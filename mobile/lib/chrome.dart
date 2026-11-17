@@ -18,6 +18,7 @@ import 'nav_items.dart';
 import 'plus.dart';
 import 'shell.dart';
 import 'state.dart';
+import 'status_emoji.dart';
 import 'subscription.dart';
 import 'theme.dart';
 import 'theme_controller.dart';
@@ -358,6 +359,7 @@ class _UserMenu extends StatelessWidget {
         ),
         PopupMenuDivider(height: 1),
         item('profile', LucideIcons.userRound, tr('Моя сторінка')),
+        if (session.pluginOn('status_emoji')) item('status', LucideIcons.smile, tr('Статус')),
         item('saved', LucideIcons.bookmark, tr('Збережене')),
         item('settings', LucideIcons.settings, tr('Налаштування')),
         if (session.isAdmin) item('admin', LucideIcons.layoutDashboard, tr('Адмін-панель')),
@@ -389,6 +391,8 @@ class _UserMenu extends StatelessWidget {
     switch (value) {
       case 'profile':
         context.go('/profile');
+      case 'status':
+        showStatusEmojiSheet(context);
       case 'saved':
         context.go('/saved');
       case 'settings':
@@ -1180,6 +1184,7 @@ List<({String title, List<_MenuEntry> items})> _menuGroups(BuildContext context,
       title: tr('Спільнота'),
       items: <_MenuEntry>[
         if ((session.modules?.contains('articles') ?? false) && fresh('/articles')) go(LucideIcons.bookOpen, tr('Статті'), '/articles'),
+        if (session.pluginOn('live_shows') && fresh('/shows')) go(LucideIcons.radio, 'GameCast', '/shows'),
         if (fresh('/podcasts')) go(LucideIcons.mic, tr('Подкасти'), '/podcasts'),
         if (session.pluginOn('ideas_board') && fresh('/ideas')) go(LucideIcons.lightbulb, tr('Дошка ідей'), '/ideas'),
         if (fresh('/invite')) go(LucideIcons.userPlus, tr('Запросити друзів'), '/invite'),

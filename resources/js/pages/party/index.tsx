@@ -127,11 +127,11 @@ export default function PartyBoard({ parties, filters, options }: Props) {
     return (
         <>
             <Head title={tr('Пошук паті')} />
-            <div className="space-y-5">
-                <section className="gc-solid rounded-2xl p-5 sm:p-6">
+            <div className="space-y-3.5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                         <div className="min-w-0 flex-1">
-                            <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
+                            <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white sm:text-2xl">
                                 <UserRoundSearch className="size-6 text-sky-400" />
                                 {tr('Пошук паті')}
                             </h1>
@@ -157,7 +157,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                             {tr('Шукаю паті')}
                         </button>
                     </div>
-                    <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                    <div className="mt-3.5 grid gap-2 sm:grid-cols-3">
                         <select
                             value={filters.game ?? ''}
                             onChange={(e) =>

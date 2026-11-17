@@ -174,9 +174,9 @@ export default function CommunityWiki({
                                 </div>
                             </form>
                         ) : page ? (
-                            <article className="gc-solid rounded-2xl p-5 sm:p-7">
+                            <article className="gc-solid rounded-2xl p-3.5 sm:p-7">
                                 <div className="flex flex-wrap items-start gap-3">
-                                    <h2 className="min-w-0 flex-1 font-display text-2xl font-semibold text-white">
+                                    <h2 className="min-w-0 flex-1 font-display text-xl font-semibold text-white sm:text-2xl">
                                         {page.title}
                                     </h2>
                                     {can_edit && (
@@ -271,7 +271,7 @@ export default function CommunityWiki({
                                         ))}
                                     </ul>
                                 )}
-                                <div className="mt-5 space-y-4">
+                                <div className="mt-3.5 space-y-4">
                                     {page.body
                                         .split(/\r?\n(?=#{1,3}\s)/)
                                         .map((part, i) => {

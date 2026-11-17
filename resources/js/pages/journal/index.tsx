@@ -101,7 +101,7 @@ export default function Journal({
             />
             <div className="mx-auto max-w-2xl space-y-4">
                 <header>
-                    <h1 className="font-display text-2xl font-bold text-white">
+                    <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                         {mine
                             ? tr('Ігровий щоденник')
                             : tr('Щоденник · {name}', { name: owner.name })}

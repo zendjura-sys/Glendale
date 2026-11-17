@@ -325,7 +325,7 @@ export default function FamilyQueue(props: Props) {
                                     customReward={customReward}
                                     setCustomReward={setCustomReward}
                                 />
-                                <div className="mt-5 flex flex-wrap gap-2 pt-4">
+                                <div className="mt-3.5 flex flex-wrap gap-2 pt-4">
                                     {current.self_review ? (
                                         <p className="text-sm text-amber-400">
                                             {tr(
@@ -485,7 +485,7 @@ function ReportDetail({
                     <div className="text-xs text-white/40">
                         {tr('До виплати')}
                     </div>
-                    <div className="font-display text-2xl font-bold text-emerald-400">
+                    <div className="font-display text-xl font-bold text-emerald-400 sm:text-2xl">
                         {report.type === 'other'
                             ? customReward
                                 ? `${customReward} ₴`

@@ -134,14 +134,18 @@ export function VoiceRooms({
     if (!data) {
         // Помилку показуємо, а не ховаємо панель, — інакше незрозуміло, куди вона поділась.
         return error ? (
-            <section className={cn('gc-solid rounded-2xl p-4', className)}>
+            <section
+                className={cn('gc-solid rounded-2xl p-3 sm:p-3.5', className)}
+            >
                 <div className="flex items-center gap-2 text-sm text-white/55">
                     <Volume2 className="size-4 text-white/35" />
                     {error}
                 </div>
             </section>
         ) : (
-            <section className={cn('gc-solid rounded-2xl p-4', className)}>
+            <section
+                className={cn('gc-solid rounded-2xl p-3 sm:p-3.5', className)}
+            >
                 <Sk className="mb-4 h-4 w-40" />
                 <ListSkeleton rows={2} avatar="square" card={false} />
             </section>
@@ -206,7 +210,7 @@ export function VoiceRooms({
     const meId = auth.user?.id;
 
     return (
-        <section className={cn('gc-solid rounded-2xl p-4', className)}>
+        <section className={cn('gc-solid rounded-2xl p-3 sm:p-3.5', className)}>
             <div className="mb-3 flex items-center gap-2">
                 <Volume2 className="size-4 text-sky-400" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">

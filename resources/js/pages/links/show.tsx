@@ -19,7 +19,7 @@ export default function BioLinks({
             <div className="min-h-dvh bg-[radial-gradient(120%_80%_at_50%_0%,rgba(99,102,241,0.35),transparent_60%),#070b18] px-4 py-12">
                 <main className="mx-auto flex max-w-md flex-col items-center text-center">
                     <UserAvatar user={profile} size="xl" showOnline={false} />
-                    <h1 className="mt-4 flex items-center gap-1.5 font-display text-2xl font-semibold text-white">
+                    <h1 className="mt-4 flex items-center gap-1.5 font-display text-xl font-semibold text-white sm:text-2xl">
                         {profile.name}
                         {profile.is_verified && (
                             <VerifiedBadge

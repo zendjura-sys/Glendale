@@ -289,7 +289,7 @@ export default function TeammateMatch({
     return (
         <>
             <Head title={tr('Підбір тиммейтів')} />
-            <div className="mx-auto max-w-3xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-3.5">
                 <Link
                     href="/party"
                     className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-white"

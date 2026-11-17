@@ -42,7 +42,7 @@ export default function PartyShow({
     return (
         <>
             <Head title={party.title} />
-            <div className="mx-auto max-w-3xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-3.5">
                 <Link
                     href="/party"
                     className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-white"
@@ -51,7 +51,7 @@ export default function PartyShow({
                     {tr('Пошук паті')}
                 </Link>
 
-                <section className="gc-solid space-y-4 rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid space-y-4 rounded-2xl p-3.5 sm:p-4">
                     <div className="flex items-start gap-3">
                         <UserAvatar user={party.host} size="lg" />
                         <div className="min-w-0 flex-1">
@@ -222,7 +222,7 @@ export default function PartyShow({
                     </div>
                 </section>
 
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Склад')} · {party.count}/{party.slots}
                     </h2>
@@ -259,7 +259,7 @@ export default function PartyShow({
                 </section>
 
                 {party.voice_room && (
-                    <section className="gc-solid flex flex-wrap items-center gap-4 rounded-2xl p-5 sm:p-6">
+                    <section className="gc-solid flex flex-wrap items-center gap-4 rounded-2xl p-3.5 sm:p-4">
                         <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
                             <Headphones className="size-5" />
                         </span>
@@ -292,7 +292,7 @@ export default function PartyShow({
                 )}
 
                 {suggestions.length > 0 && !party.full && (
-                    <section className="gc-solid rounded-2xl p-5 sm:p-6">
+                    <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                         <div className="flex items-center justify-between gap-3">
                             <h2 className="font-display text-lg font-semibold text-white">
                                 {tr('Підходять у паті')}

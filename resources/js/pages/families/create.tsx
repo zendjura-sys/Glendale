@@ -38,13 +38,13 @@ export default function CreateFamily({ servers, server }: Props) {
                 >
                     <ArrowLeft className="size-4" /> {tr('До сімей')}
                 </Link>
-                <section className="gc-solid rounded-2xl p-5 sm:p-7">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-7">
                     <div className="flex items-center gap-3">
                         <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
                             <Crown className="size-6" />
                         </span>
                         <div>
-                            <h1 className="font-display text-2xl font-bold text-white">
+                            <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                                 {tr('Створення сім’ї')}
                             </h1>
                             <p className="text-sm text-white/50">
@@ -107,7 +107,7 @@ export default function CreateFamily({ servers, server }: Props) {
                         </p>
                     </div>
 
-                    <div className="mt-5 flex flex-wrap items-start gap-5">
+                    <div className="mt-3.5 flex flex-wrap items-start gap-3.5">
                         <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
@@ -188,7 +188,7 @@ export default function CreateFamily({ servers, server }: Props) {
                         </div>
                     </div>
 
-                    <div className="gc-solid-2 mt-5 rounded-2xl p-4">
+                    <div className="gc-solid-2 mt-3.5 rounded-2xl p-4">
                         <div className="mb-3 text-sm font-semibold text-white">
                             {tr('Ваш персонаж')}
                         </div>

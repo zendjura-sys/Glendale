@@ -52,7 +52,7 @@ export default function CommunityStickers({
                 </Link>
                 <header className="flex flex-wrap items-end gap-3">
                     <div className="min-w-0 flex-1">
-                        <h1 className="font-display text-2xl font-bold text-white">
+                        <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                             {tr('Стікери спільноти')}
                         </h1>
                         <p className="mt-1 text-sm text-white/50">

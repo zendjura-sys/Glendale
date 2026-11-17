@@ -23,7 +23,7 @@ export default function Trailers({
             <Head title={tr('Трейлери')} />
             <div className="space-y-4">
                 <header>
-                    <h1 className="font-display text-2xl font-bold text-white">
+                    <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                         {tr('Трейлери')}
                     </h1>
                     <p className="mt-1 text-sm text-white/50">

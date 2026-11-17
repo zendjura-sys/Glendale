@@ -77,7 +77,7 @@ function AutopilotPanel({ data }: { data: Autopilot }) {
     );
 
     return (
-        <section className="gc-solid mb-5 space-y-3 rounded-xl p-4">
+        <section className="gc-solid mb-3.5 space-y-3 rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-display text-lg font-bold text-white">
                     {tr('Автопілот карток')}
@@ -237,7 +237,7 @@ export default function AdminCardCharacters({
 
             <form
                 onSubmit={add}
-                className="gc-solid mb-5 grid gap-3 rounded-xl p-4 sm:grid-cols-[1.2fr_1fr_1fr_auto_auto]"
+                className="gc-solid mb-3.5 grid gap-3 rounded-xl p-4 sm:grid-cols-[1.2fr_1fr_1fr_auto_auto]"
             >
                 <select
                     className={selectClass}

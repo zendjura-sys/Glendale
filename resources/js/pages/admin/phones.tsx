@@ -47,7 +47,7 @@ type Props = {
     search: string;
 };
 
-const card = 'gc-solid mb-5 rounded-2xl p-4';
+const card = 'gc-solid mb-3.5 rounded-2xl p-4';
 
 /**
  * Адмінка → Номери: коди мереж (+777 куплені, +555 випадкові), шанси рідкісного номера, знижка GameCon+,
@@ -104,18 +104,18 @@ export default function AdminPhones({
                 )}
             />
 
-            <section className="mb-5 grid gap-3 sm:grid-cols-3">
+            <section className="mb-3.5 grid gap-3 sm:grid-cols-3">
                 <div className="gc-solid rounded-2xl p-4">
                     <p className="text-xs text-white/45">
                         {tr('Номерів видано')}
                     </p>
-                    <p className="font-display text-2xl font-bold text-white">
+                    <p className="font-display text-xl font-bold text-white sm:text-2xl">
                         {stats.total}
                     </p>
                 </div>
                 <div className="gc-solid rounded-2xl p-4">
                     <p className="text-xs text-white/45">{tr('Куплено')}</p>
-                    <p className="font-display text-2xl font-bold text-white">
+                    <p className="font-display text-xl font-bold text-white sm:text-2xl">
                         {stats.purchased}
                     </p>
                 </div>

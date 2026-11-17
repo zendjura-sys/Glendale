@@ -80,7 +80,7 @@ export default function AdminModules({
                                 <div
                                     key={m.key}
                                     className={cn(
-                                        'gc-solid group relative animate-rise overflow-hidden rounded-2xl p-5 transition',
+                                        'gc-solid group relative animate-rise overflow-hidden rounded-2xl p-3.5 transition',
                                         m.enabled && 'border-gc-indigo/25',
                                         !m.available && 'opacity-65',
                                     )}

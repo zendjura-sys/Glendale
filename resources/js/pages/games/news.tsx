@@ -56,7 +56,7 @@ export default function GameNews({ items, next, games, mode, patches }: Props) {
             <Head title={tr('Новини моїх ігор')} />
             <div className="mx-auto max-w-3xl space-y-4">
                 <header>
-                    <h1 className="font-display text-2xl font-bold text-white">
+                    <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                         {tr('Новини моїх ігор')}
                     </h1>
                     <p className="text-sm text-white/55">

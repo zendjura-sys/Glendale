@@ -102,14 +102,14 @@ export default function Alerts({
             />
 
             {!enabled && (
-                <div className="gc-solid mb-5 rounded-2xl p-4 text-sm text-amber-200">
+                <div className="gc-solid mb-3.5 rounded-2xl p-4 text-sm text-amber-200">
                     {tr(
                         'Ключ UkraineAlarm не задано — додайте його в «Інтеграціях».',
                     )}
                 </div>
             )}
 
-            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatCard
                     label={tr('Місць з тривогою')}
                     value={now_total}
@@ -140,7 +140,7 @@ export default function Alerts({
                 />
             </div>
 
-            <div className="mb-5 grid gap-4 lg:grid-cols-2">
+            <div className="mb-3.5 grid gap-4 lg:grid-cols-2">
                 <section className="gc-solid rounded-2xl p-4">
                     <h2 className="mb-3 font-display text-lg font-bold text-white">
                         {tr('Стан')}
@@ -262,7 +262,7 @@ export default function Alerts({
                 </section>
             </div>
 
-            <section className="mb-5">
+            <section className="mb-3.5">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                     <h2 className="mr-2 font-display text-lg font-bold text-white">
                         {tr('Триває зараз')}

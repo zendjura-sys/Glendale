@@ -138,7 +138,7 @@ export default function FamilyPublic({
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
                     <div className="space-y-4">
                         {family.description && (
-                            <section className="gc-solid rounded-2xl p-5">
+                            <section className="gc-solid rounded-2xl p-3.5">
                                 <h2 className="mb-2 font-display font-semibold text-white">
                                     {tr('Про сім’ю')}
                                 </h2>
@@ -151,7 +151,7 @@ export default function FamilyPublic({
                             jar={donation}
                             title={tr('Підтримати сім’ю')}
                         />
-                        <section className="gc-solid rounded-2xl p-5">
+                        <section className="gc-solid rounded-2xl p-3.5">
                             <h2 className="mb-3 font-display font-semibold text-white">
                                 {tr('Керівництво')}
                             </h2>
@@ -183,7 +183,7 @@ export default function FamilyPublic({
                         </section>
                     </div>
 
-                    <section className="gc-solid h-fit rounded-2xl p-5">
+                    <section className="gc-solid h-fit rounded-2xl p-3.5">
                         {pending ? (
                             <div className="text-center">
                                 <Clock3 className="mx-auto size-8 text-amber-400" />

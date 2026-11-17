@@ -258,7 +258,7 @@ export default function AppDownload({ links, version, screens, files }: Props) {
                                     </span>
                                 )}
                             </div>
-                            <h1 className="mt-5 font-display text-3xl leading-tight font-bold tracking-tight text-white sm:text-[40px]">
+                            <h1 className="mt-3.5 font-display text-3xl leading-tight font-bold tracking-tight text-white sm:text-[40px]">
                                 {tr('GameCon у вашій кишені')}
                             </h1>
                             <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-white/70">

@@ -82,7 +82,7 @@ export default function FamilyOverview(props: Props) {
 
     return (
         <FamilyShell {...props} title={tr('Огляд')}>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="gc-compact-grid-2 lg:!grid-cols-4">
                 <Metric
                     label={tr('Заробив за тиждень')}
                     value={uahShort(stats.week_earned)}
@@ -140,13 +140,13 @@ export default function FamilyOverview(props: Props) {
                 <div className="space-y-4">
                     <Link
                         href={`${base}/reports?new=1`}
-                        className="gc-solid group flex items-center gap-4 overflow-hidden rounded-2xl p-5 transition hover:bg-[var(--gc-l3)]"
+                        className="gc-solid group flex items-center gap-3 overflow-hidden rounded-2xl p-3 transition hover:bg-[var(--gc-l3)] sm:p-3.5"
                     >
                         <span className="flex size-12 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
                             <FilePlus2 className="size-6" />
                         </span>
                         <div className="min-w-0 flex-1">
-                            <div className="font-display text-lg font-semibold text-white">
+                            <div className="text-sm font-semibold tracking-tight text-white">
                                 {tr('Подати звіт')}
                             </div>
                             <div className="text-sm text-white/50">

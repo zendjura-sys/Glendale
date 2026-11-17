@@ -118,7 +118,7 @@ export default function CharacterEdit({
                         : tr('Новий персонаж')
                 }
             />
-            <form onSubmit={submit} className="mx-auto max-w-3xl space-y-5">
+            <form onSubmit={submit} className="mx-auto max-w-3xl space-y-3.5">
                 <Link
                     href={character ? `/characters/${character.id}` : '/me'}
                     className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-white"
@@ -127,7 +127,7 @@ export default function CharacterEdit({
                     {tr('Назад')}
                 </Link>
 
-                <section className="gc-solid space-y-5 rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid space-y-3.5 rounded-2xl p-3.5 sm:p-4">
                     <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white">
                         <Drama className="size-5 text-sky-400" />
                         {character
@@ -135,7 +135,7 @@ export default function CharacterEdit({
                             : tr('Новий персонаж')}
                     </h1>
 
-                    <div className="flex flex-col gap-5 sm:flex-row">
+                    <div className="flex flex-col gap-3.5 sm:flex-row">
                         <label className="group gc-solid-2 relative flex aspect-[4/5] w-40 shrink-0 cursor-pointer items-center justify-center self-center overflow-hidden rounded-2xl transition hover:bg-[var(--gc-l3)] sm:w-44 sm:self-start">
                             {preview ? (
                                 <img

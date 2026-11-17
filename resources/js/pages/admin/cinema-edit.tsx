@@ -283,9 +283,9 @@ export default function AdminCinemaEdit({
                 }
             />
 
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_320px]">
-                <div className="space-y-5">
-                    <section className="gc-solid grid grid-cols-1 gap-4 rounded-2xl p-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3.5 xl:grid-cols-[1fr_320px]">
+                <div className="space-y-3.5">
+                    <section className="gc-solid grid grid-cols-1 gap-4 rounded-2xl p-3.5 sm:grid-cols-2">
                         <Field
                             label={tr('Назва')}
                             error={errors.title}
@@ -455,7 +455,7 @@ export default function AdminCinemaEdit({
                         </Field>
                     </section>
 
-                    <section className="gc-solid rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <h2 className="mb-1 font-display text-base font-semibold text-white">
                             {tr('Рейтинги та зовнішні ID')}
                         </h2>
@@ -537,7 +537,7 @@ export default function AdminCinemaEdit({
                         </div>
                     </section>
 
-                    <section className="gc-solid rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <h2 className="mb-4 font-display text-base font-semibold text-white">
                             {tr('Зображення')}
                         </h2>
@@ -626,7 +626,7 @@ export default function AdminCinemaEdit({
                     </section>
 
                     {movie && (
-                        <section className="gc-solid rounded-2xl p-5">
+                        <section className="gc-solid rounded-2xl p-3.5">
                             <h2 className="mb-1 flex items-center gap-2 font-display text-base font-semibold text-white">
                                 <Tv className="size-4 text-sky-400" />
                                 {tr('Плеєри')}
@@ -776,13 +776,13 @@ export default function AdminCinemaEdit({
                     )}
                 </div>
 
-                <aside className="space-y-5">
-                    <section className="gc-solid rounded-2xl p-5">
+                <aside className="space-y-3.5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <MoviePoster
                             movie={preview}
                             className="mx-auto aspect-[2/3] w-full max-w-[220px] rounded-2xl"
                         />
-                        <div className="mt-5 space-y-3">
+                        <div className="mt-3.5 space-y-3">
                             {(
                                 [
                                     ['is_published', tr('Опубліковано')],
@@ -805,7 +805,7 @@ export default function AdminCinemaEdit({
                         </div>
                     </section>
                     {movie && (
-                        <section className="gc-solid grid grid-cols-2 gap-3 rounded-2xl p-5 text-center">
+                        <section className="gc-solid grid grid-cols-2 gap-3 rounded-2xl p-3.5 text-center">
                             {(
                                 [
                                     [tr('Переглядів'), movie.views_count],
@@ -828,7 +828,7 @@ export default function AdminCinemaEdit({
                             ))}
                         </section>
                     )}
-                    <section className="gc-solid rounded-2xl p-5 text-sm">
+                    <section className="gc-solid rounded-2xl p-3.5 text-sm">
                         <p className="mb-2 font-semibold text-white">
                             {tr('Джерела метаданих')}
                         </p>

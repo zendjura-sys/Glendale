@@ -40,7 +40,7 @@ class ArcticGlassButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !busy;
-    final height = kind == ArcticButtonKind.glass ? (compact ? 40.0 : 48.0) : (compact ? 40.0 : 50.0);
+    final height = kind == ArcticButtonKind.glass ? (compact ? 32.0 : 36.0) : (compact ? 32.0 : 36.0);
     final solid = kind != ArcticButtonKind.glass;
     final dim = enabled ? 1.0 : 0.45;
     final textColor = solid ? Colors.white.withValues(alpha: enabled ? 1 : 0.6) : (color ?? ink).withValues(alpha: dim);

@@ -197,7 +197,7 @@ function Section({
     children: ReactNode;
 }) {
     return (
-        <section className="gc-solid mt-4 rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid mt-4 rounded-2xl p-3.5 sm:p-4">
             <div className="mb-3 flex items-center gap-2">
                 <Icon className="size-4 text-sky-400" />
                 <h2 className="font-display text-base font-semibold text-white">
@@ -237,7 +237,12 @@ function Score({
 
     return (
         <div className="gc-solid-2 rounded-2xl p-3 text-center">
-            <p className={cn('font-display text-2xl font-semibold', tone)}>
+            <p
+                className={cn(
+                    'font-display text-xl font-semibold sm:text-2xl',
+                    tone,
+                )}
+            >
                 {value}
             </p>
             <p className="text-xs text-white/55">{label}</p>
@@ -611,7 +616,7 @@ export default function GameShow({
             </div>
 
             {(steam_friends.length > 0 || can_curate) && (
-                <section className="gc-solid mt-4 space-y-3 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid mt-4 space-y-3 rounded-2xl p-3.5 sm:p-4">
                     {steam_friends.length > 0 && (
                         <div>
                             <h2 className="font-display text-base font-semibold text-white">
@@ -783,7 +788,7 @@ export default function GameShow({
             )}
 
             {(events.length > 0 || can_add_event) && (
-                <section className="gc-solid mt-4 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid mt-4 rounded-2xl p-3.5 sm:p-4">
                     <div className="mb-3 flex items-center gap-2">
                         <CalendarDays className="size-4 text-sky-400" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">
@@ -1280,7 +1285,7 @@ export default function GameShow({
             )}
 
             {features.clans !== false && (
-                <section className="gc-solid mt-4 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid mt-4 rounded-2xl p-3.5 sm:p-4">
                     <div className="mb-3 flex items-center gap-2">
                         <Swords className="size-4 text-sky-400" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">

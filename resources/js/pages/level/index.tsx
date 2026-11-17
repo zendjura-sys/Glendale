@@ -80,8 +80,8 @@ export default function LevelPage({
     return (
         <>
             <Head title={tr('Рівень профілю')} />
-            <div className="mx-auto max-w-4xl space-y-5">
-                <section className="gc-solid flex flex-wrap items-center gap-5 rounded-xl p-5 sm:p-6">
+            <div className="mx-auto max-w-4xl space-y-3.5">
+                <section className="gc-solid flex flex-wrap items-center gap-3.5 rounded-xl p-5 sm:p-6">
                     <div className="relative flex size-24 shrink-0 items-center justify-center rounded-full bg-amber-400/10">
                         <svg
                             viewBox="0 0 100 100"
@@ -150,7 +150,7 @@ export default function LevelPage({
                     </Button>
                 </section>
 
-                <div className="grid gap-5 md:grid-cols-[1.3fr_1fr]">
+                <div className="grid gap-3.5 md:grid-cols-[1.3fr_1fr]">
                     <section className="gc-solid rounded-xl p-4 sm:p-5">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Звідки досвід')}
@@ -185,7 +185,7 @@ export default function LevelPage({
                         </ul>
                     </section>
 
-                    <div className="space-y-5">
+                    <div className="space-y-3.5">
                         <section className="gc-solid rounded-xl p-4 sm:p-5">
                             <h2 className="font-display text-lg font-bold text-white">
                                 {tr('Назви рівнів')}

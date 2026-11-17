@@ -52,11 +52,11 @@ export default function Families({ mine, families, filters, servers }: Props) {
     return (
         <>
             <Head title={tr('Сім’ї GTA RP')} />
-            <div className="space-y-5">
-                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-7">
+            <div className="space-y-3 sm:space-y-4">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-3 sm:p-5">
                     <div className="pointer-events-none absolute -top-24 -right-10 size-96 rounded-full bg-amber-400/20 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-40 left-10 size-96 rounded-full bg-gc-indigo/25 blur-3xl" />
-                    <div className="relative flex flex-wrap items-end justify-between gap-5">
+                    <div className="relative flex flex-wrap items-end justify-between gap-3.5">
                         <div className="max-w-xl">
                             <span className="inline-flex items-center gap-2 rounded-chip bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-400">
                                 <Crown className="size-3.5" /> Family ERP
@@ -82,10 +82,10 @@ export default function Families({ mine, families, filters, servers }: Props) {
 
                 {mine.length > 0 && (
                     <section>
-                        <h2 className="mb-3 font-display text-lg font-semibold text-white">
+                        <h2 className="mb-2.5 text-sm font-semibold tracking-tight text-white">
                             {tr('Мої сім’ї')}
                         </h2>
-                        <div className="grid grid-cols-1 gap-3 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="gc-compact-grid-2 min-[1920px]:!grid-cols-4 min-[2400px]:!grid-cols-5 xl:!grid-cols-3">
                             {mine.map((f) => (
                                 <Link
                                     key={f.id}
@@ -137,7 +137,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
 
                 <section>
                     <div className="mb-3 flex flex-wrap items-center gap-2">
-                        <h2 className="mr-auto font-display text-lg font-semibold text-white">
+                        <h2 className="mr-auto text-sm font-semibold tracking-tight text-white">
                             {tr('Каталог сімей')}
                         </h2>
                         {q && (
@@ -178,7 +178,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                             )}
                         />
                     ) : (
-                        <div className="grid grid-cols-1 gap-3 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="gc-compact-grid-2 min-[1920px]:!grid-cols-4 min-[2400px]:!grid-cols-5 xl:!grid-cols-3">
                             {families.data.map((f, i) => (
                                 <Link
                                     key={f.id}

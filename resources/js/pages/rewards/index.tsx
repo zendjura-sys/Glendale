@@ -88,10 +88,10 @@ export default function RewardsCalendar({
     return (
         <>
             <Head title={tr('Нагороди за вхід')} />
-            <div className="mx-auto max-w-3xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-3.5">
                 <section className="gc-solid flex flex-wrap items-center gap-4 rounded-xl p-5">
                     <div className="min-w-0 flex-1">
-                        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
+                        <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white sm:text-2xl">
                             <Gift className="size-6 text-primary" />
                             {tr('Нагороди за вхід')}
                         </h1>

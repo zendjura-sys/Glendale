@@ -15,6 +15,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'ai_tools.dart';
 import 'api.dart';
+import 'catch_up.dart';
 import 'chat_extras.dart';
 import 'listen_together.dart';
 import 'posts.dart';
@@ -411,6 +412,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Offset drag = Offset.zero;
   final bubbleKeys = <int, GlobalKey>{};
   int? flashId;
+  bool catchUpClosed = false;
 
   Api get api => AppScope.read(context).session.api;
   int? get myId => AppScope.read(context).session.myId;
@@ -962,39 +964,59 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             _CallBanner(chat: chat, conversation: widget.id),
             Expanded(
-              child: messages.isEmpty
-                  ? QuietEmpty(icon: LucideIcons.hand, text: tr('Напишіть перше повідомлення'))
-                  : ListView.builder(
-                      controller: scroll,
-                      reverse: true,
-                      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
-                      itemCount: reversed.length,
-                      itemBuilder: (context, i) {
-                        final message = reversed[i];
-                        final previous = i + 1 < reversed.length ? reversed[i + 1] : null;
-                        final day = _dayOf(message['created_at']);
-                        final showDay = previous == null || _dayOf(previous['created_at']) != day;
-                        final id = intOf(message['id']);
-                        final bubble = _Bubble(
-                          message: message,
-                          own: intOf(mapOf(message['user'])['id']) == myId,
-                          group: group,
-                          read: id <= readUpTo,
-                          onMenu: () => _messageMenu(message),
-                          onQuote: _jumpTo,
-                          conversationId: widget.id,
-                          onThread: () => _openThread(message),
-                        );
-                        return Column(key: bubbleKeys.putIfAbsent(id, GlobalKey.new), children: [
-                          if (showDay) _DayLabel(iso: message['created_at']),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            decoration: BoxDecoration(color: flashId == id ? primary.withValues(alpha: 0.16) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
-                            child: message['type'] == 'system' || chat['can_write'] == false ? bubble : _SwipeToReply(onReply: () => _reply(message), child: bubble),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: messages.isEmpty
+                        ? QuietEmpty(icon: LucideIcons.hand, text: tr('Напишіть перше повідомлення'))
+                        : ListView.builder(
+                            controller: scroll,
+                            reverse: true,
+                            padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+                            itemCount: reversed.length,
+                            itemBuilder: (context, i) {
+                              final message = reversed[i];
+                              final previous = i + 1 < reversed.length ? reversed[i + 1] : null;
+                              final day = _dayOf(message['created_at']);
+                              final showDay = previous == null || _dayOf(previous['created_at']) != day;
+                              final id = intOf(message['id']);
+                              final bubble = _Bubble(
+                                message: message,
+                                own: intOf(mapOf(message['user'])['id']) == myId,
+                                group: group,
+                                read: id <= readUpTo,
+                                onMenu: () => _messageMenu(message),
+                                onQuote: _jumpTo,
+                                conversationId: widget.id,
+                                onThread: () => _openThread(message),
+                              );
+                              return Column(key: bubbleKeys.putIfAbsent(id, GlobalKey.new), children: [
+                                if (showDay) _DayLabel(iso: message['created_at']),
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  decoration: BoxDecoration(color: flashId == id ? primary.withValues(alpha: 0.16) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
+                                  child: message['type'] == 'system' || chat['can_write'] == false ? bubble : _SwipeToReply(onReply: () => _reply(message), child: bubble),
+                                ),
+                              ]);
+                            },
                           ),
-                        ]);
-                      },
+                  ),
+                  if (!catchUpClosed && group && session.pluginOn('chat_catch_up') && chat['catch_up'] is Map && intOf(mapOf(chat['catch_up'])['count']) > 0)
+                    Positioned(
+                      left: 8,
+                      right: 8,
+                      top: 8,
+                      child: CatchUpCard(
+                        data: mapOf(chat['catch_up']),
+                        onClose: () => setState(() => catchUpClosed = true),
+                        onJump: (id) {
+                          setState(() => catchUpClosed = true);
+                          _jumpTo(id);
+                        },
+                      ),
                     ),
+                ],
+              ),
             ),
             if (chat['can_write'] == false)
               Padding(

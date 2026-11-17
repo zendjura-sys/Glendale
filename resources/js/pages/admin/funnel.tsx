@@ -45,7 +45,7 @@ export default function AdminFunnel({
                     </button>
                 ))}
             />
-            <section className="gc-solid space-y-3 rounded-2xl p-5">
+            <section className="gc-solid space-y-3 rounded-2xl p-3.5">
                 {steps.map((step, i) => {
                     const share = Math.round((step.count / top) * 100);
                     const prev = i > 0 ? steps[i - 1].count : null;

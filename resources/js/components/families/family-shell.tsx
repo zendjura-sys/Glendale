@@ -22,7 +22,7 @@ import {
     Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { PlusBadge } from '@/components/gc/plus';
 import { ServerIcon } from '@/components/servers/server-icon';
@@ -56,6 +56,7 @@ export function FamilyShell({
     const base = `/f/${family.slug}`;
     const playing = usePlayer().current !== null;
     const reload = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const tabsNav = useRef<HTMLElement | null>(null);
 
     useRealtime(`family.${family.id}`, {
         'family.updated': () => {
@@ -63,6 +64,17 @@ export function FamilyShell({
             reload.current = setTimeout(() => router.reload(), 700);
         },
     });
+
+    useEffect(() => {
+        const active = tabsNav.current?.querySelector<HTMLElement>(
+            '[data-family-tab="active"]',
+        );
+        active?.scrollIntoView({
+            inline: 'center',
+            block: 'nearest',
+            behavior: 'smooth',
+        });
+    }, [section]);
 
     const tabs: Tab[] = [
         {
@@ -310,7 +322,10 @@ export function FamilyShell({
                             )}
                         </div>
                     </div>
-                    <nav className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden">
+                    <nav
+                        ref={tabsNav}
+                        className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden"
+                    >
                         {tabs
                             .filter((t) => t.visible)
                             .map((t) => (
@@ -318,22 +333,27 @@ export function FamilyShell({
                                     key={t.section}
                                     href={t.href}
                                     preserveScroll
+                                    data-family-tab={
+                                        section === t.section
+                                            ? 'active'
+                                            : undefined
+                                    }
                                     className={cn(
-                                        'relative inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium transition',
+                                        'relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-xs font-medium transition',
                                         section === t.section
                                             ? 'bg-white/[0.08] text-white'
                                             : 'text-white/50 hover:text-white',
                                     )}
                                 >
-                                    <t.icon className="size-4" />
+                                    <t.icon className="size-3.5" />
                                     {t.label}
                                     {!!t.badge && (
-                                        <span className="rounded-full bg-red-500 px-1.5 text-[11px] leading-4 font-semibold text-white">
+                                        <span className="rounded-full bg-red-500 px-1.5 text-[10px] leading-4 font-semibold text-white">
                                             {t.badge > 99 ? '99+' : t.badge}
                                         </span>
                                     )}
                                     {section === t.section && (
-                                        <span className="absolute inset-x-3 -bottom-1.5 h-0.5 rounded-full bg-sky-500" />
+                                        <span className="absolute inset-x-2.5 -bottom-1.5 h-0.5 rounded-full bg-sky-500" />
                                     )}
                                 </Link>
                             ))}

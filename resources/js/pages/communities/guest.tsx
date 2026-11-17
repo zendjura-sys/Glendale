@@ -116,7 +116,7 @@ export default function CommunityGuest({
                             className="-mt-16 shrink-0 sm:-mt-20"
                         />
                         <div className="min-w-0 flex-1">
-                            <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
+                            <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white sm:text-2xl">
                                 <span className="break-words">
                                     {community.name}
                                 </span>

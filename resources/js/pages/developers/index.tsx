@@ -128,7 +128,7 @@ export default function Developers({
     return (
         <>
             <Head title={tr('Розробникам')} />
-            <div className="mx-auto max-w-4xl space-y-5">
+            <div className="mx-auto max-w-4xl space-y-3.5">
                 <header className="space-y-2">
                     <h1 className="font-display text-3xl font-bold text-white">
                         {tr('Розробникам')}
@@ -179,7 +179,7 @@ export default function Developers({
                             reveal={reveal}
                         />
                     ) : (
-                        <section className="gc-solid rounded-2xl p-5 text-sm text-white/70">
+                        <section className="gc-solid rounded-2xl p-3.5 text-sm text-white/70">
                             {tr('Увійдіть, щоб створити застосунок.')}
                         </section>
                     ))}
@@ -269,7 +269,7 @@ function AppForm({
     )?.[1];
 
     return (
-        <section data-app-form className="gc-solid space-y-3 rounded-2xl p-5">
+        <section data-app-form className="gc-solid space-y-3 rounded-2xl p-3.5">
             <h2 className="font-display text-lg font-bold text-white">
                 {app ? tr('Налаштування застосунку') : tr('Новий застосунок')}
             </h2>
@@ -424,7 +424,7 @@ function AppCard({
     return (
         <section
             id={`app-${app.id}`}
-            className="gc-solid space-y-4 rounded-2xl p-5"
+            className="gc-solid space-y-4 rounded-2xl p-3.5"
         >
             <div className="flex flex-wrap items-start gap-3">
                 <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
@@ -686,7 +686,7 @@ function OAuthDocs({
     scopes: Props['scopes'];
 }) {
     return (
-        <section className="gc-solid space-y-4 rounded-2xl p-5 text-sm text-white/75">
+        <section className="gc-solid space-y-4 rounded-2xl p-3.5 text-sm text-white/75">
             <h2 className="font-display text-xl font-bold text-white">
                 {tr('Увійти через GameCon (OAuth 2.1)')}
             </h2>
@@ -775,7 +775,7 @@ function ApiDocs({ base, limits }: { base: string; limits: Props['limits'] }) {
     ];
 
     return (
-        <section className="gc-solid space-y-4 rounded-2xl p-5 text-sm text-white/75">
+        <section className="gc-solid space-y-4 rounded-2xl p-3.5 text-sm text-white/75">
             <h2 className="font-display text-xl font-bold text-white">
                 {tr('Публічний API')}
             </h2>
@@ -832,7 +832,7 @@ function ApiDocs({ base, limits }: { base: string; limits: Props['limits'] }) {
 
 function BotDocs({ base, limits }: { base: string; limits: Props['limits'] }) {
     return (
-        <section className="gc-solid space-y-4 rounded-2xl p-5 text-sm text-white/75">
+        <section className="gc-solid space-y-4 rounded-2xl p-3.5 text-sm text-white/75">
             <h2 className="font-display text-xl font-bold text-white">
                 {tr('Ключі застосунку й боти')}
             </h2>

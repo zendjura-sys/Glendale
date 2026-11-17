@@ -49,8 +49,8 @@ export default function PhotosIndex({
     return (
         <>
             <Head title={title} />
-            <div className="space-y-5">
-                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-6">
+            <div className="space-y-3.5">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-3.5 sm:p-4">
                     <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-cyan/15 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-32 left-16 size-72 rounded-full bg-gc-purple/20 blur-3xl" />
                     <div className="relative flex flex-wrap items-center gap-4">

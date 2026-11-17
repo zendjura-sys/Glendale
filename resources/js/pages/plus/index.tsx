@@ -160,10 +160,10 @@ export default function PlusPage({
     return (
         <>
             <Head title="GameCon+" />
-            <div className="mx-auto max-w-4xl space-y-5">
+            <div className="mx-auto max-w-4xl space-y-3.5">
                 <PlusTabs current="plus" />
-                <section className="gc-solid rounded-2xl p-5 sm:p-7">
-                    <h1 className="flex items-center gap-2.5 font-display text-2xl font-bold text-white sm:text-3xl">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-7">
+                    <h1 className="flex items-center gap-2.5 font-display text-xl font-bold text-white sm:text-2xl sm:text-3xl">
                         <PlusBadge className="size-7 rounded-lg [&_svg]:size-5" />
                         GameCon+
                     </h1>
@@ -211,7 +211,7 @@ export default function PlusPage({
                         <TrialOffer days={trial.days} />
                     )}
 
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-3.5 grid gap-3 sm:grid-cols-2">
                         {plans.map(([product, plan], i) => (
                             <div
                                 key={product}
@@ -273,7 +273,7 @@ export default function PlusPage({
 
                 <section className="grid gap-3 sm:grid-cols-2">
                     {PERKS().map(({ icon: Icon, title, text }) => (
-                        <div key={title} className="gc-solid rounded-2xl p-5">
+                        <div key={title} className="gc-solid rounded-2xl p-3.5">
                             <span className="flex items-center gap-2 font-semibold text-white">
                                 <Icon className="size-4 text-indigo-300" />
                                 {title}
@@ -314,7 +314,7 @@ export default function PlusPage({
                 <OtherPurchases />
 
                 {payments.length > 0 && (
-                    <section className="gc-solid rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Історія оплат')}
                         </h2>
@@ -426,7 +426,10 @@ function StyleEditor({
     };
 
     return (
-        <form onSubmit={submit} className="gc-solid space-y-4 rounded-2xl p-5">
+        <form
+            onSubmit={submit}
+            className="gc-solid space-y-4 rounded-2xl p-3.5"
+        >
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Palette className="size-5 text-indigo-300" />
                 {tr('Оформлення')}
@@ -737,7 +740,7 @@ function GiftForm({
     const days = (gifts[0]?.[1] as { days?: number } | undefined)?.days ?? 30;
 
     return (
-        <section className="gc-solid flex flex-col gap-4 rounded-2xl p-5">
+        <section className="gc-solid flex flex-col gap-4 rounded-2xl p-3.5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Gift className="size-5 text-indigo-300" />
                 {tr('Подарувати другу')}
@@ -981,7 +984,7 @@ function RedeemForm() {
 
     return (
         <form
-            className="gc-solid flex flex-col gap-3 rounded-2xl p-5"
+            className="gc-solid flex flex-col gap-3 rounded-2xl p-3.5"
             onSubmit={(event) => {
                 event.preventDefault();
                 form.post('/plus/redeem', {
@@ -1038,7 +1041,7 @@ function FamilyPlans({
             ? Math.round((price * (100 - discount)) / 100)
             : price;
     return (
-        <section className="gc-solid rounded-2xl p-5">
+        <section className="gc-solid rounded-2xl p-3.5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Users className="size-5 text-indigo-300" />
                 {tr('GameCon+ для сім’ї')}
@@ -1238,7 +1241,7 @@ function OtherPurchases() {
     if (cards.length === 0) return null;
 
     return (
-        <section className="gc-solid rounded-2xl p-5">
+        <section className="gc-solid rounded-2xl p-3.5">
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Інші покупки')}
             </h2>
@@ -1275,7 +1278,7 @@ function TitleForm({ title }: { title: Props['title'] }) {
         title.next_change !== null && form.data.name !== (title.name ?? '');
 
     return (
-        <section className="gc-solid rounded-2xl p-5">
+        <section className="gc-solid rounded-2xl p-3.5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Tag className="size-5 text-sky-300" />
                 {tr('Власна роль')}

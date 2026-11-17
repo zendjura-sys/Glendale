@@ -214,7 +214,7 @@ export default function AdminServers({
                 }
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <StatCard
                     label={tr('Опубліковано')}
                     value={counts.published}
@@ -611,7 +611,7 @@ function ServerDialog({
                           )}
                 </DialogDescription>
 
-                <div className="gc-solid-2 mt-5 flex items-center gap-4 rounded-2xl p-3">
+                <div className="gc-solid-2 mt-3.5 flex items-center gap-4 rounded-2xl p-3">
                     <ServerIcon
                         name={form.data.name || '?'}
                         icon={preview}
@@ -644,7 +644,7 @@ function ServerDialog({
                     </button>
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-3.5">
                     <ServerFormFields
                         data={form.data}
                         setData={form.setData}

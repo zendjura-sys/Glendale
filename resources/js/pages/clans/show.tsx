@@ -197,7 +197,7 @@ function Card({
     children: ReactNode;
 }) {
     return (
-        <section className="gc-solid rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
             <div className="mb-3 flex items-center gap-2">
                 <Icon className="size-4 text-sky-400" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
@@ -396,7 +396,7 @@ export default function ClanShow(props: Props) {
     return (
         <>
             <Head title={clan.display_name} />
-            <div className="gc-solid mb-4 flex flex-wrap items-center gap-4 rounded-2xl p-4 sm:p-5">
+            <div className="gc-solid mb-4 flex flex-wrap items-center gap-4 rounded-2xl p-3.5 sm:p-4">
                 <ClanLogo clan={clan} size="lg" />
                 <div className="min-w-0 flex-1">
                     <h1 className="truncate font-display text-xl font-semibold text-white sm:text-2xl">

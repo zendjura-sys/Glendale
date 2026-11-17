@@ -34,7 +34,7 @@ export default function FamilyCharterPublic({
                         })}
                     </h1>
                 </div>
-                <div className="gc-solid rounded-2xl p-5 text-sm leading-relaxed whitespace-pre-line text-white/85">
+                <div className="gc-solid rounded-2xl p-3.5 text-sm leading-relaxed whitespace-pre-line text-white/85">
                     {text ?? (
                         <span className="flex items-center gap-2 text-white/50">
                             <Scale className="size-4" />

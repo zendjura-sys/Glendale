@@ -111,7 +111,7 @@ function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
     };
 
     return (
-        <section className="gc-solid mb-5 rounded-2xl p-5">
+        <section className="gc-solid mb-3.5 rounded-2xl p-3.5">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 className="font-display text-lg font-semibold text-white">
@@ -298,7 +298,7 @@ export default function AdminMusic({
                 }
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 <StatCard
                     label={tr('Треків')}
                     value={compactNumber(stats.tracks)}

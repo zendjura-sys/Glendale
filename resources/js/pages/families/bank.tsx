@@ -95,7 +95,7 @@ export default function FamilyBank(props: Props) {
 
     return (
         <FamilyShell {...props} title={tr('Банк')}>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="gc-compact-grid-2 lg:!grid-cols-4">
                 <Metric
                     label={tr('Мій баланс')}
                     value={uahShort(me.balance)}
@@ -617,7 +617,7 @@ function ManualPanel({
             }
         >
             {open ? (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="gc-compact-grid-2 lg:!grid-cols-4">
                     <Field label={tr('Рахунок')}>
                         <Segmented
                             value={form.data.target}

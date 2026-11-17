@@ -266,7 +266,7 @@ export default function DeveloperPlugins({ plugins, version }: Props) {
                     ))}
                 </ul>
 
-                <section className="gc-solid flex items-start gap-3 rounded-2xl p-5">
+                <section className="gc-solid flex items-start gap-3 rounded-2xl p-3.5">
                     <Puzzle className="mt-0.5 size-5 shrink-0 text-primary" />
                     <p className="text-sm text-white/65">
                         {tr(

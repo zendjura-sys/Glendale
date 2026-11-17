@@ -126,7 +126,7 @@ export default function AdminAntispam({
             />
 
             <div className="grid gap-6 xl:grid-cols-2">
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                         <Globe2 className="size-5 text-sky-400" />
                         {tr('Фільтр доменів')}
@@ -211,7 +211,7 @@ export default function AdminAntispam({
                     </form>
                 </section>
 
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                         <Ban className="size-5 text-red-400" />
                         {tr('Бани за IP')}
@@ -341,7 +341,7 @@ export default function AdminAntispam({
                 </section>
             </div>
 
-            <section className="gc-solid mt-6 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mt-6 rounded-2xl p-3.5 sm:p-4">
                 <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <Search className="size-5 text-sky-400" />
                     {tr('Журнал IP')}
@@ -481,7 +481,7 @@ export default function AdminAntispam({
                 )}
             </section>
 
-            <section className="gc-solid mt-6 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mt-6 rounded-2xl p-3.5 sm:p-4">
                 <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <History className="size-5 text-sky-400" />
                     {tr('Що зупинив антиспам')}

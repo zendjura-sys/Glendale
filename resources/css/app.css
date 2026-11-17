@@ -6649,3 +6649,212 @@ html[data-theme='dark'] .am.am-in-site {
 :root[data-theme='light'] [data-on-dark] .gc-app-promo {
     background: linear-gradient(135deg, #123058 0%, #0c1a30 55%, #0a1322 100%);
 }
+
+/* =============================================================================
+ * Глобальна щільність UI (GameCon compact)
+ * Мобільні (<640px): менші падінги/шрифти/щілини в оболонці сайту.
+ * Десктоп лишає просторіші значення; картки всюди — rounded-2xl / 16px.
+ * ============================================================================= */
+
+:root {
+    --gc-density-card-pad: 0.875rem; /* 14px */
+    --gc-density-gap: 0.625rem; /* 10px */
+    --gc-density-title: 0.875rem; /* 14px */
+    --gc-density-body: 0.8125rem; /* 13px */
+    --gc-density-meta: 0.6875rem; /* 11px */
+    --gc-density-btn-h: 2.25rem; /* 36px */
+}
+
+@media (max-width: 639.98px) {
+    :root {
+        --gc-density-card-pad: 0.75rem; /* 12px */
+        --gc-density-gap: 0.5rem;
+        --gc-density-title: 0.8125rem;
+        --gc-density-body: 0.75rem;
+        --gc-density-meta: 0.6875rem;
+        --gc-density-btn-h: 2rem; /* 32px */
+    }
+
+    /* Падінги карток і секцій — здути з p-4/p-5 */
+    :root.gc-vk .gc-vk-shell :where(.p-5),
+    :root.gc-vk .gc-vk-shell :where(.p-4),
+    :root.gc-vk .gc-vk-shell :where(.p-3\.5) {
+        padding: var(--gc-density-card-pad) !important;
+    }
+    :root.gc-vk .gc-vk-shell :where(.px-5, .px-4) {
+        padding-inline: var(--gc-density-card-pad) !important;
+    }
+    :root.gc-vk .gc-vk-shell :where(.py-5, .py-4) {
+        padding-block: var(--gc-density-card-pad) !important;
+    }
+    :root.gc-vk .gc-vk-shell :where(.pt-5, .pt-4) {
+        padding-top: var(--gc-density-card-pad) !important;
+    }
+    :root.gc-vk .gc-vk-shell :where(.pb-5, .pb-4) {
+        padding-bottom: var(--gc-density-card-pad) !important;
+    }
+
+    /* Типографіка: великі заголовки → компактні */
+    :root.gc-vk .gc-vk-shell :where(.text-2xl) {
+        font-size: 1.125rem !important;
+        line-height: 1.4 !important;
+        letter-spacing: -0.02em;
+    }
+    :root.gc-vk .gc-vk-shell :where(.text-xl) {
+        font-size: 1rem !important;
+        line-height: 1.35 !important;
+        letter-spacing: -0.02em;
+    }
+    :root.gc-vk .gc-vk-shell :where(.text-lg) {
+        font-size: var(--gc-density-title) !important;
+        line-height: 1.3 !important;
+        letter-spacing: -0.015em;
+        font-weight: 600;
+    }
+    :root.gc-vk .gc-vk-shell :where(.text-base) {
+        font-size: var(--gc-density-body) !important;
+        line-height: 1.35 !important;
+    }
+    :root.gc-vk .gc-vk-shell :where(.text-sm) {
+        font-size: 0.75rem !important;
+        line-height: 1.3 !important;
+    }
+
+    /* Щілини між блоками */
+    :root.gc-vk .gc-vk-shell :where(.gap-5, .gap-4, .gap-3) {
+        gap: var(--gc-density-gap) !important;
+    }
+    :root.gc-vk
+        .gc-vk-shell
+        :is(.space-y-5, .space-y-4, .space-y-3)
+        > :not(:last-child) {
+        margin-block-end: var(--gc-density-gap) !important;
+    }
+
+    /* Кнопки / таби — компактна висота */
+    :root.gc-vk
+        .gc-vk-shell
+        :where(.h-12):not(.gc-vk-tabbar *):not(img):not(svg):not(
+            [class*='size-']
+        ) {
+        height: 2.5rem !important;
+    }
+    :root.gc-vk
+        .gc-vk-shell
+        :where(.h-11, .h-10):not(.gc-vk-tabbar *):not(img):not(svg) {
+        height: var(--gc-density-btn-h) !important;
+    }
+    :root.gc-vk .gc-vk-shell :where([data-slot='button'], .btn-glow) {
+        font-size: 0.75rem !important;
+        font-weight: 500;
+    }
+
+    /* Одноколоночні сітки каталогів/плиток → 2 колонки */
+    :root.gc-vk
+        .gc-vk-shell
+        :where(.gc-compact-grid, .gc-bento, .gc-bento-row) {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.625rem !important;
+    }
+}
+
+/* Компактний рядок списку (друзі, учасники, журнал) — єдина висота дій */
+.gc-list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 1rem;
+    border: 1px solid rgb(255 255 255 / 0.06);
+    background: #0d1017;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        transform 0.15s ease;
+}
+.gc-list-row:hover {
+    border-color: rgb(255 255 255 / 0.12);
+    background: #12151e;
+}
+.gc-list-row:active {
+    transform: scale(0.995);
+}
+html[data-theme='light'] .gc-list-row,
+:root[data-theme='light'] .gc-list-row {
+    background: rgb(255 255 255 / 0.55);
+    border-color: rgb(13 27 46 / 0.08);
+}
+html[data-theme='light'] .gc-list-row:hover,
+:root[data-theme='light'] .gc-list-row:hover {
+    background: rgb(255 255 255 / 0.78);
+}
+
+/* Заголовки віджетів VK — щільніше */
+:root.gc-vk .gc-vk-group .vkuiHeader__host {
+    padding-inline: 12px !important;
+    padding-top: 4px !important;
+    padding-bottom: 2px !important;
+}
+:root.gc-vk .gc-vk-group .vkuiHeader__content {
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.015em;
+}
+
+/* Утиліта: компактна сітка (2 / 3 / 4) — штаб сім'ї, каталоги, метрики */
+.gc-compact-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+}
+@media (min-width: 640px) {
+    .gc-compact-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+}
+@media (min-width: 1024px) {
+    .gc-compact-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+.gc-compact-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+}
+.gc-compact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.gc-compact-list > * {
+    padding: 0.625rem 0.75rem;
+}
+
+/* Шапка: щільна маска від bleed контенту над капсулою пошуку */
+.app-header-wrapper {
+    z-index: 100;
+    top: 0;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+    padding-bottom: 12px;
+    background: rgb(7 9 14 / 0.95) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    backdrop-filter: blur(24px) saturate(160%) !important;
+}
+html[data-theme='light'] .app-header-wrapper,
+:root[data-theme='light'] .app-header-wrapper {
+    background: rgb(238 242 248 / 0.95) !important;
+}
+
+/* Нижній док: матове скло rgba(14,17,24,.78) + blur 40 */
+html:root.gc-vk[data-theme] .gc-vk-tabbar.ios-glass-panel {
+    background: rgba(14, 17, 24, 0.78) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+html:root.gc-vk[data-theme='light'] .gc-vk-tabbar.ios-glass-panel {
+    background: rgba(255, 255, 255, 0.82) !important;
+}

@@ -152,7 +152,7 @@ export default function ServerShow({
     return (
         <>
             <Head title={server.name} />
-            <div className="space-y-5">
+            <div className="space-y-3.5">
                 <div className="flex flex-wrap items-center gap-4">
                     <Link
                         href="/servers"
@@ -336,7 +336,7 @@ export default function ServerShow({
                     href={`/servers/${server.slug}`}
                 />
                 <PlayingNow users={playing_now} count={playing_count} />
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                         <CalendarDays className="size-5 text-sky-400" />{' '}
                         {tr('Події сервера')}
@@ -400,7 +400,7 @@ export default function ServerShow({
                 {apps && <ServerApps slug={server.slug} apps={apps} />}
                 {tournaments &&
                     (tournaments.list.length > 0 || tournaments.can_host) && (
-                        <section className="gc-solid rounded-2xl p-5">
+                        <section className="gc-solid rounded-2xl p-3.5">
                             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                                 <h2 className="font-display text-lg font-semibold text-white">
                                     {tr('Турніри')}
@@ -452,7 +452,7 @@ export default function ServerShow({
                         </section>
                     )}
                 {charactersOn && (
-                    <section className="gc-solid rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <div className="flex items-center justify-between gap-3">
                             <h2 className="font-display text-lg font-semibold text-white">
                                 {tr('Персонажі гравців')}
@@ -484,7 +484,7 @@ export default function ServerShow({
                         )}
                     </section>
                 )}
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <h2 className="font-display text-lg font-semibold text-white">
                         {tr('Відгуки')}
                         {reviews.average !== null && (
@@ -553,7 +553,7 @@ export default function ServerShow({
                         ))}
                     </div>
                 </section>
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <header className="mb-4 flex flex-wrap items-center gap-3">
                         <Trophy className="size-5 text-amber-300" />
                         <h2 className="font-display text-lg font-semibold text-white">
@@ -637,7 +637,7 @@ export default function ServerShow({
                 </section>
 
                 {(chartOn || tagsOn || similarOn) && (
-                    <section className="gc-solid space-y-4 rounded-2xl p-5">
+                    <section className="gc-solid space-y-4 rounded-2xl p-3.5">
                         {chartOn && (
                             <h2 className="font-display text-xl font-bold text-white">
                                 {tr('Онлайн за два тижні')}
@@ -755,7 +755,7 @@ export default function ServerShow({
                     />
                 )}
                 {(newsOn || claimOn) && (
-                    <section className="gc-solid space-y-4 rounded-2xl p-5">
+                    <section className="gc-solid space-y-4 rounded-2xl p-3.5">
                         {newsOn && (
                             <h2 className="font-display text-xl font-bold text-white">
                                 {tr('Новини власника')}

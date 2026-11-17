@@ -46,7 +46,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
             <Head
                 title={`${isRules ? tr('Правила') : tr('Довідник')} — ${community.name}`}
             />
-            <div className="mx-auto max-w-3xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-3.5">
                 <div className="flex items-center gap-4">
                     <Link
                         href={`/c/${community.slug}`}
@@ -85,7 +85,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                 {toc.length > 2 && (
                     <nav
                         aria-label={tr('Зміст')}
-                        className="gc-solid rounded-2xl p-4 sm:p-5"
+                        className="gc-solid rounded-2xl p-3.5 sm:p-4"
                     >
                         <p className="mb-2 text-xs font-semibold text-white/45">
                             {tr('Зміст')}
@@ -105,7 +105,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                     </nav>
                 )}
 
-                <article className="gc-solid space-y-6 rounded-2xl p-5 sm:p-7">
+                <article className="gc-solid space-y-6 rounded-2xl p-3.5 sm:p-7">
                     {parts.map((part) => (
                         <section
                             key={part.id}

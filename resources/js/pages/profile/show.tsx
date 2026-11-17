@@ -640,7 +640,7 @@ export default function ProfileShow({
                             </span>
                         </Uploader>
                     )}
-                    <div className="flex items-end gap-4 px-2 pt-3 sm:absolute sm:inset-x-0 sm:bottom-0 sm:gap-5 sm:p-6">
+                    <div className="flex items-end gap-4 px-2 pt-3 sm:absolute sm:inset-x-0 sm:bottom-0 sm:gap-3.5 sm:p-6">
                         <div className="shrink-0">
                             <div
                                 className={cn(
@@ -1218,7 +1218,7 @@ export default function ProfileShow({
             </section>
 
             {!canSeeContent ? (
-                <div className="mt-5">
+                <div className="mt-3.5">
                     <EmptyState
                         icon={Lock}
                         title={
@@ -1255,7 +1255,7 @@ export default function ProfileShow({
                     )}
                     <div
                         className={cn(
-                            'mt-5 flex flex-col gap-5 xl:flex-row',
+                            'mt-3.5 flex flex-col gap-3.5 xl:flex-row',
                             section !== 'main' && 'hidden',
                         )}
                     >

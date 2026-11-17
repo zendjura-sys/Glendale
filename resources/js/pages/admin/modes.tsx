@@ -165,7 +165,7 @@ export default function AdminModes({
                 </p>
             )}
 
-            <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+            <div className="grid gap-3.5 lg:grid-cols-[300px_minmax(0,1fr)]">
                 {/* Перелік режимів */}
                 <div className="space-y-2">
                     {data.modes.map((item) => {
@@ -212,7 +212,7 @@ export default function AdminModes({
 
                 {/* Редактор вибраного режиму */}
                 {mode && (
-                    <div className="gc-solid space-y-6 rounded-2xl p-5 sm:p-6">
+                    <div className="gc-solid space-y-6 rounded-2xl p-3.5 sm:p-4">
                         <div className="grid gap-3 sm:grid-cols-2">
                             <label className="text-sm text-white/70">
                                 {tr('Назва')}

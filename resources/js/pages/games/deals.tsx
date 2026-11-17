@@ -65,7 +65,7 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
             <Head title={tr('Роздачі й знижки')} />
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="min-w-0 flex-1">
-                    <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
+                    <h1 className="flex items-center gap-2 font-display text-xl font-semibold text-white sm:text-2xl">
                         <Gift className="size-6 shrink-0 text-sky-400" />{' '}
                         {tr('Роздачі й знижки')}
                     </h1>
@@ -103,7 +103,7 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
             {giveawaysOn && (
                 <section className="mb-6">
                     {giveaways.length === 0 ? (
-                        <p className="gc-solid rounded-2xl p-5 text-sm text-white/50">
+                        <p className="gc-solid rounded-2xl p-3.5 text-sm text-white/50">
                             {tr(
                                 'Зараз роздач немає — увімкніть сповіщення, і ми напишемо, щойно з’явиться нова.',
                             )}
@@ -208,7 +208,7 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
             )}
 
             {dealsOn && (
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <div className="mb-3 flex items-center gap-2">
                         <Heart className="size-4 text-sky-400" />
                         <h2 className="font-display text-base font-semibold text-white">
@@ -222,7 +222,7 @@ export default function GameDeals({ giveaways, subscribed, wishlist }: Props) {
                             )}
                         </p>
                     ) : (
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                        <div className="gc-compact-grid xl:!grid-cols-5">
                             {wishlist.map((w) => {
                                 const hit =
                                     w.best !== null &&

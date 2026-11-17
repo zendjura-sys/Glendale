@@ -100,7 +100,7 @@ export default function MusicQuiz({
             <Head title={tr('Вгадай пісню')} />
             <div className="mx-auto max-w-2xl space-y-4 px-1 pt-2 pb-8">
                 <header>
-                    <h1 className="font-display text-2xl font-bold text-white">
+                    <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                         {tr('Вгадай пісню')}
                     </h1>
                     <p className="mt-1 text-sm text-white/50">

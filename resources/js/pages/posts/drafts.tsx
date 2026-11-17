@@ -15,7 +15,7 @@ export default function Drafts({ drafts }: { drafts: Draft[] }) {
             <Head title={tr('Чернетки')} />
             <section className="mx-auto max-w-2xl space-y-4">
                 <div className="flex items-center justify-between">
-                    <h1 className="font-display text-2xl font-bold text-white">
+                    <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                         {tr('Чернетки')}
                     </h1>
                     <Link
@@ -33,7 +33,7 @@ export default function Drafts({ drafts }: { drafts: Draft[] }) {
                 {drafts.map((draft) => (
                     <article
                         key={draft.id}
-                        className="gc-solid space-y-3 rounded-2xl p-5"
+                        className="gc-solid space-y-3 rounded-2xl p-3.5"
                     >
                         <p className="text-sm whitespace-pre-line text-white/80">
                             {draft.body || tr('Без тексту')}

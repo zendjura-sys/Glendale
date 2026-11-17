@@ -85,7 +85,7 @@ export default function GameBacklog({ owner, mine, board, friends }: Props) {
             <div className="mb-4 flex items-center gap-3">
                 {!mine && <UserAvatar user={owner} size="md" />}
                 <div className="min-w-0">
-                    <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
+                    <h1 className="flex items-center gap-2 font-display text-xl font-semibold text-white sm:text-2xl">
                         {mine && (
                             <Gamepad2 className="size-6 shrink-0 text-sky-400" />
                         )}

@@ -108,13 +108,13 @@ export default function PixelAvatar() {
         <>
             <Head title={tr('Піксельний аватар')} />
             <div className="mx-auto w-full max-w-4xl px-4 py-6">
-                <h1 className="font-display text-2xl font-semibold text-white">
+                <h1 className="font-display text-xl font-semibold text-white sm:text-2xl">
                     {tr('Піксельний аватар')}
                 </h1>
                 <p className="mt-1 text-sm text-white/50">
                     {tr('Намалюйте себе 16×16 — і поставте на аватар.')}
                 </p>
-                <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_16rem]">
+                <div className="mt-3.5 grid gap-3.5 lg:grid-cols-[1fr_16rem]">
                     <div
                         className="grid aspect-square w-full touch-none overflow-hidden rounded-2xl select-none"
                         style={{

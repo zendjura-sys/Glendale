@@ -67,7 +67,7 @@ export default function MusicReplay({ replay }: { replay: Replay }) {
                 </div>
             )}
             <div
-                className="mx-[var(--am-gutter)] rounded-2xl p-5 text-white"
+                className="mx-[var(--am-gutter)] rounded-2xl p-3.5 text-white"
                 style={{
                     background: 'linear-gradient(145deg, #2f7bff, #22c4f0)',
                 }}

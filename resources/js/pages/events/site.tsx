@@ -71,7 +71,7 @@ export default function SiteEventPage({ event, past, next }: Props) {
     return (
         <>
             <Head title={event?.title ?? tr('Сезонні події')} />
-            <div className="mx-auto max-w-3xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-3.5">
                 {event ? (
                     <>
                         <m.section
@@ -250,7 +250,7 @@ export default function SiteEventPage({ event, past, next }: Props) {
                     </>
                 ) : (
                     <section className="gc-solid rounded-xl p-6 text-center">
-                        <h1 className="font-display text-2xl font-bold text-white">
+                        <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                             {tr('Зараз подій немає')}
                         </h1>
                         <p className="mt-2 text-sm text-white/60">

@@ -104,7 +104,7 @@ export default function ServerFamilies({
                         <ArrowLeft className="size-5" />
                     </Link>
                     <div className="min-w-0 flex-1">
-                        <h1 className="font-display text-2xl font-bold text-white">
+                        <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                             {tr('Рейтинг сімей')}
                         </h1>
                         <p className="text-sm text-white/50">{server.name}</p>
@@ -136,7 +136,7 @@ export default function ServerFamilies({
                 </header>
 
                 {list.length === 0 ? (
-                    <section className="gc-solid rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <EmptyState
                             icon={Crown}
                             title={
@@ -170,7 +170,7 @@ export default function ServerFamilies({
                                         <Link
                                             href={`/f/${row.slug}`}
                                             className={cn(
-                                                'gc-solid flex flex-col items-center gap-2 rounded-2xl p-5 text-center hover:bg-[var(--gc-l3)]',
+                                                'gc-solid flex flex-col items-center gap-2 rounded-2xl p-3.5 text-center hover:bg-[var(--gc-l3)]',
                                                 i === 0 && 'sm:pb-8',
                                             )}
                                         >

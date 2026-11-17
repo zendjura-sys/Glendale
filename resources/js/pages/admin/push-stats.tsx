@@ -48,7 +48,7 @@ export default function PushStats({
                     )}
                 </p>
             )}
-            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatCard
                     label={tr('Доставлено')}
                     value={totals.sent}
@@ -83,7 +83,7 @@ export default function PushStats({
                 />
             </div>
 
-            <section className="gc-solid mb-5 rounded-2xl p-4">
+            <section className="gc-solid mb-3.5 rounded-2xl p-4">
                 <h2 className="mb-3 font-display text-lg font-bold text-white">
                     {tr('За днями')}
                 </h2>

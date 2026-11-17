@@ -162,11 +162,11 @@ export default function Servers({
     return (
         <>
             <Head title={tr('Сервери GTA')} />
-            <div className="space-y-5">
-                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-7">
+            <div className="space-y-3.5">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-3.5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-16 size-96 rounded-full bg-[#facc15]/15 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-36 -left-10 size-96 rounded-full bg-[#2563eb]/25 blur-3xl" />
-                    <div className="relative flex flex-wrap items-start justify-between gap-5">
+                    <div className="relative flex flex-wrap items-start justify-between gap-3.5">
                         <div className="max-w-xl">
                             <span className="inline-flex items-center gap-2 rounded-chip border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold text-[#fde68a]">
                                 {tr('🇺🇦 Зроблено в Україні')}
@@ -216,7 +216,7 @@ export default function Servers({
                                 >
                                     <div
                                         className={cn(
-                                            'font-display text-2xl font-bold',
+                                            'font-display text-xl font-bold sm:text-2xl',
                                             tone,
                                         )}
                                     >
@@ -445,7 +445,7 @@ export default function Servers({
                     </div>
                 )}
 
-                <div className="gc-solid flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center">
+                <div className="gc-solid flex flex-col gap-4 rounded-2xl p-3.5 sm:flex-row sm:items-center">
                     <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-sky-500">
                         <Crown className="size-6 text-white" />
                     </span>
@@ -478,7 +478,7 @@ export default function Servers({
                             'Після перевірки модератором сервер з’явиться в каталозі. Іконку підтягнемо з Discord або сайту автоматично.',
                         )}
                     </DialogDescription>
-                    <div className="mt-5">
+                    <div className="mt-3.5">
                         <ServerFormFields
                             data={form.data}
                             setData={form.setData}

@@ -70,7 +70,7 @@ export default function PodcastShow({
                         <p className="text-xs text-white/45">
                             {tr(podcast.category)}
                         </p>
-                        <h1 className="font-display text-2xl font-semibold text-white">
+                        <h1 className="font-display text-xl font-semibold text-white sm:text-2xl">
                             {podcast.title}
                         </h1>
                         {podcast.author && (

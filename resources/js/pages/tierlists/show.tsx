@@ -33,7 +33,7 @@ export default function TierListShow({
             <div className="mx-auto w-full max-w-4xl px-4 py-6">
                 <div className="flex flex-wrap items-start gap-3">
                     <div className="min-w-0 flex-1">
-                        <h1 className="font-display text-2xl font-semibold text-white">
+                        <h1 className="font-display text-xl font-semibold text-white sm:text-2xl">
                             {list.title}
                         </h1>
                         <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-white/50">
@@ -97,7 +97,7 @@ export default function TierListShow({
 
 export function TierBoard({ tiers }: { tiers: Tier[] }) {
     return (
-        <div className="gc-solid mt-5 overflow-hidden rounded-2xl">
+        <div className="gc-solid mt-3.5 overflow-hidden rounded-2xl">
             {tiers.map((tier, i) => (
                 <div key={i} className="flex min-h-16 last:border-0">
                     <div

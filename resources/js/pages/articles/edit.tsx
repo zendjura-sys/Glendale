@@ -178,7 +178,7 @@ export default function ArticleEdit({ article }: Props) {
                 title={article ? tr('Редагування статті') : tr('Нова стаття')}
             />
             <div className="mb-4 flex items-center gap-3">
-                <h1 className="min-w-0 flex-1 font-display text-2xl font-semibold text-white">
+                <h1 className="min-w-0 flex-1 font-display text-xl font-semibold text-white sm:text-2xl">
                     {article ? tr('Редагування статті') : tr('Нова стаття')}
                 </h1>
                 <Link
@@ -188,7 +188,7 @@ export default function ArticleEdit({ article }: Props) {
                     {tr('Скасувати')}
                 </Link>
             </div>
-            <div className="gc-solid space-y-3 rounded-2xl p-4 sm:p-5">
+            <div className="gc-solid space-y-3 rounded-2xl p-3.5 sm:p-4">
                 <input
                     value={form.data.title}
                     maxLength={140}

@@ -148,6 +148,10 @@ class _MomentsScreenState extends State<MomentsScreen> with _SitePage {
             },
           ),
         ],
+        if (d['clip_of_week'] is Map) ...[
+          const SizedBox(height: 12),
+          _ClipOfWeek(data: mapOf(d['clip_of_week'])),
+        ],
         const SizedBox(height: 12),
         if (moments.isEmpty)
           EmptyState(icon: LucideIcons.clapperboard, title: tr('Моментів поки немає'), text: tr('Поділіться першим кліпом — посиланням на YouTube, Twitch або Medal.'), action: tr('Додати момент'), onAction: _add),
@@ -157,6 +161,58 @@ class _MomentsScreenState extends State<MomentsScreen> with _SitePage {
             child: _MomentCard(moment: m, onLike: () => _like(m), onDelete: m['can_delete'] == true ? () => _delete(m) : null),
           ),
       ],
+    );
+  }
+}
+
+/// «Кліп тижня»: переможець / лідер (дані з `/site/moments`).
+class _ClipOfWeek extends StatelessWidget {
+  const _ClipOfWeek({required this.data});
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final winner = data['winner'] is Map ? mapOf(data['winner']) : null;
+    final leader = data['leader'] is Map ? mapOf(data['leader']) : null;
+    if (winner == null && leader == null) return const SizedBox.shrink();
+    final moment = mapOf((winner ?? leader)?['moment']);
+    final likes = intOf((winner ?? leader)?['likes']);
+    return Glass(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(winner != null ? LucideIcons.trophy : LucideIcons.flame, size: 18, color: gold),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  winner != null ? tr('Кліп тижня') : tr('Лідер цього тижня'),
+                  style: body(15, weight: FontWeight.w700),
+                ),
+              ),
+              Pill(label: '$likes', icon: LucideIcons.heart, color: dangerSoft),
+            ],
+          ),
+          if (winner == null) ...[
+            const SizedBox(height: 6),
+            Text(tr('Перший «Кліп тижня» оберемо в понеділок — кліп із найбільшою кількістю вподобань за тиждень.'), style: body(12.5, color: muted)),
+          ],
+          if (text(moment['title']) != null) ...[
+            const SizedBox(height: 8),
+            Text(text(moment['title'])!, style: body(14, weight: FontWeight.w600)),
+          ],
+          if (text(moment['url']) != null) ...[
+            const SizedBox(height: 8),
+            GhostButton(
+              label: tr('Дивитися'),
+              icon: LucideIcons.play,
+              compact: true,
+              onPressed: () => launchUrl(Uri.parse(text(moment['url'])!), mode: LaunchMode.externalApplication),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

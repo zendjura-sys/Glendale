@@ -215,9 +215,9 @@ function AutoImportPanel({
     ];
 
     return (
-        <section className="gc-solid relative mb-5 overflow-hidden rounded-2xl p-5 sm:p-6">
+        <section className="gc-solid relative mb-3.5 overflow-hidden rounded-2xl p-3.5 sm:p-4">
             <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full bg-gc-indigo/15 blur-3xl" />
-            <header className="relative mb-5 flex flex-wrap items-center gap-4">
+            <header className="relative mb-3.5 flex flex-wrap items-center gap-4">
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-indigo to-gc-pink">
                     <Bot className="size-6 text-white" />
                 </span>
@@ -252,7 +252,7 @@ function AutoImportPanel({
                 />
             </header>
 
-            <div className="relative grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
+            <div className="relative grid grid-cols-1 gap-3.5 lg:grid-cols-[1fr_320px]">
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                         {providerCards.map((p) => {
@@ -721,7 +721,7 @@ export default function AdminCinema({
                 }
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <StatCard
                     label={tr('Тайтлів')}
                     value={compactNumber(stats.movies)}
@@ -762,7 +762,7 @@ export default function AdminCinema({
 
             <BulkPlayersPanel data={bulk} types={types} />
 
-            <div className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <div className="mb-3.5 grid grid-cols-1 gap-3.5 xl:grid-cols-2">
                 <PlayersPanel data={players} />
                 <TmdbPanel data={tmdb} />
             </div>
@@ -1026,7 +1026,7 @@ export default function AdminCinema({
 /** Фільми, яких глядачі не знайшли в каталозі («Немає в каталозі» на сторінці кіно). */
 function MovieRequests({ requests }: { requests: MovieRequestRow[] }) {
     return (
-        <section className="gc-solid mb-5 rounded-2xl p-5">
+        <section className="gc-solid mb-3.5 rounded-2xl p-3.5">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
                 <Film className="size-4 text-sky-400" />
                 {tr('Запити глядачів')}

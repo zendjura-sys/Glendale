@@ -379,7 +379,7 @@ export default function TournamentShow({
     return (
         <>
             <Head title={tournament.title} />
-            <div className="mx-auto max-w-5xl space-y-5">
+            <div className="mx-auto max-w-5xl space-y-3.5">
                 <Link
                     href={`/servers/${tournament.server.slug}`}
                     className="inline-flex items-center gap-1.5 text-sm text-white/55 hover:text-white"
@@ -578,7 +578,7 @@ export default function TournamentShow({
                 )}
 
                 {!bracket && (
-                    <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+                    <div className="grid gap-3.5 lg:grid-cols-[1.4fr_1fr]">
                         <section className="gc-solid rounded-xl p-4 sm:p-5">
                             <h2 className="font-display text-lg font-semibold text-white">
                                 {tr('Таблиця')}
@@ -630,7 +630,7 @@ export default function TournamentShow({
                                 </ol>
                             )}
                         </section>
-                        <div className="space-y-5">
+                        <div className="space-y-3.5">
                             {running && (
                                 <section className="gc-solid rounded-xl p-4 sm:p-5">
                                     <h2 className="mb-3 font-display text-lg font-semibold text-white">

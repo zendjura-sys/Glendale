@@ -46,10 +46,10 @@ export default function StatusPage({
     return (
         <>
             <Head title={tr('Статус')} />
-            <div className="mx-auto max-w-3xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-3.5">
                 <m.section
                     {...appear(0)}
-                    className="glass flex items-center gap-4 rounded-2xl p-5 sm:p-6"
+                    className="glass flex items-center gap-4 rounded-2xl p-3.5 sm:p-4"
                 >
                     {overall === 'operational' ? (
                         <CircleCheck
@@ -112,7 +112,7 @@ export default function StatusPage({
                         {tr('Останні 30 днів')}
                     </h2>
                     {history.length === 0 ? (
-                        <p className="glass rounded-2xl p-5 text-sm text-white/50">
+                        <p className="glass rounded-2xl p-3.5 text-sm text-white/50">
                             {tr('Жодного збою за цей час.')}
                         </p>
                     ) : (
@@ -140,7 +140,7 @@ function IncidentCard({
     const updates = compact ? incident.updates.slice(0, 1) : incident.updates;
 
     return (
-        <article className="glass rounded-2xl p-5">
+        <article className="glass rounded-2xl p-3.5">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h3 className="min-w-0 flex-1 font-semibold text-white">
                     {incident.title}

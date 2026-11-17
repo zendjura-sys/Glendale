@@ -22,6 +22,7 @@ import 'backgrounds.dart';
 import 'theme.dart';
 import 'voice_room.dart';
 import 'rail.dart';
+import 'wear.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 
@@ -75,6 +76,8 @@ String appPathFor(String? sitePath) {
       return rest(1) == 'live' ? '/streams/live' : '/feed';
     case 'podcasts':
       return parts.length > 1 ? '/podcasts/${rest(1)}' : '/podcasts';
+    case 'shows':
+      return parts.length > 1 && RegExp(r'^\d+$').hasMatch(parts[1]) ? '/shows/${parts[1]}' : '/shows$query';
     case 'ideas':
       return '/ideas';
     case 'status':
@@ -232,6 +235,14 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Wear OS / малий круглий екран — компаньйон замість повної оболонки.
+    if (isWearFormFactor(context)) {
+      return AppScope(
+        session: widget.session,
+        player: widget.player,
+        child: WearHome(session: widget.session),
+      );
+    }
     final uri = GoRouterState.of(context).uri;
     final path = uri.path;
     // У «Музиці» нижня панель — вкладки розділу на місці острова (одна панель за раз).

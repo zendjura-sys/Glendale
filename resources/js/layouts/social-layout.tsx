@@ -344,10 +344,13 @@ function useNavItems() {
     }));
 }
 
-/** Закріплені користувачем розділи — у панелі (в його порядку), решта — у «Меню». */
+/** Закріплені розділи — у панелі (макс. 4 + «Меню» = 5 іконок). */
 function useMobileSplit<T extends { key: string }>(items: T[]) {
     const { auth } = usePage().props;
-    const tabs = auth.user.nav_tabs ?? [];
+    const fallback = ['profile', 'feed', 'messages', 'friends'];
+    const tabs = (
+        auth.user.nav_tabs?.length ? auth.user.nav_tabs : fallback
+    ).slice(0, 4);
     const primary = tabs
         .map((key) => items.find((i) => i.key === key))
         .filter((i): i is T => i !== undefined);

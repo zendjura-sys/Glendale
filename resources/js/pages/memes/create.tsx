@@ -138,16 +138,16 @@ export default function MemeCreate() {
         <>
             <Head title={tr('Мемогенератор')} />
             <div className="mx-auto max-w-5xl">
-                <h1 className="mb-1 flex items-center gap-2 font-display text-2xl font-semibold text-white">
+                <h1 className="mb-1 flex items-center gap-2 font-display text-xl font-semibold text-white sm:text-2xl">
                     <Laugh className="size-6 text-sky-400" />
                     {tr('Мемогенератор')}
                 </h1>
-                <p className="mb-5 text-sm text-white/55">
+                <p className="mb-3.5 text-sm text-white/55">
                     {tr(
                         'Скріншот із гри чи будь-яке фото — текст згори й знизу, і мем готовий.',
                     )}
                 </p>
-                <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
+                <div className="grid gap-3.5 lg:grid-cols-[1fr_22rem]">
                     <div
                         className="gc-solid flex items-center justify-center overflow-hidden rounded-2xl p-3"
                         onDragOver={(e) => e.preventDefault()}

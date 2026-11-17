@@ -237,13 +237,13 @@ export default function Alerts(props: {
         <>
             <Head title={tr('Мапа тривог')} />
             <div className="space-y-4">
-                <header className="gc-solid rounded-2xl p-5">
+                <header className="gc-solid rounded-2xl p-3.5">
                     <div className="flex flex-wrap items-start gap-4">
                         <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-red-500/15">
                             <Siren className="size-6 text-red-400" />
                         </span>
                         <div className="min-w-0 flex-1">
-                            <h1 className="font-display text-2xl font-bold text-white">
+                            <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                                 {tr('Мапа тривог')}
                             </h1>
                             <p className="mt-1 text-sm text-white/60">
@@ -299,7 +299,7 @@ export default function Alerts(props: {
 
                 <section
                     className={cn(
-                        'gc-solid rounded-2xl p-5',
+                        'gc-solid rounded-2xl p-3.5',
                         mine?.active && 'bg-red-500/10',
                     )}
                 >

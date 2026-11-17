@@ -53,7 +53,7 @@ export default function Support({
             <div className="mx-auto max-w-[760px] space-y-4">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <h1 className="font-display text-2xl font-semibold text-white">
+                        <h1 className="font-display text-xl font-semibold text-white sm:text-2xl">
                             {tr('Підтримка')}
                         </h1>
                         <p className="mt-1 text-sm text-white/50">
@@ -93,7 +93,7 @@ export default function Support({
                                 e.preventDefault();
                                 form.post('/support', { forceFormData: true });
                             }}
-                            className="gc-solid space-y-4 rounded-2xl p-4 sm:p-5"
+                            className="gc-solid space-y-4 rounded-2xl p-3.5 sm:p-4"
                         >
                             <div>
                                 <p className="mb-2 text-sm font-medium text-white">

@@ -26,7 +26,7 @@ export default function LiveNow({ streams, games, game }: Props) {
     return (
         <>
             <Head title={tr('Зараз в ефірі')} />
-            <div className="mx-auto max-w-5xl space-y-5">
+            <div className="mx-auto max-w-5xl space-y-3.5">
                 <header className="flex flex-wrap items-end gap-3">
                     <h1 className="flex items-center gap-2 font-display text-3xl font-bold text-white">
                         <Radio className="size-7 text-red-400" />

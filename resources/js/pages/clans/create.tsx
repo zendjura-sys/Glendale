@@ -156,7 +156,7 @@ export default function ClanCreate({
     return (
         <>
             <Head title={tr('Новий клан')} />
-            <h1 className="mb-4 flex items-center gap-2 font-display text-2xl font-semibold text-white">
+            <h1 className="mb-4 flex items-center gap-2 font-display text-xl font-semibold text-white sm:text-2xl">
                 <Swords className="size-6 text-sky-400" />{' '}
                 {tr('Новий клан або гільдія')}
             </h1>
@@ -167,7 +167,7 @@ export default function ClanCreate({
                 }}
                 className="space-y-4"
             >
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
                         {tr('1. Тип')}
                     </h2>
@@ -198,7 +198,7 @@ export default function ClanCreate({
                     </div>
                 </section>
 
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
                         {tr('2. Гра')}{' '}
                         {game && (
@@ -219,7 +219,7 @@ export default function ClanCreate({
                     )}
                 </section>
 
-                <section className="gc-solid space-y-3 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid space-y-3 rounded-2xl p-3.5 sm:p-4">
                     <h2 className="text-sm font-semibold text-white/80">
                         {tr('3. Назва й опис')}
                     </h2>
@@ -283,7 +283,7 @@ export default function ClanCreate({
                     </label>
                 </section>
 
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="mb-1 text-sm font-semibold text-white/80">
                         {tr('4. Що буде в клані')}
                     </h2>
@@ -334,7 +334,7 @@ export default function ClanCreate({
                     </div>
                 </section>
 
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
                         {tr('5. Як вступати')}
                     </h2>

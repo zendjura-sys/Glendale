@@ -132,13 +132,13 @@ export default function Communities({
     return (
         <>
             <Head title={tr('Спільноти')} />
-            <div className="space-y-5">
-                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-6">
+            <div className="space-y-3.5">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-3.5 sm:p-4">
                     <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-purple/25 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-32 left-10 size-72 rounded-full bg-gc-blue/15 blur-3xl" />
                     <div className="relative flex flex-wrap items-start justify-between gap-4">
                         <div>
-                            <h1 className="font-display text-2xl font-bold text-white">
+                            <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                                 <span className="text-gradient">
                                     {tr('Спільноти')}
                                 </span>{' '}
@@ -170,7 +170,7 @@ export default function Communities({
                         )}
                     </div>
 
-                    <div className="relative mt-5 flex flex-col gap-3 lg:flex-row lg:items-center">
+                    <div className="relative mt-3.5 flex flex-col gap-3 lg:flex-row lg:items-center">
                         <div
                             className={cn(
                                 'gc-solid-2 scrollbar-none flex max-w-full min-w-0 overflow-x-auto rounded-xl p-1',
@@ -263,7 +263,7 @@ export default function Communities({
                 </section>
 
                 {promoted.length > 0 && (
-                    <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                    <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                         <h2 className="flex items-center gap-2 font-display text-base font-semibold text-white">
                             <Megaphone className="size-4 text-sky-400" />
                             {tr('Просуваються')}
@@ -374,7 +374,7 @@ function ExploreSection({ section }: { section: Section }) {
     }[section.key];
 
     return (
-        <section className="gc-solid rounded-2xl p-4 sm:p-5">
+        <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
             <h2 className="flex items-center gap-2 font-display text-base font-semibold text-white">
                 <Icon className="size-4 text-sky-400" />
                 {title}

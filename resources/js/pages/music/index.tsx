@@ -86,14 +86,14 @@ export default function MusicIndex({
     return (
         <>
             <Head title={tr('Музика')} />
-            <div className="space-y-5">
+            <div className="space-y-3.5">
                 <section className="gc-solid relative overflow-hidden rounded-3xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-gc-purple/25 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-36 left-10 size-80 rounded-full bg-gc-cyan/15 blur-3xl" />
                     <div className="pointer-events-none absolute top-6 right-8 hidden opacity-[0.07] sm:block">
                         <Disc3 className="size-48 animate-[spin_18s_linear_infinite] text-white" />
                     </div>
-                    <div className="relative flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-end">
+                    <div className="relative flex flex-col gap-3.5 sm:flex-row sm:flex-wrap sm:items-end">
                         <div className="min-w-0 flex-1">
                             <span className="gc-solid-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-white/60">
                                 <Music2 className="size-3.5 text-sky-400" />

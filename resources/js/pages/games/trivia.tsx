@@ -58,7 +58,7 @@ export default function Trivia({
             <Head title={tr('Вікторина дня')} />
             <div className="mx-auto max-w-2xl space-y-4">
                 <header>
-                    <h1 className="font-display text-2xl font-bold text-white">
+                    <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                         {tr('Вікторина дня')}
                     </h1>
                     <p className="mt-1 text-sm text-white/50">
@@ -82,11 +82,11 @@ export default function Trivia({
                             <m.section
                                 initial={reduce ? false : { opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="gc-solid flex items-center gap-4 rounded-2xl p-5"
+                                className="gc-solid flex items-center gap-4 rounded-2xl p-3.5"
                             >
                                 <Trophy className="size-8 text-amber-300" />
                                 <div>
-                                    <p className="font-display text-2xl font-bold text-white">
+                                    <p className="font-display text-xl font-bold text-white sm:text-2xl">
                                         {played.score}/{played.total}
                                     </p>
                                     <p className="text-sm text-white/50">

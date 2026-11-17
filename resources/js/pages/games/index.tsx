@@ -91,7 +91,7 @@ export function GameCover({
     ) : (
         <span
             className={cn(
-                'flex size-full items-center justify-center bg-gradient-to-br from-gc-blue/30 via-gc-violet-400/25 to-gc-pink/25 font-display text-2xl font-bold text-white/80',
+                'flex size-full items-center justify-center bg-gradient-to-br from-gc-blue/30 via-gc-violet-400/25 to-gc-pink/25 font-display text-xl font-bold text-white/80 sm:text-2xl',
                 className,
             )}
         >
@@ -308,7 +308,7 @@ export default function GamesIndex({
     return (
         <>
             <Head title={tr('Каталог ігор')} />
-            <header className="gc-solid mb-3 space-y-4 rounded-2xl p-4 sm:p-5">
+            <header className="gc-solid mb-3 space-y-4 rounded-2xl p-3.5 sm:p-4">
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
                     <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
                         <Gamepad2 className="size-6" />
@@ -578,7 +578,7 @@ export default function GamesIndex({
                     text={tr('Спробуйте іншу назву або розділ.')}
                 />
             ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="gc-compact-grid">
                     {games.data.map((g) => {
                         const Icon = CATEGORY_ICONS[g.category];
 

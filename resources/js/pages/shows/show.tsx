@@ -137,7 +137,7 @@ export default function ShowPage(initial: State) {
                 </div>
 
                 <section className="gc-solid rounded-3xl p-5 sm:p-7">
-                    <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">
+                    <h1 className="font-display text-xl font-bold text-white sm:text-2xl sm:text-3xl">
                         {show.title}
                     </h1>
                     {show.topics.length > 0 && (
@@ -221,7 +221,7 @@ export default function ShowPage(initial: State) {
                                 initial={reduce ? false : { opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0 }}
-                                className="mt-7 flex flex-wrap justify-center gap-5 rounded-2xl bg-white/[0.03] p-4"
+                                className="mt-7 flex flex-wrap justify-center gap-3.5 rounded-2xl bg-white/[0.03] p-4"
                             >
                                 {state.guests.map((g) => (
                                     <GuestSeat

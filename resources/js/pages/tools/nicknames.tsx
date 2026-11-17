@@ -224,9 +224,9 @@ export default function Nicknames() {
     return (
         <>
             <Head title={tr('Генератор ніків')} />
-            <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6">
+            <div className="mx-auto w-full max-w-3xl space-y-3.5 px-4 py-6">
                 <div>
-                    <h1 className="font-display text-2xl font-semibold text-white">
+                    <h1 className="font-display text-xl font-semibold text-white sm:text-2xl">
                         {tr('Генератор ніків')}
                     </h1>
                     <p className="mt-1 text-sm text-white/50">

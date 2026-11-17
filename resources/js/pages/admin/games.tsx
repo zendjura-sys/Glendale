@@ -165,7 +165,7 @@ export default function AdminGames({
                 />
             </div>
 
-            <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mb-6 rounded-2xl p-3.5 sm:p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                     <h2 className="flex-1 font-display text-lg font-semibold text-white">
                         {tr('Можливості')}
@@ -225,7 +225,7 @@ export default function AdminGames({
                 </div>
             </section>
 
-            <section className="gc-solid rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                     <label className="input-glass flex h-10 min-w-[200px] flex-1 items-center gap-2 rounded-xl px-3">
                         <Search className="size-4 text-white/35" />

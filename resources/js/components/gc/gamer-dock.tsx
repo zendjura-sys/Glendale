@@ -46,7 +46,7 @@ function DockCard({
     className?: string;
 }) {
     return (
-        <section className={cn('gc-solid rounded-2xl p-4', className)}>
+        <section className={cn('gc-solid rounded-2xl p-3 sm:p-3.5', className)}>
             {children}
         </section>
     );

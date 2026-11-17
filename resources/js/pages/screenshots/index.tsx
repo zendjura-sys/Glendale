@@ -65,8 +65,8 @@ export default function Screenshots({
                 }
             />
             <div className="space-y-4">
-                <section className="gc-solid rounded-2xl p-5 sm:p-6">
-                    <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
+                    <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white sm:text-2xl">
                         <Images className="size-6 text-sky-400" />
                         {game
                             ? tr('Скриншоти · {game}', { game: game.name })
@@ -147,7 +147,7 @@ export default function Screenshots({
                 </section>
 
                 {photos.length === 0 ? (
-                    <section className="gc-solid rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <EmptyState
                             icon={Images}
                             title={tr('Скриншотів ще немає')}

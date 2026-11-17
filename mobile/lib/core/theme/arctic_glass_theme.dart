@@ -56,7 +56,7 @@ abstract final class AppBlur {
   static const card = 22.0;
   static const control = 16.0;
   static const fixed = 20.0;
-  static const dock = 20.0;
+  static const dock = 40.0;
   static const sheet = 28.0;
   static const menu = 32.0;
 }
@@ -170,9 +170,9 @@ class ArcticGlassThemeExtension extends ThemeExtension<ArcticGlassThemeExtension
     specular: Color.fromRGBO(255, 255, 255, 0),
     // Без тіні: глибину дають розмиття, кант-блік і внутрішнє світіння.
     shadows: [],
-    // Безбарвне матове скло панелей: rgba(18, 20, 26, .86).
-    barFill: LinearGradient(colors: [Color.fromRGBO(18, 20, 26, 0.86), Color.fromRGBO(18, 20, 26, 0.86)]),
-    sheetFill: Color.fromRGBO(18, 20, 26, 0.94),
+    // Матове скло доку/шапки: rgba(14, 17, 24, .78).
+    barFill: LinearGradient(colors: [Color.fromRGBO(14, 17, 24, 0.78), Color.fromRGBO(14, 17, 24, 0.78)]),
+    sheetFill: Color.fromRGBO(14, 17, 24, 0.92),
     title: AppColors.textPrimary,
     body: Color(0xFFCBD5E1),
     muted: AppColors.textSecondary,

@@ -80,7 +80,7 @@ export default function DeveloperPlugin({
                     name: plugin.name,
                 })}
             />
-            <div className="mx-auto max-w-4xl space-y-5">
+            <div className="mx-auto max-w-4xl space-y-3.5">
                 <Link
                     href="/developers/plugins"
                     className="inline-flex items-center gap-1.5 text-sm text-white/55 transition hover:text-white"
@@ -89,10 +89,10 @@ export default function DeveloperPlugin({
                     {tr('Плагіни й SDK')}
                 </Link>
 
-                <header className="gc-solid flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center">
+                <header className="gc-solid flex flex-col gap-4 rounded-2xl p-3.5 sm:flex-row sm:items-center">
                     <EngineMark plugin={plugin} size="lg" />
                     <div className="min-w-0 flex-1">
-                        <h1 className="font-display text-2xl font-bold text-white">
+                        <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                             {plugin.name}
                         </h1>
                         <p className="mt-0.5 text-sm text-white/60">
@@ -132,10 +132,10 @@ export default function DeveloperPlugin({
                     </div>
                 </header>
 
-                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-                    <div className="min-w-0 space-y-5">
+                <div className="grid gap-3.5 lg:grid-cols-[minmax(0,1fr)_300px]">
+                    <div className="min-w-0 space-y-3.5">
                         {plugin.installable && (
-                            <section className="gc-solid space-y-3 rounded-2xl p-5">
+                            <section className="gc-solid space-y-3 rounded-2xl p-3.5">
                                 <h2 className="flex items-center gap-2 font-semibold text-white">
                                     <Terminal className="size-4 text-primary" />
                                     {tr('Встановлення командою')}
@@ -162,7 +162,7 @@ export default function DeveloperPlugin({
                             </section>
                         )}
 
-                        <section className="gc-solid space-y-4 rounded-2xl p-5">
+                        <section className="gc-solid space-y-4 rounded-2xl p-3.5">
                             <h2 className="font-semibold text-white">
                                 {tr('Встановлення')}
                             </h2>
@@ -196,7 +196,7 @@ export default function DeveloperPlugin({
                             </ol>
                         </section>
 
-                        <section className="gc-solid space-y-3 rounded-2xl p-5">
+                        <section className="gc-solid space-y-3 rounded-2xl p-3.5">
                             <h2 className="flex items-center gap-2 font-semibold text-white">
                                 <Link2 className="size-4 text-primary" />
                                 {tr('Адреса повернення')}
@@ -231,7 +231,7 @@ export default function DeveloperPlugin({
                         </section>
 
                         {!native && (
-                            <section className="gc-solid space-y-3 rounded-2xl p-5">
+                            <section className="gc-solid space-y-3 rounded-2xl p-3.5">
                                 <h2 className="font-semibold text-white">
                                     {tr('Функції GameCon на вашому сайті')}
                                 </h2>
@@ -284,7 +284,7 @@ export default function DeveloperPlugin({
                             </section>
                         )}
 
-                        <section className="gc-solid space-y-3 rounded-2xl p-5">
+                        <section className="gc-solid space-y-3 rounded-2xl p-3.5">
                             <h2 className="font-semibold text-white">
                                 {tr('Для ручного налаштування')}
                             </h2>
@@ -308,8 +308,8 @@ export default function DeveloperPlugin({
                         </section>
                     </div>
 
-                    <aside className="min-w-0 space-y-5">
-                        <section className="gc-solid space-y-3 rounded-2xl p-5">
+                    <aside className="min-w-0 space-y-3.5">
+                        <section className="gc-solid space-y-3 rounded-2xl p-3.5">
                             <h2 className="font-semibold text-white">
                                 {tr('Що вміє')}
                             </h2>

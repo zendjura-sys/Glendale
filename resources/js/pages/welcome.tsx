@@ -572,7 +572,7 @@ export default function Welcome({
                             <h2 className="font-display text-[clamp(1.6rem,3vw,2.3rem)] font-bold text-white">
                                 {tr('Для власників серверів і лідерів сімей')}
                             </h2>
-                            <ul className="mt-5 space-y-3 text-sm text-white/70">
+                            <ul className="mt-3.5 space-y-3 text-sm text-white/70">
                                 {[
                                     tr(
                                         'Віджет для сайту сервера: онлайн наживо, топ сімей, кнопка голосування.',

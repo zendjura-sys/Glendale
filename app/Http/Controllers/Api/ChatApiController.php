@@ -6,6 +6,7 @@ use App\Http\Controllers\MessageController;
 use App\Models\Conversation;
 use App\Models\MessageAttachment;
 use App\Models\User;
+use App\Services\ChatCatchUp;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
@@ -39,7 +40,12 @@ class ChatApiController extends ApiController
         abort_if($me === null, 404);
 
         return response()->json([
-            'conversation' => [...$this->presenter->details($conversation, $user, $me, $this->messenger), ...$calls->forViewer($conversation, $user)],
+            'conversation' => [
+                ...$this->presenter->details($conversation, $user, $me, $this->messenger),
+                ...$calls->forViewer($conversation, $user),
+                // «Поки тебе не було» — до позначки прочитаного (як на сайті).
+                'catch_up' => app(ChatCatchUp::class)->for($conversation, $user, $me->last_read_message_id),
+            ],
             'history' => $this->presenter->history($conversation),
         ]);
     }

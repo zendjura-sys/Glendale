@@ -60,7 +60,7 @@ export default function CharacterShow({
     return (
         <>
             <Head title={character.name} />
-            <div className="mx-auto max-w-4xl space-y-5">
+            <div className="mx-auto max-w-4xl space-y-3.5">
                 <Link
                     href={`/${character.player.username}`}
                     className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-white"
@@ -70,7 +70,7 @@ export default function CharacterShow({
                 </Link>
 
                 <section className="gc-solid overflow-hidden rounded-2xl">
-                    <div className="flex flex-col gap-5 p-5 sm:flex-row sm:p-6">
+                    <div className="flex flex-col gap-3.5 p-5 sm:flex-row sm:p-6">
                         <CharacterPortrait
                             character={character}
                             className="aspect-[4/5] w-44 shrink-0 self-center rounded-2xl text-6xl sm:w-56 sm:self-start"
@@ -78,7 +78,7 @@ export default function CharacterShow({
                         <div className="min-w-0 flex-1 space-y-4">
                             <div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <h1 className="font-display text-2xl font-bold break-words text-white sm:text-3xl">
+                                    <h1 className="font-display text-xl font-bold break-words text-white sm:text-2xl sm:text-3xl">
                                         {character.name}
                                     </h1>
                                     {character.is_main && (
@@ -187,7 +187,7 @@ export default function CharacterShow({
                 </section>
 
                 {character.story && (
-                    <section className="gc-solid rounded-2xl p-5 sm:p-6">
+                    <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Історія')}
                         </h2>
@@ -198,7 +198,7 @@ export default function CharacterShow({
                 )}
 
                 {(character.photos.length > 0 || can_edit) && (
-                    <section className="gc-solid rounded-2xl p-5 sm:p-6">
+                    <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                         <div className="flex items-center justify-between gap-3">
                             <h2 className="font-display text-lg font-bold text-white">
                                 {tr('Фото')}
@@ -284,7 +284,7 @@ export default function CharacterShow({
                 )}
 
                 {others.length > 0 && (
-                    <section className="gc-solid rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Інші персонажі гравця')}
                         </h2>

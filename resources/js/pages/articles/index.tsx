@@ -19,7 +19,7 @@ export default function ArticlesIndex({ articles, drafts, game }: Props) {
             <Head title={tr('Статті')} />
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="min-w-0 flex-1">
-                    <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
+                    <h1 className="flex items-center gap-2 font-display text-xl font-semibold text-white sm:text-2xl">
                         <Newspaper className="size-6 shrink-0 text-sky-400" />
                         {game
                             ? tr('Статті про {game}', { game: game.name })
@@ -39,7 +39,7 @@ export default function ArticlesIndex({ articles, drafts, game }: Props) {
             </div>
 
             {drafts.length > 0 && (
-                <section className="gc-solid mb-5 rounded-2xl p-4">
+                <section className="gc-solid mb-3.5 rounded-2xl p-4">
                     <h2 className="mb-2 text-sm font-semibold text-white/70">
                         {tr('Мої чернетки')}
                     </h2>

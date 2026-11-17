@@ -20,7 +20,7 @@ export default function TournamentsIndex({ status, tournaments }: Props) {
     return (
         <>
             <Head title={tr('Турніри')} />
-            <div className="mx-auto max-w-3xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-3.5">
                 <header>
                     <h1 className="font-display text-3xl font-bold text-white">
                         {tr('Турніри')}

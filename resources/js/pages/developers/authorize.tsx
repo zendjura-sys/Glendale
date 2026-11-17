@@ -71,7 +71,7 @@ export default function DeveloperAuthorize({
         <>
             <Head title={tr('Увійти через GameCon')} />
             <div className="mx-auto max-w-md py-4">
-                <section className="gc-solid space-y-5 rounded-2xl p-6">
+                <section className="gc-solid space-y-3.5 rounded-2xl p-6">
                     <div className="flex items-center justify-center gap-3">
                         <span className="grid size-14 place-items-center rounded-2xl bg-primary/15 text-primary">
                             <AppWindow className="size-7" />

@@ -32,6 +32,7 @@ import 'game_card.dart';
 import 'engagement.dart';
 import 'fun.dart';
 import 'awards.dart';
+import 'gamecast.dart';
 import 'movie_extras.dart';
 import 'game_extras.dart' show MyGameNewsScreen;
 import 'game_reviews.dart';
@@ -273,6 +274,8 @@ Future<void> main() async {
           GoRoute(path: '/archive', builder: (_, _) => const PostArchiveScreen()),
           GoRoute(path: '/today', builder: (_, _) => const TodayScreen()),
           GoRoute(path: '/podcasts', builder: (_, _) => const PodcastsScreen()),
+          GoRoute(path: '/shows', builder: (_, state) => GameCastScreen(key: ValueKey(state.uri.queryParameters['topic']), topic: state.uri.queryParameters['topic'])),
+          GoRoute(path: '/shows/:id', builder: (_, state) => GameCastShowScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(path: '/ideas', builder: (_, _) => const IdeasScreen()),
           GoRoute(path: '/series/:id', builder: (_, s) => SeriesScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),
           GoRoute(path: '/configs', builder: (_, s) => ConfigsScreen(game: s.uri.queryParameters['game'])),
@@ -436,7 +439,14 @@ class GameConApp extends StatelessWidget {
       theme: gameConTheme(),
       scrollBehavior: const ArcticScrollBehavior(),
       routerConfig: router,
-      builder: (context, child) => BootSplash(child: AppLockGate(child: child ?? const SizedBox.shrink())),
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        return MediaQuery(
+          // Захист від гігантського системного шрифту Android + щільніша типографіка.
+          data: mq.copyWith(textScaler: const TextScaler.linear(0.88)),
+          child: BootSplash(child: AppLockGate(child: child ?? const SizedBox.shrink())),
+        );
+      },
     );
   }
 }

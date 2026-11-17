@@ -7,6 +7,8 @@
     <!-- Камера — лише для сканування QR-коду входу на сайт (mobile_scanner). -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <!-- Wear OS: той самий APK може ставитися на годинник; телефон не вимагає watch. -->
+    <uses-feature android:name="android.hardware.type.watch" android:required="false"/>
     <!-- Музика у фоні: foreground-сервіс медіасесії (audio_service). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>

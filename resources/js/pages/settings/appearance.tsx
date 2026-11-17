@@ -926,7 +926,7 @@ export default function Appearance({
                         )}
                     >
                         {spoilersOn && (
-                            <div className="-mx-4 -mt-4 mb-4 border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:-mt-5 sm:px-5">
+                            <div className="-mx-4 -mt-4 mb-4 border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:-mt-3.5 sm:px-5">
                                 <SettingsSwitch
                                     label={tr(
                                         'Ховати спойлери на всьому сайті',

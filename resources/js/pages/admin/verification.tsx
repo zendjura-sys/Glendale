@@ -119,7 +119,7 @@ function RequestCard({ item }: { item: Item }) {
         );
 
     return (
-        <li className="gc-solid rounded-2xl p-4 sm:p-5">
+        <li className="gc-solid rounded-2xl p-3.5 sm:p-4">
             <div className="flex flex-wrap items-start gap-3">
                 {item.user && <UserAvatar user={item.user} size="md" />}
                 <div className="min-w-0 flex-1">

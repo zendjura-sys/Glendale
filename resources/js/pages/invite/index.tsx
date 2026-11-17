@@ -90,9 +90,9 @@ export default function Invite({
     return (
         <>
             <Head title={tr('Запросити друзів')} />
-            <div className="mx-auto max-w-3xl space-y-5">
-                <section className="gc-solid rounded-2xl p-5 sm:p-6">
-                    <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
+            <div className="mx-auto max-w-3xl space-y-3.5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
+                    <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white sm:text-2xl">
                         <UserPlus className="size-6 text-sky-400" />
                         {tr('Запросити друзів')}
                     </h1>
@@ -126,7 +126,7 @@ export default function Invite({
                         <Share2 className="size-4" />
                         {tr('Поділитися')}
                     </button>
-                    <div className="mt-5 grid grid-cols-3 gap-2">
+                    <div className="mt-3.5 grid grid-cols-3 gap-2">
                         {(
                             [
                                 [tr('Прийшли'), total],
@@ -149,7 +149,7 @@ export default function Invite({
                     </div>
                 </section>
 
-                <section className="gc-solid rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <Gift className="size-5 text-amber-300" />
                         {tr('Нагороди')}
@@ -232,7 +232,7 @@ export default function Invite({
                 </section>
 
                 {leaderboard && (
-                    <section className="gc-solid rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <div className="flex flex-wrap items-center gap-3">
                             <h2 className="flex flex-1 items-center gap-2 font-display text-lg font-bold text-white">
                                 <Trophy className="size-5 text-amber-300" />
@@ -325,7 +325,7 @@ export default function Invite({
                 )}
 
                 {people.length > 0 && (
-                    <section className="gc-solid rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Ви запросили')}
                         </h2>
