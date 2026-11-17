@@ -816,6 +816,8 @@ class MenuContent extends StatefulWidget {
 
 class _MenuContentState extends State<MenuContent> {
   Map<String, dynamic>? hub;
+  /// GameCast pulse (`/shows/pulse`) — як `GameCastTile` на сайті.
+  Map<String, dynamic>? castPulse;
   bool more = false;
   bool system = false;
 
@@ -827,6 +829,7 @@ class _MenuContentState extends State<MenuContent> {
   static const _amber = Color(0xFFFBBF24);
   static const _cyan = Color(0xFF22D3EE);
   static const _red = Color(0xFFF87171);
+  static const _rose = Color(0xFFFB7185);
 
   @override
   void initState() {
@@ -834,6 +837,11 @@ class _MenuContentState extends State<MenuContent> {
     widget.session.api.get(Api.site('/me/hub')).then((d) {
       if (mounted) setState(() => hub = mapOf(d));
     }).catchError((_) {});
+    if (widget.session.pluginOn('live_shows')) {
+      widget.session.api.get(Api.site('/shows/pulse')).then((d) {
+        if (mounted) setState(() => castPulse = mapOf(d));
+      }).catchError((_) {});
+    }
   }
 
   bool _on(String module) => widget.session.modules?.contains(module) ?? true;
@@ -865,6 +873,67 @@ class _MenuContentState extends State<MenuContent> {
           FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(hint, maxLines: 1, softWrap: false, style: body(11.5, color: muted))),
         ]),
       );
+
+  String get _castSummary {
+    final live = intOf(castPulse?['live']);
+    final listeners = intOf(castPulse?['listeners']);
+    if (castPulse == null) return tr('Подкасти наживо з #темами');
+    if (live == 0) return tr('Зараз тихо — почніть першу розмову');
+    if (listeners == 0) return tr('{rooms} в ефірі — заходьте першими', {'rooms': '$live'});
+    return tr('{rooms} в ефірі · {people} слухають', {'rooms': '$live', 'people': '$listeners'});
+  }
+
+  /// Широка кнопка GameCast у меню — паритет з сайтом (еквалайзер + статус ефіру).
+  Widget _gameCastTile() {
+    final live = intOf(castPulse?['live']) > 0;
+    return _inner(
+      onTap: () => widget.onGo('/shows'),
+      padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
+      child: Row(children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: (live ? _rose : _sky).withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: live
+              ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  for (final h in const [10.0, 18.0, 12.0, 20.0, 10.0]) ...[
+                    Container(
+                      width: 3,
+                      height: h,
+                      decoration: BoxDecoration(color: _rose, borderRadius: BorderRadius.circular(2)),
+                    ),
+                    const SizedBox(width: 2),
+                  ],
+                ])
+              : Icon(LucideIcons.audioLines, size: 22, color: _sky),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Text('GameCast', style: body(15, weight: FontWeight.w800)),
+              const SizedBox(width: 8),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: live ? _rose : muted.withValues(alpha: 0.45)),
+              ),
+              if (live) ...[
+                const SizedBox(width: 6),
+                Text(tr('НАЖИВО'), style: body(10, color: _rose, weight: FontWeight.w800)),
+              ],
+            ]),
+            const SizedBox(height: 2),
+            Text(_castSummary, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+          ]),
+        ),
+        Icon(LucideIcons.chevronRight, size: 18, color: muted),
+      ]),
+    );
+  }
 
   Widget _row(IconData icon, String label, VoidCallback onTap, {Color? color}) => ArcticPressable(
         onTap: onTap,
@@ -1042,6 +1111,11 @@ class _MenuContentState extends State<MenuContent> {
             if (_on('games')) _tile(LucideIcons.gamepad2, _cyan, tr('Ігри & FPS'), tr('Перевірка ПК, беклог, роздачі'), '/games'),
           ],
         ),
+        // GameCast — на ширину блоку, як `GameCastTile` на сайті (після сітки 2×2).
+        if (widget.session.pluginOn('live_shows')) ...[
+          const SizedBox(height: 8),
+          _gameCastTile(),
+        ],
       ])),
 
       // 4. Медіа й спільнота
@@ -1184,7 +1258,7 @@ List<({String title, List<_MenuEntry> items})> _menuGroups(BuildContext context,
       title: tr('Спільнота'),
       items: <_MenuEntry>[
         if ((session.modules?.contains('articles') ?? false) && fresh('/articles')) go(LucideIcons.bookOpen, tr('Статті'), '/articles'),
-        if (session.pluginOn('live_shows') && fresh('/shows')) go(LucideIcons.radio, 'GameCast', '/shows'),
+        // GameCast — окрема картка в ігровому хабі (як на сайті), не дублюємо в «Ще».
         if (fresh('/podcasts')) go(LucideIcons.mic, tr('Подкасти'), '/podcasts'),
         if (session.pluginOn('ideas_board') && fresh('/ideas')) go(LucideIcons.lightbulb, tr('Дошка ідей'), '/ideas'),
         if (fresh('/invite')) go(LucideIcons.userPlus, tr('Запросити друзів'), '/invite'),
