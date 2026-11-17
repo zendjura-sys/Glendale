@@ -145,6 +145,8 @@ String appPathFor(String? sitePath) {
       return '/games/steam-import';
     case 'games' when rest(1) == 'backlog' || rest(1) == 'deals':
       return path;
+    case 'games' when rest(2) == 'guides':
+      return path;
     case 'games':
     case 'clans':
       return parts.length > 2 && rest(1) != 'create' ? '/$head/${rest(1)}' : '$path$query';
@@ -160,8 +162,11 @@ String appPathFor(String? sitePath) {
     case 'notifications':
     case 'feed':
       return '$path$query';
+    case 'me':
+      return rest(1) == 'author-stats' ? '/me/author-stats' : '/feed';
     case 'settings':
-      if (['links', 'account-type', 'pixel-avatar'].contains(rest(1))) return '/settings/${rest(1)}';
+      if (rest(1) == 'crosspost') return '/settings/crosspost$query';
+      if (['links', 'account-type', 'pixel-avatar', 'subscriptions', 'stream-schedule'].contains(rest(1))) return '/settings/${rest(1)}';
       return rest(1) == 'keyword-alerts' ? '/keyword-alerts' : '/settings';
     case 'id':
       return '/feed';

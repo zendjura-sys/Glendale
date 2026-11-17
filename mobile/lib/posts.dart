@@ -1227,29 +1227,40 @@ class _CommentsThreadState extends State<CommentsThread> {
                 Padding(
                   padding: const EdgeInsets.only(left: 8, top: 4),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(ago(comment['created_at']), style: body(11.5, color: faint)),
-                      if (widget.canComment) ...[
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() => replyTo = comment);
-                            focus.requestFocus();
-                          },
-                          child: Text(
-                            tr('Відповісти'),
-                            style: body(11.5, color: muted, weight: FontWeight.w600),
-                          ),
+                      Expanded(
+                        child: Wrap(
+                          spacing: 12,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(ago(comment['created_at']), style: body(11.5, color: faint)),
+                            if (widget.canComment)
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() => replyTo = comment);
+                                  focus.requestFocus();
+                                },
+                                child: Text(tr('Відповісти'), style: body(11.5, color: muted, weight: FontWeight.w600)),
+                              ),
+                            if (comment['can_thank'] == true)
+                              ThanksButton(
+                                key: ValueKey('thanks-${comment['id']}'),
+                                kind: 'comment',
+                                id: intOf(comment['id']),
+                                thanked: comment['thanked'] == true,
+                                compact: true,
+                                onChanged: (thanked, _) => setState(() => comment['thanked'] = thanked),
+                              ),
+                            if (comment['can_delete'] == true)
+                              GestureDetector(
+                                onTap: () => _remove(comment),
+                                child: Icon(LucideIcons.trash2, size: 15, color: faint),
+                              ),
+                          ],
                         ),
-                      ],
-                      if (comment['can_delete'] == true) ...[
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () => _remove(comment),
-                          child: Icon(LucideIcons.trash2, size: 15, color: faint),
-                        ),
-                      ],
-                      const Spacer(),
+                      ),
                       GestureDetector(
                         onTap: () => _like(comment),
                         child: Row(

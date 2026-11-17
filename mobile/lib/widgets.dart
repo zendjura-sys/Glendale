@@ -1638,6 +1638,83 @@ Future<bool> attempt(BuildContext context, Future<dynamic> Function() action, {S
   }
 }
 
+// ───────────────────────── Подяка ─────────────────────────
+
+/// «Дякую» під гідом чи коментарем: подяка йде в профіль автора, як кнопка на сайті.
+class ThanksButton extends StatefulWidget {
+  const ThanksButton({required this.kind, required this.id, required this.thanked, this.count, this.compact = false, this.onChanged, super.key});
+
+  /// `guide` або `comment` — ті самі види, що приймає POST /thanks.
+  final String kind;
+  final int id;
+  final bool thanked;
+
+  /// Лічильник подяк. На коментарях сайт його не показує — тоді лишається null.
+  final int? count;
+  final bool compact;
+  final void Function(bool thanked, int count)? onChanged;
+
+  @override
+  State<ThanksButton> createState() => _ThanksButtonState();
+}
+
+class _ThanksButtonState extends State<ThanksButton> {
+  late bool thanked = widget.thanked;
+  late int? count = widget.count;
+  bool busy = false;
+
+  @override
+  void didUpdateWidget(ThanksButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (busy) return;
+    if (oldWidget.id != widget.id || oldWidget.kind != widget.kind) {
+      thanked = widget.thanked;
+      count = widget.count;
+      return;
+    }
+    if (oldWidget.thanked != widget.thanked) thanked = widget.thanked;
+    if (oldWidget.count != widget.count) count = widget.count;
+  }
+
+  Future<void> _toggle() async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final res = await AppScope.read(context).session.api.post(Api.site('/thanks'), {'kind': widget.kind, 'id': widget.id});
+      if (!mounted) return;
+      final next = res['thanked'] == true;
+      final nextCount = widget.count == null ? null : intOf(res['count'], count ?? 0);
+      setState(() {
+        thanked = next;
+        count = nextCount;
+      });
+      widget.onChanged?.call(next, nextCount ?? 0);
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = widget.compact ? 11.5 : 13.0;
+    final color = thanked ? green : (widget.compact ? muted : soft);
+    return Opacity(
+      opacity: busy ? 0.6 : 1,
+      child: GestureDetector(
+        onTap: busy ? null : _toggle,
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(LucideIcons.heartHandshake, size: widget.compact ? 14 : 16, color: thanked ? green : faint),
+          const SizedBox(width: 4),
+          Text(thanked ? tr('Подякували') : tr('Дякую'), style: body(size, color: color, weight: FontWeight.w600)),
+          if (count != null && count! > 0) Text(' · $count', style: body(size, color: muted)),
+        ]),
+      ),
+    );
+  }
+}
+
 // ───────────────────────── Час ─────────────────────────
 
 String clock(dynamic iso) {

@@ -38,6 +38,8 @@ type Participant = UserCard & {
     muted: boolean;
     joined_at: string;
     speaker?: boolean;
+    /** Керівник кімнати: і так говорить, його не повертають у слухачі. */
+    manager?: boolean;
     hand?: boolean;
 };
 
@@ -362,7 +364,14 @@ export function VoiceRooms({
                                     const me = room.participants.find(
                                         (p) => p.id === meId,
                                     );
-                                    if (!me || me.speaker) return null;
+                                    if (!me) return null;
+                                    if (me.speaker) {
+                                        return (
+                                            <p className="mt-1 mb-1.5 pl-8 text-xs text-emerald-200/80">
+                                                {tr('Ви на сцені.')}
+                                            </p>
+                                        );
+                                    }
 
                                     return (
                                         <div className="mt-1 mb-1.5 flex items-center gap-2 pl-8 text-xs text-white/55">
@@ -423,6 +432,16 @@ export function VoiceRooms({
                                                     />
                                                 )}
                                                 {room.stage &&
+                                                    p.speaker &&
+                                                    !p.muted && (
+                                                        <Mic
+                                                            className="size-3.5 text-emerald-300"
+                                                            aria-label={tr(
+                                                                'На сцені',
+                                                            )}
+                                                        />
+                                                    )}
+                                                {room.stage &&
                                                     !p.speaker &&
                                                     !p.hand && (
                                                         <Headphones
@@ -451,28 +470,29 @@ export function VoiceRooms({
                                                             <MoreHorizontal className="size-3.5" />
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            {room.stage && (
-                                                                <DropdownMenuItem
-                                                                    onClick={() =>
-                                                                        moderate(
-                                                                            room,
-                                                                            p,
-                                                                            p.speaker
-                                                                                ? 'listener'
-                                                                                : 'speaker',
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Presentation />{' '}
-                                                                    {p.speaker
-                                                                        ? tr(
-                                                                              'Повернути в слухачі',
-                                                                          )
-                                                                        : tr(
-                                                                              'Запросити на сцену',
-                                                                          )}
-                                                                </DropdownMenuItem>
-                                                            )}
+                                                            {room.stage &&
+                                                                !p.manager && (
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            moderate(
+                                                                                room,
+                                                                                p,
+                                                                                p.speaker
+                                                                                    ? 'listener'
+                                                                                    : 'speaker',
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Presentation />{' '}
+                                                                        {p.speaker
+                                                                            ? tr(
+                                                                                  'Повернути в слухачі',
+                                                                              )
+                                                                            : tr(
+                                                                                  'Запросити на сцену',
+                                                                              )}
+                                                                    </DropdownMenuItem>
+                                                                )}
                                                             <DropdownMenuItem
                                                                 onClick={() =>
                                                                     moderate(

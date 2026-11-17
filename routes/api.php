@@ -15,8 +15,10 @@ use App\Http\Controllers\Api\MediaApiController;
 use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
 use App\Http\Controllers\Api\SubscriptionStatusController;
+use App\Http\Controllers\Api\TwoFactorApiController;
 use App\Http\Controllers\Api\WidgetApiController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\AuthorSubscriptionController;
 use App\Http\Controllers\AvatarCharacterController;
 use App\Http\Controllers\BioLinksController;
 use App\Http\Controllers\Bots;
@@ -132,6 +134,7 @@ use App\Http\Controllers\SteamImportController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TeammateController;
+use App\Http\Controllers\ThanksController;
 use App\Http\Controllers\TierListController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TournamentController;
@@ -262,6 +265,14 @@ Route::prefix('v1')->group(function () {
         Route::get('me/connections', [SocialApiController::class, 'connections']);
         Route::delete('me/connections/{provider}', [SocialApiController::class, 'unlink'])->whereIn('provider', ['discord', 'google']);
 
+        // Двофакторний захист: ті самі шляхи, що Fortify на сайті (/user/two-factor-…).
+        Route::post('user/two-factor-authentication', [TwoFactorApiController::class, 'store'])->middleware('throttle:6,1');
+        Route::delete('user/two-factor-authentication', [TwoFactorApiController::class, 'destroy'])->middleware('throttle:6,1');
+        Route::post('user/confirmed-two-factor-authentication', [TwoFactorApiController::class, 'confirm'])->middleware('throttle:6,1');
+        Route::get('user/two-factor-qr-code', [TwoFactorApiController::class, 'qrCode']);
+        Route::get('user/two-factor-secret-key', [TwoFactorApiController::class, 'secretKey']);
+        Route::match(['get', 'post'], 'user/two-factor-recovery-codes', [TwoFactorApiController::class, 'recoveryCodes'])->middleware('throttle:6,1');
+
         // Акаунт: пристрої й сесії, журнал входів, заморожування, оскарження, скарги й відгуки.
         Route::get('me/security', [AccountApiController::class, 'show']);
         Route::delete('me/sessions/{session}', [AccountApiController::class, 'revokeSession'])->whereNumber('session');
@@ -281,6 +292,8 @@ Route::prefix('v1')->group(function () {
             Route::post('{story}/view', [StoryController::class, 'view'])->whereNumber('story')->middleware('throttle:240,1');
             Route::post('{story}/react', [StoryController::class, 'react'])->whereNumber('story')->middleware('throttle:30,1');
             Route::post('{story}/reply', [StoryController::class, 'reply'])->whereNumber('story')->middleware('throttle:30,1');
+            Route::post('{story}/vote', [StoryController::class, 'vote'])->whereNumber('story')->middleware('throttle:30,1');
+            Route::get('{story}/poll', [StoryController::class, 'poll'])->whereNumber('story')->middleware('throttle:120,1');
             Route::get('{story}/viewers', [StoryController::class, 'viewers'])->whereNumber('story');
             Route::delete('{story}', [StoryController::class, 'destroy'])->whereNumber('story');
         });
@@ -675,6 +688,10 @@ Route::prefix('v1')->group(function () {
             Route::get('games/pc', [GameDealsController::class, 'pcShow'])->middleware('module:games');
             Route::put('games/pc', [GameDealsController::class, 'pcSave'])->middleware(['module:games', 'throttle:30,1']);
             Route::get('games/{game}', [GameController::class, 'show'])->middleware('module:games');
+            // Гіди на сторінці гри й «Дякую» під гідом або коментарем — ті самі дії, що на сайті.
+            Route::post('games/{game}/guides', [GameController::class, 'guide'])->middleware(['module:games', 'throttle:20,1']);
+            Route::delete('games/{game}/guides/{guide}', [GameController::class, 'deleteGuide'])->whereNumber('guide')->middleware('module:games');
+            Route::post('thanks', [ThanksController::class, 'store'])->middleware('throttle:60,1');
             Route::post('ideas', [IdeaController::class, 'store'])->middleware('throttle:5,1');
             Route::post('ideas/{idea}/vote', [IdeaController::class, 'toggleVote'])->middleware('throttle:60,1');
             Route::get('settings/account-type', [AccountTypeController::class, 'edit']);
@@ -684,7 +701,12 @@ Route::prefix('v1')->group(function () {
             Route::delete('settings/account-type/links/{link}', [AccountTypeController::class, 'remove'])->whereNumber('link');
             Route::post('settings/verification', [AccountTypeController::class, 'verify'])->middleware('throttle:5,1');
             Route::get('me/author-stats', [CreatorController::class, 'stats'])->middleware('throttle:30,1');
+            Route::get('settings/stream-schedule', [SetupController::class, 'scheduleShow'])->middleware('throttle:60,1');
             Route::put('settings/stream-schedule', [SetupController::class, 'schedule'])->middleware('throttle:30,1');
+            // Рівні автора. Купівля підписки лишається на сайті (правила Google Play).
+            Route::get('settings/subscriptions', [AuthorSubscriptionController::class, 'settings']);
+            Route::put('settings/subscriptions/tiers', [AuthorSubscriptionController::class, 'saveTiers'])->middleware('throttle:20,1');
+            Route::patch('author-subscriptions/{user}', [AuthorSubscriptionController::class, 'autoRenew']);
             Route::prefix('crosspost/{type}/{id}')->whereIn('type', ['user', 'server'])->whereNumber('id')->group(function () {
                 Route::get('/', [CrosspostController::class, 'index']);
                 Route::post('/', [CrosspostController::class, 'store'])->middleware('throttle:10,1');
@@ -726,6 +748,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('posts/{post}/hide', [PostController::class, 'hide'])->whereNumber('post');
                 Route::post('posts/{post}/mute', [PostController::class, 'mute'])->whereNumber('post');
                 Route::post('posts/{post}/poll', [PostController::class, 'vote'])->whereNumber('post')->middleware('throttle:60,1');
+                // Опитування в історії: голос і живі результати — ті самі дії, що stories.vote / stories.poll на сайті.
+                Route::post('stories/{story}/vote', [StoryController::class, 'vote'])->whereNumber('story')->middleware('throttle:30,1');
+                Route::get('stories/{story}/poll', [StoryController::class, 'poll'])->whereNumber('story')->middleware('throttle:120,1');
                 Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->whereNumber('comment');
                 Route::post('comments/{comment}/like', [CommentController::class, 'like'])->whereNumber('comment')->middleware('throttle:120,1');
                 Route::post('comments/{comment}/visibility', [CommentController::class, 'visibility'])->whereNumber('comment')->middleware('throttle:60,1');
@@ -962,6 +987,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/', [CommunityController::class, 'destroy']);
                 Route::get('settings', [CommunityController::class, 'edit']);
                 Route::patch('settings', [CommunityController::class, 'update']);
+                Route::patch('settings/rules', [CommunityController::class, 'updateRules']);
                 Route::put('settings/access', [CommunityController::class, 'updateAccess']);
                 Route::post('ai/description', [AiController::class, 'description'])->middleware('throttle:10,1');
                 Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover']);

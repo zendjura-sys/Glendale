@@ -69,6 +69,8 @@ dependencies:
   in_app_purchase_android: ^0.5.4
   # «Сканувати QR для входу»: вхід на сайт через застосунок (QR із https://gamecon.online/app-login/{id}).
   mobile_scanner: 7.4.2
+  # QR для ввімкнення 2FA (otpauth:// з секретного ключа, як на сайті).
+  qr_flutter: ^4.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

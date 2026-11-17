@@ -19,6 +19,8 @@ void main() {
     expect(appPathFor('/articles/gaid-po-cs2'), '/articles/gaid-po-cs2');
     expect(appPathFor('/games/deals'), '/games/deals');
     expect(appPathFor('/games/backlog/tonny'), '/games/backlog/tonny');
+    expect(appPathFor('/games/apex/guides'), '/games/apex/guides');
+    expect(appPathFor('/games/apex/guides/4'), '/games/apex/guides/4');
     expect(appPathFor('/c/khab/wiki/pravila'), '/communities/khab/wiki/pravila');
     expect(appPathFor('/c/khab/channels/3'), '/communities/khab/channels');
     expect(appPathFor('/settings/links'), '/settings/links');

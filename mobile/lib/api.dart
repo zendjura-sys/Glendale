@@ -103,7 +103,7 @@ class Api {
   /// Чи дійшов останній запит до GameCon: false — немає інтернету (музика переходить на завантажене).
   static final online = ValueNotifier<bool>(true);
 
-  Future<Map<String, dynamic>> get(String path) => _send('GET', path);
+  Future<Map<String, dynamic>> get(String path, {Map<String, String>? headers}) => _send('GET', path, null, headers);
   Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body]) => _send('POST', path, body);
   Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) => _send('PUT', path, body);
   Future<Map<String, dynamic>> patch(String path, Map<String, dynamic> body) => _send('PATCH', path, body);
@@ -146,7 +146,7 @@ class Api {
     return Map<String, dynamic>.from(user);
   }
 
-  Future<Map<String, dynamic>> _send(String method, String path, [Map<String, dynamic>? body]) async {
+  Future<Map<String, dynamic>> _send(String method, String path, [Map<String, dynamic>? body, Map<String, String>? extra]) async {
     final uri = Uri.parse('$root$path');
     final headers = {
       'Accept': 'application/json',
@@ -154,6 +154,7 @@ class Api {
       'X-Locale': I18n.requested,
       if (body != null) 'Content-Type': 'application/json',
       if (token() != null) 'Authorization': 'Bearer ${token()}',
+      ...?extra,
     };
     final encoded = body == null ? null : jsonEncode(body);
     late http.Response response;

@@ -20,6 +20,7 @@ import 'api.dart';
 import 'awards.dart';
 import 'movie_extras.dart';
 import 'characters.dart';
+import 'creator.dart';
 import 'feed.dart';
 import 'posts.dart';
 import 'state.dart';
@@ -771,6 +772,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         GhostButton(label: tr('Редагувати профіль'), icon: LucideIcons.pencil, expand: false, compact: true, onPressed: () => context.push('/settings')),
                         GhostButton(label: tr('Сезонний пропуск'), icon: LucideIcons.ticket, expand: false, compact: true, onPressed: () => context.push('/season')),
                         GhostButton(label: 'Game Card', icon: LucideIcons.qrCode, expand: false, compact: true, onPressed: () => context.push('/u/$name/card')),
+                        if (AppScope.of(context).session.pluginOn('crossposting'))
+                          GhostButton(label: tr('Автопостинг'), icon: LucideIcons.send, expand: false, compact: true, onPressed: () => context.push('/settings/crosspost')),
+                        if (AppScope.of(context).session.pluginOn('author_stats'))
+                          GhostButton(label: tr('Статистика'), icon: LucideIcons.barChart3, expand: false, compact: true, onPressed: () => context.push('/me/author-stats')),
                       ])
                     else
                       Wrap(spacing: 10, runSpacing: 10, children: [
@@ -799,6 +804,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
+        if (open) StreamSchedulePanel(username: name, isSelf: self),
         if (!open) ...[
           const SizedBox(height: 12),
           EmptyState(icon: LucideIcons.lock, title: tr('Закритий профіль'), text: tr('Додайте гравця в друзі, щоб бачити його записи, фото й музику.')),

@@ -77,6 +77,14 @@ class SetupController extends Controller
         return back();
     }
 
+    /** Поточний розклад власника — для редактора в застосунку (на сайті слоти приходять зі сторінки профілю). */
+    public function scheduleShow(Request $request, StreamSchedule $schedule): JsonResponse
+    {
+        app(Plugins::class)->ensure('stream_schedule');
+
+        return response()->json(['slots' => $schedule->of($request->user())]);
+    }
+
     /** Мемогенератор (усе малюється в браузері; публікація — звичайний запис із картинкою). */
     public function meme(): Response
     {

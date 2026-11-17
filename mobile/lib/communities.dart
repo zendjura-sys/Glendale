@@ -26,6 +26,17 @@ String communityKind(Map<String, dynamic> c) => c['type'] == 'public' ? tr('Пу
 String membersLabel(Map<String, dynamic> c, int n) =>
     c['type'] == 'public' ? plural(n, 'підписник', 'підписники', 'підписників') : plural(n, 'учасник', 'учасники', 'учасників');
 
+/// Питання анкети вступу. Картка спільноти віддає список, форма налаштувань — текст по рядках.
+List<String> communityJoinQuestions(Map<String, dynamic> c) {
+  final raw = c['join_questions'];
+  if (raw is List) {
+    return [for (final item in raw) ?text(item)];
+  }
+  final block = text(raw);
+  if (block == null) return const [];
+  return [for (final line in block.split('\n')) if (line.trim().isNotEmpty) line.trim()];
+}
+
 // ───────────────────────── Каталог ─────────────────────────
 
 class CommunitiesScreen extends StatefulWidget {
@@ -270,6 +281,15 @@ class _JoinButtonState extends State<JoinButton> {
       widget.onChanged?.call(next);
       return;
     }
+    // Анкета вступу (join_forms): відповіді в тілі join, як на сайті.
+    final questions = communityJoinQuestions(widget.community);
+    if (status == null && questions.isNotEmpty && AppScope.read(context).session.pluginOn('join_forms')) {
+      final next = await _joinWithAnswers(api, slug, questions);
+      if (next == null || !mounted) return;
+      setState(() => status = next);
+      widget.onChanged?.call(next);
+      return;
+    }
     setState(() => busy = true);
     try {
       final data = status == null ? await api.post('/api/v1/communities/$slug/join') : await api.delete('/api/v1/communities/$slug/join');
@@ -281,6 +301,83 @@ class _JoinButtonState extends State<JoinButton> {
     } finally {
       if (mounted) setState(() => busy = false);
     }
+  }
+
+  Future<String?> _joinWithAnswers(Api api, Object? slug, List<String> questions) async {
+    final answers = [for (final _ in questions) TextEditingController()];
+    var error = '';
+    var busy = false;
+    final next = await showGcSheet<String>(
+      context,
+      title: tr('Анкета вступу'),
+      subtitle: tr('Адміністрація прочитає відповіді й вирішить щодо заявки.'),
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) {
+          void clip(TextEditingController field, String value) {
+            if (value.length <= 1000) return;
+            field.value = TextEditingValue(text: value.substring(0, 1000), selection: const TextSelection.collapsed(offset: 1000));
+          }
+
+          Future<void> submit() async {
+            final filled = [for (final a in answers) a.text.trim()];
+            if (busy || filled.any((a) => a.isEmpty)) return;
+            setSheet(() {
+              busy = true;
+              error = '';
+            });
+            try {
+              final data = await api.post('/api/v1/communities/$slug/join', {'answers': filled});
+              if (sheet.mounted) Navigator.pop(sheet, text(data['membership']) ?? 'pending');
+            } catch (e) {
+              if (sheet.mounted) {
+                setSheet(() {
+                  busy = false;
+                  error = '$e';
+                });
+              }
+            }
+          }
+
+          final ready = answers.every((field) => field.text.trim().isNotEmpty);
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < questions.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 10),
+                  Text(questions[i], style: body(13.5, weight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  GcField(
+                    controller: answers[i],
+                    label: tr('Ваша відповідь'),
+                    maxLines: 3,
+                    minLines: 2,
+                    autofocus: i == 0,
+                    onChanged: (value) {
+                      clip(answers[i], value);
+                      setSheet(() => error = '');
+                    },
+                  ),
+                ],
+                if (error.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(error, style: body(12.5, color: dangerSoft)),
+                ],
+                const SizedBox(height: 14),
+                PrimaryButton(label: tr('Надіслати заявку'), icon: LucideIcons.userPlus, busy: busy, onPressed: ready && !busy ? () => unawaited(submit()) : null),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final a in answers) {
+        a.dispose();
+      }
+    });
+    return next;
   }
 
   /// Вступ у спільноту з паролем. Помилка лишається в шторці, щоб можна було спробувати ще раз.
@@ -384,13 +481,25 @@ class _JoinButtonState extends State<JoinButton> {
     if (role == 'owner' || c['managed'] == true && status == 'active') {
       return Pill(label: role == 'owner' ? tr('Власник') : tr('Керуєте'), icon: LucideIcons.crown, color: gold);
     }
-    // Пароль (і ще немає правил на цей крок) — кнопка «Вступити», як PasswordDialog на сайті.
+    // Пароль / анкета (і ще немає правил на цей крок) — як на сайті.
     final passwordGate = status == null && c['has_password'] == true && c['rules_accept'] != true;
-    final joinLabel = passwordGate ? tr('Вступити') : (public ? tr('Підписатися') : (c['privacy'] == 'closed' ? tr('Подати заявку') : tr('Вступити')));
+    final formGate = status == null && !passwordGate && communityJoinQuestions(c).isNotEmpty && AppScope.read(context).session.pluginOn('join_forms');
+    final joinLabel = passwordGate
+        ? tr('Вступити')
+        : (formGate || c['privacy'] == 'closed'
+            ? tr('Подати заявку')
+            : (public ? tr('Підписатися') : tr('Вступити')));
     return switch (status) {
       'active' => GhostButton(label: public ? tr('Ви підписані') : tr('Ви учасник'), icon: LucideIcons.check, compact: true, expand: false, onPressed: busy ? null : _toggle),
       'pending' => GhostButton(label: tr('Заявку надіслано'), icon: LucideIcons.clock, compact: true, expand: false, color: muted, onPressed: busy ? null : _toggle),
-      _ => PrimaryButton(label: joinLabel, icon: passwordGate ? LucideIcons.keyRound : null, compact: true, expand: false, busy: busy, onPressed: _toggle),
+      _ => PrimaryButton(
+          label: joinLabel,
+          icon: passwordGate ? LucideIcons.keyRound : (formGate ? LucideIcons.clipboardList : null),
+          compact: true,
+          expand: false,
+          busy: busy,
+          onPressed: _toggle,
+        ),
     };
   }
 }
@@ -982,7 +1091,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
           Glass(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
             child: Column(children: [
-              for (final member in items)
+              for (final member in items) ...[
                 UserTile(
                   user: member,
                   subtitle: tab == 'requests' ? tr('Заявка {v}', {'v': ago(member['joined_at'])}) : (communityRoles[member['role']] ?? '') + (member['is_friend'] == true ? tr(' · ваш друг') : ''),
@@ -995,10 +1104,34 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
                           ? IconButton(onPressed: () => _memberMenu(member), icon: Icon(LucideIcons.ellipsis, color: muted))
                           : null,
                 ),
+                if (tab == 'requests') _RequestAnswers(answers: maps(member['answers'])),
+              ],
             ]),
           ),
         LoadMore(more: more && !loading, onMore: _load),
       ],
+    );
+  }
+}
+
+/// Відповіді анкети під заявкою — щоб адмін бачив, що людина написала.
+class _RequestAnswers extends StatelessWidget {
+  const _RequestAnswers({required this.answers});
+  final List<Map<String, dynamic>> answers;
+
+  @override
+  Widget build(BuildContext context) {
+    if (answers.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(56, 0, 12, 10),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        for (final a in answers) ...[
+          Text(text(a['q']) ?? text(a['question']) ?? '', style: body(12, color: muted, weight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(text(a['a']) ?? text(a['answer']) ?? '', style: body(13, color: soft)),
+          const SizedBox(height: 6),
+        ],
+      ]),
     );
   }
 }
@@ -1021,6 +1154,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
   final description = TextEditingController();
   final website = TextEditingController();
   final city = TextEditingController();
+  final joinQuestions = TextEditingController();
   String type = 'group';
   String privacy = 'open';
   String wall = 'open';
@@ -1035,7 +1169,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
 
   @override
   void dispose() {
-    for (final c in [name, slug, status, description, website, city]) {
+    for (final c in [name, slug, status, description, website, city, joinQuestions]) {
       c.dispose();
     }
     super.dispose();
@@ -1056,6 +1190,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
         description.text = text(c['description']) ?? '';
         website.text = text(c['website']) ?? '';
         city.text = text(c['city']) ?? '';
+        joinQuestions.text = text(mapOf(data['extras'])['join_questions']) ?? communityJoinQuestions(c).join('\n');
         type = text(c['type']) ?? 'group';
         privacy = text(c['privacy']) ?? 'open';
         wall = text(c['wall']) ?? 'open';
@@ -1066,9 +1201,32 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
     }
   }
 
+  /// Анкета живе в правилах спільноти (PATCH settings/rules), не в основній картці.
+  Future<void> _saveQuestions() async {
+    final extras = mapOf(page?['extras']);
+    // Без уже збережених правил не шлемо патч: порожній набір затер би їх.
+    if (!extras.containsKey('slow_mode')) return;
+    await api.patch(Api.site('/c/${widget.slug}/settings/rules'), {
+      'rules': extras['rules'] ?? '',
+      'handbook': extras['handbook'] ?? '',
+      'welcome': extras['welcome'] ?? '',
+      'banned_words': extras['banned_words'] ?? '',
+      'post_tags': extras['post_tags'] ?? '',
+      'slow_mode': intOf(extras['slow_mode']),
+      'premoderation': extras['premoderation'] == true,
+      'weekly_digest': extras['weekly_digest'] == true,
+      'join_questions': joinQuestions.text.trim(),
+      'wiki_open': extras['wiki_open'] == true,
+      'rules_accept': extras['rules_accept'] == true,
+    });
+  }
+
   Future<void> _save() async {
     setState(() => busy = true);
     try {
+      final editQuestions = page?['isOwner'] == true && AppScope.read(context).session.pluginOn('join_forms');
+      if (editQuestions) await _saveQuestions();
+      if (!mounted) return;
       final result = await api.patch(Api.site('/c/${widget.slug}/settings'), {
         'name': name.text.trim(),
         'slug': slug.text.trim(),
@@ -1085,7 +1243,11 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
       toast(context, text(result['message']) ?? tr('Збережено.'));
       final redirect = text(result['redirect']);
       final nextSlug = redirect != null && redirect.startsWith('/c/') ? redirect.split('/')[2] : slug.text.trim();
-      if (nextSlug != widget.slug) context.go('/communities/$nextSlug');
+      if (nextSlug != widget.slug) {
+        context.go('/communities/$nextSlug');
+      } else if (editQuestions) {
+        await _load();
+      }
     } catch (e) {
       if (mounted) toast(context, e);
     } finally {
@@ -1162,6 +1324,23 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
             LabeledField(label: tr('Сайт'), child: GcField(controller: website, label: 'https://', keyboard: TextInputType.url)),
             const SizedBox(height: 10),
             LabeledField(label: tr('Місто'), child: GcField(controller: city, label: tr('Місто'))),
+            if (data['isOwner'] == true && AppScope.read(context).session.pluginOn('join_forms')) ...[
+              const SizedBox(height: 10),
+              LabeledField(
+                label: tr('Анкета вступу'),
+                hint: tr('Для закритої спільноти: до 5 питань, по одному в рядку. Відповіді — у заявці.'),
+                child: GcField(
+                  controller: joinQuestions,
+                  label: tr('Питання для заявки'),
+                  maxLines: 6,
+                  minLines: 3,
+                  onChanged: (value) {
+                    if (value.length <= 1500) return;
+                    joinQuestions.value = TextEditingValue(text: value.substring(0, 1500), selection: const TextSelection.collapsed(offset: 1500));
+                  },
+                ),
+              ),
+            ],
           ]),
         ),
         const SizedBox(height: 12),

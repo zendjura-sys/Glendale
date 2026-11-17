@@ -685,8 +685,27 @@ class AppSiteParityTest extends TestCase
     {
         $user = User::factory()->create();
         $token = $this->app_token($user);
+        $plugins = $this->withToken($token)->getJson('/api/v1/me')->json('user.plugins');
+        foreach (['stream_schedule', 'crossposting', 'author_stats', 'author_subscriptions'] as $key) {
+            $this->assertArrayHasKey($key, $plugins);
+        }
         $this->withToken($token)->putJson('/api/v1/site/settings/stream-schedule', ['slots' => [['day' => 5, 'time' => '20:00', 'title' => 'CS2']]])->assertSuccessful();
+        $this->withToken($token)->getJson('/api/v1/site/settings/stream-schedule')->assertOk()->assertJsonPath('slots.0.title', 'CS2')->assertJsonPath('slots.0.day', 5);
+        $this->withToken($token)->withHeaders([
+            'X-Inertia-Partial-Component' => 'profile/show',
+            'X-Inertia-Partial-Data' => 'streamSchedule',
+        ])->getJson('/api/v1/site/u/'.$user->username)->assertOk()->assertJsonPath('streamSchedule.0.title', 'CS2');
         $this->withToken($token)->getJson("/api/v1/site/crosspost/user/{$user->id}")->assertOk()->assertJsonStructure(['targets', 'events']);
+    }
+
+    public function test_app_manages_author_tiers_through_bridge(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/settings/subscriptions')->assertOk()
+            ->assertJsonStructure(['tiers', 'earnings' => ['subscribers', 'month', 'total', 'fee'], 'balance', 'subscriptions']);
+        $this->withToken($token)->putJson('/api/v1/site/settings/subscriptions/tiers', [
+            'tiers' => [['name' => 'Фан', 'price' => 5000, 'perks' => 'Закриті записи']],
+        ])->assertOk()->assertJsonPath('tiers.0.name', 'Фан')->assertJsonPath('tiers.0.price', 5000);
     }
 
     public function test_app_opens_ideas_board_and_author_stats_through_bridge(): void

@@ -523,6 +523,19 @@ class GameScreen extends StatelessWidget {
                   ]),
                 ),
               ),
+            if (AppScope.of(context).session.pluginOn('game_guides'))
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Glass(
+                  onTap: () => context.push('/games/$slug/guides'),
+                  child: Row(children: [
+                    const Icon(LucideIcons.bookOpen, size: 20, color: Color(0xFF38BDF8)),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(tr('Гіди'), style: body(15, weight: FontWeight.w600))),
+                    if (maps(data['guides']).isNotEmpty) Text(compact(maps(data['guides']).length), style: body(13, color: muted)),
+                  ]),
+                ),
+              ),
             // Блоки сайту: беклог, оцінка гравців, лідерборд, музика, ціни, «чи потягне ПК», новини, цілі, FPS, Q&A, наставники, досягнення.
             GameExtras(key: ValueKey('extras-$slug'), slug: slug, name: text(d['name']) ?? slug),
             const SizedBox(height: 12),

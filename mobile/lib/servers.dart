@@ -437,6 +437,14 @@ class ServerScreen extends StatelessWidget {
             ]),
             const SizedBox(height: 10),
             ServerCard(server: server),
+            if (mapOf(data['ownership'])['is_owner'] == true && AppScope.of(context).session.pluginOn('crossposting') && server['id'] != null) ...[
+              const SizedBox(height: 12),
+              GhostButton(
+                label: tr('Автопостинг'),
+                icon: LucideIcons.send,
+                onPressed: () => context.push('/settings/crosspost?type=server&id=${server['id']}'),
+              ),
+            ],
             if (data['votes'] is Map) ...[
               const SizedBox(height: 12),
               VotePanel(slug: slug, votes: mapOf(data['votes'])),
