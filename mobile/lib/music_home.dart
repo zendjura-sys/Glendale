@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
-import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'downloads.dart';
 import 'i18n.dart';
 import 'music.dart';
@@ -13,12 +12,10 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-// Розділ «Музика» в стилі Apple Music, як на сайті (pages/music/home, new, radio, library):
-// власна панель вкладок унизу — Головна, Нове, Радіо, Медіатека й Пошук — однією капсулою.
-// Панель стоїть на місці острова застосунку (той сховується), тож унизу завжди одна панель,
-// а міні-плеєр — над нею.
+// Розділ «Музика» як на сайті (music-layout + pages/music/*):
+// глобальна шапка й острів застосунку; розділи — пігулками зверху в контенті (`MusicNav`).
 
-class MusicHub extends StatefulWidget {
+class MusicHub extends StatelessWidget {
   const MusicHub({this.tab = 'home', super.key});
   final String tab;
 
@@ -31,114 +28,18 @@ class MusicHub extends StatefulWidget {
       };
 
   @override
-  State<MusicHub> createState() => _MusicHubState();
-}
-
-class _MusicHubState extends State<MusicHub> {
-  late String tab = widget.tab;
-
-  /// Вкладки будуються при першому відкритті й далі тримають свій стан і прокрутку.
-  late final opened = <String>{tab};
-
-  static const _tabs = ['home', 'new', 'radio', 'library'];
-
-  void _select(String value) => setState(() {
-        tab = value;
-        opened.add(value);
-      });
-
-  @override
   Widget build(BuildContext context) {
-    final labels = {
-      'home': (tr('Головна'), LucideIcons.house),
-      'new': (tr('Нове'), LucideIcons.sparkles),
-      'radio': (tr('Радіо'), LucideIcons.radio),
-      'library': (tr('Медіатека'), LucideIcons.library),
+    final page = switch (tab) {
+      'new' => const _NewTab(),
+      'radio' => const _RadioTab(),
+      'library' => const _LibraryTab(),
+      _ => const _HomeTab(),
     };
-    Widget page(String key) => switch (key) {
-          'new' => const _NewTab(),
-          'radio' => const _RadioTab(),
-          'library' => const _LibraryTab(),
-          _ => _HomeTab(onRadio: () => _select('radio')),
-        };
-    return Stack(children: [
-      Positioned.fill(
-        // Без інтернету розділ показує завантажене на телефон (плеєр грає з файлів).
-        child: ValueListenableBuilder<bool>(
-          valueListenable: Api.online,
-          builder: (context, online, tabs) => online || Downloads.instance == null ? tabs! : const DownloadsScreen(offline: true),
-          child: IndexedStack(index: _tabs.indexOf(tab), children: [for (final key in _tabs) opened.contains(key) ? page(key) : const SizedBox.shrink()]),
-        ),
-      ),
-      Positioned(
-        left: ArcticDock.sidesOf(context).left,
-        right: ArcticDock.sidesOf(context).right,
-        bottom: MediaQuery.viewPaddingOf(context).bottom + ArcticDock.bottom,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: _BarSwap(
-              // Одна капсула, як острів застосунку (і як на сайті): язичкова смуга зверху, вкладки,
-              // а п'ятою вкладкою — «Пошук».
-              child: MatteGlass(
-                borderRadius: barRadius,
-                height: _barHeight,
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: ArcticDockTabs(
-                    items: [
-                      for (final key in _tabs) ArcticDockItem(icon: labels[key]!.$2, label: labels[key]!.$1),
-                      ArcticDockItem(icon: LucideIcons.search, label: tr('Пошук')),
-                    ],
-                    current: _tabs.contains(tab) ? _tabs.indexOf(tab) : null,
-                    onTap: (i) => i < _tabs.length ? _select(_tabs[i]) : context.push('/music/search'),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    ]);
-  }
-}
-
-/// Висота панелі вкладок — як в острова застосунку, щоб заміна була непомітною.
-const _barHeight = ArcticDock.height;
-
-/// Поява й зникнення панелі вкладок: виїжджає знизу й проявляється, коли острів ховається,
-/// і так само йде, коли поверх розділу відкривається інша сторінка.
-class _BarSwap extends StatefulWidget {
-  const _BarSwap({required this.child});
-  final Widget child;
-
-  @override
-  State<_BarSwap> createState() => _BarSwapState();
-}
-
-class _BarSwapState extends State<_BarSwap> {
-  bool shown = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => shown = true);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final visible = shown && (ModalRoute.isCurrentOf(context) ?? true);
-    final duration = MediaQuery.disableAnimationsOf(context) ? Duration.zero : bottomBarSwap;
-    return IgnorePointer(
-      ignoring: !visible,
-      child: AnimatedSlide(
-        duration: duration,
-        curve: Curves.easeOutCubic,
-        offset: visible ? Offset.zero : const Offset(0, 0.35),
-        child: TweenAnimationBuilder<double>(key: const ValueKey('bottom-bar-music'), tween: Tween(end: visible ? 1 : 0), duration: duration, curve: Curves.easeOutCubic, builder: (context, v, child) => Opacity(opacity: v, child: child), child: widget.child),
-      ),
+    // Без інтернету розділ показує завантажене на телефон (плеєр грає з файлів).
+    return ValueListenableBuilder<bool>(
+      valueListenable: Api.online,
+      builder: (context, online, child) => online || Downloads.instance == null ? child! : const DownloadsScreen(offline: true),
+      child: page,
     );
   }
 }
@@ -161,8 +62,7 @@ String musicGreeting(Map<String, dynamic> me, [DateTime? now]) {
 }
 
 class _HomeTab extends StatelessWidget {
-  const _HomeTab({required this.onRadio});
-  final VoidCallback onRadio;
+  const _HomeTab();
 
   @override
   Widget build(BuildContext context) {
@@ -230,7 +130,7 @@ class _HomeTab extends StatelessWidget {
           ]),
         ],
         if (stations.isNotEmpty) ...[
-          SectionHeader(tr('Станції для тебе'), onMore: onRadio),
+          SectionHeader(tr('Станції для тебе'), onMore: () => context.go('/music/radio')),
           Shelf(children: [for (final s in stations) StationTile(station: s)]),
         ],
       ]);

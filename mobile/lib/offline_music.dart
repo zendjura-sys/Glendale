@@ -193,6 +193,7 @@ class _DownloadsList extends StatelessWidget {
     final collections = downloads.collections.where((c) => downloads.tracksOf(c.key).isNotEmpty || downloads.progressOf(c.key).$2 > 0).toList();
     final pending = downloads.tasks;
     return MusicList(
+      showNav: !offline,
       onRefresh: offline ? () => _ping(context) : null,
       children: [
         LargeTitle(tr('Завантажене'), back: !offline, subtitle: songs.isEmpty ? null : '${songs.length} ${plural(songs.length, 'пісня', 'пісні', 'пісень')} · ${bytesLabel(downloads.totalBytes)}'),

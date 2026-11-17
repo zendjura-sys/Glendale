@@ -245,11 +245,8 @@ class _AppShellState extends State<AppShell> {
     }
     final uri = GoRouterState.of(context).uri;
     final path = uri.path;
-    // У «Музиці» нижня панель — вкладки розділу на місці острова (одна панель за раз).
-    final musicTabs = hasMusicTabs(uri);
-    // «Назад» у шапці «Музики» веде на останній маршрут поза розділом.
+    // «Музика» — у тій самій оболонці, що й сайт: TopBar + IslandNav; розділи — пігулками в контенті.
     final inMusic = isMusicSection(uri);
-    if (!inMusic) MusicTopBar.exit = uri.toString();
     final topInset = MediaQuery.viewPaddingOf(context).top;
     final chatOpen = RegExp(r'^/messages/\d+').hasMatch(path);
     return AppScope(
@@ -274,8 +271,8 @@ class _AppShellState extends State<AppShell> {
             final contentWidth = wide ? tabletContentWidth : tabletPortraitWidth;
             final systemBottom = MediaQuery.viewPaddingOf(context).bottom;
             final inCall = VoiceCall.instance.active && !hideChrome;
-            // Нижня панель (острів або вкладки «Музики»); плеєр і голосова кімната завжди над нею.
-            final bottomBar = !hideChrome && (!wide || musicTabs);
+            // Нижня панель — острів; плеєр і голосова кімната завжди над нею.
+            final bottomBar = !hideChrome && !wide;
             final bottom = hideChrome ? 0.0 : systemBottom + (bottomBar ? islandExtent : 8) + (playing ? miniPlayerExtent : 0) + (inCall ? voiceBarExtent : 0);
             final contentLeft = wide ? sideNavWidth + 28 : 0.0;
             // Великий планшет (1280+ dp): третя колонка праворуч — друзі онлайн і бесіди.
@@ -329,9 +326,7 @@ class _AppShellState extends State<AppShell> {
                       top: 0,
                       left: 0,
                       right: 0,
-                      child: inMusic && !wide
-                          ? MusicTopBar(session: widget.session, player: widget.player, path: path, topInset: topInset)
-                          : TopBar(session: widget.session, player: widget.player, wide: wide, topInset: topInset),
+                      child: TopBar(session: widget.session, player: widget.player, wide: wide, topInset: topInset),
                     ),
                     // Вогники над шапкою, гірлянда й стрічка під нею.
                     Positioned.fill(child: SeasonHeader(season: season, headerBottom: topInset + siteBarHeight)),
@@ -378,7 +373,7 @@ class _AppShellState extends State<AppShell> {
                         ),
                       ),
                     // Острів — поверх усього, щоб розгорнуте меню й затемнення накривали екран.
-                    if (!wide && !hideChrome) Positioned.fill(child: IslandNav(session: widget.session, player: widget.player, path: path, hidden: musicTabs)),
+                    if (!wide && !hideChrome) Positioned.fill(child: IslandNav(session: widget.session, player: widget.player, path: path)),
                   ],
                 ),
               ),

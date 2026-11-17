@@ -1203,7 +1203,9 @@ const tabletPortraitWidth = 680.0;
 const bottomBarSwap = Duration(milliseconds: 250);
 
 /// Сторінки розділу «Музика» з власною панеллю вкладок: там вона стоїть на місці острова.
-bool hasMusicTabs(Uri uri) => uri.queryParameters['user'] == null && RegExp(r'^/music(/(new|radio|library))?/?$').hasMatch(uri.path);
+/// Раніше: чи показувати нижні вкладки «Музики» замість острова. Тепер розділ у спільній оболонці.
+@Deprecated('Music uses TopBar + IslandNav; section pills are MusicNav in content')
+bool hasMusicTabs(Uri uri) => false;
 
 /// Розділ «Музика» (свій, не чужі аудіозаписи `?user=`): там своя шапка з виходом «Назад».
 bool isMusicSection(Uri uri) => uri.queryParameters['user'] == null && RegExp(r'^/music(/|$)').hasMatch(uri.path);
