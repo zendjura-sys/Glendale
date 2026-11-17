@@ -17,6 +17,20 @@ class LiveKit
     /** Скільки живе токен входу: лише для підключення, далі LiveKit тримає з’єднання сам. */
     public const TOKEN_TTL = 6 * 3600;
 
+    /**
+     * Джерела публікації для дзвінків у бесідах: голос, камера й демонстрація екрана.
+     *
+     * @var list<string>
+     */
+    public const CALL_SOURCES = ['microphone', 'camera', 'screen_share', 'screen_share_audio'];
+
+    /**
+     * Джерела для голосових кімнат / шоу / спільного перегляду: лише мікрофон.
+     *
+     * @var list<string>
+     */
+    public const VOICE_SOURCES = ['microphone'];
+
     public function __construct(
         private readonly SiteSettings $settings,
         private readonly EdgeNode $edge,
@@ -83,7 +97,7 @@ class LiveKit
                 'canPublish' => true,
                 'canSubscribe' => true,
                 'canPublishData' => true,
-                'canPublishSources' => ['microphone'],
+                'canPublishSources' => self::VOICE_SOURCES,
                 ...$grant,
             ],
         ], fn ($v) => $v !== null));

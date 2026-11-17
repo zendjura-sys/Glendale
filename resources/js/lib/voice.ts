@@ -28,6 +28,16 @@ export type CallState = {
     invited: number[];
 };
 
+export type VoiceVideoTile = {
+    id: string;
+    identity: string;
+    name: string;
+    screen: boolean;
+    local: boolean;
+    /** HTMLVideoElement, уже прив’язаний до трека LiveKit. */
+    el: HTMLVideoElement;
+};
+
 export type VoiceState = {
     status: 'idle' | 'connecting' | 'connected';
     kind: 'room' | 'call' | 'show' | null;
@@ -45,8 +55,11 @@ export type VoiceState = {
     micOn: boolean;
     /** Модератор забрав мікрофон. */
     micBlocked: boolean;
+    cameraOn: boolean;
+    screenShareOn: boolean;
     deafened: boolean;
     speaking: string[];
+    videos: VoiceVideoTile[];
     connectedAt: number | null;
 };
 
@@ -63,8 +76,11 @@ const initial: VoiceState = {
     identity: null,
     micOn: false,
     micBlocked: false,
+    cameraOn: false,
+    screenShareOn: false,
     deafened: false,
     speaking: [],
+    videos: [],
     connectedAt: null,
 };
 
@@ -72,6 +88,7 @@ let state = initial;
 const listeners = new Set<() => void>();
 let room: Room | null = null;
 const audio = new Set<HTMLMediaElement>();
+const videoEls = new Map<string, HTMLVideoElement>();
 /** Гучність і тембр кожного, хто говорить (identity → вимірювач), — для персонажів у шоу. */
 const meters = new Map<string, ReturnType<typeof createVoiceMeter>>();
 let meterCtx: AudioContext | null = null;
@@ -120,9 +137,70 @@ export function voiceState(): VoiceState {
     return state;
 }
 
+function publishVideos() {
+    set({
+        videos: [...videoEls.entries()].map(([id, el]) => {
+            const meta = (
+                el.dataset.meta ? JSON.parse(el.dataset.meta) : {}
+            ) as {
+                identity?: string;
+                name?: string;
+                screen?: boolean;
+                local?: boolean;
+            };
+
+            return {
+                id,
+                identity: meta.identity ?? id,
+                name: meta.name ?? id,
+                screen: Boolean(meta.screen),
+                local: Boolean(meta.local),
+                el,
+            };
+        }),
+    });
+}
+
+function attachVideo(
+    id: string,
+    track: { attach: (el?: HTMLMediaElement) => HTMLMediaElement },
+    meta: { identity: string; name: string; screen: boolean; local: boolean },
+) {
+    const prev = videoEls.get(id);
+    if (prev) {
+        track.attach(prev);
+        prev.dataset.meta = JSON.stringify(meta);
+        publishVideos();
+
+        return;
+    }
+    const el = track.attach() as HTMLVideoElement;
+    el.playsInline = true;
+    el.muted = meta.local;
+    el.autoplay = true;
+    el.className = 'h-full w-full object-cover';
+    el.dataset.meta = JSON.stringify(meta);
+    videoEls.set(id, el);
+    publishVideos();
+}
+
+function detachVideo(
+    id: string,
+    track?: { detach: (el?: HTMLMediaElement) => HTMLMediaElement[] },
+) {
+    const el = videoEls.get(id);
+    if (!el) return;
+    if (track) track.detach(el);
+    else el.remove();
+    videoEls.delete(id);
+    publishVideos();
+}
+
 function cleanup() {
     audio.forEach((el) => el.remove());
     audio.clear();
+    videoEls.forEach((el) => el.remove());
+    videoEls.clear();
     meters.forEach((m) => m.stop());
     meters.clear();
     room = null;
@@ -179,22 +257,51 @@ async function connect(
         room = next;
         if (access.call) set({ callId: access.call.id });
 
-        next.on(RoomEvent.TrackSubscribed, (track, _pub, participant) => {
-            if (track.kind !== Track.Kind.Audio) return;
-            meterFor(participant.identity, track.mediaStreamTrack);
-            const el = track.attach();
-            el.muted = state.deafened;
-            el.style.display = 'none';
-            document.body.appendChild(el);
-            audio.add(el);
-        });
-        next.on(RoomEvent.TrackUnsubscribed, (track, _pub, participant) => {
-            if (track.kind === Track.Kind.Audio)
-                dropMeter(participant.identity);
-            track.detach().forEach((el) => {
-                audio.delete(el);
-                el.remove();
+        next.on(RoomEvent.TrackSubscribed, (track, pub, participant) => {
+            if (track.kind === Track.Kind.Audio) {
+                meterFor(participant.identity, track.mediaStreamTrack);
+                const el = track.attach();
+                el.muted = state.deafened;
+                el.style.display = 'none';
+                document.body.appendChild(el);
+                audio.add(el);
+
+                return;
+            }
+            if (track.kind !== Track.Kind.Video) return;
+            attachVideo(pub.trackSid, track, {
+                identity: participant.identity,
+                name: participant.name || participant.identity,
+                screen: pub.source === Track.Source.ScreenShare,
+                local: false,
             });
+        });
+        next.on(RoomEvent.TrackUnsubscribed, (track, pub, participant) => {
+            if (track.kind === Track.Kind.Audio) {
+                dropMeter(participant.identity);
+                track.detach().forEach((el) => {
+                    audio.delete(el);
+                    el.remove();
+                });
+
+                return;
+            }
+            if (track.kind === Track.Kind.Video)
+                detachVideo(pub.trackSid, track);
+        });
+        next.on(RoomEvent.LocalTrackPublished, (pub, participant) => {
+            const track = pub.track;
+            if (!track || track.kind !== Track.Kind.Video) return;
+            attachVideo(pub.trackSid, track, {
+                identity: participant.identity,
+                name: participant.name || tr('Ви'),
+                screen: pub.source === Track.Source.ScreenShare,
+                local: true,
+            });
+        });
+        next.on(RoomEvent.LocalTrackUnpublished, (pub) => {
+            if (pub.track?.kind === Track.Kind.Video)
+                detachVideo(pub.trackSid, pub.track);
         });
         next.on(RoomEvent.ActiveSpeakersChanged, (speakers) =>
             set({ speaking: speakers.map((p) => p.identity) }),
@@ -399,4 +506,56 @@ export function toggleDeafen() {
     const deafened = !state.deafened;
     audio.forEach((el) => (el.muted = deafened));
     set({ deafened });
+}
+
+async function setCamera(on: boolean) {
+    if (!room || state.kind !== 'call') return;
+    try {
+        await room.localParticipant.setCameraEnabled(on);
+        set({ cameraOn: on });
+    } catch {
+        set({ cameraOn: false });
+        toast.error(tr('Немає доступу до камери — дозвольте її в браузері'));
+    }
+}
+
+export function toggleCamera() {
+    if (state.micBlocked) {
+        toast(tr('Модератор вимкнув вам мікрофон'));
+
+        return;
+    }
+    if (state.kind !== 'call') {
+        toast(tr('Відео доступне лише в дзвінках'));
+
+        return;
+    }
+    void setCamera(!state.cameraOn);
+}
+
+async function setScreenShare(on: boolean) {
+    if (!room || state.kind !== 'call') return;
+    try {
+        await room.localParticipant.setScreenShareEnabled(on, {
+            audio: true,
+        });
+        set({ screenShareOn: on });
+    } catch {
+        set({ screenShareOn: false });
+        if (on) toast.error(tr('Не вдалося поділитися екраном'));
+    }
+}
+
+export function toggleScreenShare() {
+    if (state.micBlocked) {
+        toast(tr('Немає права публікувати відео'));
+
+        return;
+    }
+    if (state.kind !== 'call') {
+        toast(tr('Демонстрація екрана доступна в дзвінках'));
+
+        return;
+    }
+    void setScreenShare(!state.screenShareOn);
 }

@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter_background/flutter_background.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart' show Helper;
 import 'package:go_router/go_router.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -17,6 +20,17 @@ import 'i18n.dart';
 
 /// Висота панелі розмови над міні-плеєром.
 const voiceBarExtent = 64.0;
+
+/// Одна відеодоріжка в дзвінку (камера або екран).
+class CallVideoTile {
+  CallVideoTile({required this.id, required this.identity, required this.name, required this.track, required this.screen, required this.local});
+  final String id;
+  final String identity;
+  final String name;
+  final VideoTrack track;
+  final bool screen;
+  final bool local;
+}
 
 /// Розмова в голосовій кімнаті. Одна на весь застосунок і живе поза екранами,
 /// тому не обривається під час переходів між розділами й коли застосунок згорнуто.
@@ -42,6 +56,9 @@ class VoiceCall extends ChangeNotifier {
   bool micOn = false;
   bool micBlocked = false;
   bool deafened = false;
+  bool cameraOn = false;
+  bool screenShareOn = false;
+  bool frontCamera = true;
 
   /// Слухач на «сцені»: говорить лише після запрошення, руку піднімає сам.
   bool stageListener = false;
@@ -50,7 +67,13 @@ class VoiceCall extends ChangeNotifier {
   Set<String> speaking = {};
   DateTime? connectedAt;
 
+  /// Відеокадри дзвінка (локальні й віддалені).
+  final List<CallVideoTile> videos = [];
+
   bool get active => status != 'idle';
+
+  /// У дзвінку є відео або демонстрація екрана — показуємо сцену.
+  bool get hasVideo => kind == 'call' && videos.isNotEmpty;
 
   /// Голосова кімната сім’ї чи спільноти.
   Future<void> join(Api api, Map<String, dynamic> room, {required String label, required String route, void Function(Object error)? onError}) async {
@@ -177,6 +200,35 @@ class VoiceCall extends ChangeNotifier {
         })
         ..on<TrackSubscribedEvent>((e) {
           if (deafened && e.track is RemoteAudioTrack) e.track.disable();
+          if (e.track is VideoTrack) {
+            _upsertVideo(
+              id: e.publication.sid,
+              identity: e.participant.identity,
+              name: e.participant.name.isEmpty ? e.participant.identity : e.participant.name,
+              track: e.track as VideoTrack,
+              screen: e.publication.source == TrackSource.screenShareVideo,
+              local: false,
+            );
+          }
+        })
+        ..on<TrackUnsubscribedEvent>((e) {
+          if (e.track is VideoTrack) _removeVideo(e.publication.sid);
+        })
+        ..on<LocalTrackPublishedEvent>((e) {
+          final raw = e.publication.track;
+          if (raw == null || raw is! VideoTrack) return;
+          final local = next.localParticipant;
+          _upsertVideo(
+            id: e.publication.sid,
+            identity: local?.identity ?? 'local',
+            name: local?.name.isNotEmpty == true ? local!.name : tr('Ви'),
+            track: raw as VideoTrack,
+            screen: e.publication.source == TrackSource.screenShareVideo,
+            local: true,
+          );
+        })
+        ..on<LocalTrackUnpublishedEvent>((e) {
+          _removeVideo(e.publication.sid);
         })
         ..on<ParticipantPermissionsUpdatedEvent>((e) {
           if (e.participant != next.localParticipant) return;
@@ -241,11 +293,32 @@ class VoiceCall extends ChangeNotifier {
     connectedAt = null;
     micOn = false;
     micBlocked = false;
+    cameraOn = false;
+    screenShareOn = false;
+    frontCamera = true;
+    videos.clear();
     stageListener = false;
     handRaised = false;
     stageEpoch = 0;
     speaking = {};
     notifyListeners();
+  }
+
+  void _upsertVideo({required String id, required String identity, required String name, required VideoTrack track, required bool screen, required bool local}) {
+    final i = videos.indexWhere((v) => v.id == id);
+    final tile = CallVideoTile(id: id, identity: identity, name: name, track: track, screen: screen, local: local);
+    if (i >= 0) {
+      videos[i] = tile;
+    } else {
+      videos.add(tile);
+    }
+    notifyListeners();
+  }
+
+  void _removeVideo(String id) {
+    final before = videos.length;
+    videos.removeWhere((v) => v.id == id);
+    if (videos.length != before) notifyListeners();
   }
 
   /// Foreground-сервіс із мікрофоном: Android не вимикає розмову у згорнутому застосунку.
@@ -288,6 +361,85 @@ class VoiceCall extends ChangeNotifier {
     }
     unawaited(_setMic(!micOn));
     return null;
+  }
+
+  /// Камера в дзвінку: null — ок, інакше текст помилки.
+  Future<String?> toggleCamera() async {
+    if (kind != 'call') return tr('Відео доступне лише в дзвінках.');
+    if (micBlocked) return tr('Немає права публікувати відео.');
+    final local = _room?.localParticipant;
+    if (local == null) return tr('Спочатку підключіться до дзвінка.');
+    final next = !cameraOn;
+    try {
+      await local.setCameraEnabled(
+        next,
+        cameraCaptureOptions: CameraCaptureOptions(cameraPosition: frontCamera ? CameraPosition.front : CameraPosition.back),
+      );
+      cameraOn = next;
+      if (next && screenShareOn) {
+        // Екран і камера можуть йти разом; стан екрана не чіпаємо.
+      }
+      notifyListeners();
+      return null;
+    } catch (_) {
+      cameraOn = false;
+      notifyListeners();
+      return tr('Немає доступу до камери — дозвольте її в налаштуваннях.');
+    }
+  }
+
+  /// Передня / задня камера під час відеодзвінка.
+  Future<String?> flipCamera() async {
+    if (!cameraOn) return null;
+    final local = _room?.localParticipant;
+    final pub = local?.getTrackPublicationBySource(TrackSource.camera);
+    final track = pub?.track;
+    if (track is! LocalVideoTrack) return null;
+    frontCamera = !frontCamera;
+    try {
+      await local!.setCameraEnabled(
+        true,
+        cameraCaptureOptions: CameraCaptureOptions(cameraPosition: frontCamera ? CameraPosition.front : CameraPosition.back),
+      );
+      notifyListeners();
+      return null;
+    } catch (_) {
+      frontCamera = !frontCamera;
+      return tr('Не вдалося перемкнути камеру.');
+    }
+  }
+
+  /// Демонстрація екрана (Android / desktop). На iOS потрібен Broadcast Upload Extension.
+  Future<String?> toggleScreenShare() async {
+    if (kind != 'call') return tr('Демонстрація екрана доступна в дзвінках.');
+    if (micBlocked) return tr('Немає права публікувати відео.');
+    final local = _room?.localParticipant;
+    if (local == null) return tr('Спочатку підключіться до дзвінка.');
+    if (screenShareOn) {
+      try {
+        await local.setScreenShareEnabled(false);
+        screenShareOn = false;
+        notifyListeners();
+        return null;
+      } catch (_) {
+        return tr('Не вдалося зупинити демонстрацію екрана.');
+      }
+    }
+    if (!kIsWeb && Platform.isAndroid) {
+      final allowed = await Helper.requestCapturePermission();
+      if (!allowed) return tr('Дозвольте захоплення екрана.');
+      await _keepAlive(true);
+    }
+    try {
+      await local.setScreenShareEnabled(true, captureScreenAudio: true);
+      screenShareOn = true;
+      notifyListeners();
+      return null;
+    } catch (_) {
+      screenShareOn = false;
+      notifyListeners();
+      return tr('Не вдалося поділитися екраном.');
+    }
   }
 
   /// Слухач на «сцені»: null — руку змінено, інакше текст помилки.
@@ -704,6 +856,44 @@ class _VoiceBarState extends State<VoiceBar> {
                         }
                       : null,
                 ),
+                if (call.kind == 'call') ...[
+                  _BarButton(
+                    icon: call.cameraOn ? LucideIcons.video : LucideIcons.videoOff,
+                    active: call.cameraOn,
+                    tooltip: call.cameraOn ? tr('Вимкнути камеру') : tr('Увімкнути камеру'),
+                    onTap: call.status == 'connected'
+                        ? () {
+                            unawaited(call.toggleCamera().then((hint) {
+                              if (hint != null && context.mounted) toast(context, hint);
+                            }));
+                          }
+                        : null,
+                  ),
+                  if (call.cameraOn)
+                    _BarButton(
+                      icon: LucideIcons.switchCamera,
+                      active: true,
+                      tooltip: tr('Перемкнути камеру'),
+                      onTap: () {
+                        unawaited(call.flipCamera().then((hint) {
+                          if (hint != null && context.mounted) toast(context, hint);
+                        }));
+                      },
+                    ),
+                  _BarButton(
+                    icon: LucideIcons.monitorUp,
+                    active: call.screenShareOn,
+                    selected: call.screenShareOn,
+                    tooltip: call.screenShareOn ? tr('Зупинити екран') : tr('Поділитися екраном'),
+                    onTap: call.status == 'connected'
+                        ? () {
+                            unawaited(call.toggleScreenShare().then((hint) {
+                              if (hint != null && context.mounted) toast(context, hint);
+                            }));
+                          }
+                        : null,
+                  ),
+                ],
                 _BarButton(
                   icon: call.deafened ? LucideIcons.headphoneOff : LucideIcons.headphones,
                   active: !call.deafened,

@@ -130,4 +130,17 @@ class CallsTest extends TestCase
 
         $this->actingAs($this->alice)->postJson(route('messages.call.start', $this->direct()))->assertStatus(503);
     }
+
+    public function test_call_token_allows_camera_and_screen_share(): void
+    {
+        $response = $this->actingAs($this->alice)->postJson(route('messages.call.start', $this->direct()))->assertOk();
+        $parts = explode('.', (string) $response->json('token'));
+        $this->assertCount(3, $parts);
+        $payload = json_decode((string) base64_decode(strtr($parts[1], '-_', '+/').str_repeat('=', (4 - strlen($parts[1]) % 4) % 4)), true);
+        $this->assertIsArray($payload);
+        $this->assertEqualsCanonicalizing(
+            ['microphone', 'camera', 'screen_share', 'screen_share_audio'],
+            $payload['video']['canPublishSources'] ?? [],
+        );
+    }
 }

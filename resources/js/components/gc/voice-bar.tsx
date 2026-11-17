@@ -5,12 +5,22 @@ import {
     Loader2,
     Mic,
     MicOff,
+    MonitorUp,
     PhoneOff,
+    Video,
+    VideoOff,
     Volume2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { leaveVoice, toggleDeafen, toggleMic, useVoice } from '@/lib/voice';
+import {
+    leaveVoice,
+    toggleCamera,
+    toggleDeafen,
+    toggleMic,
+    toggleScreenShare,
+    useVoice,
+} from '@/lib/voice';
 import { tr } from '@/lib/i18n';
 
 const iconBtn =
@@ -79,6 +89,50 @@ export function VoiceBar() {
                         <MicOff className="size-4" />
                     )}
                 </button>
+                {voice.kind === 'call' && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={toggleCamera}
+                            disabled={voice.status !== 'connected'}
+                            aria-label={
+                                voice.cameraOn
+                                    ? tr('Вимкнути камеру')
+                                    : tr('Увімкнути камеру')
+                            }
+                            className={cn(
+                                iconBtn,
+                                voice.cameraOn
+                                    ? 'bg-white/[0.06] text-white hover:bg-white/10'
+                                    : 'bg-rose-500/15 text-rose-200 hover:bg-rose-500/25',
+                            )}
+                        >
+                            {voice.cameraOn ? (
+                                <Video className="size-4" />
+                            ) : (
+                                <VideoOff className="size-4" />
+                            )}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={toggleScreenShare}
+                            disabled={voice.status !== 'connected'}
+                            aria-label={
+                                voice.screenShareOn
+                                    ? tr('Зупинити екран')
+                                    : tr('Поділитися екраном')
+                            }
+                            className={cn(
+                                iconBtn,
+                                voice.screenShareOn
+                                    ? 'bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30'
+                                    : 'bg-white/[0.06] text-white hover:bg-white/10',
+                            )}
+                        >
+                            <MonitorUp className="size-4" />
+                        </button>
+                    </>
+                )}
                 <button
                     type="button"
                     onClick={toggleDeafen}
