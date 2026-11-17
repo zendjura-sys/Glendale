@@ -134,9 +134,7 @@ function SplashDone({
                 );
             }
         });
-        const stopTouch = isCoarsePointer()
-            ? () => {}
-            : installTouchPrefetch();
+        const stopTouch = isCoarsePointer() ? () => {} : installTouchPrefetch();
 
         return () => {
             cancelAnimationFrame(frame);
