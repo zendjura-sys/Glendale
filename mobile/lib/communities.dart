@@ -256,9 +256,19 @@ class _JoinButtonState extends State<JoinButton> {
     final slug = widget.community['slug'];
     final public = widget.community['type'] == 'public';
     if (status == 'active' && !await confirm(context, public ? tr('Відписатися?') : tr('Вийти зі спільноти?'), action: public ? tr('Відписатися') : tr('Вийти'), danger: true)) return;
+    if (!mounted) return;
     // Правила при вступі: спершу прочитати й погодитися — як на сайті.
     if (status == null && widget.community['rules_accept'] == true) {
       if (!await _acceptRules(api, slug)) return;
+    }
+    if (!mounted) return;
+    // Спільнота з паролем: пароль у тілі join, як router.post(url, { password }) на сайті.
+    if (status == null && widget.community['has_password'] == true) {
+      final next = await _joinWithPassword(api, slug);
+      if (next == null || !mounted) return;
+      setState(() => status = next);
+      widget.onChanged?.call(next);
+      return;
     }
     setState(() => busy = true);
     try {
@@ -271,6 +281,67 @@ class _JoinButtonState extends State<JoinButton> {
     } finally {
       if (mounted) setState(() => busy = false);
     }
+  }
+
+  /// Вступ у спільноту з паролем. Помилка лишається в шторці, щоб можна було спробувати ще раз.
+  Future<String?> _joinWithPassword(Api api, Object? slug) async {
+    final password = TextEditingController();
+    var error = '';
+    var busy = false;
+    final next = await showGcSheet<String>(
+      context,
+      title: tr('Спільнота з паролем'),
+      subtitle: tr('Введіть пароль, який дала адміністрація, — і одразу станете учасником.'),
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) {
+          Future<void> submit() async {
+            if (busy || password.text.isEmpty) return;
+            setSheet(() {
+              busy = true;
+              error = '';
+            });
+            try {
+              final data = await api.post('/api/v1/communities/$slug/join', {'password': password.text});
+              if (sheet.mounted) Navigator.pop(sheet, text(data['membership']) ?? 'active');
+            } catch (e) {
+              if (sheet.mounted) {
+                setSheet(() {
+                  busy = false;
+                  error = '$e';
+                });
+              }
+            }
+          }
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                GcField(
+                  controller: password,
+                  label: tr('Пароль'),
+                  obscure: true,
+                  autofocus: true,
+                  icon: LucideIcons.keyRound,
+                  onChanged: (_) => setSheet(() => error = ''),
+                  onSubmit: () => unawaited(submit()),
+                ),
+                if (error.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(error, style: body(12.5, color: dangerSoft)),
+                ],
+                const SizedBox(height: 14),
+                PrimaryButton(label: tr('Вступити'), icon: LucideIcons.keyRound, busy: busy, onPressed: password.text.isEmpty || busy ? null : () => unawaited(submit())),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    // Поле ще може бути в дереві, поки шторка дограє закриття.
+    WidgetsBinding.instance.addPostFrameCallback((_) => password.dispose());
+    return next;
   }
 
   Future<bool> _acceptRules(Api api, Object? slug) async {
@@ -313,10 +384,13 @@ class _JoinButtonState extends State<JoinButton> {
     if (role == 'owner' || c['managed'] == true && status == 'active') {
       return Pill(label: role == 'owner' ? tr('Власник') : tr('Керуєте'), icon: LucideIcons.crown, color: gold);
     }
+    // Пароль (і ще немає правил на цей крок) — кнопка «Вступити», як PasswordDialog на сайті.
+    final passwordGate = status == null && c['has_password'] == true && c['rules_accept'] != true;
+    final joinLabel = passwordGate ? tr('Вступити') : (public ? tr('Підписатися') : (c['privacy'] == 'closed' ? tr('Подати заявку') : tr('Вступити')));
     return switch (status) {
       'active' => GhostButton(label: public ? tr('Ви підписані') : tr('Ви учасник'), icon: LucideIcons.check, compact: true, expand: false, onPressed: busy ? null : _toggle),
       'pending' => GhostButton(label: tr('Заявку надіслано'), icon: LucideIcons.clock, compact: true, expand: false, color: muted, onPressed: busy ? null : _toggle),
-      _ => PrimaryButton(label: public ? tr('Підписатися') : (c['privacy'] == 'closed' ? tr('Подати заявку') : tr('Вступити')), compact: true, expand: false, busy: busy, onPressed: _toggle),
+      _ => PrimaryButton(label: joinLabel, icon: passwordGate ? LucideIcons.keyRound : null, compact: true, expand: false, busy: busy, onPressed: _toggle),
     };
   }
 }
