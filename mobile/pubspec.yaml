@@ -16,10 +16,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.2611.0+141
+version: 1.2611.0+142
 # Версія для людей і Google Play — Г.ГГММ.X.Y (див. AGENTS.md): Г — глобальна, ГГММ — рік і місяць,
 # X.Y — номер збірки в місяці (Y 0–10, далі X+1; новий місяць — 0.0). Збірка передає її як --build-name.
-gamecon_version: 1.2611.0.3
+gamecon_version: 1.2611.0.4
 
 environment:
   sdk: ^3.13.5
@@ -69,6 +69,9 @@ dependencies:
   in_app_purchase_android: ^0.5.4
   # «Сканувати QR для входу»: вхід на сайт через застосунок (QR із https://gamecon.online/app-login/{id}).
   mobile_scanner: 7.4.2
+  # Каскади списків / пружинні тапи / переходи вкладок (паритет із web motion).
+  flutter_animate: ^4.5.2
+  animations: ^2.0.11
 dev_dependencies:
   flutter_test:
     sdk: flutter

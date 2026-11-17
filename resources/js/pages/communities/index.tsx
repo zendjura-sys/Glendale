@@ -21,6 +21,7 @@ import {
 import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { CreateCommunityDialog } from '@/components/communities/create-community-dialog';
+import { CatalogShell } from '@/components/gc/catalog-shell';
 import { EmptyState } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import type { CommunityListItem, ScrollData } from '@/types';
@@ -132,51 +133,36 @@ export default function Communities({
     return (
         <>
             <Head title={tr('Спільноти')} />
-            <div className="space-y-5">
-                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-6">
-                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-purple/25 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-32 left-10 size-72 rounded-full bg-gc-blue/15 blur-3xl" />
-                    <div className="relative flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <h1 className="font-display text-2xl font-bold text-white">
-                                <span className="text-gradient">
-                                    {tr('Спільноти')}
-                                </span>{' '}
-                                {tr('за інтересами')}
-                            </h1>
-                            <p className="mt-1 text-sm text-white/50">
-                                {tr(
-                                    'Клани, фандоми, команди та сторінки улюблених ігор — усе в одному місці.',
-                                )}
-                            </p>
-                        </div>
-                        {signedIn ? (
-                            <button
-                                type="button"
-                                onClick={() => setCreating(true)}
-                                className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
-                            >
-                                <Plus className="size-4" />{' '}
-                                {tr('Створити спільноту')}
-                            </button>
-                        ) : (
-                            <Link
-                                href="/register"
-                                className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
-                            >
-                                <LogIn className="size-4" />
-                                {tr('Приєднатися до GameCon')}
-                            </Link>
-                        )}
-                    </div>
-
-                    <div className="relative mt-5 flex flex-col gap-3 lg:flex-row lg:items-center">
-                        <div
-                            className={cn(
-                                'gc-solid-2 scrollbar-none flex max-w-full min-w-0 overflow-x-auto rounded-xl p-1',
-                                !signedIn && 'hidden',
-                            )}
+            <CatalogShell
+                title={tr('Спільноти')}
+                description={tr(
+                    'Клани, фандоми, команди — мої поруч, огляд далі. Як у соцмережі: стрічка інтересів, не вітрина.',
+                )}
+                search={q}
+                onSearch={setQ}
+                actions={
+                    signedIn ? (
+                        <button
+                            type="button"
+                            onClick={() => setCreating(true)}
+                            className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
                         >
+                            <Plus className="size-4" />{' '}
+                            {tr('Створити спільноту')}
+                        </button>
+                    ) : (
+                        <Link
+                            href="/register"
+                            className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                        >
+                            <LogIn className="size-4" />
+                            {tr('Приєднатися до GameCon')}
+                        </Link>
+                    )
+                }
+                filters={
+                    signedIn ? (
+                        <div className="gc-solid-2 scrollbar-none flex max-w-full min-w-0 overflow-x-auto rounded-xl p-1">
                             {tabs.map((item) => (
                                 <button
                                     key={item.value}
@@ -185,7 +171,7 @@ export default function Communities({
                                     className={cn(
                                         'inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition',
                                         tab === item.value
-                                            ? 'bg-white/10 text-white'
+                                            ? 'bg-sky-500 text-white'
                                             : 'text-white/50 hover:text-white',
                                     )}
                                 >
@@ -199,68 +185,53 @@ export default function Communities({
                                 </button>
                             ))}
                         </div>
-                        {q && (
+                    ) : undefined
+                }
+            >
+                {tab === 'discover' && (
+                    <div className="flex gap-1 overflow-x-auto">
+                        {sorts.map((item) => (
                             <button
+                                key={item.value}
                                 type="button"
-                                onClick={() => setQ('')}
-                                className="gc-chip self-start"
-                                title={tr('Скинути пошук')}
+                                onClick={() => visit({ sort: item.value })}
+                                className={cn(
+                                    'h-8 shrink-0 rounded-lg px-3 text-[13px] font-medium transition',
+                                    filters.sort === item.value
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-white/50 hover:text-white',
+                                )}
                             >
-                                «{q}»{' '}
-                                <span aria-hidden className="text-white/45">
-                                    ×
-                                </span>
+                                {item.label}
                             </button>
-                        )}
+                        ))}
                     </div>
+                )}
 
-                    {tab === 'discover' && (
-                        <div className="relative mt-4 flex gap-1 overflow-x-auto">
-                            {sorts.map((item) => (
-                                <button
-                                    key={item.value}
-                                    type="button"
-                                    onClick={() => visit({ sort: item.value })}
-                                    className={cn(
-                                        'h-8 shrink-0 rounded-lg px-3 text-[13px] font-medium transition',
-                                        filters.sort === item.value
-                                            ? 'bg-white/10 text-white'
-                                            : 'text-white/50 hover:text-white',
-                                    )}
-                                >
-                                    {item.label}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                    {[
+                        ['', tr('Усі тематики')],
+                        ...Object.entries(categories),
+                    ].map(([key, label]) => {
+                        const active = (filters.category ?? '') === key;
 
-                    <div className="relative mt-4 -mb-1 flex gap-2 overflow-x-auto pb-1">
-                        {[
-                            ['', tr('Усі тематики')],
-                            ...Object.entries(categories),
-                        ].map(([key, label]) => {
-                            const active = (filters.category ?? '') === key;
-
-                            return (
-                                <button
-                                    key={key || 'all'}
-                                    type="button"
-                                    onClick={() =>
-                                        visit({ category: key || null })
-                                    }
-                                    className={cn(
-                                        'shrink-0 rounded-control px-3.5 py-1.5 text-xs font-medium transition',
-                                        active
-                                            ? 'border-transparent bg-sky-500 text-white'
-                                            : 'text-white/55 hover:border-white/20 hover:text-white',
-                                    )}
-                                >
-                                    {label}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </section>
+                        return (
+                            <button
+                                key={key || 'all'}
+                                type="button"
+                                onClick={() => visit({ category: key || null })}
+                                className={cn(
+                                    'shrink-0 rounded-control px-3.5 py-1.5 text-xs font-medium transition',
+                                    active
+                                        ? 'border-transparent bg-sky-500 text-white'
+                                        : 'gc-solid text-white/55 hover:text-white',
+                                )}
+                            >
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
 
                 {promoted.length > 0 && (
                     <section className="gc-solid rounded-2xl p-4 sm:p-5">
@@ -353,7 +324,7 @@ export default function Communities({
                         ))}
                     </InfiniteScroll>
                 )}
-            </div>
+            </CatalogShell>
 
             <CreateCommunityDialog
                 open={creating}

@@ -6,7 +6,6 @@ import { ConversationList } from '@/components/messenger/conversation-list';
 import { GroupInfoDialog } from '@/components/messenger/group-info-dialog';
 import { NewChatDialog } from '@/components/messenger/new-chat-dialog';
 import { inbox } from '@/lib/inbox';
-import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import type {
     ChatHistory,
@@ -29,7 +28,6 @@ export default function Messages({
     draft = null,
 }: Props) {
     const userId = usePage().props.auth.user.id;
-    const playing = usePlayer().current !== null;
     const [list, setList] = useState(conversations);
     const [composeOpen, setComposeOpen] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
@@ -118,8 +116,10 @@ export default function Messages({
             <Head title={active ? active.title : tr('Повідомлення')} />
             <div
                 className={cn(
-                    'gc-solid flex min-h-0 overflow-clip rounded-2xl max-lg:h-[calc(100dvh-76px)] max-lg:rounded-b-none md:flex-row lg:h-[calc(100dvh-100px)]',
-                    playing ? 'max-lg:-mb-44' : 'max-lg:-mb-24',
+                    'gc-solid flex min-h-0 overflow-clip rounded-2xl max-lg:rounded-b-none md:flex-row',
+                    // Immersive chat: на всю висоту під шапкою, без відступу під док.
+                    'max-lg:h-[calc(100dvh-72px-env(safe-area-inset-top))] lg:h-[calc(100dvh-100px)]',
+                    'max-lg:-mb-0',
                 )}
             >
                 <ConversationList

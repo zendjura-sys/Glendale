@@ -7,9 +7,10 @@ import { tr } from '@/lib/i18n';
 /**
  * Запобіжник: помилка в одному компоненті не гасить увесь сайт у порожній екран.
  * Без fallback показує картку «Щось пішло не так» (як сторінка помилки); fallback={null} — тихо ховає блок.
+ * `resetKey` (напр. url) скидає збій після переходу — інакше картка лишається навічно.
  */
 export class ErrorBoundary extends Component<
-    { children: ReactNode; fallback?: ReactNode },
+    { children: ReactNode; fallback?: ReactNode; resetKey?: string },
     { failed: boolean }
 > {
     state = { failed: false };
@@ -19,7 +20,22 @@ export class ErrorBoundary extends Component<
     }
 
     componentDidCatch(error: Error, info: ErrorInfo): void {
-        console.error(error, info.componentStack);
+        console.error(
+            '[ErrorBoundary]',
+            error?.stack ?? error,
+            info.componentStack,
+        );
+    }
+
+    componentDidUpdate(prev: Readonly<{ resetKey?: string }>): void {
+        if (
+            this.state.failed &&
+            prev.resetKey !== undefined &&
+            this.props.resetKey !== undefined &&
+            prev.resetKey !== this.props.resetKey
+        ) {
+            this.setState({ failed: false });
+        }
     }
 
     render(): ReactNode {

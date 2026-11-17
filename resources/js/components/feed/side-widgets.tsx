@@ -17,6 +17,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import { playQueue, usePlayer } from '@/lib/player';
+import { GC_HD_DOCK, GC_4K } from '@/lib/shell-breakpoints';
 import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
 import type { MovieCard } from '@/types/cinema';
@@ -588,12 +589,12 @@ const exceptContinue = (onFeed: boolean): readonly WidgetKey[] =>
     onFeed ? WIDGET_ORDER.filter((k) => k !== 'continue') : WIDGET_ORDER;
 
 /**
- * Дві колонки (планшет і невеликий ПК, 768–1279): віджети в лівій колонці під «Офіційним застосунком».
- * На ширших екранах тут нічого — віджети в третій (і четвертій) колонці.
+ * HD (планшет і ПК до FHD, 768–1919): віджети під меню в лівій колонці + кнопка застосунку.
+ * З FHD віджети йдуть у третю (і на 4K — четверту) колонку.
  */
 export function DockWidgets() {
     const { url } = usePage();
-    const on = useMedia('(min-width: 768px) and (max-width: 1279px)');
+    const on = useMedia(GC_HD_DOCK);
     const data = useSideWidgets(on);
     if (!on) return null;
 
@@ -607,12 +608,12 @@ export function DockWidgets() {
 }
 
 /**
- * Четверта колонка (2400+): у стрічці — друга половина віджетів (перша — у третій колонці),
- * на інших сторінках третьої колонки немає, тож тут усі віджети.
+ * Четверта колонка (4K+): у стрічці — друга половина віджетів (перша — у третій колонці),
+ * на інших сторінках ContextRail тримає основне, тут — решта.
  */
 export function RailWidgets() {
     const { url } = usePage();
-    const on = useMedia('(min-width: 2400px)');
+    const on = useMedia(GC_4K);
     const data = useSideWidgets(on);
     if (!on) return null;
     const onFeed = url.startsWith('/feed');
@@ -620,15 +621,19 @@ export function RailWidgets() {
     return (
         <SideWidgets
             data={data}
-            only={onFeed ? (['cinema', 'giveaways'] as const) : WIDGET_ORDER}
+            only={
+                onFeed
+                    ? (['cinema', 'giveaways'] as const)
+                    : (['cinema', 'giveaways', 'continue'] as const)
+            }
             className="space-y-4"
         />
     );
 }
 
-/** Третя колонка стрічки: на 3 колонках — усі віджети, на 4 — перша половина. */
+/** Третя колонка стрічки: на FHD/2K — усі віджети, на 4K — перша половина. */
 export function FeedColumnWidgets({ data }: { data: SideWidgetsData | null }) {
-    const four = useMedia('(min-width: 2400px)');
+    const four = useMedia(GC_4K);
 
     return (
         <SideWidgets

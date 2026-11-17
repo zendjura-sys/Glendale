@@ -1,14 +1,8 @@
 import { usePage } from '@inertiajs/react';
-import {
-    Clapperboard,
-    Music,
-    Newspaper,
-    Server,
-    ShieldHalf,
-    Zap,
-} from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
+import { ModuleIcon } from '@/components/gc/module-icon';
 import { PrefetchLink } from '@/components/gc/prefetch-link';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { api } from '@/lib/api';
@@ -17,8 +11,8 @@ import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 
 /**
- * Перемикач головних розділів у шапці-острові (Spatial Arctic): пігулки з іконками Lucide,
- * активна — суцільна плашка з небесним текстом, що плавно перетікає (без руху — миттєво).
+ * Перемикач головних розділів у шапці-острові (iOS 27+ Liquid Glass / 21st Nimbus):
+ * пігулки з ModuleIcon, активна — водяна крапля з morphing layoutId.
  */
 export function HeaderNav({ className }: { className?: string }) {
     const { modules } = usePage().props;
@@ -29,35 +23,35 @@ export function HeaderNav({ className }: { className?: string }) {
             key: 'feed',
             href: '/feed',
             label: tr('Стрічка'),
-            icon: Newspaper,
+            icon: 'newspaper',
             module: null,
         },
         {
             key: 'families',
             href: '/families',
             label: tr('Сім’ї'),
-            icon: ShieldHalf,
+            icon: 'crown',
             module: 'families',
         },
         {
             key: 'servers',
             href: '/servers',
             label: tr('Сервери'),
-            icon: Server,
+            icon: 'server',
             module: 'servers',
         },
         {
             key: 'cinema',
             href: '/cinema',
             label: tr('Кіно'),
-            icon: Clapperboard,
+            icon: 'clapperboard',
             module: 'cinema',
         },
         {
             key: 'music',
             href: '/music',
             label: tr('Музика'),
-            icon: Music,
+            icon: 'music',
             module: 'music',
         },
     ].filter((i) => i.module === null || modules.includes(i.module));
@@ -72,7 +66,7 @@ export function HeaderNav({ className }: { className?: string }) {
         <nav
             aria-label={tr('Головні розділи')}
             className={cn(
-                'gc-header-nav flex items-center gap-1 rounded-full p-1',
+                'gc-header-nav gc-liquid-glass-inner flex items-center gap-0.5 rounded-full p-1',
                 className,
             )}
         >
@@ -86,8 +80,8 @@ export function HeaderNav({ className }: { className?: string }) {
                     className={cn(
                         'relative flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold transition-colors',
                         active === item.key
-                            ? 'text-sky-400'
-                            : 'text-white/70 hover:text-white',
+                            ? 'text-[var(--gc-liquid-fg)]'
+                            : 'text-[var(--gc-liquid-fg-soft)] hover:text-[var(--gc-liquid-fg)]',
                     )}
                 >
                     {active === item.key && (
@@ -98,14 +92,21 @@ export function HeaderNav({ className }: { className?: string }) {
                                     ? { duration: 0 }
                                     : {
                                           type: 'spring',
-                                          stiffness: 420,
-                                          damping: 34,
+                                          stiffness: 380,
+                                          damping: 32,
+                                          mass: 0.85,
                                       }
                             }
-                            className="gc-header-nav-active absolute inset-0 rounded-full"
+                            className="gc-header-nav-active gc-liquid-drop absolute inset-0 rounded-full"
+                            aria-hidden
                         />
                     )}
-                    <item.icon className="relative size-4" />
+                    <ModuleIcon
+                        name={item.icon}
+                        animated
+                        size={16}
+                        className="relative"
+                    />
                     <span className="relative hidden 2xl:inline">
                         {item.label}
                     </span>

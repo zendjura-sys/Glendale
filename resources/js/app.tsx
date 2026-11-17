@@ -22,6 +22,7 @@ import {
     primaryWarmUrls,
     warmIdle,
 } from '@/lib/prefetch';
+import { warmBootRoutes } from '@/lib/boot-orchestrator';
 
 // Швидкий перший кадр: стартовий файл без макетів. Кожен макет (соцмережа, адмінка, вхід, налаштування) —
 // окремим файлом, що вантажиться, коли вперше знадобиться, і далі лишається в кеші.
@@ -115,6 +116,8 @@ function SplashDone({
                     ).connection?.saveData,
                 ),
         );
+        // Під час сплешу вже гріємо ключові маршрути; після — ховаємо скло й акорд.
+        warmBootRoutes(user?.username);
         const frame = requestAnimationFrame(() => {
             (
                 window as unknown as { gcHideSplash?: () => void }
@@ -278,8 +281,8 @@ void createInertiaApp({
                         dataSaver={authUser?.data_saver}
                     />
                     <SkipLink />
-                    {/* Збій сторінки — картка з кнопкою оновлення; збій тостів чи банера — лише вони зникають. */}
-                    <ErrorBoundary>
+                    {/* Збій сторінки — картка з кнопкою оновлення; resetKey скидає після переходу. */}
+                    <ErrorBoundary resetKey={page.url}>
                         <Suspense
                             fallback={<BootSkeleton name={page.component} />}
                         >

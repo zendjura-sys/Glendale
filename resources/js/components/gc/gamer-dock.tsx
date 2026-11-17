@@ -16,6 +16,8 @@ import type { ReactNode } from 'react';
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { plusNameProps } from '@/components/gc/plus';
 import { useRail } from '@/components/gc/rail-widgets';
+import { GcStaggerItem } from '@/components/motion/GcStaggerItem';
+import { GcStaggerList } from '@/components/motion/GcStaggerList';
 import { RpDossier } from '@/components/gc/rp-dossier';
 import type { RailData } from '@/components/gc/rail-widgets';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -220,49 +222,55 @@ function BentoMenu() {
     );
     const rest = items.filter((i) => !main.includes(i) && i.key !== 'profile');
 
-    const tile = (item: (typeof items)[number], big: boolean) => (
-        <Link
-            key={item.key}
-            href={item.href}
-            prefetch={['mount', 'hover']}
-            cacheFor="2m"
-            aria-current={active(item.href) ? 'page' : undefined}
-            className={cn(
-                'relative flex min-w-0 items-center gap-2 rounded-xl transition',
-                big ? 'flex-col justify-center px-2 py-3' : 'px-2.5 py-2',
-                active(item.href)
-                    ? 'bg-[var(--gc-active)] text-sky-400'
-                    : 'gc-solid-2 text-white/85 hover:bg-[var(--gc-l3)]',
-            )}
-        >
-            <ModuleIcon
-                name={item.icon}
-                animated
-                size={big ? 22 : 18}
-                className="shrink-0"
-            />
-            <span
-                className={cn(
-                    'min-w-0 truncate font-medium',
-                    big ? 'text-xs' : 'text-[13px]',
-                )}
-            >
-                {item.label}
-            </span>
-            {item.badge > 0 && (
-                <span className="absolute top-1.5 right-1.5 min-w-4 rounded-full bg-sky-500 px-1 text-center text-[10px] leading-4 font-bold text-white">
-                    {item.badge > 99 ? '99+' : item.badge}
-                </span>
-            )}
-        </Link>
-    );
+    const tile = (item: (typeof items)[number], big: boolean) => {
+        const on = active(item.href);
+        return (
+            <GcStaggerItem key={item.key}>
+                <Link
+                    href={item.href}
+                    prefetch={['mount', 'hover']}
+                    cacheFor="2m"
+                    aria-current={on ? 'page' : undefined}
+                    className={cn(
+                        'relative flex min-w-0 items-center gap-2 rounded-xl transition',
+                        big
+                            ? 'flex-col justify-center px-2 py-3'
+                            : 'px-2.5 py-2',
+                        on
+                            ? 'gc-liquid-drop text-[var(--gc-liquid-fg)]'
+                            : 'gc-solid-2 text-white/85 hover:bg-[var(--gc-l3)]',
+                    )}
+                >
+                    <ModuleIcon
+                        name={item.icon}
+                        animated
+                        size={big ? 22 : 18}
+                        className="relative shrink-0"
+                    />
+                    <span
+                        className={cn(
+                            'relative min-w-0 truncate font-medium',
+                            big ? 'text-xs' : 'text-[13px]',
+                        )}
+                    >
+                        {item.label}
+                    </span>
+                    {item.badge > 0 && (
+                        <span className="absolute top-1.5 right-1.5 min-w-4 rounded-full bg-sky-500 px-1 text-center text-[10px] leading-4 font-bold text-white">
+                            {item.badge > 99 ? '99+' : item.badge}
+                        </span>
+                    )}
+                </Link>
+            </GcStaggerItem>
+        );
+    };
 
     return (
         <DockCard>
             <nav aria-label={tr('Розділи')}>
-                <div className="grid grid-cols-2 gap-2">
+                <GcStaggerList className="grid grid-cols-2 gap-2">
                     {main.map((item) => tile(item, true))}
-                </div>
+                </GcStaggerList>
                 {rest.length > 0 && (
                     <>
                         <button
@@ -405,7 +413,7 @@ export function GamerDock({ footer }: { footer?: ReactNode }) {
     const { data } = useRail();
 
     return (
-        <aside className="sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-[calc(100dvh-104px)] w-[264px] shrink-0 [scrollbar-width:none] flex-col gap-3 overflow-y-auto overscroll-contain pb-4 [view-transition-name:gc-sidebar] md:flex">
+        <aside className="gc-col-dock sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-[calc(100dvh-104px)] w-[264px] shrink-0 [scrollbar-width:none] flex-col gap-3 overflow-y-auto overscroll-contain pb-4 [view-transition-name:gc-sidebar] min-[2560px]:w-[300px] md:flex">
             <PlayerCard me={data?.me} />
             <BentoMenu />
             <VoiceHub data={data} />

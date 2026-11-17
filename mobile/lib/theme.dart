@@ -69,25 +69,26 @@ const neonPalette = GcPalette(
 
 /// «Крижана Арктика» (світла): тло #F1F5F9, білі картки, вкладене #F1F5F9, наведення #E2E8F0;
 /// акцент — глибокий небесний #0284C7 (читається на білому).
+/// Alabaster Frosted Glass (світла iOS 27): тло #F2F4F8, картки #FFFFFF, вкладене #EAECEF.
 const arcticPalette = GcPalette(
   brightness: Brightness.light,
-  voidColor: Color(0xFFE2ECF8),
-  abyss: Color(0xFFEEF4FC),
-  deep: Color(0xFFF4F8FD),
-  popover: Color(0xFFF6FAFF),
-  ink: AppColors.lightTitle,
-  soft: AppColors.lightBody,
-  muted: AppColors.lightMuted,
-  faint: Color(0xFF8A9AB0),
+  voidColor: Color(0xFFF2F4F8),
+  abyss: Color(0xFFF2F4F8),
+  deep: Color(0xFFFFFFFF),
+  popover: Color(0xFFFFFFFF),
+  ink: Color(0xFF0F172A),
+  soft: Color(0xFF334155),
+  muted: Color(0xFF64748B),
+  faint: Color(0xFF94A3B8),
   primary: Color(0xFF0A6FE0),
-  card: Color.fromRGBO(255, 255, 255, 0.46),
-  cardTop: Color.fromRGBO(255, 255, 255, 0.72),
-  raised: Color(0xFFFFFFFF),
-  field: Color.fromRGBO(255, 255, 255, 0.70),
-  bar: Color.fromRGBO(255, 255, 255, 0.78),
-  line: Color(0x170B1528),
-  lineStrong: Color(0x1F0B1528),
-  fg: AppColors.lightTitle,
+  card: Color(0xFFFFFFFF),
+  cardTop: Color(0xFFFFFFFF),
+  raised: Color(0xFFEAECEF),
+  field: Color(0xFFEAECEF),
+  bar: Color.fromRGBO(255, 255, 255, 0.82),
+  line: Color.fromRGBO(15, 23, 42, 0.08),
+  lineStrong: Color.fromRGBO(15, 23, 42, 0.12),
+  fg: Color(0xFF0F172A),
   brand: [Color(0xFF0A6FE0), Color(0xFF0A8FE6), Color(0xFF00A8E0)],
 );
 

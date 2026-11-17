@@ -10,7 +10,8 @@ export function LogoMark({ className }: { className?: string }) {
             height={36}
             draggable={false}
             className={cn(
-                'inline-block size-9 shrink-0 drop-shadow-[0_6px_18px_rgb(0_150_255/0.35)] select-none',
+                // Без синього неону — iOS 27+ матове скло в шапці/доці.
+                'inline-block size-9 shrink-0 select-none',
                 className,
             )}
         />

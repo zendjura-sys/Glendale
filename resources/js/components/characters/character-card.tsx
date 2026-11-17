@@ -124,9 +124,10 @@ export function CharactersWidget({
     characters,
     isSelf,
 }: {
-    characters: CharacterCardData[];
+    characters?: CharacterCardData[] | null;
     isSelf: boolean;
 }) {
+    const list = characters ?? [];
     return (
         <Widget
             title={tr('Персонажі RP')}
@@ -143,7 +144,7 @@ export function CharactersWidget({
                 )
             }
         >
-            {characters.length === 0 ? (
+            {list.length === 0 ? (
                 <p className="px-1 text-sm text-white/50">
                     {tr(
                         'Створіть персонажа: ім’я, біографія, сім’я й історія на сервері.',
@@ -151,7 +152,7 @@ export function CharactersWidget({
                 </p>
             ) : (
                 <div className="space-y-0.5">
-                    {characters.map((character) => (
+                    {list.map((character) => (
                         <CharacterRow
                             key={character.id}
                             character={character}

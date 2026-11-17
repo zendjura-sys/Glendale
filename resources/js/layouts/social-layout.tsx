@@ -1,3 +1,4 @@
+import { ContextRail } from '@/components/gc/context-rail';
 import { SideRail } from '@/components/gc/side-rail';
 import { playNavTick } from '@/lib/sound-fx';
 import { GamerDock } from '@/components/gc/gamer-dock';
@@ -60,7 +61,7 @@ import { MOBILE_LABEL } from '@/lib/nav';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
-import { PageTransition } from '@/components/gc/page-transition';
+import { GcPageTransition } from '@/components/motion/GcPageTransition';
 import { AppPromoCard } from '@/components/app-promo/app-promo-card';
 import { DockWidgets } from '@/components/feed/side-widgets';
 import { LanguageMenu } from '@/components/gc/language-switcher';
@@ -259,15 +260,17 @@ function Topbar() {
 
     return (
         <header className="app-header-wrapper">
-            {/* Шапка — плаваюча капсула з безбарвного матового скла (як острів-меню знизу); обгортка прозора. */}
-            {/* Шапка — парящий скляний острів (одне з трьох місць зі склом: шапка, навбар, плеєр). */}
-            <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island [view-transition-name:gc-topbar]">
+            {/* Зовнішня обгортка без blur/transform. Капсула — всередині відступів екрана. */}
+            <div className="ios27-glass-capsule ios-header-pill gc-glass-island pointer-events-auto mx-auto box-border w-full max-w-[460px] [view-transition-name:gc-topbar] sm:max-w-3xl xl:max-w-[var(--gc-shell-max)]">
                 <Link
                     href="/feed"
                     className="flex shrink-0 items-center self-center md:mr-4"
+                    aria-label="GameCon"
                 >
                     <Logo className="hidden sm:inline-flex" />
-                    <LogoMark className="sm:hidden" />
+                    <span className="inline-flex size-10 items-center justify-center rounded-[14px] border border-white/[0.14] bg-white/[0.07] sm:hidden">
+                        <LogoMark className="size-6 drop-shadow-none" />
+                    </span>
                 </Link>
                 <QuickSearch className="max-w-[340px] min-w-0 flex-1" />
                 <HeaderNav className="mx-auto hidden xl:flex" />
@@ -365,14 +368,24 @@ function MobileNav() {
     const [open, setOpen] = useState(false);
     const reduce = useReducedMotion();
     const close = useCallback(() => setOpen(false), []);
+    const { url } = usePage();
 
     const { primary, rest } = useMobileSplit(items);
     const restActive = rest.some((i) => isActive(i.href, i.key));
     const restBadge = rest.reduce((sum, i) => sum + i.badge, 0);
 
+    // Будь-яка зміна URL миттєво ховає шторку — інакше меню лишається поверх нової сторінки.
+    useEffect(() => {
+        setOpen(false);
+    }, [url]);
+
     useEffect(() => {
         if (!open) return;
-        const offNavigate = router.on('start', close);
+        const offNavigate = router.on('start', (event) => {
+            if (!event.detail.visit.prefetch) {
+                close();
+            }
+        });
         const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
         const overflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
@@ -404,68 +417,84 @@ function MobileNav() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: reduce ? 0 : 0.2 }}
-                            className="fixed inset-0 z-[54] bg-black/45"
+                            transition={{ duration: 0 }}
+                            className="fixed inset-0 z-[54] bg-[#07090E]/92 backdrop-blur-2xl"
                         />
                         <m.div
                             key="menu"
                             role="dialog"
                             aria-label={tr('Меню')}
+                            onClick={(event) => {
+                                if (
+                                    (event.target as HTMLElement).closest('a')
+                                ) {
+                                    close();
+                                }
+                            }}
                             initial={reduce ? false : { y: '100%' }}
                             animate={{ y: 0 }}
-                            exit={reduce ? { opacity: 0 } : { y: '100%' }}
+                            exit={{ opacity: 0, transition: { duration: 0 } }}
                             transition={motionOr(reduce, SNAP)}
-                            className="gc-vk-sheet fixed inset-x-0 bottom-[calc(var(--vkui_internal--tabbar_height,48px)+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-2xl px-3 pt-3 pb-2"
+                            className="fixed inset-x-0 bottom-[calc(86px+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-3xl bg-[#07090E]/92 px-3 pt-2 pb-24 shadow-[0_-12px_40px_rgb(0_0_0/0.35)]"
                         >
+                            <div
+                                aria-hidden
+                                className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20"
+                            />
                             <MenuHub onClose={close} />
                         </m.div>
                     </>
                 )}
             </AnimatePresence>
-            <Tabbar
-                aria-label={tr('Розділи')}
-                className="ios-glass-panel gc-vk-tabbar z-[56] [view-transition-name:gc-tabbar]"
-            >
-                {primary.map((item) => (
-                    <TabbarItem
-                        key={item.key}
-                        Component={Link}
-                        href={item.href}
-                        // Телефон: mount гріє розділи одразу; ПК: ще й hover. Кеш 2 хв.
-                        {...({
-                            prefetch: ['mount', 'hover'],
-                            cacheFor: '2m',
-                        } as object)}
-                        onClick={() => playNavTick()}
-                        selected={!open && isActive(item.href, item.key)}
-                        aria-current={
-                            !open && isActive(item.href, item.key)
-                                ? 'page'
-                                : undefined
-                        }
-                        label={MOBILE_LABEL[item.key] ?? item.label}
-                        indicator={counter(item.badge)}
-                    >
-                        <ModuleIcon name={item.icon} animated size={26} />
-                    </TabbarItem>
-                ))}
-                <TabbarItem
-                    Component="button"
-                    type="button"
-                    data-test="mobile-menu"
-                    aria-expanded={open}
-                    selected={open || restActive}
-                    onClick={() => setOpen((value) => !value)}
-                    label={tr('Меню')}
-                    indicator={
-                        restBadge > 0 && !open ? (
-                            <Badge mode="prominent" />
-                        ) : undefined
-                    }
+            {/* Обгортка без backdrop-filter, transform і filter — інакше blur капсули не працює. */}
+            <div className="gc-dock-frame pointer-events-none fixed inset-x-0 bottom-0 z-[100] flex justify-center px-3 pt-2 pb-[max(env(safe-area-inset-bottom,0px),10px)]">
+                <Tabbar
+                    aria-label={tr('Розділи')}
+                    className="ios27-glass-capsule gc-vk-tabbar pointer-events-auto box-border h-[62px] w-full max-w-[460px] rounded-[26px] px-2 [view-transition-name:gc-tabbar]"
                 >
-                    <ModuleIcon name="menu" animated size={26} />
-                </TabbarItem>
-            </Tabbar>
+                    {primary.map((item) => {
+                        const selected = !open && isActive(item.href, item.key);
+                        return (
+                            <TabbarItem
+                                key={item.key}
+                                Component={Link}
+                                href={item.href}
+                                {...({
+                                    prefetch: ['mount', 'hover'],
+                                    cacheFor: '2m',
+                                } as object)}
+                                onClick={() => playNavTick()}
+                                selected={selected}
+                                aria-current={selected ? 'page' : undefined}
+                                label={MOBILE_LABEL[item.key] ?? item.label}
+                                indicator={counter(item.badge)}
+                            >
+                                <ModuleIcon
+                                    name={item.icon}
+                                    animated
+                                    size={26}
+                                />
+                            </TabbarItem>
+                        );
+                    })}
+                    <TabbarItem
+                        Component="button"
+                        type="button"
+                        data-test="mobile-menu"
+                        aria-expanded={open}
+                        selected={open || restActive}
+                        onClick={() => setOpen((value) => !value)}
+                        label={tr('Меню')}
+                        indicator={
+                            restBadge > 0 && !open ? (
+                                <Badge mode="prominent" />
+                            ) : undefined
+                        }
+                    >
+                        <ModuleIcon name="menu" animated size={26} />
+                    </TabbarItem>
+                </Tabbar>
+            </div>
         </div>
     );
 }
@@ -551,12 +580,30 @@ function IncidentBanner() {
 /** Остання сторінка сайту поза «Музикою» — куди веде «‹ Назад» у розділі (layouts/music-layout.tsx). */
 export const LAST_PAGE_KEY = 'gc:last-page';
 
+/** Відкритий діалог / канал: без футера й нижнього доку — композер біля низу екрана. */
+function isChatImmersive(url: string): boolean {
+    return (
+        /^\/messages\/\d+/.test(url) ||
+        url.startsWith('/messages/with/') ||
+        url.startsWith('/messages/saved') ||
+        /^\/c\/[^/]+\/channels(\/|$)/.test(url)
+    );
+}
+
+function isMessagesSection(url: string): boolean {
+    return (
+        url.startsWith('/messages') || /^\/c\/[^/]+\/channels(\/|$)/.test(url)
+    );
+}
+
 export default function SocialLayout({ children }: PropsWithChildren) {
     const { auth, modules, airAlerts } = usePage().props;
     const { url } = usePage();
     const { current } = usePlayer();
     useStreamerMode();
     const paletteOn = usePlugin('command_palette');
+    const chatImmersive = isChatImmersive(url);
+    const hideSiteChrome = isMessagesSection(url);
 
     useEffect(() => {
         if (url.startsWith('/music')) {
@@ -569,6 +616,16 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             // Приватний режим без сховища — «Назад» поведе в стрічку.
         }
     }, [url]);
+
+    useEffect(() => {
+        document.documentElement.classList.toggle(
+            'gc-chat-immersive',
+            chatImmersive,
+        );
+
+        return () =>
+            document.documentElement.classList.remove('gc-chat-immersive');
+    }, [chatImmersive]);
 
     // Сторінка в панелі «поруч» (розділений екран) — лише вміст, без шапки, меню й плеєра.
     if (isPanelView()) {
@@ -583,7 +640,12 @@ export default function SocialLayout({ children }: PropsWithChildren) {
 
     return (
         <VkProvider>
-            <div className="gc-vk-page relative min-h-dvh">
+            <div
+                className={cn(
+                    'gc-vk-page relative min-h-dvh',
+                    chatImmersive && 'gc-chat-immersive',
+                )}
+            >
                 <PaletteSync />
                 {modules.includes('messages') && (
                     <>
@@ -598,7 +660,11 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <div
                     className={cn(
                         'gc-vk-shell gc-split-shift mx-auto flex max-w-[var(--gc-shell-max)] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
-                        current ? 'pb-44 md:pb-28' : 'pb-24 md:pb-10',
+                        chatImmersive
+                            ? 'pb-0 md:pb-4'
+                            : current
+                              ? 'pb-44 md:pb-28'
+                              : 'pb-24 md:pb-10',
                     )}
                 >
                     <GamerDock
@@ -624,11 +690,17 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                         <AlertBanner />
                         <Announcement />
                         <NavigationSkeleton>
-                            <PageTransition>{children}</PageTransition>
+                            {/* Лише {children} анімуються; Topbar/MobileNav — поза motion (fixed). */}
+                            <GcPageTransition>{children}</GcPageTransition>
                         </NavigationSkeleton>
-                        <SiteFooter className="glass-matte gc-footer-card mb-4" />
+                        {!hideSiteChrome && (
+                            <SiteFooter className="glass-matte gc-footer-card mb-4" />
+                        )}
                     </main>
-                    <SideRail />
+                    {/* FHD+: третя колонка на всьому сайті; /feed і кіно мають свій aside. */}
+                    {!chatImmersive && <ContextRail />}
+                    {/* 4K+: четверта колонка. */}
+                    {!chatImmersive && <SideRail />}
                 </div>
                 <VoiceBar />
                 {modules.includes('music') && (
@@ -639,7 +711,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 )}
                 <BillingHost />
                 <PhonePrompt />
-                <MobileNav />
+                {!chatImmersive && <MobileNav />}
                 <FeedbackDialog />
                 <KeyboardShortcuts username={auth.user.username} />
                 {paletteOn && (

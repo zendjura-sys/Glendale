@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Clock3, Crown, Plus, ShieldCheck, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Pagination, selectClass } from '@/components/gc/admin';
+import { CatalogShell } from '@/components/gc/catalog-shell';
 import { EmptyState } from '@/components/gc/widget';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { RankBadge } from '@/components/families/ui';
@@ -52,37 +53,42 @@ export default function Families({ mine, families, filters, servers }: Props) {
     return (
         <>
             <Head title={tr('Сім’ї GTA RP')} />
-            <div className="space-y-5">
-                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-7">
-                    <div className="pointer-events-none absolute -top-24 -right-10 size-96 rounded-full bg-amber-400/20 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-40 left-10 size-96 rounded-full bg-gc-indigo/25 blur-3xl" />
-                    <div className="relative flex flex-wrap items-end justify-between gap-5">
-                        <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-chip bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-400">
-                                <Crown className="size-3.5" /> Family ERP
-                            </span>
-                            <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
-                                {tr('Сім’ї')}{' '}
-                                <span className="text-gradient">GTA RP</span>
-                            </h1>
-                            <p className="mt-2 text-sm leading-relaxed text-white/55">
-                                {tr(
-                                    'Звіти про бізвари й контракти, автоматичні виплати, депозити, склад з квотами, дисципліна й рейтинг — без таблиць і ручних підрахунків.',
-                                )}
-                            </p>
-                        </div>
-                        <Link
-                            href="/families/create"
-                            className="btn-glow inline-flex h-12 items-center gap-2 rounded-2xl px-6 text-sm font-semibold"
-                        >
-                            <Plus className="size-4" /> {tr('Створити сім’ю')}
-                        </Link>
-                    </div>
-                </section>
-
+            <CatalogShell
+                title={tr('Сім’ї GTA RP')}
+                description={tr(
+                    'Ваші сім’ї поруч — далі каталог серверів. Звіти, банк, склад і рейтинг усередині кожної.',
+                )}
+                search={q}
+                onSearch={setQ}
+                filters={
+                    <select
+                        value={filters.server ?? ''}
+                        onChange={(e) =>
+                            visit({ server: e.target.value || null })
+                        }
+                        className={selectClass}
+                        aria-label={tr('Сервер')}
+                    >
+                        <option value="">{tr('Усі сервери')}</option>
+                        {servers.map((s) => (
+                            <option key={s.id} value={s.slug}>
+                                {s.name}
+                            </option>
+                        ))}
+                    </select>
+                }
+                actions={
+                    <Link
+                        href="/families/create"
+                        className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                    >
+                        <Plus className="size-4" /> {tr('Створити сім’ю')}
+                    </Link>
+                }
+            >
                 {mine.length > 0 && (
                     <section>
-                        <h2 className="mb-3 font-display text-lg font-semibold text-white">
+                        <h2 className="gc-type-title mb-3 text-white">
                             {tr('Мої сім’ї')}
                         </h2>
                         <div className="grid grid-cols-1 gap-3 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -136,38 +142,9 @@ export default function Families({ mine, families, filters, servers }: Props) {
                 )}
 
                 <section>
-                    <div className="mb-3 flex flex-wrap items-center gap-2">
-                        <h2 className="mr-auto font-display text-lg font-semibold text-white">
-                            {tr('Каталог сімей')}
-                        </h2>
-                        {q && (
-                            <button
-                                type="button"
-                                onClick={() => setQ('')}
-                                className="gc-chip self-start"
-                                title={tr('Скинути пошук')}
-                            >
-                                «{q}»{' '}
-                                <span aria-hidden className="text-white/45">
-                                    ×
-                                </span>
-                            </button>
-                        )}
-                        <select
-                            value={filters.server ?? ''}
-                            onChange={(e) =>
-                                visit({ server: e.target.value || null })
-                            }
-                            className={selectClass}
-                        >
-                            <option value="">{tr('Усі сервери')}</option>
-                            {servers.map((s) => (
-                                <option key={s.id} value={s.slug}>
-                                    {s.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    <h2 className="gc-type-title mb-3 text-white">
+                        {tr('Каталог сімей')}
+                    </h2>
 
                     {families.data.length === 0 ? (
                         <EmptyState
@@ -276,7 +253,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                     )}
                     <Pagination data={families} />
                 </section>
-            </div>
+            </CatalogShell>
         </>
     );
 }

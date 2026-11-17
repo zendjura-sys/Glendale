@@ -22,7 +22,8 @@ import {
     Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useRef } from 'react';
+import { m, useReducedMotion } from 'motion/react';
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { PlusBadge } from '@/components/gc/plus';
 import { ServerIcon } from '@/components/servers/server-icon';
@@ -55,6 +56,18 @@ export function FamilyShell({
 }: FamilyShellProps & { title: string; children: ReactNode }) {
     const base = `/f/${family.slug}`;
     const playing = usePlayer().current !== null;
+    const reduce = useReducedMotion();
+    const tabStrip = useRef<HTMLElement | null>(null);
+
+    useEffect(() => {
+        tabStrip.current
+            ?.querySelector<HTMLElement>('[aria-current="page"]')
+            ?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center',
+            });
+    }, [section]);
     const reload = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useRealtime(`family.${family.id}`, {
@@ -310,33 +323,77 @@ export function FamilyShell({
                             )}
                         </div>
                     </div>
-                    <nav className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden">
+                    <nav
+                        ref={(el) => {
+                            tabStrip.current = el;
+                        }}
+                        className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden"
+                    >
                         {tabs
                             .filter((t) => t.visible)
-                            .map((t) => (
-                                <Link
-                                    key={t.section}
-                                    href={t.href}
-                                    preserveScroll
-                                    className={cn(
-                                        'relative inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium transition',
-                                        section === t.section
-                                            ? 'bg-white/[0.08] text-white'
-                                            : 'text-white/50 hover:text-white',
-                                    )}
-                                >
-                                    <t.icon className="size-4" />
-                                    {t.label}
-                                    {!!t.badge && (
-                                        <span className="rounded-full bg-red-500 px-1.5 text-[11px] leading-4 font-semibold text-white">
-                                            {t.badge > 99 ? '99+' : t.badge}
+                            .map((t) => {
+                                const on = section === t.section;
+                                return (
+                                    <Link
+                                        key={t.section}
+                                        href={t.href}
+                                        preserveScroll
+                                        preserveState
+                                        prefetch={['hover']}
+                                        cacheFor="1m"
+                                        aria-current={on ? 'page' : undefined}
+                                        className={cn(
+                                            'relative inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium transition-colors',
+                                            on
+                                                ? 'text-white'
+                                                : 'text-white/50 hover:text-white',
+                                        )}
+                                    >
+                                        {on && (
+                                            <m.span
+                                                layoutId="gc-family-tab"
+                                                className="absolute inset-0 rounded-xl bg-white/[0.1]"
+                                                transition={
+                                                    reduce
+                                                        ? { duration: 0 }
+                                                        : {
+                                                              type: 'spring',
+                                                              stiffness: 420,
+                                                              damping: 34,
+                                                              mass: 0.8,
+                                                          }
+                                                }
+                                                aria-hidden
+                                            />
+                                        )}
+                                        <t.icon className="relative size-4" />
+                                        <span className="relative">
+                                            {t.label}
                                         </span>
-                                    )}
-                                    {section === t.section && (
-                                        <span className="absolute inset-x-3 -bottom-1.5 h-0.5 rounded-full bg-sky-500" />
-                                    )}
-                                </Link>
-                            ))}
+                                        {!!t.badge && (
+                                            <span className="relative rounded-full bg-red-500 px-1.5 text-[11px] leading-4 font-semibold text-white">
+                                                {t.badge > 99 ? '99+' : t.badge}
+                                            </span>
+                                        )}
+                                        {on && (
+                                            <m.span
+                                                layoutId="gc-family-tab-line"
+                                                className="absolute inset-x-3 -bottom-1.5 h-0.5 rounded-full bg-sky-400"
+                                                transition={
+                                                    reduce
+                                                        ? { duration: 0 }
+                                                        : {
+                                                              type: 'spring',
+                                                              stiffness: 420,
+                                                              damping: 34,
+                                                          }
+                                                }
+                                                aria-hidden
+                                            />
+                                        )}
+                                    </Link>
+                                );
+                            })}
                     </nav>
                 </header>
 

@@ -462,11 +462,17 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.2611.0.3';
+const whatsNewVersion = '1.2611.0.4';
 
 /// Нове саме в цій версії — зверху, окремим блоком.
 List<String> _whatsNewCurrent() => [
-      // Наступна версія (1.2611.0.4): нове з’являється зверху; при підвищенні версії старіші пункти — у «раніше».
+      tr('Матове скло iOS 27: плавне перемикання темної й світлої теми без спалахів.'),
+      tr('Стартовий екран з відсотком завантаження, акордом і тактильним відгуком.'),
+      tr('Каскадна поява списків і пружинне натискання карток.'),
+    ];
+
+/// Версія 1.2611.0.3.
+List<String> _whatsNew2611_3() => [
       tr('Підвантаження стрічки й каталогів — крижані скелетони замість спінера внизу списку.'),
     ];
 
@@ -773,7 +779,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs, {bool f
   await prefs.setString('whats_new', whatsNewVersion);
   if (!context.mounted) return;
   final current = _whatsNewCurrent();
-  final earlier = [..._whatsNew2611_2(), ..._whatsNew2611_1(), ..._whatsNew2611_0(), ..._whatsNew124(), ..._whatsNew123(), ..._whatsNew122(), ..._whatsNew121(), ..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
+  final earlier = [..._whatsNew2611_3(), ..._whatsNew2611_2(), ..._whatsNew2611_1(), ..._whatsNew2611_0(), ..._whatsNew124(), ..._whatsNew123(), ..._whatsNew122(), ..._whatsNew121(), ..._whatsNew119(), ..._whatsNew118(), ..._whatsNew117(), ..._whatsNew116(), ..._whatsNew115(), ..._whatsNew113(), ..._whatsNew112(), ..._whatsNew111(), ..._whatsNewPrev(), ..._whatsNew()];
   Widget card(String item, {bool fresh = false}) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),

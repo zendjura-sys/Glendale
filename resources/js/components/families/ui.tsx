@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { m, useReducedMotion } from 'motion/react';
+import { useId, type ReactNode } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -157,33 +158,56 @@ export function Segmented<T extends string>({
     onChange: (value: T) => void;
     className?: string;
 }) {
+    const reduce = useReducedMotion();
+    const layoutId = useId();
+
     return (
         <div
             className={cn(
-                'gc-solid flex max-w-full [scrollbar-width:none] overflow-x-auto rounded-xl p-1 text-sm',
+                'gc-solid relative flex max-w-full [scrollbar-width:none] overflow-x-auto rounded-xl p-1 text-sm',
                 className,
             )}
         >
-            {options.map((o) => (
-                <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => onChange(o.value)}
-                    className={cn(
-                        'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition',
-                        value === o.value
-                            ? 'bg-sky-500 text-white'
-                            : 'text-white/60 hover:text-white',
-                    )}
-                >
-                    {o.label}
-                    {!!o.badge && (
-                        <span className="rounded-full bg-red-500 px-1.5 text-[11px] leading-4 text-white">
-                            {o.badge}
-                        </span>
-                    )}
-                </button>
-            ))}
+            {options.map((o) => {
+                const on = value === o.value;
+                return (
+                    <button
+                        key={o.value}
+                        type="button"
+                        onClick={() => onChange(o.value)}
+                        className={cn(
+                            'relative inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition-colors',
+                            on
+                                ? 'text-white'
+                                : 'text-white/60 hover:text-white',
+                        )}
+                    >
+                        {on && (
+                            <m.span
+                                layoutId={`seg-${layoutId}`}
+                                className="absolute inset-0 rounded-lg bg-sky-500"
+                                transition={
+                                    reduce
+                                        ? { duration: 0 }
+                                        : {
+                                              type: 'spring',
+                                              stiffness: 420,
+                                              damping: 34,
+                                              mass: 0.8,
+                                          }
+                                }
+                                aria-hidden
+                            />
+                        )}
+                        <span className="relative">{o.label}</span>
+                        {!!o.badge && (
+                            <span className="relative rounded-full bg-red-500 px-1.5 text-[11px] leading-4 text-white">
+                                {o.badge}
+                            </span>
+                        )}
+                    </button>
+                );
+            })}
         </div>
     );
 }

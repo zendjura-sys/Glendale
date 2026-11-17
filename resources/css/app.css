@@ -2475,20 +2475,26 @@ html[data-text='xl'] {
     overflow: hidden;
 }
 /*
- * Ширина макета за екраном: телефон — одна колонка; планшет (768+) — меню + вміст;
- * 1280+ — три колонки; FHD (1920+) — ширше; 2K і більше (2400+) — чотири колонки.
+ * Ширина макета за екраном (весь сайт):
+ * телефон — 1 колонка; HD (768–1919) — 2 (меню+віджети | контент);
+ * FHD (1920+) — 3; 2K (2560+) — 3 широкі; 4K+ (3000+) — 4.
  */
 :root {
-    --gc-shell-max: 1320px;
+    --gc-shell-max: 1280px;
 }
 @media (min-width: 1920px) {
     :root {
-        --gc-shell-max: 1600px;
+        --gc-shell-max: 1760px;
     }
 }
-@media (min-width: 2400px) {
+@media (min-width: 2560px) {
     :root {
-        --gc-shell-max: 2000px;
+        --gc-shell-max: 2320px;
+    }
+}
+@media (min-width: 3000px) {
+    :root {
+        --gc-shell-max: 3000px;
     }
 }
 .season-pine {
@@ -5586,21 +5592,67 @@ iframe {
     display: none !important;
 }
 
-/* ---------- Телефон: Tabbar VKUI — острів знизу, і шторка меню над ним ---------- */
+/* Док: зовнішня рамка без blur/transform (інакше backdrop-filter капсули вимикається). */
+.gc-dock-frame {
+    background: linear-gradient(
+        to top,
+        rgba(7, 9, 14, 0.85) 15%,
+        rgba(7, 9, 14, 0.4) 60%,
+        transparent 100%
+    );
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transform: none !important;
+    filter: none !important;
+}
+html[data-theme='light'] .gc-dock-frame,
+:root[data-theme='light'] .gc-dock-frame {
+    background: linear-gradient(
+        to top,
+        rgba(246, 248, 252, 0.92) 15%,
+        rgba(246, 248, 252, 0.45) 60%,
+        transparent 100%
+    );
+}
+/* ---------- Телефон: капсула всередині рамки, не fixed і не ширша за екран ---------- */
 :root.gc-vk .gc-vk-tabbar {
-    --vkui_internal--tabbar_height: 64px;
-    left: 10px !important;
-    right: 10px !important;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-    width: auto !important;
-    padding: 0 4px !important;
-    border-radius: 24px;
-    background: var(--vkui--color_background_content);
-    box-shadow: var(--vkui--elevation3, 0 4px 24px rgb(0 0 0 / 0.14));
+    --vkui_internal--tabbar_height: 62px;
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 1 !important;
+    width: 100% !important;
+    max-width: 460px !important;
+    height: 62px !important;
+    margin: 0 !important;
+    padding: 0 8px !important;
+    border-radius: 26px !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+    filter: none !important;
+}
+:root.gc-vk .gc-vk-tabbar.ios27-glass-capsule::before,
+:root.gc-vk .gc-vk-tabbar.ios27-glass-capsule::after {
+    content: none !important;
+    display: none !important;
 }
 :root.gc-vk .gc-vk-tabbar .vkuiTabbarItem__label {
     font-size: 11px;
     font-weight: 500;
+}
+:root.gc-vk .gc-vk-tabbar .vkuiTabbarItem__in svg {
+    width: 26px;
+    height: 26px;
+    stroke-width: 2;
+    flex-shrink: 0;
+}
+:root.gc-vk .gc-vk-tabbar .vkuiTabbarItem--selected {
+    color: #f8fafc;
+}
+html[data-theme='light'] :root.gc-vk .gc-vk-tabbar .vkuiTabbarItem--selected,
+:root.gc-vk[data-theme='light'] .gc-vk-tabbar .vkuiTabbarItem--selected {
+    color: #0f172a;
 }
 :root.gc-vk .gc-vk-sheet {
     left: 10px !important;
@@ -6067,9 +6119,39 @@ html:root.gc-vk[data-theme] {
     --color-gc-lilac-400: var(--gc-accent);
     --color-gc-lilac-300: var(--gc-accent);
 }
-/* Ширина оболонки: шапка-острів і три колонки (Gamer Dock, стрічка, права колонка). */
+/*
+ * Ширина оболонки Arctic (весь сайт): HD → FHD → 2K → 4K.
+ * Колонки: 1 (mobile) / 2 (HD) / 3 (FHD–2K) / 4 (4K+).
+ */
 :root.gc-vk[data-skin][data-theme] {
-    --gc-shell-max: 1600px;
+    --gc-shell-max: 1280px;
+}
+@media (min-width: 1920px) {
+    :root.gc-vk[data-skin][data-theme] {
+        --gc-shell-max: 1760px;
+    }
+}
+@media (min-width: 2560px) {
+    :root.gc-vk[data-skin][data-theme] {
+        --gc-shell-max: 2320px;
+    }
+}
+@media (min-width: 3000px) {
+    :root.gc-vk[data-skin][data-theme] {
+        --gc-shell-max: 3000px;
+    }
+}
+
+/* Мобільна 1 колонка: трохи щільніший ритм під контентом над таббаром. */
+@media (max-width: 767px) {
+    html:root.gc-vk[data-theme] .gc-vk-shell {
+        gap: 0;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    html:root.gc-vk[data-theme] .gc-vt-main > *:first-child {
+        margin-top: 0;
+    }
 }
 html:root.gc-vk[data-theme='light'] {
     --gc-page: #f1f5f9;
@@ -6095,6 +6177,46 @@ html:root.gc-vk[data-theme] body {
 }
 .gc-solid-2 {
     background: var(--gc-l2);
+}
+.gc-solid-3 {
+    background: var(--gc-l3);
+}
+
+/*
+ * Типографіка соцмережі (Montserrat лишається): ролі, не нові шрифти.
+ * display — ім’я/бренд; title — заголовок блоку; body — пост; meta — час, підказки.
+ */
+.gc-type-display {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+.gc-type-title {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    line-height: 1.3;
+    font-weight: 700;
+}
+.gc-type-body {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-weight: 500;
+}
+.gc-type-meta {
+    font-size: 0.75rem;
+    line-height: 1.35;
+    font-weight: 500;
+    color: color-mix(in oklab, var(--gc-text-2, #94a3b8) 92%, transparent);
+}
+@media (min-width: 640px) {
+    .gc-type-display {
+        font-size: 1.75rem;
+    }
+    .gc-type-title {
+        font-size: 1rem;
+    }
 }
 html:root.gc-vk[data-theme]
     :is(
@@ -6648,4 +6770,428 @@ html[data-theme='dark'] .am.am-in-site {
 /* На темному тлі (data-on-dark) картка застосунку лишається темною й у світлій темі. */
 :root[data-theme='light'] [data-on-dark] .gc-app-promo {
     background: linear-gradient(135deg, #123058 0%, #0c1a30 55%, #0a1322 100%);
+}
+
+/* ==========================================================================
+   iOS 27+ Achromatic Frosted Glass — семантична палітра + безшовне dark/light.
+   Світла: Alabaster. Темна: Onyx. Кольорові заливки блоків заборонені —
+   лише кореневий background і непрозорі поверхні карток.
+   ========================================================================== */
+
+:root {
+    --gc-bg-root: #f2f4f8;
+    --gc-surface-card: #ffffff;
+    --gc-surface-slot: #eaecef;
+    --gc-text-primary: #0f172a;
+    --gc-text-secondary: #64748b;
+    --gc-border-subtle: rgba(15, 23, 42, 0.08);
+
+    --gc-glass-bg: rgba(255, 255, 255, 0.82);
+    --gc-glass-border: rgba(15, 23, 42, 0.09);
+    --gc-glass-highlight: rgba(255, 255, 255, 0.95);
+    --gc-glass-shadow: 0 14px 36px -6px rgba(15, 23, 42, 0.1);
+
+    --gc-scrim-top: linear-gradient(
+        to bottom,
+        #f2f4f8 35%,
+        rgba(242, 244, 248, 0.82) 70%,
+        transparent 100%
+    );
+    --gc-scrim-bottom: linear-gradient(
+        to top,
+        #f2f4f8 45%,
+        rgba(242, 244, 248, 0.88) 75%,
+        transparent 100%
+    );
+
+    --gc-theme-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dark,
+html.dark,
+html[data-theme='dark'] {
+    --gc-bg-root: #07090e;
+    --gc-surface-card: #0d1017;
+    --gc-surface-slot: #151922;
+    --gc-text-primary: #f8fafc;
+    --gc-text-secondary: #94a3b8;
+    --gc-border-subtle: rgba(255, 255, 255, 0.07);
+
+    --gc-glass-bg: rgba(18, 20, 26, 0.86);
+    --gc-glass-border: rgba(255, 255, 255, 0.12);
+    --gc-glass-highlight: rgba(255, 255, 255, 0.22);
+    --gc-glass-shadow: 0 14px 36px -6px rgba(0, 0, 0, 0.75);
+
+    --gc-scrim-top: linear-gradient(
+        to bottom,
+        #07090e 35%,
+        rgba(7, 9, 14, 0.82) 70%,
+        transparent 100%
+    );
+    --gc-scrim-bottom: linear-gradient(
+        to top,
+        #07090e 45%,
+        rgba(7, 9, 14, 0.88) 75%,
+        transparent 100%
+    );
+}
+
+html.light,
+html[data-theme='light'] {
+    --gc-bg-root: #f2f4f8;
+    --gc-surface-card: #ffffff;
+    --gc-surface-slot: #eaecef;
+    --gc-text-primary: #0f172a;
+    --gc-text-secondary: #64748b;
+    --gc-border-subtle: rgba(15, 23, 42, 0.08);
+    --gc-glass-bg: rgba(255, 255, 255, 0.82);
+    --gc-glass-border: rgba(15, 23, 42, 0.09);
+    --gc-glass-highlight: rgba(255, 255, 255, 0.95);
+    --gc-glass-shadow: 0 14px 36px -6px rgba(15, 23, 42, 0.1);
+    --gc-scrim-top: linear-gradient(
+        to bottom,
+        #f2f4f8 35%,
+        rgba(242, 244, 248, 0.82) 70%,
+        transparent 100%
+    );
+    --gc-scrim-bottom: linear-gradient(
+        to top,
+        #f2f4f8 45%,
+        rgba(242, 244, 248, 0.88) 75%,
+        transparent 100%
+    );
+}
+
+html,
+body {
+    background-color: var(--gc-bg-root);
+    color: var(--gc-text-primary);
+    transition:
+        background-color 0.45s var(--gc-theme-ease),
+        color 0.45s var(--gc-theme-ease);
+}
+
+/* Arctic / VK шари підхоплюють нову палітру без ривка. */
+html:root.gc-vk[data-theme='dark'] {
+    --gc-page: var(--gc-bg-root);
+    --gc-l1: var(--gc-surface-card);
+    --gc-l2: var(--gc-surface-slot);
+    --gc-l3: #1a1f2b;
+    --gc-text: var(--gc-text-primary);
+    --gc-text-2: var(--gc-text-secondary);
+    --gc-glass-bg: rgba(18, 20, 26, 0.86);
+}
+html:root.gc-vk[data-theme='light'] {
+    --gc-page: var(--gc-bg-root);
+    --gc-l1: var(--gc-surface-card);
+    --gc-l2: var(--gc-surface-slot);
+    --gc-l3: #e2e5ea;
+    --gc-text: var(--gc-text-primary);
+    --gc-text-2: var(--gc-text-secondary);
+    --gc-glass-bg: rgba(255, 255, 255, 0.82);
+}
+
+.gc-solid {
+    background: var(--gc-surface-card);
+    transition: background-color 0.45s var(--gc-theme-ease);
+}
+.gc-solid-2 {
+    background: var(--gc-surface-slot);
+    transition: background-color 0.45s var(--gc-theme-ease);
+}
+
+/* Матова капсула скла (хідер / док / прелоадер). */
+.gc-frosted-capsule {
+    background: var(--gc-glass-bg) !important;
+    border: 1px solid var(--gc-glass-border) !important;
+    box-shadow:
+        var(--gc-glass-shadow),
+        inset 0 1px 0 var(--gc-glass-highlight) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(140%);
+    backdrop-filter: blur(40px) saturate(140%);
+    transition:
+        background-color 0.45s var(--gc-theme-ease),
+        border-color 0.45s var(--gc-theme-ease),
+        box-shadow 0.45s var(--gc-theme-ease);
+}
+
+/* iOS 27+ матове скло: щільне, blur на самій капсулі (не на ::before і не на батьку). */
+.ios27-glass-capsule {
+    background: rgba(14, 17, 24, 0.78) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(160%) !important;
+    backdrop-filter: blur(40px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+        0 12px 32px -4px rgba(0, 0, 0, 0.75) !important;
+    transform: none !important;
+    filter: none !important;
+}
+html[data-theme='light'] .ios27-glass-capsule,
+:root[data-theme='light'] .ios27-glass-capsule {
+    background: rgba(255, 255, 255, 0.82) !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+        0 12px 32px -4px rgba(15, 23, 42, 0.16) !important;
+}
+/* Перебиває суцільний фон і backdrop-filter:none у VK-шапки. */
+:root.gc-vk .ios-header-pill.gc-glass-island.ios27-glass-capsule,
+html:root.gc-vk[data-theme]
+    .ios-header-pill.gc-glass-island.ios27-glass-capsule,
+:root.gc-vk .gc-vk-tabbar.ios27-glass-capsule {
+    background: rgba(14, 17, 24, 0.78) !important;
+    background-image: none !important;
+    -webkit-backdrop-filter: blur(40px) saturate(160%) !important;
+    backdrop-filter: blur(40px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+        0 12px 32px -4px rgba(0, 0, 0, 0.75) !important;
+    transform: none !important;
+    filter: none !important;
+}
+html[data-theme='light']
+    :root.gc-vk
+    .ios-header-pill.gc-glass-island.ios27-glass-capsule,
+:root.gc-vk[data-theme='light']
+    .ios-header-pill.gc-glass-island.ios27-glass-capsule,
+html[data-theme='light'] :root.gc-vk .gc-vk-tabbar.ios27-glass-capsule,
+:root.gc-vk[data-theme='light'] .gc-vk-tabbar.ios27-glass-capsule {
+    background: rgba(255, 255, 255, 0.82) !important;
+}
+.app-header-wrapper {
+    box-sizing: border-box;
+    z-index: 100;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+    padding-bottom: 12px;
+    /* Маска над капсулою: контент не просвічує між верхом екрана і пошуком. */
+    background: linear-gradient(
+        to bottom,
+        #07090e 35%,
+        rgba(7, 9, 14, 0.75) 75%,
+        transparent 100%
+    ) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transform: none !important;
+    filter: none !important;
+}
+html[data-theme='light'] .app-header-wrapper,
+:root[data-theme='light'] .app-header-wrapper {
+    background: linear-gradient(
+        to bottom,
+        #eef2f8 35%,
+        rgba(238, 242, 248, 0.82) 75%,
+        transparent 100%
+    ) !important;
+}
+.app-header-wrapper .ios27-glass-capsule.ios-header-pill {
+    width: 100%;
+    max-width: 460px;
+    height: 60px;
+    margin-inline: auto;
+    box-sizing: border-box;
+}
+@media (min-width: 640px) {
+    .app-header-wrapper .ios27-glass-capsule.ios-header-pill {
+        max-width: 48rem;
+    }
+}
+@media (min-width: 1280px) {
+    .app-header-wrapper .ios27-glass-capsule.ios-header-pill {
+        max-width: var(--gc-shell-max);
+    }
+}
+.app-header-wrapper .ios-header-search {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    color: rgba(255, 255, 255, 0.8);
+}
+html[data-theme='light'] .app-header-wrapper .ios-header-search,
+:root[data-theme='light'] .app-header-wrapper .ios-header-search {
+    background: rgba(15, 23, 42, 0.05) !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
+    color: rgba(15, 23, 42, 0.75);
+}
+
+/*
+ * iOS 27+ Liquid Glass (21st.dev Liquid Glass Navbar / Nimbus «Waterline»).
+ * Той самий рецепт для шапки-острова й нижнього навбару: tint + rim + soft depth.
+ */
+:root {
+    --gc-liquid-tint: rgba(255, 255, 255, 0.14);
+    --gc-liquid-fg: #0b132b;
+    --gc-liquid-fg-soft: rgba(11, 19, 43, 0.6);
+    --gc-liquid-rim: rgba(255, 255, 255, 0.7);
+    --gc-liquid-drop: rgba(255, 255, 255, 0.42);
+    --gc-liquid-drop-hi: rgba(255, 255, 255, 0.85);
+    --gc-liquid-shadow:
+        0 12px 32px -14px rgba(0, 40, 90, 0.45), 0 2px 6px rgba(0, 40, 90, 0.1);
+}
+html[data-theme='dark'],
+.dark {
+    --gc-liquid-tint: rgba(10, 18, 40, 0.26);
+    --gc-liquid-fg: #f1f7ff;
+    --gc-liquid-fg-soft: rgba(241, 247, 255, 0.66);
+    --gc-liquid-rim: rgba(255, 255, 255, 0.34);
+    --gc-liquid-drop: rgba(255, 255, 255, 0.16);
+    --gc-liquid-drop-hi: rgba(255, 255, 255, 0.55);
+    --gc-liquid-shadow:
+        0 12px 32px -14px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 40, 90, 0.18);
+}
+
+.gc-liquid-glass {
+    isolation: isolate;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    background: var(--gc-liquid-tint) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.35) brightness(1.06) !important;
+    backdrop-filter: blur(18px) saturate(1.35) brightness(1.06) !important;
+    border: 1px solid transparent !important;
+    box-shadow:
+        inset 0 1px 1px var(--gc-liquid-rim),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+        var(--gc-liquid-shadow) !important;
+}
+
+.gc-liquid-glass-inner {
+    background: color-mix(in oklab, var(--gc-liquid-tint) 55%, transparent);
+    border: 1px solid color-mix(in oklab, var(--gc-liquid-rim) 35%, transparent);
+    box-shadow: inset 0 1px 0
+        color-mix(in oklab, var(--gc-liquid-rim) 50%, transparent);
+}
+
+/* Активна «водяна крапля» (fallback без WebGL з Nimbus). */
+.gc-liquid-drop {
+    background:
+        radial-gradient(
+            120% 140% at 30% 0%,
+            var(--gc-liquid-drop-hi),
+            transparent 55%
+        ),
+        var(--gc-liquid-drop) !important;
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.9),
+        inset 0 -2px 6px rgba(0, 162, 255, 0.18),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+        0 6px 16px -6px rgba(0, 70, 140, 0.35) !important;
+    border: 0 !important;
+}
+
+html:root.gc-vk[data-theme] .gc-header-nav {
+    background: color-mix(in oklab, var(--gc-liquid-tint) 70%, transparent);
+}
+html:root.gc-vk[data-theme] .gc-header-nav-active {
+    background: transparent;
+}
+html:root.gc-vk[data-theme] .gc-header-nav a {
+    color: var(--gc-liquid-fg-soft);
+}
+html:root.gc-vk[data-theme] .gc-header-nav a[aria-current='page'],
+html:root.gc-vk[data-theme] .gc-header-nav a:hover {
+    color: var(--gc-liquid-fg);
+}
+
+/* Нижній док: liquid glass поверх VKUI Tabbar. */
+html:root.gc-vk[data-theme] .gc-vk-tabbar.gc-liquid-glass {
+    background: var(--gc-liquid-tint) !important;
+}
+html:root.gc-vk[data-theme] .gc-vk-tabbar .gc-liquid-tab {
+    color: var(--gc-liquid-fg-soft);
+}
+html:root.gc-vk[data-theme]
+    .gc-vk-tabbar
+    .vkuiTabbarItem--selected.gc-liquid-tab,
+html:root.gc-vk[data-theme] .gc-vk-tabbar .gc-liquid-tab[aria-current='page'] {
+    color: var(--gc-liquid-fg);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .gc-liquid-glass {
+        background: var(--gc-glass-bg) !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+    }
+}
+
+.gc-scrim-top,
+.gc-scrim-bottom {
+    pointer-events: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 40;
+}
+.gc-scrim-top {
+    top: 0;
+    height: calc(88px + env(safe-area-inset-top, 0px));
+    background: var(--gc-scrim-top);
+}
+.gc-scrim-bottom {
+    bottom: 0;
+    height: calc(88px + env(safe-area-inset-bottom, 0px));
+    background: var(--gc-scrim-bottom);
+}
+@media (min-width: 768px) {
+    .gc-scrim-bottom {
+        display: none;
+    }
+}
+
+/* Без спалаху при View Transition теми. */
+html.gc-theme-vt::view-transition-old(root),
+html.gc-theme-vt::view-transition-new(root) {
+    animation-duration: 0.45s;
+    animation-timing-function: var(--gc-theme-ease);
+    mix-blend-mode: normal;
+}
+@media (prefers-reduced-motion: reduce) {
+    html,
+    body,
+    .gc-solid,
+    .gc-solid-2,
+    .gc-frosted-capsule {
+        transition: none !important;
+    }
+}
+
+/* Spotlight на інтерактивних картках (GcInteractiveCard). */
+.gc-interactive {
+    transform-origin: center;
+}
+.gc-interactive:hover,
+.gc-interactive[data-hover] {
+    --gc-interactive-glow: 1;
+}
+
+/* Boot preloader iOS 27 glass */
+#gc-boot-root {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 12, 16, 0.9);
+    -webkit-backdrop-filter: blur(48px) saturate(140%);
+    backdrop-filter: blur(48px) saturate(140%);
+    color: #f8fafc;
+    transition:
+        opacity 0.42s var(--gc-theme-ease),
+        transform 0.42s var(--gc-theme-ease),
+        visibility 0.42s,
+        filter 0.42s var(--gc-theme-ease);
+}
+html[data-theme='light'] #gc-boot-root {
+    background: rgba(242, 244, 248, 0.92);
+    color: #0f172a;
+}
+#gc-boot-root.gc-boot-exit {
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(1.04);
+    filter: blur(0px);
+    pointer-events: none;
 }

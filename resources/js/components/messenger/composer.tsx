@@ -42,6 +42,12 @@ import { usePlugin } from '@/lib/plugins';
 const MAX_ATTACHMENTS = 10;
 const MAX_LENGTH = 4096;
 
+function chatImmersive(): boolean {
+    if (typeof document === 'undefined') return false;
+
+    return document.documentElement.classList.contains('gc-chat-immersive');
+}
+
 type Props = {
     canWrite: boolean;
     /** Чому писати не можна (за замовчуванням — обмеження в особистих). */
@@ -164,14 +170,14 @@ export function Composer({
 
     const resize = () => {
         const el = textRef.current;
-        if (el) fitTextarea(el, 180);
+        if (el) fitTextarea(el, 120);
     };
 
     useEffect(() => {
         if (!draft) return;
         const el = textRef.current;
         if (!el) return;
-        fitTextarea(el, 180);
+        fitTextarea(el, 120);
         el.focus();
         el.setSelectionRange(el.value.length, el.value.length);
     }, [draft]);
@@ -330,9 +336,14 @@ export function Composer({
         });
     };
 
+    const immersive = chatImmersive();
+    const bottomPad = immersive
+        ? 'pb-[max(env(safe-area-inset-bottom,0px),8px)]'
+        : dockedAboveNav(playing);
+
     if (!canWrite) {
         return (
-            <div className={cn('px-4 pt-4', dockedAboveNav(playing))}>
+            <div className={cn('px-4 pt-4', bottomPad)}>
                 <p className="flex items-center justify-center gap-2 text-center text-sm text-white/45">
                     <Lock className="size-4" />
                     {lockedText ??
@@ -345,14 +356,16 @@ export function Composer({
     }
 
     const context = editing ?? replyTo;
-    const iconButton =
-        'flex size-10 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-[var(--gc-l3)] hover:text-white disabled:opacity-40';
+    const hasDraft =
+        body.trim().length > 0 || hasAttachments || Boolean(editing);
+    const roundBtn =
+        'flex size-[42px] shrink-0 items-center justify-center rounded-full border border-white/[0.10] bg-white/[0.06] text-white/75 transition hover:bg-white/[0.11] active:scale-95 disabled:opacity-40';
 
     return (
         <div
             className={cn(
-                'relative bg-transparent px-3 pt-2 sm:px-4',
-                dockedAboveNav(playing),
+                'relative border-t border-white/[0.08] bg-[#07090E]/85 px-3 pt-2 backdrop-blur-2xl sm:px-3',
+                bottomPad,
             )}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
@@ -635,13 +648,13 @@ export function Composer({
                     <button
                         type="button"
                         onClick={voice.cancel}
-                        className={cn(iconButton, 'hover:text-red-400')}
+                        className={cn(roundBtn, 'hover:text-red-400')}
                         aria-label={tr('Скасувати запис')}
                         title={tr('Скасувати')}
                     >
                         <Trash2 className="size-5" />
                     </button>
-                    <div className="input-glass flex h-11 min-w-0 flex-1 items-center gap-3 rounded-control px-4">
+                    <div className="flex h-[42px] min-w-0 flex-1 items-center gap-3 rounded-[22px] border border-white/[0.12] bg-[#12151E]/90 px-4">
                         <span className="relative flex size-2.5 shrink-0">
                             <span className="absolute inset-0 animate-ping rounded-full bg-red-500/70" />
                             <span className="relative size-2.5 rounded-full bg-red-500" />
@@ -662,22 +675,23 @@ export function Composer({
                     <button
                         type="button"
                         onClick={sendRecording}
-                        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white transition hover:brightness-110"
+                        className="flex size-[42px] shrink-0 items-center justify-center rounded-full bg-white text-[#07090E] shadow-md transition active:scale-90"
                         aria-label={tr('Надіслати голосове')}
                     >
                         <SendHorizonal className="size-5" />
                     </button>
                 </div>
             ) : (
-                <div className="flex items-end gap-1.5">
+                <div className="flex items-end gap-2">
+                    {/* 1. Вкладення */}
                     {!editing && (
-                        <div ref={attachRef} className="relative mb-0.5">
+                        <div ref={attachRef} className="relative">
                             <button
                                 type="button"
                                 onClick={() => setAttachOpen((v) => !v)}
                                 className={cn(
-                                    iconButton,
-                                    attachOpen && 'bg-white/[0.07] text-white',
+                                    roundBtn,
+                                    attachOpen && 'bg-white/[0.12] text-white',
                                 )}
                                 aria-label={tr('Прикріпити')}
                                 title={tr('Прикріпити')}
@@ -690,7 +704,7 @@ export function Composer({
                                 />
                             </button>
                             {attachOpen && (
-                                <div className="glass-strong absolute bottom-12 left-0 z-30 w-52 animate-rise rounded-2xl p-1.5">
+                                <div className="glass-strong absolute bottom-12 left-0 z-30 w-56 animate-rise rounded-2xl p-1.5">
                                     {[
                                         {
                                             label: tr('Фото'),
@@ -699,6 +713,17 @@ export function Composer({
                                             tone: 'from-gc-blue to-gc-cyan',
                                             run: () =>
                                                 imageRef.current?.click(),
+                                        },
+                                        {
+                                            label: tr('Камера'),
+                                            hint: tr('Відеокружок'),
+                                            icon: Camera,
+                                            tone: 'from-gc-cyan to-gc-indigo',
+                                            run: () =>
+                                                videoNotesOn
+                                                    ? setNoteOpen(true)
+                                                    : imageRef.current?.click(),
+                                            hide: !showMic || !videoNotesOn,
                                         },
                                         {
                                             label: tr('Файл'),
@@ -748,40 +773,43 @@ export function Composer({
                                                   },
                                               ]
                                             : []),
-                                    ].map((item) => (
-                                        <button
-                                            key={item.label}
-                                            type="button"
-                                            onClick={() => {
-                                                setAttachOpen(false);
-                                                item.run();
-                                            }}
-                                            className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition hover:bg-[var(--gc-l3)]"
-                                        >
-                                            <span
-                                                className={cn(
-                                                    'flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white',
-                                                    item.tone,
-                                                )}
+                                    ]
+                                        .filter((item) => !item.hide)
+                                        .map((item) => (
+                                            <button
+                                                key={item.label}
+                                                type="button"
+                                                onClick={() => {
+                                                    setAttachOpen(false);
+                                                    item.run();
+                                                }}
+                                                className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition hover:bg-[var(--gc-l3)]"
                                             >
-                                                <item.icon className="size-4" />
-                                            </span>
-                                            <span>
-                                                <span className="block text-sm font-medium text-white">
-                                                    {item.label}
+                                                <span
+                                                    className={cn(
+                                                        'flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white',
+                                                        item.tone,
+                                                    )}
+                                                >
+                                                    <item.icon className="size-4" />
                                                 </span>
-                                                <span className="block text-xs text-white/40">
-                                                    {item.hint}
+                                                <span>
+                                                    <span className="block text-sm font-medium text-white">
+                                                        {item.label}
+                                                    </span>
+                                                    <span className="block text-xs text-white/40">
+                                                        {item.hint}
+                                                    </span>
                                                 </span>
-                                            </span>
-                                        </button>
-                                    ))}
+                                            </button>
+                                        ))}
                                 </div>
                             )}
                         </div>
                     )}
 
-                    <div className="input-glass flex min-w-0 flex-1 items-end rounded-control pr-1">
+                    {/* 2. Єдина капсула тексту — без подвійної блакитної рамки */}
+                    <div className="flex min-h-[42px] min-w-0 flex-1 items-end gap-1.5 rounded-[22px] border border-white/[0.12] bg-[#12151E]/90 px-3.5 py-1.5 transition-all focus-within:border-white/[0.24] focus-within:bg-[#161A25]">
                         <textarea
                             ref={textRef}
                             value={body}
@@ -823,69 +851,62 @@ export function Composer({
                             placeholder={
                                 hasAttachments
                                     ? tr('Додайте підпис…')
-                                    : tr('Напишіть повідомлення…')
+                                    : tr('Повідомлення...')
                             }
-                            className="[field-sizing:content] max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
+                            className="max-h-[120px] min-w-0 flex-1 resize-none overflow-y-auto !border-0 border-0 bg-transparent py-[3px] text-[15px] leading-[22px] text-white !shadow-none shadow-none !ring-0 ring-0 !outline-none outline-none placeholder:text-white/40 focus:!border-0 focus:border-0 focus:shadow-none focus:!ring-0 focus:ring-0 focus:!outline-none focus:outline-none"
                         />
-                        {aiWriterOn && !editing && (
-                            <AiWriter text={body} onResult={setBody} />
-                        )}
-                        {gifOn && !editing && (
-                            <button
-                                type="button"
-                                onClick={() => setPickingGif((v) => !v)}
-                                aria-label="GIF"
-                                title="GIF"
-                                className={cn(
-                                    'mb-1 flex h-9 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white/50 transition hover:text-white',
-                                    pickingGif && 'text-[#7ee0b5]',
-                                )}
-                            >
-                                GIF
-                            </button>
-                        )}
-                        <div ref={emojiRef} className="relative mb-1">
-                            <button
-                                type="button"
-                                onClick={() => setEmojiOpen((value) => !value)}
-                                className={cn(
-                                    'flex size-9 items-center justify-center rounded-full text-white/50 transition hover:text-white',
-                                    emojiOpen && 'text-gc-gold',
-                                )}
-                                aria-label={tr('Емодзі та стікери')}
-                                title={tr('Емодзі та стікери')}
-                            >
-                                <Smile className="size-5" />
-                            </button>
-                            {emojiOpen && (
-                                <div className="absolute right-0 bottom-12 z-30">
-                                    <EmojiPanel
-                                        allowStickers={!editing}
-                                        onEmoji={insertEmoji}
-                                        onSticker={(sticker) => {
-                                            setEmojiOpen(false);
-                                            onSend({
-                                                kind: 'sticker',
-                                                sticker,
-                                            });
-                                        }}
-                                    />
-                                </div>
+                        <div className="flex h-[28px] shrink-0 items-center gap-0.5 self-end">
+                            {aiWriterOn && !editing && (
+                                <AiWriter text={body} onResult={setBody} />
                             )}
+                            {gifOn && !editing && (
+                                <button
+                                    type="button"
+                                    onClick={() => setPickingGif((v) => !v)}
+                                    aria-label="GIF"
+                                    title="GIF"
+                                    className={cn(
+                                        'flex h-7 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white/50 transition hover:text-white',
+                                        pickingGif && 'text-[#7ee0b5]',
+                                    )}
+                                >
+                                    GIF
+                                </button>
+                            )}
+                            <div ref={emojiRef} className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setEmojiOpen((value) => !value)
+                                    }
+                                    className={cn(
+                                        'flex size-7 items-center justify-center rounded-full text-white/55 transition hover:text-white',
+                                        emojiOpen && 'text-gc-gold',
+                                    )}
+                                    aria-label={tr('Емодзі та стікери')}
+                                    title={tr('Емодзі та стікери')}
+                                >
+                                    <Smile className="size-4.5" />
+                                </button>
+                                {emojiOpen && (
+                                    <div className="absolute right-0 bottom-10 z-30">
+                                        <EmojiPanel
+                                            allowStickers={!editing}
+                                            onEmoji={insertEmoji}
+                                            onSticker={(sticker) => {
+                                                setEmojiOpen(false);
+                                                onSend({
+                                                    kind: 'sticker',
+                                                    sticker,
+                                                });
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {showMic && videoNotesOn && (
-                        <button
-                            type="button"
-                            onClick={() => setNoteOpen(true)}
-                            className="gc-solid-2 mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/[0.12] hover:text-white"
-                            aria-label={tr('Записати відеокружок')}
-                            title={tr('Відеокружок')}
-                        >
-                            <Camera className="size-5" />
-                        </button>
-                    )}
                     {noteOpen && (
                         <VideoNoteRecorder
                             onClose={closeNote}
@@ -894,18 +915,20 @@ export function Composer({
                             }
                         />
                     )}
-                    {showMic ? (
+
+                    {/* 3. Мікрофон ↔ Надіслати */}
+                    {showMic && !hasDraft ? (
                         <button
                             type="button"
                             onClick={startRecording}
-                            className="gc-solid-2 mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-sky-500 hover:text-white"
+                            className={roundBtn}
                             aria-label={tr('Записати голосове')}
                             title={tr('Голосове повідомлення')}
                         >
                             <Mic className="size-5" />
                         </button>
                     ) : (
-                        <div ref={sendRef} className="relative mb-0.5">
+                        <div ref={sendRef} className="relative">
                             {sendMenu && (
                                 <div className="glass-strong absolute right-0 bottom-12 z-30 w-64 animate-rise space-y-1 rounded-2xl p-1.5">
                                     {vanishOn && (
@@ -943,7 +966,7 @@ export function Composer({
                                                 aria-label={tr(
                                                     'Час надсилання',
                                                 )}
-                                                className="input-glass h-10 w-full rounded-lg px-2 text-sm text-white"
+                                                className="h-10 w-full rounded-lg border border-white/[0.12] bg-[#12151E] px-2 text-sm text-white outline-none"
                                             />
                                         </div>
                                     )}
@@ -953,7 +976,7 @@ export function Composer({
                                             setSendMenu(false);
                                             submit();
                                         }}
-                                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-sky-500 text-sm font-semibold text-white"
+                                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-sm font-semibold text-[#07090E]"
                                     >
                                         <SendHorizonal className="size-4" />
                                         {publishAt
@@ -1005,10 +1028,10 @@ export function Composer({
                                 }}
                                 disabled={!canSubmit}
                                 className={cn(
-                                    'flex size-11 shrink-0 items-center justify-center rounded-full text-white transition duration-300 select-none [-webkit-touch-callout:none]',
+                                    'flex size-[42px] shrink-0 items-center justify-center rounded-full transition-all duration-200 select-none [-webkit-touch-callout:none] active:scale-90',
                                     canSubmit
-                                        ? 'scale-100 bg-sky-500 hover:brightness-110'
-                                        : 'gc-solid-2 scale-95 text-white/35',
+                                        ? 'bg-white text-[#07090E] shadow-md'
+                                        : 'border border-white/[0.10] bg-white/[0.06] text-white/35',
                                 )}
                                 aria-label={
                                     editing ? tr('Зберегти') : tr('Надіслати')

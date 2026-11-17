@@ -150,19 +150,25 @@ export function BacklogWidget({
     data,
     isSelf,
 }: {
-    data: BacklogSummary;
+    data: BacklogSummary | null | undefined;
     isSelf: boolean;
 }) {
-    const total = BACKLOG_STATUSES.reduce((sum, s) => sum + data.counts[s], 0);
+    if (!data) return null;
+    const playing = Array.isArray(data.playing) ? data.playing : [];
+    const counts = data.counts ?? ({} as BacklogSummary['counts']);
+    const total = BACKLOG_STATUSES.reduce(
+        (sum, s) => sum + (counts[s] ?? 0),
+        0,
+    );
     if (total === 0 && !isSelf) {
         return null;
     }
 
     return (
         <Widget title={tr('Ігри')} icon={Gamepad2} href={data.href}>
-            {data.playing.length > 0 ? (
+            {playing.length > 0 ? (
                 <div className="mb-3 grid grid-cols-2 gap-2">
-                    {data.playing.map((game) => (
+                    {playing.map((game) => (
                         <Link
                             key={game.id}
                             href={`/games/${game.slug}`}
@@ -205,7 +211,7 @@ export function BacklogWidget({
                         >
                             <meta.icon className={cn('size-4', meta.tone)} />
                             <span className="text-sm font-semibold text-white tabular-nums">
-                                {data.counts[s]}
+                                {counts[s] ?? 0}
                             </span>
                             <span className="text-[11px] text-white/50">
                                 {meta.label()}
