@@ -19,6 +19,7 @@ import {
     CONTENT_CACHE,
     NAV_CACHE,
     installTouchPrefetch,
+    isCoarsePointer,
     primaryWarmUrls,
     warmIdle,
 } from '@/lib/prefetch';
@@ -72,10 +73,12 @@ const appName = import.meta.env.VITE_APP_NAME || 'GameCon';
 
 // Клас gc-vt стоїть на <html> ще до рендера нової сторінки, тож каскад
 // появи не потрапляє у знімок View Transition (див. PageTransition).
+// На телефоні View Transitions не ставимо — знімки шару їдять GPU/пам’ять.
 if (
     typeof document !== 'undefined' &&
     document.startViewTransition &&
-    !document.documentElement.dataset.vt
+    !document.documentElement.dataset.vt &&
+    !isCoarsePointer()
 ) {
     document.documentElement.dataset.vt = '1';
     const startViewTransition = document.startViewTransition.bind(document);
@@ -120,7 +123,8 @@ function SplashDone({
                 window as unknown as { gcHideSplash?: () => void }
             ).gcHideSplash?.();
             bootChimeOnce();
-            if (user) {
+            // Prefetch основних розділів — лише ПК; на телефоні гріє мережу й CPU.
+            if (user && !isCoarsePointer()) {
                 warmIdle(
                     primaryWarmUrls({
                         username: user.username,
@@ -130,7 +134,7 @@ function SplashDone({
                 );
             }
         });
-        const stopTouch = installTouchPrefetch();
+        const stopTouch = isCoarsePointer() ? () => {} : installTouchPrefetch();
 
         return () => {
             cancelAnimationFrame(frame);
@@ -160,6 +164,9 @@ function shouldViewTransition(options: VisitOptions): boolean {
     if (typeof document === 'undefined' || !document.startViewTransition) {
         return false;
     }
+
+    // Телефон: миттєвий своп без анімації шарів.
+    if (isCoarsePointer()) return false;
 
     return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }

@@ -146,8 +146,8 @@ export default function CommunityMembers({
     return (
         <>
             <Head title={tr('Учасники — {name}', { name: community.name })} />
-            <div className="space-y-5">
-                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-6">
+            <div className="space-y-3.5">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-3.5 sm:p-4">
                     <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-indigo/20 blur-3xl" />
                     <div className="relative flex items-center gap-4">
                         <Link
@@ -171,7 +171,7 @@ export default function CommunityMembers({
                         </div>
                     </div>
 
-                    <div className="relative mt-5 flex flex-col gap-3 md:flex-row">
+                    <div className="relative mt-3.5 flex flex-col gap-3 md:flex-row">
                         <div className="gc-solid-2 flex shrink-0 overflow-x-auto rounded-xl p-1">
                             {tabs.map((item) => (
                                 <Link
@@ -233,7 +233,7 @@ export default function CommunityMembers({
                         {members.data.map((member) => (
                             <div
                                 key={member.id}
-                                className="flex items-center gap-3 px-4 py-3 transition hover:bg-[var(--gc-l3)] sm:px-5"
+                                className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-[var(--gc-l3)] sm:px-5"
                             >
                                 <Link href={`/${member.username}`}>
                                     <UserAvatar user={member} size="md" />

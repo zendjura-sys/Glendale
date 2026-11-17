@@ -203,6 +203,17 @@ class Api {
     return tr('Щось пішло не так.');
   }
 
+  /// Закрити чужу сесію, не підміняючи поточний токен (прибрати акаунт зі списку).
+  static Future<void> logoutToken(String token) async {
+    try {
+      await http.post(Uri.parse('$root/api/v1/logout'), headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'GameCon/1.0 (Flutter)',
+        'Authorization': 'Bearer $token',
+      }).timeout(const Duration(seconds: 8));
+    } catch (_) {}
+  }
+
   /// Завантаження файлу з авторизацією (докази звітів, вкладення чату).
   Future<List<int>> bytes(String path) async {
     final response = await http.get(Uri.parse(path.startsWith('http') ? path : '$root$path'), headers: {

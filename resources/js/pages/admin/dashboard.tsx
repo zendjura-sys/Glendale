@@ -108,7 +108,7 @@ function ActivityChart({ data }: { data: ChartPoint[] }) {
 
     return (
         <div>
-            <div className="mb-4 flex flex-wrap gap-5">
+            <div className="mb-4 flex flex-wrap gap-3.5">
                 {(Object.keys(SERIES) as (keyof typeof SERIES)[]).map((key) => (
                     <div key={key} className="flex items-center gap-2.5">
                         <span
@@ -317,7 +317,7 @@ export default function AdminDashboard({
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_340px]">
-                <section className="gc-solid rounded-2xl p-5 sm:p-6">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <div className="mb-4 flex items-center gap-2">
                         <Activity className="size-4 text-sky-400" />
                         <h2 className="font-display text-sm font-semibold text-white/90">
@@ -355,7 +355,7 @@ export default function AdminDashboard({
                     <div className="grid grid-cols-2 gap-4">
                         <div className="gc-solid rounded-2xl p-4">
                             <UserPlus className="size-4 text-gc-sky" />
-                            <div className="mt-3 font-display text-2xl font-bold text-white">
+                            <div className="mt-3 font-display text-xl font-bold text-white sm:text-2xl">
                                 {compactNumber(stats.friendships)}
                             </div>
                             <div className="text-xs text-white/45">
@@ -364,7 +364,7 @@ export default function AdminDashboard({
                         </div>
                         <div className="gc-solid rounded-2xl p-4">
                             <Ban className="size-4 text-red-400" />
-                            <div className="mt-3 font-display text-2xl font-bold text-white">
+                            <div className="mt-3 font-display text-xl font-bold text-white sm:text-2xl">
                                 {stats.banned}
                             </div>
                             <div className="text-xs text-white/45">
@@ -374,7 +374,7 @@ export default function AdminDashboard({
                     </div>
                     <Link
                         href="/admin/modules"
-                        className="gc-solid group rounded-2xl p-5 transition hover:border-white/15"
+                        className="gc-solid group rounded-2xl p-3.5 transition hover:border-white/15"
                     >
                         <div className="flex items-center justify-between">
                             <Blocks className="size-5 text-[#d3b0ff]" />
@@ -382,7 +382,7 @@ export default function AdminDashboard({
                                 {tr('Керувати →')}
                             </span>
                         </div>
-                        <div className="mt-3 font-display text-2xl font-bold text-white">
+                        <div className="mt-3 font-display text-xl font-bold text-white sm:text-2xl">
                             {stats.modules_enabled}
                             <span className="text-base text-white/35">
                                 {' '}
@@ -401,7 +401,7 @@ export default function AdminDashboard({
                             />
                         </div>
                     </Link>
-                    <section className="gc-solid rounded-2xl p-5">
+                    <section className="gc-solid rounded-2xl p-3.5">
                         <div className="mb-3 flex items-center gap-2">
                             <Server className="size-4 text-sky-400" />
                             <h2 className="font-display text-xs font-semibold text-white/80">
@@ -433,7 +433,7 @@ export default function AdminDashboard({
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Нові користувачі')}
@@ -473,7 +473,7 @@ export default function AdminDashboard({
                         ))}
                     </ul>
                 </section>
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Останні записи')}

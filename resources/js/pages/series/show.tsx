@@ -23,14 +23,14 @@ export default function SeriesShow({
         <>
             <Head title={series.title} />
             <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6">
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <p className="flex items-center gap-2 text-xs font-medium text-sky-400">
                         <ListOrdered className="size-4" />
                         {tr('Серія записів · {count}', {
                             count: String(posts.length),
                         })}
                     </p>
-                    <h1 className="mt-2 font-display text-2xl font-semibold text-white">
+                    <h1 className="mt-2 font-display text-xl font-semibold text-white sm:text-2xl">
                         {series.title}
                     </h1>
                     {series.description && (

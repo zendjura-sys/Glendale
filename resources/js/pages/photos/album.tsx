@@ -111,7 +111,7 @@ export default function PhotoAlbum({
         <>
             <Head title={album.title} />
             <div
-                className="space-y-5"
+                className="space-y-3.5"
                 onDragOver={(event) => {
                     if (!can.upload) return;
                     event.preventDefault();
@@ -148,7 +148,7 @@ export default function PhotoAlbum({
                                 <ArrowLeft className="size-3.5" />
                                 {tr('Фотографії')} {album.owner.name}
                             </Link>
-                            <h1 className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">
+                            <h1 className="mt-1 font-display text-xl font-bold text-white sm:text-2xl sm:text-3xl">
                                 {album.title}
                             </h1>
                             {album.description && (

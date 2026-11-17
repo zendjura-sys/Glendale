@@ -230,11 +230,11 @@ export default function PlusCompare(props: Props) {
     return (
         <>
             <Head title={tr('Тарифи GameCon+')} />
-            <div className="mx-auto max-w-5xl space-y-5">
+            <div className="mx-auto max-w-5xl space-y-3.5">
                 <PlusTabs current="plus" />
 
                 <section className="grid gap-3 md:grid-cols-3">
-                    <div className="gc-solid flex flex-col rounded-2xl p-5">
+                    <div className="gc-solid flex flex-col rounded-2xl p-3.5">
                         <p className="font-display text-lg font-bold text-white">
                             {tr('Безкоштовно')}
                         </p>
@@ -247,7 +247,7 @@ export default function PlusCompare(props: Props) {
                             0 ₴
                         </p>
                     </div>
-                    <div className="gc-solid relative flex flex-col rounded-2xl p-5 ring-2 ring-primary/60">
+                    <div className="gc-solid relative flex flex-col rounded-2xl p-3.5 ring-2 ring-primary/60">
                         <p className="flex items-center gap-2 font-display text-lg font-bold text-white">
                             <PlusBadge className="size-6 rounded-md [&_svg]:size-4" />
                             GameCon+
@@ -286,7 +286,7 @@ export default function PlusCompare(props: Props) {
                                   : tr('Оформити')}
                         </Link>
                     </div>
-                    <div className="gc-solid flex flex-col rounded-2xl p-5">
+                    <div className="gc-solid flex flex-col rounded-2xl p-3.5">
                         <p className="font-display text-lg font-bold text-white">
                             {tr('GameCon+ для сім’ї')}
                         </p>
@@ -358,7 +358,7 @@ export default function PlusCompare(props: Props) {
                     </table>
                 </section>
 
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <h2 className="mb-3 font-display text-lg font-bold text-white">
                         {tr('Часті питання')}
                     </h2>

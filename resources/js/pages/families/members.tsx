@@ -210,10 +210,10 @@ export default function FamilyMembers(props: Props) {
                                             }
                                             className={cn(
                                                 btnSuccess,
-                                                'h-11 w-full sm:w-auto',
+                                                'h-9 w-full sm:w-auto',
                                             )}
                                         >
-                                            <Check className="size-4" />{' '}
+                                            <Check className="size-3.5" />{' '}
                                             {tr('Прийняти')}
                                         </button>
                                         <button
@@ -236,10 +236,10 @@ export default function FamilyMembers(props: Props) {
                                             }}
                                             className={cn(
                                                 btnDanger,
-                                                'h-11 w-full sm:w-auto',
+                                                'h-9 w-full sm:w-auto',
                                             )}
                                         >
-                                            <X className="size-4" />{' '}
+                                            <X className="size-3.5" />{' '}
                                             {tr('Відхилити')}
                                         </button>
                                     </div>
@@ -257,7 +257,7 @@ export default function FamilyMembers(props: Props) {
                             {filtered.map((m) => (
                                 <li
                                     key={m.id}
-                                    className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap"
+                                    className="flex flex-wrap items-center gap-2.5 px-3 py-2.5 sm:flex-nowrap"
                                 >
                                     <UserAvatar
                                         user={{

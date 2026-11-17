@@ -6,6 +6,7 @@ import outline from '@/data/ukraine-outline.json';
 import type { AlertRegion } from '@/components/alerts/alert-map';
 import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
+import { navPrefetch } from '@/lib/prefetch';
 import { cn } from '@/lib/utils';
 
 const W = 200;
@@ -80,7 +81,7 @@ export function AlertMapButton({
     return (
         <Link
             href="/alerts"
-            prefetch={['mount', 'hover']}
+            prefetch={navPrefetch()}
             cacheFor="2m"
             aria-current={current ? 'page' : undefined}
             aria-label={

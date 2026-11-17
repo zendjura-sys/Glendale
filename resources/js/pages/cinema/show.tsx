@@ -392,7 +392,7 @@ export default function CinemaShow({
                             />
                         </div>
                     </aside>
-                    <div className="min-w-0 space-y-5">
+                    <div className="min-w-0 space-y-3.5">
                         <div className="gc-title-desk">
                             <TitleDesktop
                                 movie={movie}
@@ -556,10 +556,10 @@ export default function CinemaShow({
                             )}
                         </section>
 
-                        <div className="grid grid-cols-1 gap-5 @5xl:grid-cols-[1fr_280px]">
-                            <div className="min-w-0 space-y-5">
+                        <div className="grid grid-cols-1 gap-3.5 @5xl:grid-cols-[1fr_280px]">
+                            <div className="min-w-0 space-y-3.5">
                                 {movie.description && (
-                                    <section className="glass rounded-2xl p-5">
+                                    <section className="glass rounded-2xl p-3.5">
                                         <h2 className="mb-2 font-display text-lg font-semibold text-white">
                                             {tr('Про що')}
                                         </h2>
@@ -604,7 +604,7 @@ export default function CinemaShow({
                                 )}
                                 <section
                                     id="comments"
-                                    className="glass scroll-mt-24 rounded-2xl p-5"
+                                    className="glass scroll-mt-24 rounded-2xl p-3.5"
                                 >
                                     <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                                         <MessageCircle className="size-5 text-gc-lilac-400" />
@@ -633,9 +633,9 @@ export default function CinemaShow({
                                     />
                                 </section>
                             </div>
-                            <aside className="space-y-5">
+                            <aside className="space-y-3.5">
                                 {seen.length > 0 && (
-                                    <section className="glass rounded-2xl p-5">
+                                    <section className="glass rounded-2xl p-3.5">
                                         <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
                                             {tr('Уже бачили')}
                                         </h2>
@@ -660,7 +660,7 @@ export default function CinemaShow({
                                     </section>
                                 )}
                                 {taste.length > 0 && (
-                                    <section className="glass rounded-2xl p-5">
+                                    <section className="glass rounded-2xl p-3.5">
                                         <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
                                             {tr('Схожий смак')}
                                         </h2>
@@ -689,7 +689,7 @@ export default function CinemaShow({
                                         </ul>
                                     </section>
                                 )}
-                                <section className="glass rounded-2xl p-5">
+                                <section className="glass rounded-2xl p-3.5">
                                     <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
                                         {tr('Друзі та цей фільм')}
                                     </h2>
@@ -794,7 +794,7 @@ function Soundtrack({
     const [adding, setAdding] = useState(false);
 
     return (
-        <section className="glass rounded-2xl p-5">
+        <section className="glass rounded-2xl p-3.5">
             <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="font-display text-lg font-semibold text-white">
                     {tr('Саундтрек')}

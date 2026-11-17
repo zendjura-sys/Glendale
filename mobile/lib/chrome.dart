@@ -10,6 +10,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'account.dart';
+import 'accounts.dart';
 import 'api.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'i18n.dart';
@@ -18,6 +19,7 @@ import 'nav_items.dart';
 import 'plus.dart';
 import 'shell.dart';
 import 'state.dart';
+import 'status_emoji.dart';
 import 'subscription.dart';
 import 'theme.dart';
 import 'theme_controller.dart';
@@ -157,85 +159,6 @@ class TopBar extends StatelessWidget {
   }
 }
 
-/// Шапка «Музики» на телефоні — як на сайті. Острова там немає (його місце займають вкладки розділу),
-/// тож ліворуч «‹ Назад» — вихід із «Музики» туди, звідки прийшли, — а праворуч дзвіночок сповіщень
-/// і аватар: він відкриває те саме меню розділів, що й острів.
-class MusicTopBar extends StatelessWidget {
-  const MusicTopBar({required this.session, required this.player, required this.path, required this.topInset, super.key});
-  final Session session;
-  final TrackPlayer player;
-  final String path;
-  final double topInset;
-
-  /// Останній маршрут поза «Музикою» (оболонка оновлює його на кожному переході) — туди веде «Назад».
-  static String? exit;
-
-  @override
-  Widget build(BuildContext context) {
-    final me = session.me ?? const {};
-    return HeaderCapsule(
-      topInset: topInset,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(4, 0, 6, 0),
-        child: SizedBox(
-          height: headerCapsuleHeight - 2,
-          child: Row(
-            children: [
-              TextButton.icon(
-                onPressed: () => context.go(exit ?? '/feed'),
-                style: TextButton.styleFrom(foregroundColor: accent, padding: EdgeInsets.fromLTRB(2, 8, 8, 8)),
-                icon: Icon(LucideIcons.chevronLeft, size: 24, color: accent),
-                label: Text(tr('Назад'), style: body(15, color: accent, weight: FontWeight.w600)),
-              ),
-              Spacer(),
-              _headerButton(LucideIcons.bell, tr('Сповіщення'), () => showNotifications(context, session), badge: session.unreadNotifications),
-              SizedBox(width: 2),
-              Semantics(
-                button: true,
-                label: tr('Меню'),
-                child: ArcticPressable(
-                  key: const ValueKey('music-menu'),
-                  onTap: () => showSectionsMenu(context, session, player, path),
-                  scale: 0.92,
-                  child: Padding(
-                    padding: EdgeInsets.all(4),
-                    child: IceRingAvatar(child: Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 34, frame: PlusMark.from(session.subscription.style)?.frame)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Меню розділів шторкою — той самий вміст, що в розгорнутому острові, але з усіма розділами
-/// (вкладок острова поруч немає). Для екранів без острова, як-от «Музика».
-Future<void> showSectionsMenu(BuildContext context, Session session, TrackPlayer player, String path) {
-  return showGcSheet<void>(
-    context,
-    builder: (sheet) => SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(12, 4, 12, 12),
-      child: ListenableBuilder(
-        listenable: session,
-        builder: (_, _) => MenuContent(
-          session: session,
-          player: player,
-          path: path,
-          rest: visibleNav(session.modules),
-          onGo: (to) {
-            Navigator.pop(sheet);
-            context.go(to);
-          },
-          onClose: () => Navigator.pop(sheet),
-        ),
-      ),
-    ),
-  );
-}
-
 /// Поле пошуку в шапці: скляна капсула; від дотику грань плавно спалахує сапфіровим сяйвом,
 /// лупа стає акцентною — і відкривається пошук. На сторінці пошуку поле лишається «у фокусі».
 class _SearchField extends StatefulWidget {
@@ -358,6 +281,7 @@ class _UserMenu extends StatelessWidget {
         ),
         PopupMenuDivider(height: 1),
         item('profile', LucideIcons.userRound, tr('Моя сторінка')),
+        if (session.pluginOn('status_emoji')) item('status', LucideIcons.smile, tr('Статус')),
         item('saved', LucideIcons.bookmark, tr('Збережене')),
         item('settings', LucideIcons.settings, tr('Налаштування')),
         if (session.isAdmin) item('admin', LucideIcons.layoutDashboard, tr('Адмін-панель')),
@@ -365,6 +289,7 @@ class _UserMenu extends StatelessWidget {
         item('theme', palette.isLight ? LucideIcons.moon : LucideIcons.sun, palette.isLight ? tr('Темна тема') : tr('Світла тема')),
         item('language', LucideIcons.languages, tr('Мова')),
         PopupMenuDivider(height: 1),
+        ...accountMenuEntries(session),
         item('logout', LucideIcons.logOut, tr('Вийти'), color: dangerSoft),
       ],
       child: Padding(
@@ -389,6 +314,8 @@ class _UserMenu extends StatelessWidget {
     switch (value) {
       case 'profile':
         context.go('/profile');
+      case 'status':
+        showStatusEmojiSheet(context);
       case 'saved':
         context.go('/saved');
       case 'settings':
@@ -401,8 +328,17 @@ class _UserMenu extends StatelessWidget {
         session.setTheme(palette.isLight ? 'dark' : 'light');
       case 'language':
         showLanguageSheet(context, session);
+      case 'add-account':
+        beginAddingAccount(context, session, player);
       case 'logout':
         signOut(session, player);
+      case _ when value.startsWith('account:'):
+        final id = int.tryParse(value.substring('account:'.length));
+        if (id != null) switchStoredAccount(context, session, player, id);
+      case _ when value.startsWith('forget:'):
+        final id = int.tryParse(value.substring('forget:'.length));
+        final account = id == null ? null : session.stored(id);
+        if (account != null) removeStoredAccount(context, session, player, account);
     }
   }
 }
@@ -812,6 +748,8 @@ class MenuContent extends StatefulWidget {
 
 class _MenuContentState extends State<MenuContent> {
   Map<String, dynamic>? hub;
+  /// GameCast pulse (`/shows/pulse`) — як `GameCastTile` на сайті.
+  Map<String, dynamic>? castPulse;
   bool more = false;
   bool system = false;
 
@@ -823,6 +761,7 @@ class _MenuContentState extends State<MenuContent> {
   static const _amber = Color(0xFFFBBF24);
   static const _cyan = Color(0xFF22D3EE);
   static const _red = Color(0xFFF87171);
+  static const _rose = Color(0xFFFB7185);
 
   @override
   void initState() {
@@ -830,6 +769,11 @@ class _MenuContentState extends State<MenuContent> {
     widget.session.api.get(Api.site('/me/hub')).then((d) {
       if (mounted) setState(() => hub = mapOf(d));
     }).catchError((_) {});
+    if (widget.session.pluginOn('live_shows')) {
+      widget.session.api.get(Api.site('/shows/pulse')).then((d) {
+        if (mounted) setState(() => castPulse = mapOf(d));
+      }).catchError((_) {});
+    }
   }
 
   bool _on(String module) => widget.session.modules?.contains(module) ?? true;
@@ -861,6 +805,67 @@ class _MenuContentState extends State<MenuContent> {
           FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(hint, maxLines: 1, softWrap: false, style: body(11.5, color: muted))),
         ]),
       );
+
+  String get _castSummary {
+    final live = intOf(castPulse?['live']);
+    final listeners = intOf(castPulse?['listeners']);
+    if (castPulse == null) return tr('Подкасти наживо з #темами');
+    if (live == 0) return tr('Зараз тихо — почніть першу розмову');
+    if (listeners == 0) return tr('{rooms} в ефірі — заходьте першими', {'rooms': '$live'});
+    return tr('{rooms} в ефірі · {people} слухають', {'rooms': '$live', 'people': '$listeners'});
+  }
+
+  /// Широка кнопка GameCast у меню — паритет з сайтом (еквалайзер + статус ефіру).
+  Widget _gameCastTile() {
+    final live = intOf(castPulse?['live']) > 0;
+    return _inner(
+      onTap: () => widget.onGo('/shows'),
+      padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
+      child: Row(children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: (live ? _rose : _sky).withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: live
+              ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  for (final h in const [10.0, 18.0, 12.0, 20.0, 10.0]) ...[
+                    Container(
+                      width: 3,
+                      height: h,
+                      decoration: BoxDecoration(color: _rose, borderRadius: BorderRadius.circular(2)),
+                    ),
+                    const SizedBox(width: 2),
+                  ],
+                ])
+              : Icon(LucideIcons.audioLines, size: 22, color: _sky),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Text('GameCast', style: body(15, weight: FontWeight.w800)),
+              const SizedBox(width: 8),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: live ? _rose : muted.withValues(alpha: 0.45)),
+              ),
+              if (live) ...[
+                const SizedBox(width: 6),
+                Text(tr('НАЖИВО'), style: body(10, color: _rose, weight: FontWeight.w800)),
+              ],
+            ]),
+            const SizedBox(height: 2),
+            Text(_castSummary, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+          ]),
+        ),
+        Icon(LucideIcons.chevronRight, size: 18, color: muted),
+      ]),
+    );
+  }
 
   Widget _row(IconData icon, String label, VoidCallback onTap, {Color? color}) => ArcticPressable(
         onTap: onTap,
@@ -907,11 +912,17 @@ class _MenuContentState extends State<MenuContent> {
         ]),
       ),
     ]);
+    // Кнопка перемикача — поруч із карткою, не всередині неї: інакше тап відкрив би профіль.
+    final profile = profilePinned ? Padding(padding: const EdgeInsets.all(4), child: identity) : ArcticPressable(onTap: () => widget.onGo('/profile'), child: Padding(padding: const EdgeInsets.all(4), child: identity));
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       // 1. Профіль і GameCon+
       _block(Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        profilePinned ? Padding(padding: const EdgeInsets.all(4), child: identity) : ArcticPressable(onTap: () => widget.onGo('/profile'), child: Padding(padding: const EdgeInsets.all(4), child: identity)),
+        Row(children: [
+          Expanded(child: profile),
+          AccountQuickButton(session: session, player: widget.player, onClose: widget.onClose),
+        ]),
+        AccountSwitcherList(session: session, player: widget.player, onClose: widget.onClose),
         const SizedBox(height: 8),
         // RP-досьє персонажа — для учасників сім'ї (дані /me/hub).
         if (family['dossier'] is Map) ...[
@@ -1038,6 +1049,11 @@ class _MenuContentState extends State<MenuContent> {
             if (_on('games')) _tile(LucideIcons.gamepad2, _cyan, tr('Ігри & FPS'), tr('Перевірка ПК, беклог, роздачі'), '/games'),
           ],
         ),
+        // GameCast — на ширину блоку, як `GameCastTile` на сайті (після сітки 2×2).
+        if (widget.session.pluginOn('live_shows')) ...[
+          const SizedBox(height: 8),
+          _gameCastTile(),
+        ],
       ])),
 
       // 4. Медіа й спільнота
@@ -1180,6 +1196,7 @@ List<({String title, List<_MenuEntry> items})> _menuGroups(BuildContext context,
       title: tr('Спільнота'),
       items: <_MenuEntry>[
         if ((session.modules?.contains('articles') ?? false) && fresh('/articles')) go(LucideIcons.bookOpen, tr('Статті'), '/articles'),
+        // GameCast — окрема картка в ігровому хабі (як на сайті), не дублюємо в «Ще».
         if (fresh('/podcasts')) go(LucideIcons.mic, tr('Подкасти'), '/podcasts'),
         if (session.pluginOn('ideas_board') && fresh('/ideas')) go(LucideIcons.lightbulb, tr('Дошка ідей'), '/ideas'),
         if (fresh('/invite')) go(LucideIcons.userPlus, tr('Запросити друзів'), '/invite'),

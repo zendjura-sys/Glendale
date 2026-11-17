@@ -47,10 +47,10 @@ export default function LegalDocument({
             labels={labels}
             languages={translations}
         >
-            <article lang={locale} className="glass rounded-2xl p-5 sm:p-8">
+            <article lang={locale} className="glass rounded-2xl p-3.5 sm:p-8">
                 <header className="mb-6 space-y-3 border-b border-white/[0.06] pb-5">
                     <div className="flex flex-wrap items-start gap-3">
-                        <h1 className="min-w-0 flex-1 font-display text-2xl font-bold text-white sm:text-3xl">
+                        <h1 className="min-w-0 flex-1 font-display text-xl font-bold text-white sm:text-2xl sm:text-3xl">
                             {title}
                         </h1>
                         {!is_master && (

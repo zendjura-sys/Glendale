@@ -126,7 +126,7 @@ export default function CinemaOverview({
                     {recommended.length > 0 ? (
                         <ForYouRow movies={recommended} />
                     ) : (
-                        <div className="glass rounded-2xl p-5 text-[15px] text-white/55">
+                        <div className="glass rounded-2xl p-3.5 text-[15px] text-white/55">
                             {tr(
                                 'Продовжуйте дивитися й оцінювати. Чим чесніше виставлені оцінки, тим точніше будуть підібрані рекомендації.',
                             )}
@@ -135,9 +135,9 @@ export default function CinemaOverview({
                 </section>
 
                 {discussed.length > 0 && (
-                    <section className="glass rounded-2xl p-5">
+                    <section className="glass rounded-2xl p-3.5">
                         <SectionTitle title={tr('Обговорюване сьогодні')} />
-                        <div className="grid gap-5 lg:grid-cols-2">
+                        <div className="grid gap-3.5 lg:grid-cols-2">
                             {discussed.map((movie) => (
                                 <MovieRow
                                     key={movie.id}

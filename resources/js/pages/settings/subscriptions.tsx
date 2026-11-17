@@ -84,7 +84,7 @@ export default function SubscriptionsSettings({
     return (
         <>
             <Head title={tr('Підписки')} />
-            <div className="space-y-5">
+            <div className="space-y-3.5">
                 <SettingsCard
                     title={tr('Платна підписка на вас')}
                     description={tr(

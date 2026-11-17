@@ -15,6 +15,7 @@ import 'i18n.dart';
 import 'listen_together.dart';
 import 'lyrics.dart';
 import 'music.dart';
+import 'music_nav.dart';
 import 'offline_music.dart';
 import 'posts.dart';
 import 'shell.dart';
@@ -135,20 +136,23 @@ double tileWidth(BuildContext context) => math.min((MediaQuery.sizeOf(context).w
 // ───────────────────────── Каркас сторінки ─────────────────────────
 
 /// Прокрутка сторінки музики: під прозору шапку, без бічних полів (полиці — на всю ширину).
+/// [showNav] — пігулки розділу як на сайті (`MusicNav`); для чужого профілю / офлайн-режиму можна вимкнути.
 class MusicList extends StatelessWidget {
-  const MusicList({required this.children, this.onRefresh, this.extraBottom = 0, super.key});
+  const MusicList({required this.children, this.onRefresh, this.showNav = true, super.key});
   final List<Widget> children;
   final Future<void> Function()? onRefresh;
-
-  /// Місце під власну панель вкладок розділу.
-  final double extraBottom;
+  final bool showNav;
 
   @override
   Widget build(BuildContext context) {
+    final items = <Widget>[
+      if (showNav) const MusicNav(),
+      ...children,
+    ];
     final list = ListView(
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-      padding: EdgeInsets.only(top: siteHeaderInset(context), bottom: ShellChrome.bottomOf(context) + extraBottom + 20),
-      children: children,
+      padding: EdgeInsets.only(top: siteHeaderInset(context), bottom: ShellChrome.bottomOf(context) + 20),
+      children: items,
     );
     if (onRefresh == null) return list;
     return RefreshIndicator(color: primary, backgroundColor: popover, onRefresh: onRefresh!, child: list);

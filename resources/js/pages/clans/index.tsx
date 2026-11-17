@@ -118,7 +118,7 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
         <>
             <Head title={tr('Клани й гільдії')} />
             <div className="mb-4 flex flex-wrap items-center gap-3">
-                <h1 className="flex flex-1 items-center gap-2 font-display text-2xl font-semibold text-white">
+                <h1 className="flex flex-1 items-center gap-2 font-display text-xl font-semibold text-white sm:text-2xl">
                     <Swords className="size-6 text-sky-400" />{' '}
                     {tr('Клани й гільдії')}
                 </h1>
@@ -131,11 +131,11 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
             </div>
 
             {mine.length > 0 && (
-                <section className="mb-5">
+                <section className="mb-3.5">
                     <h2 className="mb-2 text-sm font-semibold text-white/70">
                         {tr('Мої')}
                     </h2>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="gc-compact-grid-2 lg:!grid-cols-3">
                         {mine.map((c) => (
                             <ClanRow key={c.id} clan={c} />
                         ))}
@@ -192,7 +192,7 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
                     text={tr('Створіть свій — оберіть гру й потрібні розділи.')}
                 />
             ) : (
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="gc-compact-grid-2 lg:!grid-cols-3">
                     {clans.data.map((c) => (
                         <ClanRow key={c.id} clan={c} />
                     ))}

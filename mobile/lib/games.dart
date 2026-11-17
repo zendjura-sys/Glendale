@@ -509,6 +509,20 @@ class GameScreen extends StatelessWidget {
                   if (text(d['igdb_url']) != null) GhostButton(label: 'IGDB', icon: LucideIcons.externalLink, expand: false, compact: true, onPressed: () => _open(text(d['igdb_url'])!)),
                 ]),
               ]),
+            // Публічні кадри гравців — як посилання на сайті, коли лічильник > 0.
+            if (intOf(data['screenshots']) > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Glass(
+                  onTap: () => context.push('/screenshots?game=${Uri.encodeQueryComponent(slug)}'),
+                  child: Row(children: [
+                    const Icon(LucideIcons.images, size: 20, color: Color(0xFF38BDF8)),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(tr('Скриншоти гравців'), style: body(15, weight: FontWeight.w600))),
+                    Text(compact(data['screenshots']), style: body(13, color: muted)),
+                  ]),
+                ),
+              ),
             // Блоки сайту: беклог, оцінка гравців, лідерборд, музика, ціни, «чи потягне ПК», новини, цілі, FPS, Q&A, наставники, досягнення.
             GameExtras(key: ValueKey('extras-$slug'), slug: slug, name: text(d['name']) ?? slug),
             const SizedBox(height: 12),

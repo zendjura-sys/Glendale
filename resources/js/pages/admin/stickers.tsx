@@ -56,7 +56,7 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
                 )}
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <StatCard
                     label={tr('Наборів')}
                     value={stats.packs}
@@ -80,7 +80,7 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
 
             <form
                 onSubmit={create}
-                className="gc-solid mb-5 flex flex-wrap items-start gap-2 rounded-2xl p-3"
+                className="gc-solid mb-3.5 flex flex-wrap items-start gap-2 rounded-2xl p-3"
             >
                 <div className="min-w-[200px] flex-1">
                     <Input
@@ -178,7 +178,7 @@ function PackCard({
     return (
         <section
             className={cn(
-                'gc-solid rounded-2xl p-4 sm:p-5',
+                'gc-solid rounded-2xl p-3.5 sm:p-4',
                 !pack.is_active && 'opacity-70',
             )}
         >

@@ -79,9 +79,9 @@ export default function AnimeImport({ preview }: Props) {
     return (
         <>
             <Head title={tr('Імпорт списків аніме')} />
-            <div className="mx-auto max-w-3xl space-y-5">
-                <section className="gc-solid space-y-4 rounded-2xl p-5">
-                    <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
+            <div className="mx-auto max-w-3xl space-y-3.5">
+                <section className="gc-solid space-y-4 rounded-2xl p-3.5">
+                    <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white sm:text-2xl">
                         <ListPlus className="size-6 text-sky-400" />
                         {tr('Імпорт списків аніме')}
                     </h1>

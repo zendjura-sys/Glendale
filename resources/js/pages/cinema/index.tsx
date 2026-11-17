@@ -103,7 +103,7 @@ function TmdbLookup({ query }: { query: string }) {
     if (found.length === 0) return null;
 
     return (
-        <section className="glass rounded-2xl p-4 sm:p-5">
+        <section className="glass rounded-2xl p-3.5 sm:p-4">
             <h2 className="font-display text-lg font-semibold text-white">
                 {tr('Знайдено в TMDB')}
                 <span className="ml-2 text-sm font-normal text-white/40">
@@ -385,7 +385,7 @@ export default function CinemaIndex({
                         }
                     />
                 ) : (
-                    <section className="glass rounded-2xl p-4 sm:p-5">
+                    <section className="glass rounded-2xl p-3.5 sm:p-4">
                         <div className="mb-4 flex items-center gap-3">
                             <h2 className="font-display text-lg font-semibold text-white max-sm:hidden">
                                 {filtered ? tr('Знайдено') : tr('Каталог')}

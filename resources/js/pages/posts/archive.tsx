@@ -65,7 +65,7 @@ export default function PostArchivePage({
             <div className="mx-auto max-w-[640px] space-y-4">
                 <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
                     <div>
-                        <h1 className="font-display text-2xl font-semibold text-white">
+                        <h1 className="font-display text-xl font-semibold text-white sm:text-2xl">
                             {tr('Архів записів')}
                         </h1>
                         <p className="mt-1 text-sm text-white/45">

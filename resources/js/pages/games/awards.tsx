@@ -213,13 +213,13 @@ export default function Awards(props: Props) {
         <>
             <Head title={tr('Гра року {year}', { year })} />
             <div className="space-y-4">
-                <header className="gc-solid rounded-2xl p-5">
+                <header className="gc-solid rounded-2xl p-3.5">
                     <div className="flex items-start gap-4">
                         <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/15">
                             <Trophy className="size-6 text-primary" />
                         </span>
                         <div className="min-w-0 flex-1">
-                            <h1 className="font-display text-2xl font-bold text-white">
+                            <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                                 {tr('Гра року {year}', { year })}
                             </h1>
                             <p className="mt-1 text-sm text-white/55">

@@ -67,7 +67,7 @@ export default function AdminStatus({
                 }
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-5">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 md:grid-cols-5">
                 {components.map((c) => (
                     <div key={c.key} className="gc-solid rounded-2xl p-4">
                         <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function AdminStatus({
 
             <form
                 onSubmit={open}
-                className="gc-solid mb-5 space-y-2 rounded-2xl p-4"
+                className="gc-solid mb-3.5 space-y-2 rounded-2xl p-4"
             >
                 <h2 className="text-sm font-semibold text-white">
                     {tr('Оголосити збій')}

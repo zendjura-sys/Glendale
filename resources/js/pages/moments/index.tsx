@@ -87,11 +87,11 @@ export default function Moments({
                         : tr('Моменти')
                 }
             />
-            <div className="space-y-5">
-                <section className="gc-solid rounded-2xl p-5 sm:p-6">
+            <div className="space-y-3.5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                         <div className="min-w-0 flex-1">
-                            <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
+                            <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white sm:text-2xl">
                                 <Clapperboard className="size-6 text-sky-400" />
                                 {tr('Моменти')}
                             </h1>
@@ -110,7 +110,7 @@ export default function Moments({
                             {tr('Додати момент')}
                         </button>
                     </div>
-                    <div className="mt-5 flex flex-col gap-2 lg:flex-row lg:items-center">
+                    <div className="mt-3.5 flex flex-col gap-2 lg:flex-row lg:items-center">
                         <div className="gc-solid-2 -mx-1 scrollbar-none flex min-w-0 snap-x gap-1 overflow-x-auto rounded-xl p-1">
                             {TABS().map((tab) => (
                                 <button
@@ -177,7 +177,7 @@ export default function Moments({
                         }
                     />
                 ) : (
-                    <div className="grid grid-cols-1 gap-4 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="gc-compact-grid min-[1920px]:!grid-cols-4 min-[2400px]:!grid-cols-5 sm:!grid-cols-2 xl:!grid-cols-3">
                         {moments.map((moment) => (
                             <MomentCard key={moment.id} moment={moment} />
                         ))}

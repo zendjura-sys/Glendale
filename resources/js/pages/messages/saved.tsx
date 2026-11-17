@@ -18,7 +18,7 @@ export default function SavedMessages({ items }: { items: Item[] }) {
         <>
             <Head title={tr('Обрані')} />
             <div className="mx-auto w-full max-w-xl space-y-4">
-                <h1 className="font-display text-2xl font-bold text-white">
+                <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                     {tr('Обрані повідомлення')}
                 </h1>
                 {items.length === 0 ? (

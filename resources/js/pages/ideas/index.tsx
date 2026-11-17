@@ -86,7 +86,7 @@ export default function IdeasIndex({
             <div className="mx-auto w-full max-w-3xl px-4 py-6">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
+                        <h1 className="flex items-center gap-2 font-display text-xl font-semibold text-white sm:text-2xl">
                             <Lightbulb className="size-6 text-sky-400" />
                             {tr('Дошка ідей')}
                         </h1>
@@ -153,7 +153,7 @@ export default function IdeasIndex({
                     </form>
                 )}
 
-                <div className="mt-5 flex flex-wrap gap-2">
+                <div className="mt-3.5 flex flex-wrap gap-2">
                     {(['top', 'new'] as const).map((value) => (
                         <button
                             key={value}

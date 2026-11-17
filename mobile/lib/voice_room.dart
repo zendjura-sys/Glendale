@@ -66,6 +66,24 @@ class VoiceCall extends ChangeNotifier {
     );
   }
 
+  /// GameCast: підключення до шоу наживо (ведучі говорять, слухачі — слухають).
+  Future<void> show(Api api, int id, String title, {void Function(Object error)? onError}) async {
+    if (kind == 'show' && roomId == id && active) return;
+    await _connect(
+      api,
+      () => api.post(Api.site('/shows/$id/join')),
+      onError: onError,
+      failure: tr('Не вдалося підключитися до шоу.'),
+      meta: () {
+        kind = 'show';
+        roomId = id;
+        roomName = title;
+        label = 'GameCast';
+        route = '/shows/$id';
+      },
+    );
+  }
+
   /// Голос під час спільного перегляду фільму.
   Future<void> watch(Api api, String code, String title, {void Function(Object error)? onError}) async {
     await _connect(
@@ -188,12 +206,14 @@ class VoiceCall extends ChangeNotifier {
   Future<void> leave() async {
     final room = _room;
     final call = kind == 'call' ? callId : null;
+    final showId = kind == 'show' ? roomId : null;
     final api = _api;
     _room = null;
     await room?.disconnect();
     await _reset();
     // Співрозмовник побачить кінець дзвінка одразу, не чекаючи вебхука LiveKit.
     if (call != null && api != null) unawaited(api.post('/api/v1/calls/$call/leave').then((_) => null, onError: (_) => null));
+    if (showId != null && api != null) unawaited(api.post(Api.site('/shows/$showId/leave')).then((_) => null, onError: (_) => null));
   }
 
   Future<void> _reset() async {

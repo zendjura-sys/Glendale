@@ -128,7 +128,7 @@ export default function AdminPlus({
                 }
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <StatCard
                     label={tr('Людей з GameCon+')}
                     value={stats.users}
@@ -157,10 +157,10 @@ export default function AdminPlus({
                 />
             </div>
 
-            <div className="mb-5 grid gap-5 lg:grid-cols-2">
+            <div className="mb-3.5 grid gap-3.5 lg:grid-cols-2">
                 <form
                     onSubmit={submitGrant}
-                    className="gc-solid space-y-3 rounded-2xl p-5"
+                    className="gc-solid space-y-3 rounded-2xl p-3.5"
                 >
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Видати GameCon+')}
@@ -208,7 +208,7 @@ export default function AdminPlus({
                 <PromoForm products={products} />
             </div>
 
-            <section className="gc-solid mb-5 rounded-2xl p-5">
+            <section className="gc-solid mb-3.5 rounded-2xl p-3.5">
                 <h2 className="font-display text-lg font-bold text-white">
                     {tr('Чинні періоди')}
                 </h2>
@@ -286,8 +286,8 @@ export default function AdminPlus({
                 )}
             </section>
 
-            <div className="grid gap-5 lg:grid-cols-2">
-                <section className="gc-solid rounded-2xl p-5">
+            <div className="grid gap-3.5 lg:grid-cols-2">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Промокоди')}
                     </h2>
@@ -358,7 +358,7 @@ export default function AdminPlus({
                     </ul>
                 </section>
 
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Останні оплати')}
                     </h2>
@@ -483,7 +483,10 @@ function PromoForm({ products }: { products: Props['products'] }) {
     };
 
     return (
-        <form onSubmit={submit} className="gc-solid space-y-3 rounded-2xl p-5">
+        <form
+            onSubmit={submit}
+            className="gc-solid space-y-3 rounded-2xl p-3.5"
+        >
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                 <Ticket className="size-5 text-indigo-300" />
                 {tr('Новий промокод')}

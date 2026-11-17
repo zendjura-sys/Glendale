@@ -640,7 +640,7 @@ export default function ProfileShow({
                             </span>
                         </Uploader>
                     )}
-                    <div className="flex items-end gap-4 px-2 pt-3 sm:absolute sm:inset-x-0 sm:bottom-0 sm:gap-5 sm:p-6">
+                    <div className="flex items-end gap-4 px-2 pt-3 sm:absolute sm:inset-x-0 sm:bottom-0 sm:gap-3.5 sm:p-6">
                         <div className="shrink-0">
                             <div
                                 className={cn(
@@ -850,18 +850,23 @@ export default function ProfileShow({
                             roles={profile.roles}
                             className="px-2.5 py-1 text-xs"
                         />
-                        <BadgeStrip badges={tieredBadges} isSelf={isSelf} />
-                        {questPoints !== null && questPoints > 0 && (
-                            <span
-                                title={tr('Очки за виконані завдання')}
-                                className="inline-flex items-center gap-1 rounded-chip bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-300 tabular-nums"
-                            >
-                                <Coins className="size-3.5" />
-                                {tr('{n} очок', {
-                                    n: questPoints.toLocaleString('uk-UA'),
-                                })}
-                            </span>
-                        )}
+                        <Deferred
+                            data={['tieredBadges', 'questPoints']}
+                            fallback={<span hidden />}
+                        >
+                            <BadgeStrip badges={tieredBadges} isSelf={isSelf} />
+                            {questPoints !== null && questPoints > 0 && (
+                                <span
+                                    title={tr('Очки за виконані завдання')}
+                                    className="inline-flex items-center gap-1 rounded-chip bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-300 tabular-nums"
+                                >
+                                    <Coins className="size-3.5" />
+                                    {tr('{n} очок', {
+                                        n: questPoints.toLocaleString('uk-UA'),
+                                    })}
+                                </span>
+                            )}
+                        </Deferred>
                         {linkedAccounts.map((a) =>
                             a.href ? (
                                 <a
@@ -892,16 +897,18 @@ export default function ProfileShow({
                             {profile.note}
                         </p>
                     )}
-                    {ready && (
-                        <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-chip bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
-                            <span className="size-1.5 rounded-full bg-emerald-400" />
-                            {ready.game
-                                ? tr('Готовий грати в {game}', {
-                                      game: ready.game.name,
-                                  })
-                                : tr('Готовий грати зараз')}
-                        </p>
-                    )}
+                    <Deferred data="ready" fallback={<span hidden />}>
+                        {ready ? (
+                            <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-chip bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                                <span className="size-1.5 rounded-full bg-emerald-400" />
+                                {ready.game
+                                    ? tr('Готовий грати в {game}', {
+                                          game: ready.game.name,
+                                      })
+                                    : tr('Готовий грати зараз')}
+                            </p>
+                        ) : null}
+                    </Deferred>
                     {(profile.status || profile.status_emoji) && (
                         <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[15px] text-white/75">
                             {profile.status_emoji && (
@@ -983,17 +990,21 @@ export default function ProfileShow({
                             )}
                         </div>
                     )}
-                    <WatchedTogether
-                        key={profile.id}
-                        people={together}
-                        isSelf={isSelf}
-                        hiddenForOthers={togetherOff}
-                    />
-                    {compatibility && compatibility.score > 0 && (
-                        <div className="mt-2">
-                            <CompatibilityChip data={compatibility} />
-                        </div>
-                    )}
+                    <Deferred data="together" fallback={<span hidden />}>
+                        <WatchedTogether
+                            key={profile.id}
+                            people={together}
+                            isSelf={isSelf}
+                            hiddenForOthers={togetherOff}
+                        />
+                    </Deferred>
+                    <Deferred data="compatibility" fallback={<span hidden />}>
+                        {compatibility && compatibility.score > 0 ? (
+                            <div className="mt-2">
+                                <CompatibilityChip data={compatibility} />
+                            </div>
+                        ) : null}
+                    </Deferred>
                     <div className="mt-4 flex flex-wrap items-center gap-2 lg:hidden">
                         <Link
                             href={`/${profile.username}/card`}
@@ -1218,7 +1229,7 @@ export default function ProfileShow({
             </section>
 
             {!canSeeContent ? (
-                <div className="mt-5">
+                <div className="mt-3.5">
                     <EmptyState
                         icon={Lock}
                         title={
@@ -1255,59 +1266,82 @@ export default function ProfileShow({
                     )}
                     <div
                         className={cn(
-                            'mt-5 flex flex-col gap-5 xl:flex-row',
+                            'mt-3.5 flex flex-col gap-3.5 xl:flex-row',
                             section !== 'main' && 'hidden',
                         )}
                     >
                         <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:h-fit xl:w-[320px]">
                             {showVisitors && (
-                                <Widget title={tr('Хто заходив')} icon={Eye}>
-                                    {visitors.length === 0 ? (
-                                        <p className="px-1 text-sm text-white/45">
-                                            {tr('Поки ніхто не заходив.')}
-                                        </p>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {visitors.map((visitor) => (
-                                                <Link
-                                                    key={visitor.id}
-                                                    href={`/${visitor.username}`}
-                                                    className="flex items-center gap-2 rounded-2xl px-1 py-1 transition hover:bg-[var(--gc-l3)]"
-                                                >
-                                                    <UserAvatar
-                                                        user={visitor}
-                                                        size="sm"
-                                                    />
-                                                    <span className="min-w-0 flex-1">
-                                                        <span className="block truncate text-sm text-white">
-                                                            {visitor.first_name}
+                                <Deferred
+                                    data="visitors"
+                                    fallback={<span hidden />}
+                                >
+                                    <Widget
+                                        title={tr('Хто заходив')}
+                                        icon={Eye}
+                                    >
+                                        {visitors.length === 0 ? (
+                                            <p className="px-1 text-sm text-white/45">
+                                                {tr('Поки ніхто не заходив.')}
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {visitors.map((visitor) => (
+                                                    <Link
+                                                        key={visitor.id}
+                                                        href={`/${visitor.username}`}
+                                                        className="flex items-center gap-2 rounded-2xl px-1 py-1 transition hover:bg-[var(--gc-l3)]"
+                                                    >
+                                                        <UserAvatar
+                                                            user={visitor}
+                                                            size="sm"
+                                                        />
+                                                        <span className="min-w-0 flex-1">
+                                                            <span className="block truncate text-sm text-white">
+                                                                {
+                                                                    visitor.first_name
+                                                                }
+                                                            </span>
+                                                            <span className="block text-xs text-white/40">
+                                                                {formatDate(
+                                                                    visitor.visited_at,
+                                                                    false,
+                                                                )}
+                                                            </span>
                                                         </span>
-                                                        <span className="block text-xs text-white/40">
-                                                            {formatDate(
-                                                                visitor.visited_at,
-                                                                false,
-                                                            )}
-                                                        </span>
-                                                    </span>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    )}
-                                </Widget>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </Widget>
+                                </Deferred>
                             )}
                             {liveOn && stream && (
                                 <ProfileStream stream={stream} />
                             )}
-                            {account && <AccountCard data={account} />}
+                            <Deferred data="account" fallback={<span hidden />}>
+                                {account ? (
+                                    <AccountCard data={account} />
+                                ) : null}
+                            </Deferred>
                             {blockSequence(blockOrder).map((key) => {
                                 const widgets: Record<string, ReactNode> = {
                                     // Ігрові блоки — лише в режимах, де є «Граю в…» (не в «Класиці», «Кіномані»…).
-                                    track: (profileTrack ||
-                                        (isSelf && profileTrackOn)) && (
-                                        <ProfileTrack
-                                            track={profileTrack}
-                                            isSelf={isSelf && profileTrackOn}
-                                        />
+                                    track: (
+                                        <Deferred
+                                            data="profileTrack"
+                                            fallback={<span hidden />}
+                                        >
+                                            {(profileTrack ||
+                                                (isSelf && profileTrackOn)) && (
+                                                <ProfileTrack
+                                                    track={profileTrack}
+                                                    isSelf={
+                                                        isSelf && profileTrackOn
+                                                    }
+                                                />
+                                            )}
+                                        </Deferred>
                                     ),
                                     platforms: playingOn &&
                                         profile.platforms && (
@@ -1319,80 +1353,114 @@ export default function ProfileShow({
                                                 isSelf={isSelf && gamerIdsOn}
                                             />
                                         ),
-                                    steam: playingOn &&
-                                        (steamLibrary?.length ?? 0) > 0 && (
-                                            <Widget
-                                                title={tr('Бібліотека Steam')}
-                                            >
-                                                <div className="space-y-1 px-1">
-                                                    {steamLibrary?.map(
-                                                        (game) =>
-                                                            game.href ? (
-                                                                <Link
-                                                                    key={
-                                                                        game.name
-                                                                    }
-                                                                    href={
-                                                                        game.href
-                                                                    }
-                                                                    className="flex justify-between gap-3 text-sm text-white"
-                                                                >
-                                                                    <span className="truncate">
-                                                                        {
-                                                                            game.name
-                                                                        }
-                                                                    </span>
-                                                                    <span className="text-xs text-white/40">
-                                                                        {
-                                                                            game.hours
-                                                                        }
-                                                                        г
-                                                                    </span>
-                                                                </Link>
-                                                            ) : (
-                                                                <div
-                                                                    key={
-                                                                        game.name
-                                                                    }
-                                                                    className="flex justify-between gap-3 text-sm text-white/80"
-                                                                >
-                                                                    <span className="truncate">
-                                                                        {
-                                                                            game.name
-                                                                        }
-                                                                    </span>
-                                                                    <span className="text-xs text-white/40">
-                                                                        {
-                                                                            game.hours
-                                                                        }
-                                                                        г
-                                                                    </span>
-                                                                </div>
-                                                            ),
-                                                    )}
-                                                </div>
-                                            </Widget>
-                                        ),
+                                    steam: (
+                                        <Deferred
+                                            data="steamLibrary"
+                                            fallback={<span hidden />}
+                                        >
+                                            {playingOn &&
+                                                (steamLibrary?.length ?? 0) >
+                                                    0 && (
+                                                    <Widget
+                                                        title={tr(
+                                                            'Бібліотека Steam',
+                                                        )}
+                                                    >
+                                                        <div className="space-y-1 px-1">
+                                                            {steamLibrary?.map(
+                                                                (game) =>
+                                                                    game.href ? (
+                                                                        <Link
+                                                                            key={
+                                                                                game.name
+                                                                            }
+                                                                            href={
+                                                                                game.href
+                                                                            }
+                                                                            className="flex justify-between gap-3 text-sm text-white"
+                                                                        >
+                                                                            <span className="truncate">
+                                                                                {
+                                                                                    game.name
+                                                                                }
+                                                                            </span>
+                                                                            <span className="text-xs text-white/40">
+                                                                                {
+                                                                                    game.hours
+                                                                                }
+                                                                                г
+                                                                            </span>
+                                                                        </Link>
+                                                                    ) : (
+                                                                        <div
+                                                                            key={
+                                                                                game.name
+                                                                            }
+                                                                            className="flex justify-between gap-3 text-sm text-white/80"
+                                                                        >
+                                                                            <span className="truncate">
+                                                                                {
+                                                                                    game.name
+                                                                                }
+                                                                            </span>
+                                                                            <span className="text-xs text-white/40">
+                                                                                {
+                                                                                    game.hours
+                                                                                }
+                                                                                г
+                                                                            </span>
+                                                                        </div>
+                                                                    ),
+                                                            )}
+                                                        </div>
+                                                    </Widget>
+                                                )}
+                                        </Deferred>
+                                    ),
                                     steam_achievements: steamAchievements &&
                                         canSeeContent && (
                                             <SteamAchievements
                                                 username={profile.username}
                                             />
                                         ),
-                                    setup: setup && (
-                                        <MySetup data={setup} isSelf={isSelf} />
+                                    setup: (
+                                        <Deferred
+                                            data="setup"
+                                            fallback={<span hidden />}
+                                        >
+                                            {setup ? (
+                                                <MySetup
+                                                    data={setup}
+                                                    isSelf={isSelf}
+                                                />
+                                            ) : null}
+                                        </Deferred>
                                     ),
-                                    stream_schedule: streamSchedule && (
-                                        <StreamSchedule
-                                            slots={streamSchedule}
-                                            isSelf={isSelf}
-                                        />
+                                    stream_schedule: (
+                                        <Deferred
+                                            data="streamSchedule"
+                                            fallback={<span hidden />}
+                                        >
+                                            {streamSchedule ? (
+                                                <StreamSchedule
+                                                    slots={streamSchedule}
+                                                    isSelf={isSelf}
+                                                />
+                                            ) : null}
+                                        </Deferred>
                                     ),
-                                    cards: cardShowcase && (
-                                        <CardShowcase
-                                            data={cardShowcase}
-                                            isSelf={isSelf}
-                                        />
+                                    cards: (
+                                        <Deferred
+                                            data="cardShowcase"
+                                            fallback={<span hidden />}
+                                        >
+                                            {cardShowcase ? (
+                                                <CardShowcase
+                                                    data={cardShowcase}
+                                                    isSelf={isSelf}
+                                                />
+                                            ) : null}
+                                        </Deferred>
                                     ),
                                     about: profile.about && (
                                         <Widget title={tr('Про себе')}>
@@ -1401,24 +1469,45 @@ export default function ProfileShow({
                                             </p>
                                         </Widget>
                                     ),
-                                    characters: (characters.length > 0 ||
-                                        (isSelf && charactersOn)) && (
-                                        <CharactersWidget
-                                            characters={characters}
-                                            isSelf={isSelf}
-                                        />
+                                    characters: (
+                                        <Deferred
+                                            data="characters"
+                                            fallback={<span hidden />}
+                                        >
+                                            {(characters.length > 0 ||
+                                                (isSelf && charactersOn)) && (
+                                                <CharactersWidget
+                                                    characters={characters}
+                                                    isSelf={isSelf}
+                                                />
+                                            )}
+                                        </Deferred>
                                     ),
-                                    games: backlog && (
-                                        <BacklogWidget
-                                            data={backlog}
-                                            isSelf={isSelf}
-                                        />
+                                    games: (
+                                        <Deferred
+                                            data="backlog"
+                                            fallback={<span hidden />}
+                                        >
+                                            {backlog ? (
+                                                <BacklogWidget
+                                                    data={backlog}
+                                                    isSelf={isSelf}
+                                                />
+                                            ) : null}
+                                        </Deferred>
                                     ),
-                                    achievements: achievements && (
-                                        <AchievementsCard
-                                            data={achievements}
-                                            isSelf={isSelf}
-                                        />
+                                    achievements: (
+                                        <Deferred
+                                            data="achievements"
+                                            fallback={<span hidden />}
+                                        >
+                                            {achievements ? (
+                                                <AchievementsCard
+                                                    data={achievements}
+                                                    isSelf={isSelf}
+                                                />
+                                            ) : null}
+                                        </Deferred>
                                     ),
                                     audio: audio && (
                                         <>

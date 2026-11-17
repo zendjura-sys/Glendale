@@ -96,7 +96,7 @@ export default function SeasonPass({
     return (
         <>
             <Head title={tr('Сезонний пропуск')} />
-            <div className="mx-auto max-w-4xl space-y-5">
+            <div className="mx-auto max-w-4xl space-y-3.5">
                 <section
                     className="relative overflow-hidden rounded-xl p-5 sm:p-7"
                     style={{
@@ -124,7 +124,7 @@ export default function SeasonPass({
                                 m: left.minutes,
                             })}
                         </p>
-                        <div className="mt-5 flex flex-wrap items-end justify-between gap-3">
+                        <div className="mt-3.5 flex flex-wrap items-end justify-between gap-3">
                             <div>
                                 <div className="font-display text-4xl font-bold text-white tabular-nums">
                                     {tr('Рівень {n}', { n: level })}
@@ -190,7 +190,7 @@ export default function SeasonPass({
                     )}
                 </section>
 
-                <div className="grid gap-5 md:grid-cols-[1fr_1.4fr]">
+                <div className="grid gap-3.5 md:grid-cols-[1fr_1.4fr]">
                     <section className="gc-solid rounded-xl p-4 sm:p-5">
                         <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                             <Target className="size-5 text-primary" />

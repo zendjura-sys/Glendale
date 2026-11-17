@@ -149,7 +149,7 @@ function Section({
                     {description}
                 </p>
             </div>
-            <div className="grid content-start gap-5">{children}</div>
+            <div className="grid content-start gap-3.5">{children}</div>
         </section>
     );
 }

@@ -392,7 +392,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                     )}
                                     {party.ended && tr(' · завершено')}
                                 </p>
-                                <h1 className="mt-1 truncate font-display text-2xl font-semibold text-white">
+                                <h1 className="mt-1 truncate font-display text-xl font-semibold text-white sm:text-2xl">
                                     {state.track?.title ?? tr('Нічого не грає')}
                                 </h1>
                                 <p className="truncate text-sm text-white/60">

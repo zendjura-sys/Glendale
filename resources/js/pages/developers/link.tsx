@@ -39,7 +39,7 @@ export default function DeveloperLink({ code, error, done }: Props) {
                 <m.section
                     initial={reduce ? false : { opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="gc-solid space-y-5 rounded-2xl p-6 text-center"
+                    className="gc-solid space-y-3.5 rounded-2xl p-6 text-center"
                 >
                     {done ? (
                         <>

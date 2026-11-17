@@ -6,20 +6,21 @@ import {
     DialogDescription,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { GcSegmented } from '@/components/gc/gc-segmented';
 import { cn } from '@/lib/utils';
 import { LOCALE } from '@/lib/i18n';
 
 export const btnPrimary =
-    'btn-glow inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50';
+    'btn-glow inline-flex h-9 items-center justify-center gap-1.5 rounded-xl px-3.5 text-xs font-semibold disabled:opacity-50 sm:h-10 sm:px-4 sm:text-sm';
 export const btnGhost =
-    'gc-solid-2 inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-sm font-medium text-white/75 transition hover:text-white disabled:opacity-50';
+    'gc-solid-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/75 transition hover:text-white disabled:opacity-50 sm:h-10 sm:px-3.5 sm:text-sm';
 // Тоновані кнопки дій (як «Виплатити з казни» / «Видати догану»): суцільний тон без рамок.
 export const btnDanger =
-    'inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-red-500/15 px-3.5 text-sm font-semibold text-red-400 transition hover:bg-red-500/25 disabled:opacity-50';
+    'inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-red-500/15 px-3 text-xs font-semibold text-red-400 transition hover:bg-red-500/25 disabled:opacity-50 sm:h-10 sm:text-sm';
 export const btnSuccess =
-    'inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-500/15 px-3.5 text-sm font-semibold text-emerald-400 transition hover:bg-emerald-500/25 disabled:opacity-50';
+    'inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-emerald-500/15 px-3 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/25 disabled:opacity-50 sm:h-10 sm:text-sm';
 export const textareaClass =
-    'input-glass w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none';
+    'input-glass w-full rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none sm:px-3.5 sm:py-2.5 sm:text-sm';
 
 /**
  * Картка розділу: кольорова іконка, жирний заголовок, дія чи лічильник праворуч;
@@ -46,22 +47,22 @@ export function Panel({
     return (
         <section
             className={cn(
-                'gc-solid rounded-[22px]',
-                padded && 'p-4 sm:p-5',
+                'gc-solid rounded-2xl',
+                padded && 'p-3 sm:p-3.5',
                 className,
             )}
         >
             {(title || actions) && (
                 <div
                     className={cn(
-                        'mb-4 flex flex-wrap items-center gap-2',
-                        !padded && 'px-4 pt-4 sm:px-5 sm:pt-5',
+                        'mb-2.5 flex flex-wrap items-center gap-2',
+                        !padded && 'px-3 pt-3 sm:px-3.5 sm:pt-3.5',
                     )}
                 >
                     {title && (
-                        <h2 className="flex min-w-0 flex-1 items-center gap-2.5 font-display text-[15px] font-bold text-white sm:text-base">
+                        <h2 className="flex min-w-0 flex-1 items-center gap-2 font-display text-sm font-semibold tracking-tight text-white">
                             {Icon && (
-                                <Icon className={cn('size-5 shrink-0', tone)} />
+                                <Icon className={cn('size-4 shrink-0', tone)} />
                             )}
                             {title}
                         </h2>
@@ -89,21 +90,21 @@ export function Metric({
 }) {
     return (
         // Плитка-показник: підпис, велике число в тоні, підказка нижче («+$1.4M за тиждень»).
-        <div className="gc-solid relative overflow-hidden rounded-[20px] px-4 py-4">
-            <div className="flex items-center justify-between gap-2 text-[13px] font-medium text-white/60">
+        <div className="gc-solid relative overflow-hidden rounded-2xl px-3 py-3">
+            <div className="flex items-center justify-between gap-2 text-[11px] font-medium text-white/60">
                 <span className="min-w-0 truncate">{label}</span>
-                {Icon && <Icon className={cn('size-4 shrink-0', tone)} />}
+                {Icon && <Icon className={cn('size-3.5 shrink-0', tone)} />}
             </div>
             <div
                 className={cn(
-                    'mt-1.5 truncate font-display text-[26px] leading-tight font-extrabold tabular-nums',
+                    'mt-1 truncate font-display text-xl leading-tight font-extrabold tabular-nums sm:text-[22px]',
                     tone,
                 )}
             >
                 {value}
             </div>
             {hint && (
-                <div className="mt-1 text-xs leading-snug text-white/50">
+                <div className="mt-0.5 text-[11px] leading-tight text-white/45">
                     {hint}
                 </div>
             )}
@@ -158,33 +159,18 @@ export function Segmented<T extends string>({
     className?: string;
 }) {
     return (
-        <div
-            className={cn(
-                'gc-solid flex max-w-full [scrollbar-width:none] overflow-x-auto rounded-xl p-1 text-sm',
-                className,
-            )}
-        >
-            {options.map((o) => (
-                <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => onChange(o.value)}
-                    className={cn(
-                        'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition',
-                        value === o.value
-                            ? 'bg-sky-500 text-white'
-                            : 'text-white/60 hover:text-white',
-                    )}
-                >
-                    {o.label}
-                    {!!o.badge && (
-                        <span className="rounded-full bg-red-500 px-1.5 text-[11px] leading-4 text-white">
-                            {o.badge}
-                        </span>
-                    )}
-                </button>
-            ))}
-        </div>
+        <GcSegmented
+            className={className}
+            equal={options.length <= 4}
+            value={value}
+            onChange={(key) => onChange(key as T)}
+            options={options.map((o) => ({
+                key: o.value,
+                label: o.label,
+                count: o.badge,
+                badge: !!o.badge,
+            }))}
+        />
     );
 }
 

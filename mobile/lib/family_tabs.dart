@@ -718,35 +718,71 @@ class WarehouseTab extends StatelessWidget {
             title: '${categories[entry.key] ?? entry.key}',
             icon: LucideIcons.package,
             children: [
-              for (final item in entry.value)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: item['low'] == true ? danger.withValues(alpha: 0.1) : (item['is_archived'] == true ? raised.withValues(alpha: 0.5) : raised),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(children: [
-                    Row(children: [
-                      Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('${item['name']}${item['is_archived'] == true ? ' (архів)' : ''}', style: body(14, weight: FontWeight.w600)),
-                          if (item['hourly_quota'] != null) Text(tr('квота {v}/год', {'v': item['hourly_quota']}), style: body(11.5, color: muted)),
-                        ]),
-                      ),
-                      Text('${item['quantity']}', style: display(18, color: item['low'] == true ? dangerSoft : ink)),
-                      const SizedBox(width: 4),
-                      Text(text(item['unit']) ?? tr('шт'), style: body(12, color: muted)),
-                    ]),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      Expanded(child: GhostButton(label: tr('Взяти'), icon: LucideIcons.upload, compact: true, onPressed: intOf(item['quantity']) > 0 && item['is_archived'] != true ? () => _move(context, item, 'take') : null)),
-                      const SizedBox(width: 8),
-                      Expanded(child: GhostButton(label: tr('Покласти'), icon: LucideIcons.download, compact: true, onPressed: item['is_archived'] != true ? () => _move(context, item, 'put') : null)),
-                      if (manage) IconButton(visualDensity: VisualDensity.compact, onPressed: () => _editItem(context, item: item), icon: Icon(LucideIcons.pencil, size: 18, color: muted)),
-                    ]),
-                  ]),
-                ),
+              // Компактна сітка 2 в ряд — навіть одна позиція не тягнеться на всю ширину.
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final tileW = (constraints.maxWidth - 8) / 2;
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final item in entry.value)
+                        SizedBox(
+                          width: tileW,
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: item['low'] == true
+                                  ? danger.withValues(alpha: 0.1)
+                                  : (item['is_archived'] == true ? raised.withValues(alpha: 0.5) : raised),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(children: [
+                                  Expanded(
+                                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                      FitText('${item['name']}${item['is_archived'] == true ? ' (архів)' : ''}', style: body(12.5, weight: FontWeight.w600), maxLines: 2),
+                                      if (item['hourly_quota'] != null) Text(tr('квота {v}/год', {'v': item['hourly_quota']}), style: body(10.5, color: muted)),
+                                    ]),
+                                  ),
+                                  Text('${item['quantity']}', style: display(16, color: item['low'] == true ? dangerSoft : ink)),
+                                ]),
+                                const SizedBox(height: 8),
+                                Row(children: [
+                                  Expanded(
+                                    child: GhostButton(
+                                      label: tr('Взяти'),
+                                      icon: LucideIcons.upload,
+                                      compact: true,
+                                      onPressed: intOf(item['quantity']) > 0 && item['is_archived'] != true ? () => _move(context, item, 'take') : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: GhostButton(
+                                      label: tr('Покласти'),
+                                      icon: LucideIcons.download,
+                                      compact: true,
+                                      onPressed: item['is_archived'] != true ? () => _move(context, item, 'put') : null,
+                                    ),
+                                  ),
+                                  if (manage)
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      onPressed: () => _editItem(context, item: item),
+                                      icon: Icon(LucideIcons.pencil, size: 16, color: muted),
+                                    ),
+                                ]),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
       ],
@@ -1817,48 +1853,68 @@ class ShiftsTab extends StatelessWidget {
         trailing: manage ? GhostButton(label: tr('Нова'), icon: LucideIcons.plus, compact: true, expand: false, onPressed: () => _create(context)) : null,
         children: [
           if (shifts.isEmpty) QuietEmpty(icon: LucideIcons.calendarClock, text: tr('Цього тижня змін немає.')),
-          for (final s in shifts)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Row(children: [
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(s['title']) ?? '', style: body(14, weight: FontWeight.w600)),
-                    Text('${shortStamp(s['starts_at'])} ${clock(s['starts_at'])}–${clock(s['ends_at'])}', style: body(12, color: muted)),
-                    Row(children: [
-                      if (s['member'] != null) ...[Icon(LucideIcons.crown, size: 13, color: gold), const SizedBox(width: 4)],
-                      Flexible(child: Text(mapOf(s['member'])['display'] != null ? '${mapOf(s['member'])['display']}' : tr('Вільна'), style: body(12, color: s['member'] == null ? green : soft))),
-                    ]),
-                  ]),
-                ),
-                if (s['member'] == null)
-                  PrimaryButton(label: tr('Взяти'), compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/claim'))))
-                else if (s['mine'] == true)
-                  GhostButton(label: tr('Відмовитися'), compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/release'))))
-                else if (s['can_join'] == true)
-                  GhostButton(label: tr('В напарники'), icon: LucideIcons.userRoundPlus, compact: true, expand: false, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/join'))))
-                else if (s['partner'] != null)
-                  GhostButton(
-                    label: s['partner'] == 'pending' ? tr('Скасувати заявку') : tr('Вийти зі зміни'),
-                    compact: true,
-                    expand: false,
-                    onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/leave'))),
-                  ),
-                if (manage)
-                  IconButton(
-                    tooltip: tr('Видалити'),
-                    icon: Icon(LucideIcons.trash2, size: 18, color: dangerSoft),
-                    onPressed: () async {
-                      if (await confirm(context, tr('Видалити зміну?'), danger: true) && context.mounted) {
-                        await ctx.act(context, () => ctx.api.delete(ctx.path('shifts/${s['id']}')));
-                      }
-                    },
-                  ),
-              ]),
-              if (s['goal'] is Map) _ShiftGoal(goal: mapOf(s['goal'])),
-              for (final p in maps(s['partners'])) _ShiftPartner(ctx: ctx, shift: s, partner: p),
-              ]),
+          // Компактна сітка 2 в ряд — як на сайті, без розтягнутих на всю ширину днів.
+          if (shifts.isNotEmpty)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final tileW = (constraints.maxWidth - 8) / 2;
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final s in shifts)
+                      SizedBox(
+                        width: tileW,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(16)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              FitText(text(s['title']) ?? '', style: body(12.5, weight: FontWeight.w700), maxLines: 2),
+                              const SizedBox(height: 2),
+                              Text('${shortStamp(s['starts_at'])} ${clock(s['starts_at'])}–${clock(s['ends_at'])}', style: body(10.5, color: muted)),
+                              const SizedBox(height: 4),
+                              Row(children: [
+                                if (s['member'] != null) ...[Icon(LucideIcons.crown, size: 12, color: gold), const SizedBox(width: 3)],
+                                Flexible(child: FitText(mapOf(s['member'])['display'] != null ? '${mapOf(s['member'])['display']}' : tr('Вільна'), style: body(11, color: s['member'] == null ? green : soft))),
+                              ]),
+                              const SizedBox(height: 8),
+                              if (s['member'] == null)
+                                PrimaryButton(label: tr('Взяти'), compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/claim'))))
+                              else if (s['mine'] == true)
+                                GhostButton(label: tr('Відмовитися'), compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/release'))))
+                              else if (s['can_join'] == true)
+                                GhostButton(label: tr('В напарники'), icon: LucideIcons.userRoundPlus, compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/join'))))
+                              else if (s['partner'] != null)
+                                GhostButton(
+                                  label: s['partner'] == 'pending' ? tr('Скасувати') : tr('Вийти'),
+                                  compact: true,
+                                  onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/leave'))),
+                                ),
+                              if (manage)
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    tooltip: tr('Видалити'),
+                                    icon: Icon(LucideIcons.trash2, size: 16, color: dangerSoft),
+                                    onPressed: () async {
+                                      if (await confirm(context, tr('Видалити зміну?'), danger: true) && context.mounted) {
+                                        await ctx.act(context, () => ctx.api.delete(ctx.path('shifts/${s['id']}')));
+                                      }
+                                    },
+                                  ),
+                                ),
+                              if (s['goal'] is Map) _ShiftGoal(goal: mapOf(s['goal'])),
+                              for (final p in maps(s['partners'])) _ShiftPartner(ctx: ctx, shift: s, partner: p),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
         ],
       ),

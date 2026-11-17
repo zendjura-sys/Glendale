@@ -124,7 +124,7 @@ export default function AdminSiteEvents({
             {draft && (
                 <form
                     onSubmit={save}
-                    className="gc-solid mb-5 space-y-4 rounded-xl p-4"
+                    className="gc-solid mb-3.5 space-y-4 rounded-xl p-4"
                 >
                     <div className="grid gap-3 sm:grid-cols-2">
                         <label className="space-y-1 text-sm text-white/70">

@@ -498,7 +498,7 @@ export default function Profile({
 
             {playingOn && <PlayingSettingsCard />}
 
-            <div className="mt-5">
+            <div className="mt-3.5">
                 <ConnectedAccounts connections={connections} />
             </div>
 

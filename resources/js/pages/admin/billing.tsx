@@ -158,14 +158,14 @@ export default function AdminBilling({
             />
 
             {!monobank && (
-                <p className="mb-5 rounded-2xl bg-amber-300/10 p-4 text-sm text-amber-100">
+                <p className="mb-3.5 rounded-2xl bg-amber-300/10 p-4 text-sm text-amber-100">
                     {tr(
                         'Оплата карткою вимкнена: вставте токен еквайрингу monobank в Адмінка → Інтеграції → monobank.',
                     )}
                 </p>
             )}
 
-            <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <StatCard
                     label={tr('Оплачено цього місяця')}
                     value={money(stats.paid_month)}
@@ -200,7 +200,7 @@ export default function AdminBilling({
 
             <ProductsForm products={products} />
 
-            <div className="my-5 grid gap-5 lg:grid-cols-2">
+            <div className="my-5 grid gap-3.5 lg:grid-cols-2">
                 <RulesForm rules={rules} />
                 <GooglePayForm settings={google_pay} webhook={webhook} />
             </div>
@@ -227,7 +227,7 @@ function OrdersList({ orders }: { orders: Props['orders'] }) {
     };
 
     return (
-        <section className="gc-solid mb-5 rounded-2xl p-5">
+        <section className="gc-solid mb-3.5 rounded-2xl p-3.5">
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Оплати')}
             </h2>
@@ -386,7 +386,7 @@ function ProductsForm({ products }: { products: Product[] }) {
     };
 
     return (
-        <form onSubmit={save} className="gc-solid rounded-2xl p-5">
+        <form onSubmit={save} className="gc-solid rounded-2xl p-3.5">
             <div className="flex flex-wrap items-center gap-3">
                 <h2 className="flex-1 font-display text-lg font-bold text-white">
                     {tr('Тарифи')}
@@ -665,7 +665,7 @@ function RulesForm({ rules }: { rules: Rules }) {
                 event.preventDefault();
                 form.put('/admin/billing/rules', { preserveScroll: true });
             }}
-            className="gc-solid space-y-3 rounded-2xl p-5"
+            className="gc-solid space-y-3 rounded-2xl p-3.5"
         >
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Правила підписок')}
@@ -782,7 +782,7 @@ function GooglePayForm({
                 event.preventDefault();
                 form.put('/admin/billing/google-pay', { preserveScroll: true });
             }}
-            className="gc-solid space-y-3 rounded-2xl p-5"
+            className="gc-solid space-y-3 rounded-2xl p-3.5"
         >
             <div className="flex items-center gap-3">
                 <h2 className="flex-1 font-display text-lg font-bold text-white">
@@ -879,7 +879,7 @@ function LegacySection({
     transactions: Props['transactions'];
 }) {
     return (
-        <section className="gc-solid rounded-2xl p-5">
+        <section className="gc-solid rounded-2xl p-3.5">
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Старий баланс')}
             </h2>
@@ -888,7 +888,7 @@ function LegacySection({
                     'Поповнення рахунку вимкнено. Залишки автоматично зараховуються в ціну наступної оплати людини; їх можна скоригувати вручну.',
                 )}
             </p>
-            <div className="mt-4 grid gap-5 lg:grid-cols-2">
+            <div className="mt-4 grid gap-3.5 lg:grid-cols-2">
                 <div>
                     <AdjustForm />
                     {balances.length > 0 && (
@@ -972,7 +972,7 @@ function LegacySection({
                     </ul>
                     {transactions.length > 0 && (
                         <>
-                            <h3 className="mt-5 text-sm font-semibold text-white/80">
+                            <h3 className="mt-3.5 text-sm font-semibold text-white/80">
                                 {tr('Корекції й повернення')}
                             </h3>
                             <ul className="mt-2 divide-y divide-white/[0.06]">

@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { m, useReducedMotion } from 'motion/react';
 import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
+import { navPrefetch } from '@/lib/prefetch';
 import { cn } from '@/lib/utils';
 
 export type UnderlineTab = {
@@ -99,7 +100,7 @@ export function UnderlineTabs({
                             aria-selected={on}
                             data-active={on || undefined}
                             preserveScroll
-                            prefetch={['mount', 'hover']}
+                            prefetch={navPrefetch()}
                             cacheFor="1m"
                             className={className}
                         >

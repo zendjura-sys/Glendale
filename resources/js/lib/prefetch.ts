@@ -2,11 +2,9 @@ import { router } from '@inertiajs/react';
 import type { LinkPrefetchOption } from '@inertiajs/core';
 
 /**
- * Безшовні переходи: підтягуємо дані сторінки до кліку.
- *
- * Телефон/планшет: немає hover — тому «mount» для постійної навігації й pointerdown
- * для карток у контенті. Десктоп: hover + той самий кеш.
- * Економія трафіку (data-saver) — не гріємо заздалегідь.
+ * Підтягування сторінок до кліку — лише на ПК (hover / idle).
+ * На телефоні/планшеті prefetch і mount-прогрів дають зайве CPU/мережу:
+ * кожен таб нижньої панелі тягнув повний Inertia-візит одразу після сплешу.
  */
 
 /** Кеш розділів шапки / нижньої панелі / меню. */
@@ -16,13 +14,15 @@ export const NAV_CACHE = '2m';
 export const CONTENT_CACHE = '1m';
 
 /**
- * Постійна навігація: mount гріє одразу (телефон), hover — при наведенні (ПК).
- * Inertia не вмішує hover+click в одні й ті самі обробники — click тут не ставимо.
+ * Постійна навігація на ПК: mount + hover.
+ * На телефоні див. navPrefetch() → false.
  */
 export const NAV_PREFETCH: LinkPrefetchOption[] = ['mount', 'hover'];
 
-/** Картки в контенті: лише hover (ПК); дотик — через warmOnPointer / installTouchPrefetch. */
+/** Картки в контенті на ПК: hover. */
 export const CONTENT_PREFETCH: LinkPrefetchOption = 'hover';
+
+const COARSE_MQ = '(hover: none) and (pointer: coarse)';
 
 function browserSaveData(): boolean {
     return Boolean(
@@ -31,12 +31,29 @@ function browserSaveData(): boolean {
     );
 }
 
-/** Чи можна гріти сторінки зараз (без режиму економії). */
+/** Телефон / планшет (той самий медіа-запит, що в app.css для мобільного UI). */
+export function isCoarsePointer(): boolean {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia(COARSE_MQ).matches;
+}
+
+/** Чи можна гріти сторінки зараз (не телефон, не data-saver). */
 export function canPrefetch(): boolean {
     if (typeof window === 'undefined') return false;
+    if (isCoarsePointer()) return false;
     if (browserSaveData()) return false;
     if (document.documentElement.dataset.dataSaver === '1') return false;
     return true;
+}
+
+/** Prefetch для шапки / дока / меню — на телефоні вимкнено. */
+export function navPrefetch(): false | LinkPrefetchOption[] {
+    return canPrefetch() ? NAV_PREFETCH : false;
+}
+
+/** Prefetch для карток — на телефоні вимкнено. */
+export function contentPrefetch(): false | LinkPrefetchOption {
+    return canPrefetch() ? CONTENT_PREFETCH : false;
 }
 
 function sameOriginPath(href: string): string | null {
@@ -71,7 +88,7 @@ export function warm(
     }
 }
 
-/** Кілька адрес під час простою (requestIdleCallback). */
+/** Кілька адрес під час простою (requestIdleCallback) — лише ПК. */
 export function warmIdle(
     hrefs: string[],
     cacheFor: string | number = NAV_CACHE,
@@ -119,10 +136,12 @@ export function isPrefetching(href: string): boolean {
 
 /**
  * Глобально: на дотик/стилус гріємо same-origin посилання до кліку.
+ * На телефоні не ставимо — canPrefetch() уже false, але слухач теж не вішаємо.
  * На миші не чіпаємо — там працює hover Inertia.
  */
 export function installTouchPrefetch(): () => void {
     if (typeof document === 'undefined') return () => {};
+    if (isCoarsePointer()) return () => {};
 
     const onPointerDown = (event: PointerEvent) => {
         if (event.pointerType === 'mouse') return;
@@ -146,7 +165,7 @@ export function installTouchPrefetch(): () => void {
         document.removeEventListener('pointerdown', onPointerDown, true);
 }
 
-/** Основні розділи для прогріву після сплешу (телефон і ПК). */
+/** Основні розділи для прогріву після сплешу (лише ПК через warmIdle/canPrefetch). */
 export function primaryWarmUrls(input: {
     username?: string | null;
     modules?: string[] | null;

@@ -136,7 +136,7 @@ export default function CommunitySettings({
     return (
         <>
             <Head title={tr('Керування — {name}', { name: community.name })} />
-            <div className="mx-auto max-w-3xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-3.5">
                 <div className="flex items-center gap-4">
                     <Link
                         href={`/c/${community.slug}`}
@@ -164,7 +164,7 @@ export default function CommunitySettings({
                     </Link>
                 </div>
 
-                <form onSubmit={submit} className="space-y-5">
+                <form onSubmit={submit} className="space-y-3.5">
                     <SettingsCard
                         title={tr('Основна інформація')}
                         description={tr('Назва, адреса та опис спільноти')}
@@ -299,7 +299,7 @@ export default function CommunitySettings({
                         title={tr('Тип і доступ')}
                         description={tr('Хто може бачити й публікувати')}
                     >
-                        <div className="space-y-5">
+                        <div className="space-y-3.5">
                             <Segmented
                                 value={data.type}
                                 onChange={(value) => setData('type', value)}

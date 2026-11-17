@@ -28,7 +28,7 @@ export default function CommunityLogPage({
     return (
         <>
             <Head title={tr('Журнал дій — {name}', { name: community.name })} />
-            <div className="mx-auto max-w-3xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-3.5">
                 <div className="flex items-center gap-4">
                     <Link
                         href={`/c/${community.slug}/settings`}

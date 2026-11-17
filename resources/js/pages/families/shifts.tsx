@@ -121,7 +121,7 @@ export default function Shifts(props: Props) {
                 >
                     <ChevronLeft className="size-4" />
                 </Link>
-                <h2 className="font-display text-lg font-semibold text-white">
+                <h2 className="text-sm font-semibold tracking-tight text-white sm:text-base">
                     {days[0].toLocaleDateString('uk-UA', {
                         day: 'numeric',
                         month: 'long',
@@ -169,7 +169,7 @@ export default function Shifts(props: Props) {
                 )}
             </div>
 
-            <div className="grid gap-3 min-[1920px]:grid-cols-7 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="gc-compact-grid-2 min-[1920px]:!grid-cols-7 xl:!grid-cols-4">
                 {days.map((d) => {
                     const key = d.toLocaleDateString('en-CA');
                     const list = shifts.filter(
@@ -180,13 +180,13 @@ export default function Shifts(props: Props) {
                         <Panel
                             key={key}
                             className={cn(
-                                'min-h-36',
+                                'min-h-28',
                                 key === today && 'ring-2 ring-primary/60',
                             )}
                             title={
                                 <span className="capitalize">
                                     {d.toLocaleDateString('uk-UA', {
-                                        weekday: 'long',
+                                        weekday: 'short',
                                     })}{' '}
                                     <span className="font-normal text-white/45">
                                         {d.getDate()}

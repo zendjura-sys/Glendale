@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'account_store.dart';
 import 'api.dart';
 import 'app_login.dart' show appLoginIdFrom;
 import 'nav_items.dart';
@@ -17,6 +18,11 @@ import 'i18n.dart';
 class Session extends ChangeNotifier {
   Session(this.prefs) : api = Api(() => _token) {
     _token = prefs.getString('token');
+    accounts = AccountVault.read(prefs);
+    returnAccountId = prefs.getInt(AccountVault.returnKey);
+    // Прапорець «додаємо акаунт» має сенс лише поки активної сесії немає.
+    addingAccount = _token == null && (prefs.getBool(AccountVault.addingKey) ?? false);
+    if (_token != null && prefs.getBool(AccountVault.addingKey) == true) unawaited(prefs.remove(AccountVault.addingKey));
     subscription = SubscriptionController(api, prefs);
   }
 
@@ -42,6 +48,18 @@ class Session extends ChangeNotifier {
   /// Що зробити при виході з акаунта (напр. стерти завантажену музику — приватність).
   final logoutHooks = <Future<void> Function()>[];
 
+  /// Акаунти цього телефона (токени + картки). Порожньо, поки людину не додавали через перемикач.
+  List<StoredAccount> accounts = [];
+
+  /// Іде звичайний вхід, який додасть акаунт, а не замінить список.
+  bool addingAccount = false;
+
+  /// Куди повернутися, якщо додавання скасували.
+  int? returnAccountId;
+
+  /// Зростає при зміні активного акаунта — оболонка перебудовує екрани.
+  int shellEpoch = 0;
+
   /// Профіль узято з телефону, бо на старті не було інтернету: оновиться, щойно зв’язок повернеться.
   bool _staleMe = false;
 
@@ -61,6 +79,20 @@ class Session extends ChangeNotifier {
   /// Кнопки ШІ в чаті — за плагінами сайту `ai_writer` (ШІ-редактор) і `ai_summary` (підсумок бесіди).
   /// Функції-плагіни сайту, які показує й застосунок (напр. `gif_search`).
   bool pluginOn(String key) => me?['plugins'] is Map && (me!['plugins'] as Map)[key] == true;
+
+  /// Перемикач акаунтів увімкнено на сайті (плагін `account_switcher` у профілі).
+  bool get accountSwitcherOn => pluginOn('account_switcher');
+
+  List<StoredAccount> get otherAccounts => [for (final account in accounts) if (account.id != myId) account];
+
+  bool get canAddAccount => accountSwitcherOn && accounts.length < AccountVault.maxAccounts;
+
+  StoredAccount? stored(int id) {
+    for (final account in accounts) {
+      if (account.id == id) return account;
+    }
+    return null;
+  }
 
   bool aiOn(String key) => me?['ai'] is Map && (me!['ai'] as Map)[key] == true;
 
@@ -100,6 +132,7 @@ class Session extends ChangeNotifier {
       try {
         me = await api.me();
         _rememberMe();
+        accounts = await AccountVault.touch(prefs, _token!, me!);
         _syncTheme();
         _startPolling();
         unawaited(subscription.refreshSubscriptionStatus());
@@ -111,7 +144,15 @@ class Session extends ChangeNotifier {
           _staleMe = true;
           _startPolling();
         } else {
+          final dead = _token;
           await clear();
+          if (dead != null) {
+            final stale = accounts.where((a) => a.token == dead).toList();
+            for (final account in stale) {
+              accounts = await AccountVault.forget(prefs, account.id);
+            }
+            if (stale.isNotEmpty) notifyListeners();
+          }
         }
       }
     }
@@ -120,13 +161,22 @@ class Session extends ChangeNotifier {
   }
 
   Future<void> saveToken(String value, Map<String, dynamic>? user) async {
+    // Як на сайті: перший вхід сам по собі список не починає. Додавання або вже збережені акаунти — так.
+    final keep = addingAccount || accounts.isNotEmpty;
+    final previous = myId;
     _token = value;
     await prefs.setString('token', value);
     me = user ?? await api.me();
+    addingAccount = false;
+    returnAccountId = null;
+    await prefs.remove(AccountVault.addingKey);
+    await prefs.remove(AccountVault.returnKey);
+    if (me != null) accounts = keep ? await AccountVault.remember(prefs, value, me!) : await AccountVault.touch(prefs, value, me!);
     _rememberMe();
     _syncTheme();
     _startPolling();
     unawaited(subscription.refreshSubscriptionStatus());
+    if (previous != myId) shellEpoch++;
     notifyListeners();
   }
 
@@ -134,12 +184,111 @@ class Session extends ChangeNotifier {
     me = await api.me();
     _staleMe = false;
     _rememberMe();
+    final token = _token;
+    if (token != null && me != null) accounts = await AccountVault.touch(prefs, token, me!);
     _syncTheme();
     notifyListeners();
   }
 
-  Future<void> clear() async {
+  /// Запамʼятати поточний акаунт і піти на звичайний вхід по ще один (токен не відкликається).
+  Future<void> prepareAddAccount() async {
+    final token = _token;
+    if (token != null && me != null) {
+      accounts = await AccountVault.remember(prefs, token, me!);
+      returnAccountId = myId;
+      if (returnAccountId != null) await prefs.setInt(AccountVault.returnKey, returnAccountId!);
+    }
+    addingAccount = true;
+    await prefs.setBool(AccountVault.addingKey, true);
+    await _dropActive(forget: false);
+  }
+
+  /// Скасувати додавання й повернути акаунт, з якого пішли.
+  Future<bool> cancelAdd() async {
+    final id = returnAccountId ?? prefs.getInt(AccountVault.returnKey);
+    if (id == null) {
+      addingAccount = false;
+      await prefs.remove(AccountVault.addingKey);
+      notifyListeners();
+      return false;
+    }
+    return switchTo(id);
+  }
+
+  /// Увійти в уже збережений акаунт: підмінити токен і профіль, перебудувати оболонку.
+  /// false — токена більше немає (401/403): акаунт прибрано зі списку.
+  Future<bool> switchTo(int id) async {
+    final account = stored(id);
+    if (account == null) return false;
+    if (id == myId && _token == account.token && !addingAccount) return true;
+    final leaving = _token != null && myId != null && myId != id;
+    if (leaving) await _runLogoutHooks();
     _poll?.cancel();
+    _poll = null;
+    _token = account.token;
+    await prefs.setString('token', account.token);
+    me = Map<String, dynamic>.from(account.profile);
+    unreadChats = 0;
+    unreadNotifications = 0;
+    addingAccount = false;
+    returnAccountId = null;
+    await prefs.remove(AccountVault.addingKey);
+    await prefs.remove(AccountVault.returnKey);
+    _staleMe = true;
+    await subscription.reset();
+    var ok = true;
+    try {
+      final loaded = await api.me();
+      me = loaded;
+      _staleMe = false;
+      _rememberMe();
+      accounts = await AccountVault.touch(prefs, account.token, loaded);
+      _syncTheme();
+    } catch (e) {
+      if (e is ApiException && (e.status == 401 || e.status == 403)) {
+        accounts = await AccountVault.forget(prefs, id);
+        _token = null;
+        me = null;
+        await prefs.remove('token');
+        await prefs.remove('me.cache');
+        _staleMe = false;
+        ok = false;
+      } else {
+        _rememberMe();
+        _syncTheme();
+      }
+    }
+    if (ok) {
+      _startPolling();
+      unawaited(subscription.refreshSubscriptionStatus());
+    }
+    shellEpoch++;
+    notifyListeners();
+    return ok;
+  }
+
+  /// Прибрати акаунт із телефона. Поточний — це вихід (токен відкликається).
+  Future<void> removeAccount(int id) async {
+    final account = stored(id);
+    if (account == null) return;
+    if (id == myId && _token != null) {
+      try {
+        await api.post('/api/v1/logout');
+      } catch (_) {}
+      await clear();
+      return;
+    }
+    await Api.logoutToken(account.token);
+    accounts = await AccountVault.forget(prefs, id);
+    notifyListeners();
+  }
+
+  Future<void> clear() => _dropActive(forget: true);
+
+  Future<void> _dropActive({required bool forget}) async {
+    final id = myId;
+    _poll?.cancel();
+    _poll = null;
     _token = null;
     me = null;
     unreadChats = 0;
@@ -147,13 +296,25 @@ class Session extends ChangeNotifier {
     await prefs.remove('token');
     await prefs.remove('me.cache');
     _staleMe = false;
+    await _runLogoutHooks();
+    if (forget && id != null) accounts = await AccountVault.forget(prefs, id);
+    if (forget) {
+      addingAccount = false;
+      returnAccountId = null;
+      await prefs.remove(AccountVault.addingKey);
+      await prefs.remove(AccountVault.returnKey);
+    }
+    await subscription.reset();
+    shellEpoch++;
+    notifyListeners();
+  }
+
+  Future<void> _runLogoutHooks() async {
     for (final hook in logoutHooks) {
       try {
         await hook();
       } catch (_) {}
     }
-    await subscription.reset();
-    notifyListeners();
   }
 
   void _rememberMe() {

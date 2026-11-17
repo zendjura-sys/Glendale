@@ -54,7 +54,7 @@ export default function MusicMix({
             </div>
             <SongList
                 tracks={tracks}
-                className="mt-5"
+                className="mt-3.5"
                 extra={(t) => t.album ?? undefined}
             />
         </>

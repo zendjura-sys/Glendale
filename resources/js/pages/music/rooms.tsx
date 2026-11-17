@@ -57,7 +57,7 @@ export default function MusicRooms({ rooms, groups }: Props) {
                         {tr('Живих кімнат поки немає — відкрийте свою.')}
                     </p>
                 )}
-                <div className="grid grid-cols-1 gap-3 min-[1920px]:grid-cols-4 min-[2400px]:grid-cols-5 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="gc-compact-grid-2 min-[1920px]:!grid-cols-4 min-[2400px]:!grid-cols-5 xl:!grid-cols-3">
                     {rooms.map((room, i) => (
                         <m.div
                             key={room.code}
@@ -124,7 +124,7 @@ export default function MusicRooms({ rooms, groups }: Props) {
                         </button>
                     ))}
                 </div>
-                <p className="am-footnote mt-5 flex max-w-2xl gap-2 text-[var(--am-label2)]">
+                <p className="am-footnote mt-3.5 flex max-w-2xl gap-2 text-[var(--am-label2)]">
                     <Info className="mt-0.5 size-4 shrink-0" />
                     {tr(
                         'Синхронно грають лише треки GameCon і радіо. Spotify кожен слухає через власний акаунт, тому його не можна увімкнути всім одночасно.',

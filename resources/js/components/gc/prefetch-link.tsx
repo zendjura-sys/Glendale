@@ -2,11 +2,10 @@ import { Link } from '@inertiajs/react';
 import type { ComponentProps } from 'react';
 import {
     CONTENT_CACHE,
-    CONTENT_PREFETCH,
     NAV_CACHE,
-    NAV_PREFETCH,
     canPrefetch,
-    warm,
+    contentPrefetch,
+    navPrefetch,
 } from '@/lib/prefetch';
 import { useDataSaver } from '@/lib/data-saver';
 
@@ -14,15 +13,15 @@ type LinkProps = ComponentProps<typeof Link>;
 
 type Props = LinkProps & {
     /**
-     * nav — шапка, нижня панель, меню (mount+hover, довгий кеш).
-     * content — картки й посилання в стрічці (hover на ПК; дотик — глобальний touch prefetch).
+     * nav — шапка / меню на ПК (mount+hover).
+     * content — картки на ПК (hover). На телефоні prefetch завжди вимкнено.
      */
     kind?: 'nav' | 'content';
 };
 
 /**
- * Inertia Link із правильним prefetch для телефону й ПК.
- * У режимі економії трафіку — звичайне посилання без попереднього завантаження.
+ * Inertia Link із prefetch лише на ПК.
+ * Телефон і data-saver — звичайне посилання без попереднього завантаження.
  */
 export function PrefetchLink({
     kind = 'content',
@@ -44,7 +43,7 @@ export function PrefetchLink({
         return (
             <Link
                 {...props}
-                prefetch={prefetch ?? NAV_PREFETCH}
+                prefetch={prefetch ?? navPrefetch()}
                 cacheFor={cacheFor ?? NAV_CACHE}
                 onPointerDown={onPointerDown}
             />
@@ -54,18 +53,9 @@ export function PrefetchLink({
     return (
         <Link
             {...props}
-            prefetch={prefetch ?? CONTENT_PREFETCH}
+            prefetch={prefetch ?? contentPrefetch()}
             cacheFor={cacheFor ?? CONTENT_CACHE}
-            onPointerDown={(event) => {
-                // Дубль до глобального touch-prefetch: якщо слухач ще не стоїть.
-                if (
-                    event.pointerType !== 'mouse' &&
-                    typeof props.href === 'string'
-                ) {
-                    warm(props.href, CONTENT_CACHE);
-                }
-                onPointerDown?.(event);
-            }}
+            onPointerDown={onPointerDown}
         />
     );
 }

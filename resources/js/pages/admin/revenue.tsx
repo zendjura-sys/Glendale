@@ -75,7 +75,7 @@ export default function AdminRevenue({
                 ))}
             </div>
 
-            <section className="gc-solid mb-4 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mb-4 rounded-2xl p-3.5 sm:p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-3 text-xs text-white/55">
                     <span>
                         {tr(
@@ -123,7 +123,7 @@ export default function AdminRevenue({
             </section>
 
             <div className="grid gap-4 lg:grid-cols-2">
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="font-display text-base font-semibold text-white">
                         {tr('Продукти')}
                     </h2>
@@ -151,7 +151,7 @@ export default function AdminRevenue({
                         ))}
                     </ul>
                 </section>
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="font-display text-base font-semibold text-white">
                         {tr('Автори з найбільшим нарахуванням одиниць')}
                     </h2>

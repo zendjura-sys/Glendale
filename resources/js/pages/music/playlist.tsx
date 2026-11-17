@@ -224,7 +224,7 @@ export default function PlaylistShow({
                 <>
                     <SongList
                         tracks={tracks}
-                        className="mt-5"
+                        className="mt-3.5"
                         extra={(t) => t.album ?? undefined}
                         onRemove={
                             can.manage ? (t) => void detach(t) : undefined

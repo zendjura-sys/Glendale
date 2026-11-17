@@ -54,7 +54,7 @@ export default function CinemaSchedule({
             <Head title={tr('Розклад')} />
             <CinemaShell side={side}>
                 <CinemaNav active="schedule" />
-                <section className="glass rounded-2xl p-5">
+                <section className="glass rounded-2xl p-3.5">
                     <h1 className="font-display text-xl font-semibold text-white">
                         {tr('Розклад нових серій на тиждень')}
                     </h1>
@@ -84,7 +84,7 @@ export default function CinemaSchedule({
                             )}
                         />
                     ) : (
-                        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5">
+                        <div className="mt-3.5 grid grid-cols-2 gap-4 sm:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5">
                             {group.movies.map((movie) => (
                                 <Link
                                     key={movie.id}

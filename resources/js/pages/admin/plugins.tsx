@@ -48,7 +48,7 @@ export default function AdminPlugins({ plugins }: { plugins: PluginItem[] }) {
                                     <div
                                         key={plugin.key}
                                         className={cn(
-                                            'gc-solid relative overflow-hidden rounded-2xl p-5',
+                                            'gc-solid relative overflow-hidden rounded-2xl p-3.5',
                                             plugin.enabled &&
                                                 'border-gc-indigo/25',
                                         )}

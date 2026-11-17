@@ -60,9 +60,9 @@ export default function SteamImport({
     return (
         <>
             <Head title={tr('Імпорт бібліотеки Steam')} />
-            <div className="mx-auto max-w-4xl space-y-5">
-                <section className="gc-solid rounded-2xl p-5">
-                    <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
+            <div className="mx-auto max-w-4xl space-y-3.5">
+                <section className="gc-solid rounded-2xl p-3.5">
+                    <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white sm:text-2xl">
                         <Download className="size-6 text-sky-400" />
                         {tr('Імпорт бібліотеки Steam')}
                     </h1>
@@ -82,7 +82,7 @@ export default function SteamImport({
                 </section>
 
                 {!connected ? (
-                    <section className="gc-solid space-y-3 rounded-2xl p-5 text-sm text-white/70">
+                    <section className="gc-solid space-y-3 rounded-2xl p-3.5 text-sm text-white/70">
                         <p>
                             {tr(
                                 'Підключіть Steam у налаштуваннях (і зробіть бібліотеку відкритою в приватності Steam), щоб імпортувати ігри.',

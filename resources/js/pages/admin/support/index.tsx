@@ -27,7 +27,7 @@ type AdminTicket = TicketCard & {
 /** Картка обраного звернення праворуч (лише на широкому екрані): хто, про що, останнє повідомлення. */
 function TicketPreview({ ticket }: { ticket: AdminTicket }) {
     return (
-        <aside className="gc-solid sticky top-20 hidden flex-col gap-5 rounded-2xl p-5 xl:flex">
+        <aside className="gc-solid sticky top-20 hidden flex-col gap-3.5 rounded-2xl p-3.5 xl:flex">
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <p className="text-xs text-white/45 tabular-nums">

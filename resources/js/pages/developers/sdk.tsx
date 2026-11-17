@@ -151,7 +151,7 @@ window.postMessage({ target: 'gamecon-sdk', cmd: 'setBusy', args: [true] }, '*')
                             <Layers className="size-6" />
                         </span>
                         <div className="min-w-0">
-                            <h1 className="font-display text-2xl font-bold text-white">
+                            <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                                 GameCon SDK
                             </h1>
                             <p className="text-sm text-white/55">
@@ -199,7 +199,7 @@ window.postMessage({ target: 'gamecon-sdk', cmd: 'setBusy', args: [true] }, '*')
 
                 <section
                     data-sdk="sandbox"
-                    className="gc-solid min-w-0 space-y-4 rounded-2xl p-4 sm:p-5"
+                    className="gc-solid min-w-0 space-y-4 rounded-2xl p-3.5 sm:p-4"
                 >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <h2 className="font-display text-lg font-bold text-white">
@@ -336,7 +336,7 @@ window.postMessage({ target: 'gamecon-sdk', cmd: 'setBusy', args: [true] }, '*')
 
                 <section
                     data-sdk="code"
-                    className="gc-solid min-w-0 space-y-3 rounded-2xl p-4 sm:p-5"
+                    className="gc-solid min-w-0 space-y-3 rounded-2xl p-3.5 sm:p-4"
                 >
                     <div className="flex flex-wrap items-center gap-2">
                         <h2 className="mr-auto font-display text-lg font-bold text-white">
@@ -377,7 +377,7 @@ window.postMessage({ target: 'gamecon-sdk', cmd: 'setBusy', args: [true] }, '*')
 
                 <section
                     data-sdk="settings"
-                    className="gc-solid grid min-w-0 gap-4 rounded-2xl p-4 sm:p-5 lg:grid-cols-2"
+                    className="gc-solid grid min-w-0 gap-4 rounded-2xl p-3.5 sm:p-4 lg:grid-cols-2"
                 >
                     <div className="min-w-0 space-y-3">
                         <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
@@ -441,7 +441,7 @@ overlay.postMessage({ target: 'gamecon-sdk', cmd: 'disable' }, '*');`}
                     />
                 </section>
 
-                <section className="gc-solid min-w-0 space-y-3 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid min-w-0 space-y-3 rounded-2xl p-3.5 sm:p-4">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <KeyRound className="size-5 text-primary" />
                         {tr('Адреси')}

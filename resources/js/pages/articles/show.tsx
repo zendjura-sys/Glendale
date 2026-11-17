@@ -70,7 +70,7 @@ export default function ArticleShow({
                             {article.excerpt}
                         </p>
                     )}
-                    <div className="mt-5 flex flex-wrap items-center gap-3 pb-5 text-sm text-white/55">
+                    <div className="mt-3.5 flex flex-wrap items-center gap-3 pb-5 text-sm text-white/55">
                         <Link
                             href={`/${article.user.username}`}
                             className="flex items-center gap-2 text-white/85 hover:text-white"

@@ -125,7 +125,7 @@ export default function FamilyEvents(props: Props) {
                     />
                 </Panel>
             ) : (
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="gc-compact-grid-2">
                     {planned.map((e) => (
                         <Panel key={e.id}>
                             {e.cover_url && (

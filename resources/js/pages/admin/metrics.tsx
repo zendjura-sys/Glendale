@@ -54,7 +54,7 @@ export default function Metrics({ report }: { report: Report }) {
                 )}
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <StatCard
                     label={tr('DAU — сьогодні')}
                     value={report.dau}
@@ -80,7 +80,7 @@ export default function Metrics({ report }: { report: Report }) {
                 />
             </div>
 
-            <div className="mb-5 grid gap-3 sm:grid-cols-2">
+            <div className="mb-3.5 grid gap-3 sm:grid-cols-2">
                 <div className="gc-solid rounded-2xl p-4">
                     <p className="text-sm text-white/55">
                         {tr('Липкість (DAU / MAU)')}
@@ -111,7 +111,7 @@ export default function Metrics({ report }: { report: Report }) {
                 </div>
             </div>
 
-            <section className="gc-solid mb-5 rounded-2xl p-4">
+            <section className="gc-solid mb-3.5 rounded-2xl p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-4 text-sm">
                     <h2 className="mr-auto font-semibold text-white">
                         {tr('Активні за 30 днів')}
@@ -168,7 +168,7 @@ export default function Metrics({ report }: { report: Report }) {
                 </div>
             </section>
 
-            <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
+            <div className="grid gap-3.5 xl:grid-cols-[1.4fr_1fr]">
                 <section className="gc-solid overflow-x-auto rounded-2xl p-4">
                     <h2 className="mb-1 font-semibold text-white">
                         {tr('Утримання за тижнями реєстрації')}

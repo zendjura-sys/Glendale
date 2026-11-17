@@ -12,20 +12,53 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ai_tools.dart';
 import 'api.dart';
+import 'catch_up.dart';
 import 'chat_extras.dart';
 import 'listen_together.dart';
 import 'posts.dart';
 import 'push.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'video_note.dart';
 import 'voice_note.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 import 'skeletons.dart';
+
+/// Чернетка незакінченого повідомлення — лише на цьому пристрої (як `gc-draft:chat:{id}` у localStorage сайту).
+/// Порожній текст прибирає запис. Список бесід слухає [changed], щоб показати «Чернетка: …».
+class ChatDrafts {
+  static final changed = ValueNotifier<int>(0);
+  static final _tails = <int, Future<void>>{};
+
+  static String key(int id) => 'gc-draft:chat:$id';
+
+  static String read(SharedPreferences prefs, int id) => prefs.getString(key(id)) ?? '';
+
+  /// Записи одного чату йдуть чергою, щоб старіший текст не перезаписав новіший.
+  static Future<void> write(SharedPreferences prefs, int id, String text) {
+    final previous = _tails[id] ?? Future<void>.value();
+    final next = previous.then((_) => _commit(prefs, id, text), onError: (_, _) => _commit(prefs, id, text));
+    _tails[id] = next;
+    return next;
+  }
+
+  static Future<void> _commit(SharedPreferences prefs, int id, String text) async {
+    final store = text.trim().isEmpty ? null : text;
+    if (store == prefs.getString(key(id))) return;
+    if (store == null) {
+      await prefs.remove(key(id));
+    } else {
+      await prefs.setString(key(id), store);
+    }
+    changed.value++;
+  }
+}
 
 // ───────────────────────── Список бесід ─────────────────────────
 
@@ -140,6 +173,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               else
                 for (final conversation in shown)
                   _ConversationRow(
+                    key: ValueKey(conversation['id']),
                     conversation: conversation,
                     active: split && intOf(conversation['id']) == selected,
                     onOpen: split ? () => setState(() => selected = intOf(conversation['id'])) : null,
@@ -152,25 +186,74 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 }
 
-class _ConversationRow extends StatelessWidget {
-  const _ConversationRow({required this.conversation, this.active = false, this.onOpen});
+class _ConversationRow extends StatefulWidget {
+  const _ConversationRow({required this.conversation, this.active = false, this.onOpen, super.key});
   final Map<String, dynamic> conversation;
   final bool active;
   final VoidCallback? onOpen;
 
   @override
+  State<_ConversationRow> createState() => _ConversationRowState();
+}
+
+class _ConversationRowState extends State<_ConversationRow> {
+  String draft = '';
+
+  @override
+  void initState() {
+    super.initState();
+    ChatDrafts.changed.addListener(_onDrafts);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    draft = _read();
+  }
+
+  @override
+  void didUpdateWidget(_ConversationRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.conversation['id'] != widget.conversation['id']) draft = _read();
+  }
+
+  @override
+  void dispose() {
+    ChatDrafts.changed.removeListener(_onDrafts);
+    super.dispose();
+  }
+
+  String _read() => ChatDrafts.read(AppScope.read(context).session.prefs, intOf(widget.conversation['id']));
+
+  void _onDrafts() {
+    if (!mounted) return;
+    final next = _read();
+    if (next != draft) setState(() => draft = next);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final conversation = widget.conversation;
     final last = conversation['last_message'] is Map ? mapOf(conversation['last_message']) : null;
     final peer = conversation['peer'] is Map ? mapOf(conversation['peer']) : null;
     final group = conversation['type'] == 'group';
     final unread = intOf(conversation['unread']);
     final title = text(conversation['title']) ?? tr('Бесіда');
     final prefix = last == null ? '' : (last['is_own'] == true ? tr('Ви: ') : (group && text(last['author']) != null ? '${last['author']}: ' : ''));
+    final preview = draft.trim().isNotEmpty
+        ? TextSpan(children: [
+            TextSpan(text: tr('Чернетка:'), style: body(13, color: danger, weight: FontWeight.w600)),
+            TextSpan(text: ' ${draft.split('\n').first}'),
+          ])
+        : TextSpan(children: [
+            TextSpan(text: prefix, style: body(13, color: soft.withValues(alpha: 0.8))),
+            TextSpan(text: text(last?['preview']) ?? tr('Немає повідомлень')),
+          ]);
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: onOpen ?? () => context.push('/messages/${conversation['id']}'),
+      onTap: widget.onOpen ?? () => context.push('/messages/${conversation['id']}'),
       child: Container(
-        decoration: active ? BoxDecoration(color: primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)) : null,
+        decoration: widget.active ? BoxDecoration(color: primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)) : null,
         child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
         child: Row(
@@ -197,10 +280,7 @@ class _ConversationRow extends StatelessWidget {
                   Row(children: [
                     Expanded(
                       child: Text.rich(
-                        TextSpan(children: [
-                          TextSpan(text: prefix, style: body(13, color: soft.withValues(alpha: 0.8))),
-                          TextSpan(text: text(last?['preview']) ?? tr('Немає повідомлень')),
-                        ]),
+                        preview,
                         maxLines: 2,
                         overflow: TextOverflow.fade,
                         style: body(13, color: muted),
@@ -398,6 +478,11 @@ class _ChatScreenState extends State<ChatScreen> {
   final scroll = ScrollController();
   final input = TextEditingController();
   final focus = FocusNode();
+  SharedPreferences? _prefs;
+  String? _draftCache;
+  bool _drafts = false;
+  bool _draftListening = false;
+  Timer? _draftTimer;
   Map<String, dynamic>? replyTo;
   Map<String, dynamic>? editing;
   final images = <XFile>[];
@@ -411,6 +496,8 @@ class _ChatScreenState extends State<ChatScreen> {
   Offset drag = Offset.zero;
   final bubbleKeys = <int, GlobalKey>{};
   int? flashId;
+  bool catchUpClosed = false;
+  final _reacting = <int>{};
 
   Api get api => AppScope.read(context).session.api;
   int? get myId => AppScope.read(context).session.myId;
@@ -420,7 +507,10 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     recorder.addListener(_onRecorder);
     recorder.onLimit = () => _stopVoice(send: true);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _armDrafts();
+      _load();
+    });
     unawaited(Push.instance?.seenChat(widget.id));
     poll = Timer.periodic(const Duration(seconds: 4), (_) => _refresh());
     scroll.addListener(() {
@@ -431,6 +521,10 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     poll?.cancel();
+    _draftTimer?.cancel();
+    if (_draftListening) input.removeListener(_scheduleDraft);
+    // Останні символи могли ще не встигнути зберегтися (пауза 300 мс). Редагування чужого тексту не пишемо.
+    if (_drafts && editing == null && _prefs != null) unawaited(ChatDrafts.write(_prefs!, widget.id, input.text));
     scroll.dispose();
     input.dispose();
     focus.dispose();
@@ -442,6 +536,48 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _onRecorder() {
     if (mounted) setState(() {});
+  }
+
+  /// Як useDraft на сайті: підставити збережене, якщо поле порожнє, далі писати з паузою 300 мс.
+  /// Ключа `local_drafts` у профілі застосунку може не бути — тоді чернетки увімкнені, як дефолт сайту.
+  void _armDrafts() {
+    if (!mounted || _prefs != null) return;
+    final session = AppScope.read(context).session;
+    _prefs = session.prefs;
+    final plugins = session.me?['plugins'];
+    _drafts = plugins is! Map || !plugins.containsKey('local_drafts') || plugins['local_drafts'] == true;
+    if (!_drafts) return;
+    final saved = ChatDrafts.read(session.prefs, widget.id);
+    _draftCache = saved;
+    if (saved.isNotEmpty && input.text.trim().isEmpty && editing == null) {
+      input.value = TextEditingValue(text: saved, selection: TextSelection.collapsed(offset: saved.length));
+      setState(() {});
+    }
+    input.addListener(_scheduleDraft);
+    _draftListening = true;
+  }
+
+  void _scheduleDraft() {
+    if (!_drafts || editing != null) return;
+    // Пам’ять одразу, SharedPreferences — з паузою, як localStorage на сайті.
+    _draftCache = input.text;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(milliseconds: 300), _flushDraft);
+  }
+
+  void _flushDraft() {
+    _draftTimer?.cancel();
+    if (!_drafts || editing != null) return;
+    _draftCache ??= input.text;
+    final prefs = _prefs;
+    if (prefs == null) return;
+    unawaited(ChatDrafts.write(prefs, widget.id, _draftCache!));
+  }
+
+  /// Повернути чернетку в поле (після редагування повідомлення поле знову порожнє).
+  void _fillDraft() {
+    final saved = _drafts ? (_draftCache ?? '') : '';
+    input.value = TextEditingValue(text: saved, selection: TextSelection.collapsed(offset: saved.length));
   }
 
   Future<void> _load() async {
@@ -533,6 +669,7 @@ class _ChatScreenState extends State<ChatScreen> {
           input.clear();
           images.clear();
           files.clear();
+          _flushDraft();
         }
         replyTo = null;
       });
@@ -555,7 +692,7 @@ class _ChatScreenState extends State<ChatScreen> {
         final index = messages.indexWhere((m) => m['id'] == message['id']);
         if (index >= 0 && data['message'] is Map) messages[index] = mapOf(data['message']);
         editing = null;
-        input.clear();
+        _fillDraft();
       });
     } catch (e) {
       if (mounted) toast(context, e);
@@ -600,6 +737,70 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     final note = await recorder.finish();
     if (note != null) await _sendVoice(note);
+  }
+
+  /// Відеокружок: системна камера або коротке відео з галереї (окремого пакета камери немає).
+  Future<void> _videoNote() async {
+    if (recorder.active || sending) return;
+    final choice = await showGcSheet<String>(
+      context,
+      title: tr('Відеокружок'),
+      builder: (sheet) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          _AttachOption(icon: LucideIcons.camera, color: const Color(0xFFEF4444), title: tr('Зняти'), subtitle: tr('Фронтальна камера, до 60 с'), onTap: () => Navigator.pop(sheet, 'camera')),
+          _AttachOption(icon: LucideIcons.image, color: const Color(0xFF38BDF8), title: tr('З галереї'), subtitle: tr('Коротке відео до 60 с'), onTap: () => Navigator.pop(sheet, 'gallery')),
+        ]),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    final XFile? file;
+    try {
+      file = await ImagePicker().pickVideo(
+        source: choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        preferredCameraDevice: CameraDevice.front,
+        maxDuration: const Duration(seconds: videoNoteMaxSeconds),
+      );
+    } catch (_) {
+      if (mounted) toast(context, tr('Немає доступу до камери або мікрофона.'));
+      return;
+    }
+    if (file == null || !mounted) return;
+    final prepared = await prepareVideoNote(path: file.path, name: file.name, mime: file.mimeType);
+    if (!mounted) return;
+    if (prepared.error != null) {
+      toast(context, prepared.error!);
+      return;
+    }
+    await _sendVideoNote(prepared);
+  }
+
+  Future<void> _sendVideoNote(PreparedVideoNote note) async {
+    final path = note.path;
+    final filename = note.filename;
+    final seconds = note.seconds;
+    if (path == null || filename == null || seconds == null) return;
+    setState(() => sending = true);
+    try {
+      final data = await api.upload(
+        '/api/v1/messages/${widget.id}',
+        {
+          'video_duration': '$seconds',
+          if (replyTo != null) 'reply_to_id': '${replyTo!['id']}',
+        },
+        [await http.MultipartFile.fromPath('video_note', path, filename: filename)],
+      );
+      if (!mounted) return;
+      setState(() {
+        if (data['message'] is Map) messages.add(mapOf(data['message']));
+        replyTo = null;
+      });
+      if (scroll.hasClients) unawaited(scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
   }
 
   Future<void> _sendVoice(VoiceNote note) async {
@@ -654,8 +855,9 @@ class _ChatScreenState extends State<ChatScreen> {
   void _reply(Map<String, dynamic> message) {
     unawaited(HapticFeedback.lightImpact());
     setState(() {
-      if (editing != null) input.clear();
+      final wasEditing = editing != null;
       editing = null;
+      if (wasEditing) _fillDraft();
       replyTo = message;
     });
     focus.requestFocus();
@@ -764,11 +966,15 @@ class _ChatScreenState extends State<ChatScreen> {
     final threads = group && session.pluginOn('chat_threads');
     final canPin = session.pluginOn('chat_pins') && (chat['can_pin'] == true || (!group && chat['can_pin'] != false));
     final pinned = maps(chat['pins']).any((p) => intOf(p['id']) == intOf(message['id']));
+    final reactionsOn = session.pluginOn('message_reactions') && message['type'] != 'system';
+    final canBan = canOfferGuestBan(chat, message, ipBansOn: session.pluginOn('ip_bans'), isAdmin: session.isAdmin, myRole: text(chat['my_role']));
+    final canRestrict = !own && canOfferChatRestrict(chat, message, restrictionsOn: session.pluginOn('chat_restrictions'));
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
         padding: EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (reactionsOn) _ReactionPicker(mine: _myReaction(message), onPick: (emoji) => Navigator.pop(sheet, emoji)),
           SheetAction(icon: LucideIcons.reply, label: tr('Відповісти'), onTap: () => Navigator.pop(sheet, 'reply')),
           if (threads) SheetAction(icon: LucideIcons.messagesSquare, label: tr('Відповісти в гілці'), onTap: () => Navigator.pop(sheet, 'thread')),
           if (canPin) SheetAction(icon: LucideIcons.pin, label: pinned ? tr('Відкріпити') : tr('Закріпити'), onTap: () => Navigator.pop(sheet, 'pin')),
@@ -776,11 +982,18 @@ class _ChatScreenState extends State<ChatScreen> {
           if (own && hasText && message['type'] == 'text') SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
           if (own) SheetAction(icon: LucideIcons.trash2, label: tr('Видалити'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
           if (!own && hasText && I18n.translate) SheetAction(icon: LucideIcons.languages, label: tr('Перекласти'), onTap: () => Navigator.pop(sheet, 'translate')),
+          if (canRestrict) SheetAction(icon: LucideIcons.gavel, label: tr('Тайм-аут або виключення'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'restrict')),
+          if (canBan) SheetAction(icon: LucideIcons.ban, label: tr('Заблокувати гостя'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'ban')),
           if (!own) SheetAction(icon: LucideIcons.flag, label: tr('Поскаржитися'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'report')),
         ]),
       ),
     );
     if (!mounted || choice == null) return;
+    if (_messageReactions.contains(choice)) {
+      final mine = _myReaction(message);
+      await _react(message, choice == mine ? null : choice);
+      return;
+    }
     switch (choice) {
       case 'thread':
         await _openThread(message);
@@ -797,6 +1010,7 @@ class _ChatScreenState extends State<ChatScreen> {
         await Clipboard.setData(ClipboardData(text: text(message['body']) ?? ''));
         if (mounted) toast(context, tr('Скопійовано.'));
       case 'edit':
+        _flushDraft();
         setState(() {
           replyTo = null;
           editing = message;
@@ -811,9 +1025,58 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       case 'report':
         await _report(message);
+      case 'ban':
+        await _banGuest(message);
+      case 'restrict':
+        final user = mapOf(message['user']);
+        if (await showChatRestrict(context, conversationId: widget.id, user: user) && mounted) await _refresh();
       case 'translate':
         await _translate(message);
     }
+  }
+
+  /// Емодзі, який поставила ця людина (одна реакція на повідомлення).
+  String? _myReaction(Map<String, dynamic> message) {
+    final me = myId;
+    if (me == null) return null;
+    for (final reaction in maps(message['reactions'])) {
+      final ids = reaction['user_ids'];
+      if (ids is List && ids.any((id) => intOf(id) == me)) return text(reaction['emoji']);
+    }
+    return null;
+  }
+
+  /// Поставити або замінити реакцію. null — зняти (той самий емодзі ще раз).
+  Future<void> _react(Map<String, dynamic> message, String? emoji) async {
+    final id = intOf(message['id']);
+    if (message['type'] == 'system' || _reacting.contains(id)) return;
+    _reacting.add(id);
+    try {
+      final data = await api.post(Api.site('/messages/${widget.id}/messages/$id/react'), {'emoji': emoji});
+      if (!mounted) return;
+      final updated = data['message'];
+      if (updated is Map) {
+        setState(() {
+          final index = messages.indexWhere((m) => intOf(m['id']) == id);
+          if (index >= 0) messages[index] = mapOf(updated);
+        });
+      }
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      _reacting.remove(id);
+    }
+  }
+
+  Future<void> _openReactions(Map<String, dynamic> message) async {
+    final mine = _myReaction(message);
+    final picked = await showGcSheet<String>(
+      context,
+      title: tr('Реакція'),
+      builder: (sheet) => _ReactionPicker(mine: mine, onPick: (emoji) => Navigator.pop(sheet, emoji)),
+    );
+    if (!mounted || picked == null) return;
+    await _react(message, picked == mine ? null : picked);
   }
 
   /// Гілка під повідомленням групи — у шторці; після закриття оновлюємо лічильник.
@@ -854,6 +1117,23 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Бан гостя гостьового чату: той самий строк і «на всьому сайті», що в діалозі сайту. Повідомлення зникає.
+  Future<void> _banGuest(Map<String, dynamic> message) async {
+    final session = AppScope.read(context).session;
+    final staff = session.isAdmin || session.me?['role'] == 'moderator';
+    final channelId = int.tryParse('${conversation?['community_channel_id']}');
+    final guestChat = conversation?['guest_chat'] == true || (channelId != null && channelId > 0);
+    final banned = await confirmGuestBan(
+      context,
+      conversationId: widget.id,
+      messageId: intOf(message['id']),
+      guestName: messageGuestName(message),
+      canEverywhere: staff,
+      preferEverywhere: staff && !guestChat,
+    );
+    if (banned && mounted) setState(() => messages.removeWhere((m) => m['id'] == message['id']));
+  }
+
   /// Скарга на повідомлення — потрапляє в Адмінку → Модерація (а в чаті сім’ї — ще й керівництву).
   Future<void> _report(Map<String, dynamic> message) async {
     final reasons = [('spam', tr('Спам або реклама')), ('abuse', tr('Образи чи мат')), ('scam', tr('Шахрайство')), ('child_safety', tr('Загроза дитині, сексуальна експлуатація')), ('other', tr('Інше'))];
@@ -891,6 +1171,10 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     final group = chat['type'] == 'group';
     final session = AppScope.of(context).session;
+    final backgroundsOn = session.pluginOn('chat_backgrounds');
+    final botsOn = group && chatCanModerate(chat) && chatBotsOn(session);
+    final timeout = chatTimeoutText(chat['timeout_until']);
+    final locked = chat['can_write'] == false || timeout != null;
     final peer = chat['peer'] is Map ? mapOf(chat['peer']) : null;
     final readUpTo = intOf(chat['read_up_to']);
     final reversed = messages.reversed.toList();
@@ -943,7 +1227,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     onPressed: _editNote,
                     icon: Icon(LucideIcons.stickyNote, color: text(chat['note']) != null ? const Color(0xFFFCD34D) : muted),
                   ),
-                if (group) IconButton(tooltip: tr('Меню бесіди'), onPressed: _chatMenu, icon: Icon(LucideIcons.ellipsisVertical, color: muted)),
+                if (group || session.pluginOn('chat_media_panel') || backgroundsOn || botsOn) IconButton(tooltip: tr('Меню бесіди'), onPressed: _chatMenu, icon: Icon(LucideIcons.ellipsisVertical, color: muted)),
               ]),
             ),
             Divider(height: 1, color: line),
@@ -962,41 +1246,75 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             _CallBanner(chat: chat, conversation: widget.id),
             Expanded(
-              child: messages.isEmpty
-                  ? QuietEmpty(icon: LucideIcons.hand, text: tr('Напишіть перше повідомлення'))
-                  : ListView.builder(
-                      controller: scroll,
-                      reverse: true,
-                      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
-                      itemCount: reversed.length,
-                      itemBuilder: (context, i) {
-                        final message = reversed[i];
-                        final previous = i + 1 < reversed.length ? reversed[i + 1] : null;
-                        final day = _dayOf(message['created_at']);
-                        final showDay = previous == null || _dayOf(previous['created_at']) != day;
-                        final id = intOf(message['id']);
-                        final bubble = _Bubble(
-                          message: message,
-                          own: intOf(mapOf(message['user'])['id']) == myId,
-                          group: group,
-                          read: id <= readUpTo,
-                          onMenu: () => _messageMenu(message),
-                          onQuote: _jumpTo,
-                          conversationId: widget.id,
-                          onThread: () => _openThread(message),
-                        );
-                        return Column(key: bubbleKeys.putIfAbsent(id, GlobalKey.new), children: [
-                          if (showDay) _DayLabel(iso: message['created_at']),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            decoration: BoxDecoration(color: flashId == id ? primary.withValues(alpha: 0.16) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
-                            child: message['type'] == 'system' || chat['can_write'] == false ? bubble : _SwipeToReply(onReply: () => _reply(message), child: bubble),
-                          ),
-                        ]);
-                      },
+              child: Stack(
+                children: [
+                  if (backgroundsOn)
+                    Positioned.fill(
+                      child: IgnorePointer(child: ChatBackdrop(background: chat['background'] is Map ? mapOf(chat['background']) : null)),
                     ),
+                  Positioned.fill(
+                    child: messages.isEmpty
+                        ? QuietEmpty(icon: LucideIcons.hand, text: tr('Напишіть перше повідомлення'))
+                        : ListView.builder(
+                            controller: scroll,
+                            reverse: true,
+                            padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+                            itemCount: reversed.length,
+                            itemBuilder: (context, i) {
+                              final message = reversed[i];
+                              final previous = i + 1 < reversed.length ? reversed[i + 1] : null;
+                              final day = _dayOf(message['created_at']);
+                              final showDay = previous == null || _dayOf(previous['created_at']) != day;
+                              final id = intOf(message['id']);
+                              final reactionsOn = session.pluginOn('message_reactions') && message['type'] != 'system';
+                              final bubble = _Bubble(
+                                message: message,
+                                own: intOf(mapOf(message['user'])['id']) == myId,
+                                group: group,
+                                read: id <= readUpTo,
+                                onMenu: () => _messageMenu(message),
+                                onQuote: _jumpTo,
+                                conversationId: widget.id,
+                                onThread: () => _openThread(message),
+                                canReact: reactionsOn,
+                                mine: _myReaction(message),
+                                onToggle: reactionsOn ? (emoji) => _react(message, emoji) : null,
+                                onAdd: reactionsOn ? () => _openReactions(message) : null,
+                              );
+                              return Column(key: bubbleKeys.putIfAbsent(id, GlobalKey.new), children: [
+                                if (showDay) _DayLabel(iso: message['created_at']),
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  decoration: BoxDecoration(color: flashId == id ? primary.withValues(alpha: 0.16) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
+                                  child: message['type'] == 'system' || locked ? bubble : _SwipeToReply(onReply: () => _reply(message), child: bubble),
+                                ),
+                              ]);
+                            },
+                          ),
+                  ),
+                  if (!catchUpClosed && group && session.pluginOn('chat_catch_up') && chat['catch_up'] is Map && intOf(mapOf(chat['catch_up'])['count']) > 0)
+                    Positioned(
+                      left: 8,
+                      right: 8,
+                      top: 8,
+                      child: CatchUpCard(
+                        data: mapOf(chat['catch_up']),
+                        onClose: () => setState(() => catchUpClosed = true),
+                        onJump: (id) {
+                          setState(() => catchUpClosed = true);
+                          _jumpTo(id);
+                        },
+                      ),
+                    ),
+                ],
+              ),
             ),
-            if (chat['can_write'] == false)
+            if (timeout != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 14, 16, 16 + ShellChrome.bottomOf(context)),
+                child: Text(timeout, textAlign: TextAlign.center, style: body(13, color: muted)),
+              )
+            else if (chat['can_write'] == false)
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(tr('Ви не можете написати цьому користувачу.'), textAlign: TextAlign.center, style: body(13, color: muted)),
@@ -1041,9 +1359,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   onPressed: () => setState(() {
-                    if (editing != null) input.clear();
+                    final wasEditing = editing != null;
                     editing = null;
                     replyTo = null;
+                    if (wasEditing) _fillDraft();
                   }),
                   icon: Icon(LucideIcons.x, size: 18, color: muted),
                 ),
@@ -1108,29 +1427,33 @@ class _ChatScreenState extends State<ChatScreen> {
       return RoundIcon(icon: editing != null ? LucideIcons.check : LucideIcons.send, onTap: sending || empty ? null : _send, filled: true, size: 44);
     }
     final recording = recorder.active;
-    return Tooltip(
-      message: tr('Утримуйте, щоб записати голосове'),
-      child: GestureDetector(
-        onTap: sending ? null : () => _startVoice(hold: false),
-        onLongPressStart: sending ? null : (_) => _startVoice(hold: true),
-        onLongPressMoveUpdate: _onHoldMove,
-        onLongPressEnd: (_) => _onHoldEnd(),
-        onLongPressCancel: _onHoldEnd,
-        child: AnimatedScale(
-          scale: recording ? 1.3 : 1,
-          duration: const Duration(milliseconds: 160),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: buttonGradient,
-              shape: BoxShape.circle,
+    final notes = AppScope.read(context).session.pluginOn('video_notes');
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      if (notes && !recording) ...[
+        RoundIcon(icon: LucideIcons.camera, onTap: sending ? null : _videoNote, color: soft, size: 44, tooltip: tr('Відеокружок')),
+        const SizedBox(width: 6),
+      ],
+      Tooltip(
+        message: tr('Утримуйте, щоб записати голосове'),
+        child: GestureDetector(
+          onTap: sending ? null : () => _startVoice(hold: false),
+          onLongPressStart: sending ? null : (_) => _startVoice(hold: true),
+          onLongPressMoveUpdate: _onHoldMove,
+          onLongPressEnd: (_) => _onHoldEnd(),
+          onLongPressCancel: _onHoldEnd,
+          child: AnimatedScale(
+            scale: recording ? 1.3 : 1,
+            duration: const Duration(milliseconds: 160),
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle),
+              child: const Icon(LucideIcons.mic, color: Colors.white, size: 21),
             ),
-            child: const Icon(LucideIcons.mic, color: Colors.white, size: 21),
           ),
         ),
       ),
-    );
+    ]);
   }
 
   Widget _recordingBar() {
@@ -1213,21 +1536,46 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// Меню бесіди: «Підсумок від ШІ» (плагін ai_summary, лише для груп — як на сайті) і відомості про бесіду.
+  /// Меню бесіди: матеріали, фон, боти (групи), «Підсумок від ШІ» і відомості про бесіду.
   Future<void> _chatMenu() async {
-    final summary = AppScope.read(context).session.aiOn('ai_summary');
+    final session = AppScope.read(context).session;
+    final chat = conversation ?? const <String, dynamic>{};
+    final group = chat['type'] == 'group';
+    final summary = session.aiOn('ai_summary') && group;
+    final shared = session.pluginOn('chat_media_panel');
+    final backgrounds = session.pluginOn('chat_backgrounds');
+    final bots = group && chatCanModerate(chat) && chatBotsOn(session);
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (shared) SheetAction(icon: LucideIcons.folderOpen, label: tr('Матеріали чату'), onTap: () => Navigator.pop(sheet, 'shared')),
+          if (backgrounds) SheetAction(icon: LucideIcons.wallpaper, label: tr('Фон чату'), onTap: () => Navigator.pop(sheet, 'background')),
+          if (bots) SheetAction(icon: LucideIcons.bot, label: tr('Боти бесіди'), onTap: () => Navigator.pop(sheet, 'bots')),
           if (summary) SheetAction(icon: LucideIcons.sparkles, label: tr('Підсумок від ШІ'), color: cyan, onTap: () => Navigator.pop(sheet, 'summary')),
-          SheetAction(icon: LucideIcons.info, label: tr('Учасники й налаштування'), onTap: () => Navigator.pop(sheet, 'members')),
+          if (group) SheetAction(icon: LucideIcons.info, label: tr('Учасники й налаштування'), onTap: () => Navigator.pop(sheet, 'members')),
         ]),
       ),
     );
     if (!mounted || choice == null) return;
+    if (choice == 'shared') await showChatShared(context, conversationId: widget.id, onJump: _jumpTo);
+    if (!mounted) return;
+    if (choice == 'background') {
+      final saved = await showChatBackground(
+        context,
+        conversationId: widget.id,
+        current: text(conversation?['my_background']),
+        shared: text(conversation?['shared_background']),
+        canShare: chatCanModerate(conversation ?? chat),
+      );
+      if (saved != null && mounted && conversation != null) setState(() => applyChatBackground(conversation!, saved));
+    }
+    if (!mounted) return;
+    if (choice == 'bots') await showChatBots(context, widget.id);
+    if (!mounted) return;
     if (choice == 'summary') await showAiSummary(context, widget.id);
+    if (!mounted) return;
     if (choice == 'members') await _showMembers();
   }
 
@@ -1244,6 +1592,7 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (sheet) => _GroupInfo(
         conversation: chat,
         myId: myId,
+        onJump: _jumpTo,
         onChanged: () async {
           await _load();
         },
@@ -1439,9 +1788,25 @@ class _SwipeToReplyState extends State<_SwipeToReply> with SingleTickerProviderS
   }
 }
 
-/// Повідомлення: текст, відповідь, фото, файли, голосове, стікер, контакт, системне.
+/// Той самий набір, що `MessageReaction::EMOJI` і пікер реакцій на сайті.
+const _messageReactions = ['👍', '❤️', '🔥', '😂', '😮', '😢', '🎉', '👎'];
+
+/// Повідомлення: текст, відповідь, фото, файли, голосове, відеокружок, стікер, контакт, системне.
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, required this.own, required this.group, required this.read, required this.onMenu, required this.onQuote, required this.conversationId, this.onThread});
+  const _Bubble({
+    required this.message,
+    required this.own,
+    required this.group,
+    required this.read,
+    required this.onMenu,
+    required this.onQuote,
+    required this.conversationId,
+    this.onThread,
+    this.canReact = false,
+    this.mine,
+    this.onToggle,
+    this.onAdd,
+  });
   final Map<String, dynamic> message;
   final bool own;
   final bool group;
@@ -1450,6 +1815,10 @@ class _Bubble extends StatelessWidget {
   final ValueChanged<int> onQuote;
   final int conversationId;
   final VoidCallback? onThread;
+  final bool canReact;
+  final String? mine;
+  final ValueChanged<String>? onToggle;
+  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -1462,17 +1831,31 @@ class _Bubble extends StatelessWidget {
     }
     final user = mapOf(message['user']);
     final rank = user['family_rank'] is Map ? mapOf(user['family_rank']) : null;
+    final bot = messageIsBot(message);
+    final guest = !bot && messageIsGuest(message);
+    final authorName = bot ? messageBotName(message) : (guest ? messageGuestName(message) : (text(user['name']) ?? ''));
+    final showAuthor = !own && (group || bot || guest);
     final attachments = maps(message['attachments']);
     final photos = attachments.where((a) => a['type'] == 'image' && a['view_once'] != true).toList();
     final once = attachments.where((a) => a['view_once'] == true).toList();
     final thread = message['thread'] is Map ? mapOf(message['thread']) : null;
     final docs = attachments.where((a) => a['type'] == 'file').toList();
     final voice = attachments.where((a) => a['type'] == 'voice').toList();
+    final notes = attachments.where((a) => a['type'] == 'video_note').toList();
     final sticker = message['sticker'] is Map ? mapOf(message['sticker']) : null;
     final contact = message['contact'] is Map ? mapOf(message['contact']) : null;
     final reply = message['reply_to'] is Map ? mapOf(message['reply_to']) : null;
     final rawBody = text(message['body']);
     final bodyText = rawBody == null ? null : maskProfanity(rawBody, text(AppScope.read(context).session.me?['profanity_mask']));
+    final bareNote = notes.length == 1 &&
+        photos.isEmpty &&
+        once.isEmpty &&
+        docs.isEmpty &&
+        voice.isEmpty &&
+        contact == null &&
+        reply == null &&
+        (bodyText == null || bodyText.isEmpty) &&
+        (thread == null || intOf(thread['count']) == 0);
     final meta = Row(mainAxisSize: MainAxisSize.min, children: [
       if (message['edited_at'] != null) Text(tr('ред. '), style: body(11, color: own ? fg.withValues(alpha: 0.60) : faint)),
       Text(clock(message['created_at']), style: body(11, color: own ? fgSoft : faint)),
@@ -1483,12 +1866,14 @@ class _Bubble extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (group && !own)
+        if (showAuthor)
           Padding(
             padding: const EdgeInsets.only(bottom: 3),
             child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              Text(text(user['name']) ?? '', style: body(12.5, color: const Color(0xFF9AA8FF), weight: FontWeight.w700)),
-              if (rank != null) Pill(label: '${rank['rank']} ${rank['title'] ?? ''}'.trim(), color: muted),
+              Text(authorName, style: body(12.5, color: bot ? const Color(0xFF7CC8FF) : (guest ? muted : const Color(0xFF9AA8FF)), weight: FontWeight.w700)),
+              if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+              if (guest) Pill(label: tr('гість'), color: muted),
+              if (rank != null && !bot && !guest) Pill(label: '${rank['rank']} ${rank['title'] ?? ''}'.trim(), color: muted),
             ]),
           ),
         if (reply != null)
@@ -1524,6 +1909,9 @@ class _Bubble extends StatelessWidget {
           ),
         for (final doc in docs) _FileChip(file: doc, own: own),
         for (final clip in voice) _VoiceClip(clip: clip, own: own, conversationId: conversationId, messageId: intOf(message['id'])),
+        if (!bareNote)
+          for (final note in notes)
+            Padding(padding: const EdgeInsets.only(bottom: 4), child: VideoNotePlayer(key: ValueKey('vn-${note['id']}'), note: note)),
         if (contact != null)
           GestureDetector(
             onTap: () => context.push('/u/${contact['username']}'),
@@ -1547,10 +1935,30 @@ class _Bubble extends StatelessWidget {
 
     final bubble = sticker != null
         ? Column(crossAxisAlignment: own ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
-            if (group && !own) Text(text(user['name']) ?? '', style: body(12, color: const Color(0xFF9AA8FF), weight: FontWeight.w700)),
+            if (showAuthor)
+              Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                Text(authorName, style: body(12, color: bot ? const Color(0xFF7CC8FF) : const Color(0xFF9AA8FF), weight: FontWeight.w700)),
+                if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+                if (guest) Pill(label: tr('гість'), color: muted),
+              ]),
             SizedBox(width: 130, height: 130, child: NetImage(text(sticker['url']), fit: BoxFit.contain)),
             meta,
           ])
+        : bareNote
+            ? Column(crossAxisAlignment: own ? CrossAxisAlignment.end : CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                if (showAuthor)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 3),
+                    child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                      Text(authorName, style: body(12.5, color: bot ? const Color(0xFF7CC8FF) : (guest ? muted : const Color(0xFF9AA8FF)), weight: FontWeight.w700)),
+                      if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+                      if (guest) Pill(label: tr('гість'), color: muted),
+                    ]),
+                  ),
+                VideoNotePlayer(key: ValueKey('vn-${notes.first['id']}'), note: notes.first),
+                const SizedBox(height: 3),
+                meta,
+              ])
         : Container(
             constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.74),
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
@@ -1573,13 +1981,154 @@ class _Bubble extends StatelessWidget {
         mainAxisAlignment: own ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (group && !own) ...[
-            GestureDetector(onTap: () => context.push('/u/${user['username']}'), child: Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? '?', size: 30)),
+          if (showAuthor && group) ...[
+            if (bot)
+              Container(
+                width: 30,
+                height: 30,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: primary.withValues(alpha: 0.2), shape: BoxShape.circle),
+                child: const Icon(LucideIcons.bot, size: 16, color: Color(0xFF7CC8FF)),
+              )
+            else if (guest)
+              Avatar(name: authorName, size: 30)
+            else
+              GestureDetector(onTap: () => context.push('/u/${user['username']}'), child: Avatar(url: text(user['avatar_url']), name: authorName.isEmpty ? '?' : authorName, size: 30)),
             const SizedBox(width: 6),
           ],
-          Flexible(child: GestureDetector(onLongPress: onMenu, child: bubble)),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: own ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                GestureDetector(onLongPress: onMenu, child: bubble),
+                _ReactionRow(reactions: maps(message['reactions']), own: own, mine: mine, canReact: canReact, onToggle: onToggle, onAdd: onAdd),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// Пікер із восьми емодзі чату. Повтор уже своєї реакції знімає її.
+class _ReactionPicker extends StatelessWidget {
+  const _ReactionPicker({required this.mine, required this.onPick});
+  final String? mine;
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 2,
+        runSpacing: 2,
+        children: [
+          for (final emoji in _messageReactions)
+            GestureDetector(
+              onTap: () => onPick(emoji),
+              child: Semantics(
+                button: true,
+                selected: emoji == mine,
+                label: tr('Реакція {emoji}', {'emoji': emoji}),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: emoji == mine ? primary.withValues(alpha: 0.25) : null,
+                    shape: BoxShape.circle,
+                    border: emoji == mine ? Border.all(color: primary.withValues(alpha: 0.6)) : null,
+                  ),
+                  child: Text(emoji, style: const TextStyle(fontSize: 22)),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Чіпи під повідомленням: емодзі й кількість. Своя реакція підсвічена; тап перемикає її.
+class _ReactionRow extends StatelessWidget {
+  const _ReactionRow({required this.reactions, required this.own, required this.mine, required this.canReact, this.onToggle, this.onAdd});
+  final List<Map<String, dynamic>> reactions;
+  final bool own;
+  final String? mine;
+  final bool canReact;
+  final ValueChanged<String>? onToggle;
+  final VoidCallback? onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final chips = [for (final reaction in reactions) if (text(reaction['emoji']) != null) reaction];
+    if (chips.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        alignment: own ? WrapAlignment.end : WrapAlignment.start,
+        children: [
+          for (final reaction in chips)
+            _ReactionChip(
+              emoji: text(reaction['emoji'])!,
+              count: intOf(reaction['count']),
+              selected: text(reaction['emoji']) == mine,
+              onTap: canReact && onToggle != null ? () => onToggle!(text(reaction['emoji'])!) : null,
+            ),
+          if (canReact && onAdd != null)
+            Tooltip(
+              message: tr('Реакція'),
+              child: GestureDetector(
+                onTap: onAdd,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.07), shape: BoxShape.circle),
+                  child: Icon(LucideIcons.smilePlus, size: 15, color: muted),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReactionChip extends StatelessWidget {
+  const _ReactionChip({required this.emoji, required this.count, required this.selected, this.onTap});
+  final String emoji;
+  final int count;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: selected ? primary.withValues(alpha: 0.25) : fg.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(999),
+        border: selected ? Border.all(color: primary.withValues(alpha: 0.6)) : null,
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(emoji, style: const TextStyle(fontSize: 14, height: 1.2)),
+        if (count > 1) ...[
+          const SizedBox(width: 4),
+          Text('$count', style: body(12, color: selected ? ink : muted, weight: FontWeight.w600)),
+        ],
+      ]),
+    );
+    if (onTap == null) return chip;
+    return GestureDetector(
+      onTap: onTap,
+      child: Semantics(button: true, selected: selected, label: tr('Реакція {emoji}', {'emoji': emoji}), child: chip),
     );
   }
 }
@@ -1902,11 +2451,12 @@ class _StickerPickerState extends State<_StickerPicker> {
 
 /// Інформація про групу: назва, фото, учасники (додати / видалити), вихід.
 class _GroupInfo extends StatefulWidget {
-  const _GroupInfo({required this.conversation, required this.myId, required this.onChanged, required this.onLeft});
+  const _GroupInfo({required this.conversation, required this.myId, required this.onChanged, required this.onLeft, required this.onJump});
   final Map<String, dynamic> conversation;
   final int? myId;
   final Future<void> Function() onChanged;
   final VoidCallback onLeft;
+  final ValueChanged<int> onJump;
 
   @override
   State<_GroupInfo> createState() => _GroupInfoState();
@@ -1987,12 +2537,96 @@ class _GroupInfoState extends State<_GroupInfo> {
     }
   }
 
+  bool _canRestrict(Map<String, dynamic> member) {
+    if (!manager || intOf(member['id']) == widget.myId || member['role'] == 'owner') return false;
+    if (member['role'] == 'admin' && widget.conversation['my_role'] != 'owner') return false;
+    return text(member['username']) != null;
+  }
+
+  Future<void> _lift(Map<String, dynamic> member) async {
+    if (!await attempt(context, () => api.delete(Api.site('/messages/$id/members/${member['username']}/restrict')))) return;
+    if (!mounted) return;
+    setState(() {
+      final index = members.indexWhere((item) => item['id'] == member['id']);
+      if (index >= 0) members[index] = {...members[index], 'timeout_until': null};
+    });
+    await widget.onChanged();
+  }
+
+  Future<void> _restrict(Map<String, dynamic> member) async {
+    if (!await showChatRestrict(context, conversationId: id, user: member) || !mounted) return;
+    await widget.onChanged();
+    if (!mounted) return;
+    final fresh = await api.get('/api/v1/messages/$id');
+    if (mounted) setState(() => members = maps(mapOf(fresh['conversation'])['members']));
+  }
+
+  Future<void> _background() async {
+    final saved = await showChatBackground(
+      context,
+      conversationId: id,
+      current: text(widget.conversation['my_background']),
+      shared: text(widget.conversation['shared_background']),
+      canShare: manager,
+    );
+    if (saved == null || !mounted) return;
+    applyChatBackground(widget.conversation, saved);
+    await widget.onChanged();
+  }
+
+  Widget _tool(IconData icon, String title, String subtitle, VoidCallback onTap) {
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(icon, color: accent),
+        title: Text(title, style: body(15, weight: FontWeight.w600)),
+        subtitle: Text(subtitle, style: body(12, color: muted)),
+        trailing: Icon(LucideIcons.chevronRight, size: 18, color: faint),
+        onTap: onTap,
+      ),
+    );
+  }
+
+  Widget? _memberTools(Map<String, dynamic> member) {
+    final session = AppScope.read(context).session;
+    final restrictions = session.pluginOn('chat_restrictions');
+    final timedOut = text(member['timeout_until']) != null;
+    final canRemove = manager && intOf(member['id']) != widget.myId && member['role'] != 'owner';
+    final canRestrict = restrictions && _canRestrict(member);
+    if (!timedOut && !canRemove && !canRestrict) return null;
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      if (timedOut && restrictions && manager)
+        TextButton(
+          onPressed: () => _lift(member),
+          style: TextButton.styleFrom(visualDensity: VisualDensity.compact, foregroundColor: const Color(0xFFFDE68A), padding: const EdgeInsets.symmetric(horizontal: 8)),
+          child: Text(tr('Зняти'), style: body(12, color: const Color(0xFFFDE68A), weight: FontWeight.w700)),
+        )
+      else if (timedOut)
+        Pill(label: tr('Тайм-аут'), icon: LucideIcons.clock, color: const Color(0xFFFDE68A)),
+      if (canRestrict)
+        IconButton(
+          tooltip: tr('Тайм-аут або виключення'),
+          onPressed: () => _restrict(member),
+          icon: Icon(LucideIcons.gavel, color: muted, size: 18),
+        ),
+      if (canRemove) IconButton(onPressed: () => _remove(member), icon: Icon(LucideIcons.userRoundMinus, color: muted, size: 20)),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final me = members.where((m) => intOf(m['id']) == widget.myId).firstOrNull;
+    final session = AppScope.read(context).session;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       children: [
+        if (session.pluginOn('chat_media_panel'))
+          _tool(LucideIcons.images, tr('Матеріали чату'), tr('Фото, файли, посилання й голосові'), () => showChatShared(context, conversationId: id, onJump: widget.onJump)),
+        if (session.pluginOn('chat_backgrounds'))
+          _tool(LucideIcons.wallpaper, tr('Фон чату'), manager ? tr('Для мене або для всіх') : tr('Особистий фон бачите лише ви.'), _background),
+        if (manager && chatBotsOn(session))
+          _tool(LucideIcons.bot, tr('Боти бесіди'), tr('Привітання, автопости й ШІ-бот'), () => showChatBots(context, id)),
         if (manager)
           Row(children: [
             Expanded(child: GhostButton(label: tr('Назва'), icon: LucideIcons.pencil, compact: true, onPressed: _rename)),
@@ -2010,9 +2644,7 @@ class _GroupInfoState extends State<_GroupInfo> {
               'admin' => tr('Адміністратор'),
               _ => '@${member['username']}',
             },
-            trailing: manager && intOf(member['id']) != widget.myId && member['role'] != 'owner'
-                ? IconButton(onPressed: () => _remove(member), icon: Icon(LucideIcons.userRoundMinus, color: muted, size: 20))
-                : null,
+            trailing: _memberTools(member),
           ),
         const SizedBox(height: 12),
         if (me != null) DangerButton(label: tr('Вийти з бесіди'), icon: LucideIcons.logOut, expand: true, onPressed: () => _remove(me)),

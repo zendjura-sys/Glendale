@@ -219,7 +219,7 @@ export default function Feed({
     return (
         <>
             <Head title={tr('Новини')} />
-            <div className="flex gap-5">
+            <div className="flex gap-3.5">
                 <div className="min-w-0 flex-1 space-y-4">
                     {/* Верх стрічки за макетом: моменти, одна смуга «серія · готовий грати · завдання»,
                         далі — Wrapped, «Завтра» й трансляції друзів (порожні не показуються). */}
@@ -317,7 +317,7 @@ export default function Feed({
                     )}
 
                     {tab === 'discover' && !hasFriends && (
-                        <div className="gradient-border gc-solid flex items-center gap-4 rounded-2xl p-5">
+                        <div className="gradient-border gc-solid flex items-center gap-4 rounded-2xl p-3.5">
                             <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-sky-500">
                                 <Sparkles className="size-6 text-white" />
                             </span>

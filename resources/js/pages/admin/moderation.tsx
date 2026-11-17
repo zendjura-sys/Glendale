@@ -185,7 +185,7 @@ export default function AdminModeration({
 
             <ModerationQueue items={queue} />
 
-            <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mb-6 rounded-2xl p-3.5 sm:p-4">
                 <h2 className="mb-3 font-display text-lg font-semibold text-white">
                     {tr('Скарги')}
                 </h2>
@@ -376,7 +376,7 @@ export default function AdminModeration({
             <FeedbackList feedback={feedback} />
 
             {muted.length > 0 && (
-                <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid mb-6 rounded-2xl p-3.5 sm:p-4">
                     <h2 className="mb-3 font-display text-lg font-semibold text-white">
                         {tr('Заглушені')}
                     </h2>
@@ -415,7 +415,7 @@ export default function AdminModeration({
                 </section>
             )}
 
-            <section className="gc-solid rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                 <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <MessageSquareWarning className="size-5 text-sky-400" />
                     {tr('Автомодерація')}

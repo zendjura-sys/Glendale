@@ -55,10 +55,10 @@ export default function People({ filters, saved, total, users }: Props) {
     return (
         <>
             <Head title={tr('Пошук людей')} />
-            <div className="space-y-5">
-                <section className="gc-solid relative overflow-hidden rounded-2xl p-5 sm:p-6">
+            <div className="space-y-3.5">
+                <section className="gc-solid relative overflow-hidden rounded-2xl p-3.5 sm:p-4">
                     <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-blue/20 blur-3xl" />
-                    <h1 className="relative font-display text-2xl font-bold text-white">
+                    <h1 className="relative font-display text-xl font-bold text-white sm:text-2xl">
                         {tr('Знайдіть')}{' '}
                         <span className="text-gradient">
                             {tr('своїх людей')}
@@ -78,7 +78,7 @@ export default function People({ filters, saved, total, users }: Props) {
                         )}
                     </p>
 
-                    <div className="relative mt-5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_auto_auto]">
+                    <div className="relative mt-3.5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_auto_auto]">
                         <label className="input-glass flex h-11 items-center gap-2.5 rounded-xl px-3.5">
                             <Search className="size-4 text-white/40" />
                             <input
@@ -217,7 +217,7 @@ export default function People({ filters, saved, total, users }: Props) {
                         data="users"
                         loading={<ListSkeleton rows={3} card={false} />}
                         preserveUrl
-                        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+                        className="gc-compact-grid"
                     >
                         {users.data.map((person) => (
                             <PersonCard key={person.id} person={person} />

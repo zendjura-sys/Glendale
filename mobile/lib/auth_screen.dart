@@ -7,6 +7,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'account_store.dart';
+import 'accounts.dart';
 import 'api.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -196,9 +198,81 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
+  Future<void> _continueAs(StoredAccount account) async {
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    final ok = await widget.session.switchTo(account.id);
+    if (ok) {
+      refreshHomeWidgets(widget.session);
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      busy = false;
+      error = tr('Цей акаунт більше не збережено на пристрої — увійдіть ще раз.');
+    });
+  }
+
+  Future<void> _cancelAdd() async {
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    final ok = await widget.session.cancelAdd();
+    if (ok) refreshHomeWidgets(widget.session);
+    if (mounted) setState(() => busy = false);
+  }
+
+  Widget _savedAccount(StoredAccount account) {
+    final username = account.username;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          onTap: busy ? null : () => _continueAs(account),
+          borderRadius: BorderRadius.circular(999),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(children: [
+              Avatar(url: account.avatarUrl, name: account.name, size: 32),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: Colors.white, weight: FontWeight.w600)),
+                  if (username != null) Text('@$username', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: Colors.white70)),
+                ]),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
   List<Widget> _form() {
     const gap = SizedBox(height: 16);
+    final session = widget.session;
+    final saved = session.accounts;
     return [
+      if (session.addingAccount) ...[
+        Text(tr('Додати акаунт'), textAlign: TextAlign.center, style: display(22, color: Colors.white)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: busy ? null : _cancelAdd,
+          child: Text(tr('Скасувати'), textAlign: TextAlign.center, style: body(14, color: const Color(0xBFFFFFFF), weight: FontWeight.w600)),
+        ),
+        const SizedBox(height: 20),
+      ],
+      if (ticket == null && saved.isNotEmpty) ...[
+        Text(tr('Продовжити як'), textAlign: TextAlign.center, style: body(13, color: Colors.white70, weight: FontWeight.w600)),
+        const SizedBox(height: 10),
+        for (final account in saved) _savedAccount(account),
+        const SizedBox(height: 8),
+      ],
       if (ticket == null)
         Center(
           child: _AuthTabs(

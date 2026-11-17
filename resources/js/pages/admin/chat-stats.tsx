@@ -168,7 +168,7 @@ export default function AdminChatStats({
                 />
             </div>
 
-            <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
+            <section className="gc-solid mb-6 rounded-2xl p-3.5 sm:p-4">
                 <h2 className="mb-4 font-display text-lg font-semibold text-white">
                     {tr('Повідомлення по днях')}
                 </h2>
@@ -176,7 +176,7 @@ export default function AdminChatStats({
             </section>
 
             <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="mb-1 font-display text-lg font-semibold text-white">
                         {tr('Найжвавіші групи')}
                     </h2>
@@ -222,7 +222,7 @@ export default function AdminChatStats({
                     )}
                 </section>
 
-                <section className="gc-solid rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                         <ShieldAlert className="size-5 text-red-400" />
                         {tr('Антиспам за тиждень')}

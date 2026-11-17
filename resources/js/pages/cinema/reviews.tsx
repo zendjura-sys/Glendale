@@ -26,7 +26,7 @@ export default function Reviews({
             <Head title={tr('Рецензії')} />
             <div className="mx-auto max-w-3xl space-y-4">
                 <header>
-                    <h1 className="font-display text-2xl font-bold text-white">
+                    <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                         {tr('Рецензії')}
                     </h1>
                     <p className="mt-1 text-sm text-white/50">

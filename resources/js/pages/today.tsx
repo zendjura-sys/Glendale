@@ -53,7 +53,7 @@ export default function Today({
             <Head title={tr('Сьогодні')} />
             <div className="mx-auto max-w-[640px] space-y-4">
                 <header>
-                    <h1 className="font-display text-2xl font-semibold text-white">
+                    <h1 className="font-display text-xl font-semibold text-white sm:text-2xl">
                         {tr('Сьогодні')}
                     </h1>
                     <p className="mt-1 text-sm text-white/45 first-letter:uppercase">

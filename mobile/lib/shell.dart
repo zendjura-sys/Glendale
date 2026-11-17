@@ -22,6 +22,7 @@ import 'backgrounds.dart';
 import 'theme.dart';
 import 'voice_room.dart';
 import 'rail.dart';
+import 'wear.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 
@@ -75,6 +76,8 @@ String appPathFor(String? sitePath) {
       return rest(1) == 'live' ? '/streams/live' : '/feed';
     case 'podcasts':
       return parts.length > 1 ? '/podcasts/${rest(1)}' : '/podcasts';
+    case 'shows':
+      return parts.length > 1 && RegExp(r'^\d+$').hasMatch(parts[1]) ? '/shows/${parts[1]}' : '/shows$query';
     case 'ideas':
       return '/ideas';
     case 'status':
@@ -113,6 +116,8 @@ String appPathFor(String? sitePath) {
       return '/albums/${rest(1)}$query';
     case 'photos':
       return parts.length > 2 && rest(1) == 'u' ? '/photos?user=${rest(2)}' : '/photos';
+    case 'screenshots':
+      return '$path$query';
     case 'music':
       if (rest(1) == 'u' && parts.length > 2) return '/music?user=${rest(2)}';
       if (rest(1) == 'playlists' && parts.length > 2) return '/music/playlists/${rest(2)}';
@@ -232,13 +237,18 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Wear OS / малий круглий екран — компаньйон замість повної оболонки.
+    if (isWearFormFactor(context)) {
+      return AppScope(
+        session: widget.session,
+        player: widget.player,
+        child: WearHome(session: widget.session),
+      );
+    }
     final uri = GoRouterState.of(context).uri;
     final path = uri.path;
-    // У «Музиці» нижня панель — вкладки розділу на місці острова (одна панель за раз).
-    final musicTabs = hasMusicTabs(uri);
-    // «Назад» у шапці «Музики» веде на останній маршрут поза розділом.
+    // «Музика» — у тій самій оболонці, що й сайт: TopBar + IslandNav; розділи — пігулками в контенті.
     final inMusic = isMusicSection(uri);
-    if (!inMusic) MusicTopBar.exit = uri.toString();
     final topInset = MediaQuery.viewPaddingOf(context).top;
     final chatOpen = RegExp(r'^/messages/\d+').hasMatch(path);
     return AppScope(
@@ -263,8 +273,8 @@ class _AppShellState extends State<AppShell> {
             final contentWidth = wide ? tabletContentWidth : tabletPortraitWidth;
             final systemBottom = MediaQuery.viewPaddingOf(context).bottom;
             final inCall = VoiceCall.instance.active && !hideChrome;
-            // Нижня панель (острів або вкладки «Музики»); плеєр і голосова кімната завжди над нею.
-            final bottomBar = !hideChrome && (!wide || musicTabs);
+            // Нижня панель — острів; плеєр і голосова кімната завжди над нею.
+            final bottomBar = !hideChrome && !wide;
             final bottom = hideChrome ? 0.0 : systemBottom + (bottomBar ? islandExtent : 8) + (playing ? miniPlayerExtent : 0) + (inCall ? voiceBarExtent : 0);
             final contentLeft = wide ? sideNavWidth + 28 : 0.0;
             // Великий планшет (1280+ dp): третя колонка праворуч — друзі онлайн і бесіди.
@@ -273,6 +283,8 @@ class _AppShellState extends State<AppShell> {
             // Сезон із профілю (App\Support\Seasons): прикраси тла, вмісту, шапки й аватарів.
             final season = text(widget.session.me?['season']);
             if (currentSeason.value != season) WidgetsBinding.instance.addPostFrameCallback((_) => currentSeason.value = season);
+            // Новий акаунт — ті самі маршрути, але екрани з нуля (стрічка, чати, лічильники).
+            final page = KeyedSubtree(key: ValueKey(widget.session.shellEpoch), child: widget.child);
             return ShellChrome(
               bottom: bottom,
               child: Scaffold(
@@ -291,12 +303,12 @@ class _AppShellState extends State<AppShell> {
                         right: contentRight,
                         child: LayoutBuilder(
                           builder: (context, box) => Center(
-                            child: SizedBox(width: math.min(box.maxWidth, contentWidth), height: box.maxHeight, child: widget.child),
+                            child: SizedBox(width: math.min(box.maxWidth, contentWidth), height: box.maxHeight, child: page),
                           ),
                         ),
                       )
                     else
-                      widget.child,
+                      page,
                     // Маски-скрими під шапкою й доком: текст розчиняється ДО входу під скляні капсули,
                     // а не просвічує навколо них.
                     Positioned(
@@ -318,9 +330,7 @@ class _AppShellState extends State<AppShell> {
                       top: 0,
                       left: 0,
                       right: 0,
-                      child: inMusic && !wide
-                          ? MusicTopBar(session: widget.session, player: widget.player, path: path, topInset: topInset)
-                          : TopBar(session: widget.session, player: widget.player, wide: wide, topInset: topInset),
+                      child: TopBar(session: widget.session, player: widget.player, wide: wide, topInset: topInset),
                     ),
                     // Вогники над шапкою, гірлянда й стрічка під нею.
                     Positioned.fill(child: SeasonHeader(season: season, headerBottom: topInset + siteBarHeight)),
@@ -367,7 +377,7 @@ class _AppShellState extends State<AppShell> {
                         ),
                       ),
                     // Острів — поверх усього, щоб розгорнуте меню й затемнення накривали екран.
-                    if (!wide && !hideChrome) Positioned.fill(child: IslandNav(session: widget.session, player: widget.player, path: path, hidden: musicTabs)),
+                    if (!wide && !hideChrome) Positioned.fill(child: IslandNav(session: widget.session, player: widget.player, path: path)),
                   ],
                 ),
               ),

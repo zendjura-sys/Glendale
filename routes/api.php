@@ -838,6 +838,8 @@ Route::prefix('v1')->group(function () {
                 Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update']);
                 Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
                 Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1');
+                // Реакція на повідомлення — той самий контролер і набір емодзі, що й на сайті.
+                Route::post('{conversation}/messages/{message}/react', [MessageController::class, 'react'])->middleware('throttle:60,1');
                 Route::post('{conversation}/polls', [MessageController::class, 'poll'])->middleware('throttle:10,1');
                 Route::post('{conversation}/messages/{message}/vote', [MessageController::class, 'vote'])->middleware('throttle:60,1');
                 Route::post('{conversation}/messages/{message}/close-poll', [MessageController::class, 'closePoll'])->middleware('throttle:20,1');

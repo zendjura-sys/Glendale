@@ -166,7 +166,17 @@ ThemeData gameConTheme() {
   );
   return base.copyWith(
     extensions: [palette.isLight ? ArcticGlassThemeExtension.daylight : ArcticGlassThemeExtension.dark],
-    textTheme: base.textTheme.apply(fontFamily: 'Montserrat', bodyColor: ink, displayColor: ink),
+    textTheme: base.textTheme
+        .apply(fontFamily: 'Montserrat', bodyColor: ink, displayColor: ink)
+        .copyWith(
+          bodyLarge: base.textTheme.bodyLarge?.copyWith(fontSize: 14, height: 1.35),
+          bodyMedium: base.textTheme.bodyMedium?.copyWith(fontSize: 13, height: 1.35),
+          bodySmall: base.textTheme.bodySmall?.copyWith(fontSize: 11.5, height: 1.3),
+          titleLarge: base.textTheme.titleLarge?.copyWith(fontSize: 17, height: 1.2, letterSpacing: -0.3),
+          titleMedium: base.textTheme.titleMedium?.copyWith(fontSize: 14.5, height: 1.25, letterSpacing: -0.2),
+          titleSmall: base.textTheme.titleSmall?.copyWith(fontSize: 13, height: 1.25, fontWeight: FontWeight.w600),
+          labelLarge: base.textTheme.labelLarge?.copyWith(fontSize: 12.5, fontWeight: FontWeight.w600),
+        ),
     splashColor: cyan.withValues(alpha: 0.10),
     highlightColor: Colors.white.withValues(alpha: 0.03),
     dividerColor: line,

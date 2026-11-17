@@ -677,7 +677,7 @@ export default function WatchParty({
                     onClick={() => setInviteOpen(false)}
                 >
                     <div
-                        className="glass-strong w-full max-w-md rounded-2xl p-5"
+                        className="glass-strong w-full max-w-md rounded-2xl p-3.5"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h2 className="mb-3 font-display text-base font-semibold text-white">

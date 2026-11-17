@@ -62,7 +62,7 @@ export default function AdminClans({ clans, filters, types, stats }: Props) {
                 )}
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <StatCard
                     label={tr('Кланів')}
                     value={stats.clans}

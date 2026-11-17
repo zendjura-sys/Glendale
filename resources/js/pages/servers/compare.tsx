@@ -63,7 +63,7 @@ export default function CompareServers({ left, right, servers }: Props) {
     return (
         <>
             <Head title={tr('Порівняння серверів')} />
-            <div className="space-y-5">
+            <div className="space-y-3.5">
                 <Link
                     href="/servers"
                     className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"

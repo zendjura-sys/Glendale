@@ -208,7 +208,7 @@ export default function CommunityShow({
                 </div>
 
                 <div className="relative px-5 pb-5 sm:px-8">
-                    <div className="-mt-16 flex flex-col gap-5 sm:-mt-20 sm:flex-row sm:items-end">
+                    <div className="-mt-16 flex flex-col gap-3.5 sm:-mt-20 sm:flex-row sm:items-end">
                         <div className="group relative w-fit">
                             <CommunityAvatar
                                 community={community}
@@ -228,7 +228,7 @@ export default function CommunityShow({
 
                         <div className="min-w-0 flex-1 pb-1">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h1 className="font-display text-2xl font-bold tracking-tight text-white sm:text-[30px]">
+                                <h1 className="font-display text-xl font-bold tracking-tight text-white sm:text-2xl sm:text-[30px]">
                                     {community.name}
                                 </h1>
                                 {community.is_verified && (
@@ -308,7 +308,7 @@ export default function CommunityShow({
                         </div>
                     </div>
 
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 pt-4">
+                    <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 pt-4">
                         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/55">
                             {community.city && (
                                 <span className="inline-flex items-center gap-1.5">
@@ -389,7 +389,7 @@ export default function CommunityShow({
             </section>
 
             {!can.view ? (
-                <div className="mt-5">
+                <div className="mt-3.5">
                     <EmptyState
                         icon={Lock}
                         title={tr('Це закрита група')}
@@ -399,7 +399,7 @@ export default function CommunityShow({
                     />
                 </div>
             ) : (
-                <div className="mt-5 flex flex-col gap-5 xl:flex-row">
+                <div className="mt-3.5 flex flex-col gap-3.5 xl:flex-row">
                     <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:order-last xl:h-fit xl:w-[320px]">
                         {membership?.status === 'active' && (
                             <VoiceRooms
@@ -580,7 +580,7 @@ export default function CommunityShow({
                         {can.moderate && queue.length > 0 && (
                             <section
                                 id="queue"
-                                className="gc-solid space-y-3 rounded-2xl p-4 sm:p-5"
+                                className="gc-solid space-y-3 rounded-2xl p-3.5 sm:p-4"
                             >
                                 <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
                                     <ClipboardCheck className="size-4 text-gc-amber" />

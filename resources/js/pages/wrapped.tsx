@@ -209,7 +209,7 @@ function Big({ value, label }: { value: number; label: string }) {
 function Stat({ value, label }: { value: number; label: string }) {
     return (
         <div className="rounded-2xl bg-white/[0.08] px-4 py-3 ring-1 ring-white/15 ring-inset">
-            <p className="font-display text-2xl font-bold text-white tabular-nums">
+            <p className="font-display text-xl font-bold text-white tabular-nums sm:text-2xl">
                 <Count value={value} />
             </p>
             <p className="text-sm text-white/65">{label}</p>
@@ -916,7 +916,7 @@ function Summary({ w }: { w: Wrapped }) {
                         </div>
                     </div>
                     {stats.length > 0 && (
-                        <div className="mt-5 grid grid-cols-2 gap-3">
+                        <div className="mt-3.5 grid grid-cols-2 gap-3">
                             {stats.map((s) => (
                                 <div key={s.label}>
                                     <p className="font-display text-3xl font-bold text-white tabular-nums">

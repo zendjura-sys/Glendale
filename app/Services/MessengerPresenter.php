@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CommunityChannel;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Family;
@@ -12,6 +13,7 @@ use App\Models\MessageFavorite;
 use App\Models\MessagePin;
 use App\Models\User;
 use App\Services\Chat\ChatBackgrounds;
+use App\Services\Communities\CommunityChannels;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -386,6 +388,15 @@ class MessengerPresenter
         $peer = $conversation->isGroup() ? null : $participants->firstWhere('user_id', '!=', $viewer->id)?->user;
 
         $others = $participants->where('user_id', '!=', $viewer->id);
+        $channel = $conversation->community_channel_id === null
+            ? null
+            : CommunityChannel::query()->with('community')->find($conversation->community_channel_id);
+        // Гостьовий чат спільноти — єдиний канал, де пишуть гості без акаунта.
+        $guestChat = $channel !== null && $channel->community !== null
+            && (int) $channel->community->guest_chat_channel_id === (int) $channel->id;
+        $canBanGuest = $viewer->isStaff()
+            || $me->canManage()
+            || ($channel?->community !== null && app(CommunityChannels::class)->canManage($channel->community, $viewer));
 
         return [
             'id' => $conversation->id,
@@ -401,6 +412,10 @@ class MessengerPresenter
             'pinned' => $me->pinned_at !== null,
             'folder' => $me->folder,
             'my_role' => $me->role,
+            // Гостьовий чат спільноти й право банити гостя (адміни каналу — у спільноті, персонал сайту — всюди).
+            'community_channel_id' => $conversation->community_channel_id,
+            'guest_chat' => $guestChat,
+            'can_ban_guest' => ($guestChat || $viewer->isStaff()) && $canBanGuest,
             'note' => $me->note,
             'pins' => $this->pins($conversation),
             'can_pin' => ! $conversation->isGroup() || $me->canManage(),

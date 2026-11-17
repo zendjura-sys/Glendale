@@ -67,7 +67,7 @@ export default function MovieRoulette({
             <Head title={tr('Що подивитися?')} />
             <div className="mx-auto max-w-3xl space-y-4">
                 <header>
-                    <h1 className="font-display text-2xl font-bold text-white">
+                    <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                         {tr('Що подивитися?')}
                     </h1>
                     <p className="mt-1 text-sm text-white/50">
@@ -217,7 +217,7 @@ export default function MovieRoulette({
                     )}
                 </AnimatePresence>
                 {empty && (
-                    <p className="glass rounded-2xl p-5 text-center text-sm text-white/55">
+                    <p className="glass rounded-2xl p-3.5 text-center text-sm text-white/55">
                         {tr(
                             'За такими фільтрами нічого не знайшлося — спробуйте інший жанр чи рік.',
                         )}

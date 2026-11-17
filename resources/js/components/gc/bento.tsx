@@ -13,7 +13,7 @@ export function BentoGrid({
     return (
         <div
             className={cn(
-                'gc-bento grid grid-flow-row-dense grid-cols-1 gap-4 sm:grid-cols-6',
+                'gc-bento grid grid-flow-row-dense grid-cols-2 gap-2.5 sm:grid-cols-6 sm:gap-3',
                 className,
             )}
         >
@@ -58,7 +58,7 @@ export function BentoTile({
 /** Ряд плиток (напр. 4 + 2): якщо одна плитка порожня, решта тягнеться на всю ширину. */
 export function BentoRow({ children }: PropsWithChildren) {
     return (
-        <div className="gc-bento-row grid grid-flow-row-dense grid-cols-1 gap-4 sm:col-span-6 sm:grid-cols-6">
+        <div className="gc-bento-row grid grid-flow-row-dense grid-cols-2 gap-2.5 sm:col-span-6 sm:grid-cols-6 sm:gap-3">
             {children}
         </div>
     );

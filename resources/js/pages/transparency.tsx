@@ -90,7 +90,7 @@ function spamLabel(k: string): string {
 function Stat({ value, label }: { value: ReactNode; label: string }) {
     return (
         <div className="rounded-xl bg-white/5 px-3 py-2.5">
-            <div className="font-display text-2xl font-bold text-white tabular-nums">
+            <div className="font-display text-xl font-bold text-white tabular-nums sm:text-2xl">
                 {value}
             </div>
             <div className="text-xs text-white/55">{label}</div>
@@ -147,7 +147,7 @@ function Section({
             initial={reduce ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={motionOr(reduce, { ...RISE, delay })}
-            className="gc-solid space-y-3 rounded-2xl p-5"
+            className="gc-solid space-y-3 rounded-2xl p-3.5"
         >
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white [&_svg]:size-5 [&_svg]:text-primary">
                 {icon}
@@ -164,7 +164,7 @@ export default function Transparency({ quarters, report }: Props) {
     return (
         <>
             <Head title={tr('Звіт прозорості')} />
-            <div className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-0">
+            <div className="mx-auto max-w-4xl space-y-3.5 px-4 py-6 sm:px-0">
                 <header className="space-y-2">
                     <h1 className="font-display text-3xl font-bold text-white sm:text-4xl">
                         {tr('Звіт прозорості')}
@@ -279,7 +279,7 @@ export default function Transparency({ quarters, report }: Props) {
                     />
                 </Section>
 
-                <div className="grid gap-5 md:grid-cols-2">
+                <div className="grid gap-3.5 md:grid-cols-2">
                     <Section
                         icon={<Scale />}
                         title={tr('Апеляції')}

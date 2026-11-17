@@ -81,7 +81,7 @@ export default function AdminSystem({
                 )}
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 md:grid-cols-3">
                 <StatCard
                     label={tr('Відкритих помилок')}
                     value={stats.open}
@@ -101,7 +101,7 @@ export default function AdminSystem({
                 />
             </div>
 
-            <section className="gc-solid mb-5 rounded-2xl p-4">
+            <section className="gc-solid mb-3.5 rounded-2xl p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                     <h2 className="flex-1 font-semibold text-white">
                         {tr('Резервні копії')}
@@ -154,7 +154,7 @@ export default function AdminSystem({
                 )}
             </section>
 
-            <section className="gc-solid mb-5 rounded-2xl p-4">
+            <section className="gc-solid mb-3.5 rounded-2xl p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                     <h2 className="flex flex-1 items-center gap-2 font-semibold text-white">
                         <ListChecks className="size-4 text-sky-400" />

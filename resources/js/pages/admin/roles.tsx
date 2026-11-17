@@ -110,7 +110,7 @@ export default function AdminRoles({
                 }
             />
 
-            <div className="mb-5 grid gap-3 sm:grid-cols-2">
+            <div className="mb-3.5 grid gap-3 sm:grid-cols-2">
                 <Link
                     href="/admin/team"
                     className="gc-solid flex items-start gap-3 rounded-2xl p-4 hover:bg-white/[0.04]"

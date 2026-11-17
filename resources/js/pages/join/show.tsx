@@ -26,7 +26,7 @@ export default function JoinShow({ token, invite }: Props) {
             <Head title={tr('Запрошення')} />
             <section className="gc-solid mx-auto max-w-md rounded-2xl p-6">
                 <p className="text-xs font-semibold text-white/40">{kind}</p>
-                <h1 className="mt-1 font-display text-2xl font-bold text-white">
+                <h1 className="mt-1 font-display text-xl font-bold text-white sm:text-2xl">
                     {invite.name}
                 </h1>
                 <p className="mt-2 text-sm text-white/55">
@@ -37,7 +37,7 @@ export default function JoinShow({ token, invite }: Props) {
                         : tr('Вас запросили приєднатися.')}
                 </p>
                 <form
-                    className="mt-5 space-y-3"
+                    className="mt-3.5 space-y-3"
                     onSubmit={(event) => {
                         event.preventDefault();
                         form.post(`/join/${token}`);

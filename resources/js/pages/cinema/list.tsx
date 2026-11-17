@@ -117,10 +117,10 @@ export default function List({ list, movies: initial }: Props) {
         <>
             <Head title={list.title} />
             <div className="space-y-4">
-                <header className="glass rounded-2xl p-5">
+                <header className="glass rounded-2xl p-3.5">
                     <div className="flex flex-wrap items-start gap-4">
                         <div className="min-w-0 flex-1">
-                            <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
+                            <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white sm:text-2xl">
                                 {!list.is_public && (
                                     <Lock className="size-5 text-white/45" />
                                 )}

@@ -158,7 +158,7 @@ export default function AdminDesign({
 
             <SeasonalCard value={seasonal} seasons={seasons} />
 
-            <section className="gc-solid mb-5 flex flex-wrap items-center gap-3 rounded-2xl p-4">
+            <section className="gc-solid mb-3.5 flex flex-wrap items-center gap-3 rounded-2xl p-4">
                 <span className="flex size-11 items-center justify-center rounded-2xl bg-sky-500 text-white">
                     <Palette className="size-5" />
                 </span>
@@ -198,7 +198,7 @@ export default function AdminDesign({
 
             <form
                 onSubmit={upload}
-                className="gc-solid mb-5 grid gap-3 rounded-2xl p-4 sm:grid-cols-2"
+                className="gc-solid mb-3.5 grid gap-3 rounded-2xl p-4 sm:grid-cols-2"
             >
                 <h2 className="font-display text-base font-bold text-white sm:col-span-2">
                     {tr('Новий стиль')}
@@ -533,7 +533,7 @@ function SeasonalCard({
     };
 
     return (
-        <section className="gc-solid mb-5 rounded-2xl p-4">
+        <section className="gc-solid mb-3.5 rounded-2xl p-4">
             <div className="flex items-center gap-3">
                 <span className="gc-solid-2 flex size-11 items-center justify-center rounded-2xl text-white">
                     <Snowflake className="size-5" />
@@ -629,7 +629,7 @@ function AuthImagesCard({ images }: { images: Record<string, string | null> }) {
     ];
 
     return (
-        <section className="gc-solid mb-5 rounded-2xl p-4">
+        <section className="gc-solid mb-3.5 rounded-2xl p-4">
             <div className="flex items-center gap-3">
                 <span className="gc-solid-2 flex size-11 items-center justify-center rounded-2xl text-white">
                     <LogIn className="size-5" />
@@ -757,7 +757,7 @@ function BackgroundCard({ image }: { image: SiteImage | null }) {
     ];
 
     return (
-        <section className="gc-solid mb-5 rounded-2xl p-4">
+        <section className="gc-solid mb-3.5 rounded-2xl p-4">
             <div className="flex items-center gap-3">
                 <span className="gc-solid-2 flex size-11 items-center justify-center rounded-2xl text-white">
                     <ImagePlus className="size-5" />
@@ -907,7 +907,7 @@ function VideosCard({ videos }: { videos: VideoBg[] }) {
     ];
 
     return (
-        <section className="gc-solid mb-5 rounded-2xl p-4">
+        <section className="gc-solid mb-3.5 rounded-2xl p-4">
             <div className="flex items-center gap-3">
                 <span className="gc-solid-2 flex size-11 items-center justify-center rounded-2xl text-white">
                     <Video className="size-5" />
@@ -1147,7 +1147,7 @@ function AppLinksCard({
     );
 
     return (
-        <form onSubmit={submit} className="gc-solid mb-5 rounded-2xl p-4">
+        <form onSubmit={submit} className="gc-solid mb-3.5 rounded-2xl p-4">
             <div className="flex items-center gap-3">
                 <span className="gc-solid-2 flex size-11 items-center justify-center rounded-2xl text-white">
                     <Smartphone className="size-5" />
@@ -1169,7 +1169,7 @@ function AppLinksCard({
             <div className="grid gap-3 sm:grid-cols-2">
                 {MOBILE_STORES.map(field)}
             </div>
-            <p className="mt-5 mb-2 text-xs font-semibold text-white/50">
+            <p className="mt-3.5 mb-2 text-xs font-semibold text-white/50">
                 {tr('Комп’ютер: магазин і пряме завантаження')}
             </p>
             <div className="grid gap-3 sm:grid-cols-2">

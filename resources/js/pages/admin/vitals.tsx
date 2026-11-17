@@ -151,7 +151,7 @@ export default function Vitals({ days, device, report }: Props) {
                 </div>
             </div>
 
-            <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 {METRICS.map((m) => {
                     const s = report.overall[m.key];
 
@@ -190,7 +190,7 @@ export default function Vitals({ days, device, report }: Props) {
             </div>
 
             {report.daily.length > 1 && (
-                <section className="gc-solid mb-5 rounded-2xl p-4">
+                <section className="gc-solid mb-3.5 rounded-2xl p-4">
                     <h2 className="mb-3 text-sm font-semibold text-white">
                         {tr('LCP по днях (p75)')}
                     </h2>

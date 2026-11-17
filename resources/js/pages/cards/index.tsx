@@ -178,13 +178,13 @@ export default function CardsAlbum({
     return (
         <>
             <Head title={tr('Колекційні картки')} />
-            <div className="mx-auto max-w-5xl space-y-5">
+            <div className="mx-auto max-w-5xl space-y-3.5">
                 <m.section
                     initial={reduce ? false : { opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={motionOr(reduce, RISE)}
                     data-on-dark
-                    className="relative overflow-hidden rounded-2xl p-5 text-white sm:p-7"
+                    className="relative overflow-hidden rounded-2xl p-3.5 text-white sm:p-7"
                     style={{
                         background:
                             'radial-gradient(120% 140% at 0% 0%, #4338ca 0%, transparent 55%), radial-gradient(90% 120% at 100% 100%, #7c3aed 0%, transparent 60%), #0b1220',
@@ -201,7 +201,7 @@ export default function CardsAlbum({
                                     'Ігри, персонажі аніме, фільмів і серіалів — 16 рангів від N до U. Набір щодня, картки за перегляд і гру, дублікати — в кристали.',
                                 )}
                             </p>
-                            <div className="mt-4 flex flex-wrap items-center gap-5">
+                            <div className="mt-4 flex flex-wrap items-center gap-3.5">
                                 <div className="flex items-center gap-3">
                                     <svg
                                         viewBox="0 0 44 44"
@@ -276,7 +276,7 @@ export default function CardsAlbum({
                                     </div>
                                 )}
                             </div>
-                            <div className="mt-5 flex flex-wrap gap-2">
+                            <div className="mt-3.5 flex flex-wrap gap-2">
                                 <Button
                                     disabled={busy || left !== null}
                                     onClick={() => setOpening({ kind: 'pack' })}
@@ -608,7 +608,7 @@ export default function CardsAlbum({
                             initial={reduce ? false : { scale: 0.95, y: 10 }}
                             animate={{ scale: 1, y: 0 }}
                             transition={motionOr(reduce, RISE)}
-                            className="gc-solid w-full max-w-sm rounded-2xl p-5"
+                            className="gc-solid w-full max-w-sm rounded-2xl p-3.5"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex justify-end">

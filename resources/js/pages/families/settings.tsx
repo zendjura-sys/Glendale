@@ -347,7 +347,7 @@ function ProfilePanel({
 
     return (
         <Panel title={tr('Профіль сім’ї')} icon={SettingsIcon}>
-            <div className="flex flex-wrap items-start gap-5">
+            <div className="flex flex-wrap items-start gap-3.5">
                 <div className="flex flex-col items-center gap-2">
                     <FamilyLogo
                         family={{

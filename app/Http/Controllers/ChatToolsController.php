@@ -71,7 +71,7 @@ class ChatToolsController extends Controller
         return Storage::disk($attachment->disk)->response($attachment->path, $attachment->name ?? 'file', $headers, 'inline');
     }
 
-    public function restrict(Request $request, Conversation $conversation, User $user, ChatRestrictions $restrictions): RedirectResponse
+    public function restrict(Request $request, Conversation $conversation, User $user, ChatRestrictions $restrictions): RedirectResponse|JsonResponse
     {
         app(Plugins::class)->ensure('chat_restrictions');
         $data = $request->validate([
@@ -80,18 +80,18 @@ class ChatToolsController extends Controller
         ]);
         $restrictions->restrict($conversation, $request->user(), $user, $data['kind'], (int) $data['minutes']);
 
-        return back();
+        return $this->saved($request);
     }
 
-    public function lift(Request $request, Conversation $conversation, User $user, ChatRestrictions $restrictions): RedirectResponse
+    public function lift(Request $request, Conversation $conversation, User $user, ChatRestrictions $restrictions): RedirectResponse|JsonResponse
     {
         app(Plugins::class)->ensure('chat_restrictions');
         $restrictions->lift($conversation, $request->user(), $user);
 
-        return back();
+        return $this->saved($request);
     }
 
-    public function background(Request $request, Conversation $conversation, ChatBackgrounds $backgrounds): RedirectResponse
+    public function background(Request $request, Conversation $conversation, ChatBackgrounds $backgrounds): RedirectResponse|JsonResponse
     {
         app(Plugins::class)->ensure('chat_backgrounds');
         $data = $request->validate([
@@ -107,6 +107,24 @@ class ChatToolsController extends Controller
             $backgrounds->set($conversation, $request->user(), $data['preset'] ?? null, $forAll);
         }
 
-        return back();
+        if (! $request->expectsJson()) {
+            return back();
+        }
+
+        $conversation->refresh();
+        $me = $conversation->participantFor($request->user());
+
+        return response()->json([
+            'ok' => true,
+            'background' => $backgrounds->resolve($me?->background ?? $conversation->background),
+            'my_background' => $me?->background,
+            'shared_background' => $conversation->background,
+        ]);
+    }
+
+    /** Застосунок просить JSON; форма сайту лишається на сторінці. */
+    private function saved(Request $request): RedirectResponse|JsonResponse
+    {
+        return $request->expectsJson() ? response()->json(['ok' => true]) : back();
     }
 }

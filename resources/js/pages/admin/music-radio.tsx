@@ -70,7 +70,7 @@ export default function AdminMusicRadio({ stations, genres, stats }: Props) {
                 }
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3">
+            <div className="mb-3.5 grid grid-cols-2 gap-3">
                 <StatCard
                     label={tr('Станцій')}
                     value={stats.total}
@@ -92,7 +92,7 @@ export default function AdminMusicRadio({ stations, genres, stats }: Props) {
             </datalist>
 
             {adding && (
-                <section className="gc-solid mb-5 rounded-2xl p-4 sm:p-5">
+                <section className="gc-solid mb-3.5 rounded-2xl p-3.5 sm:p-4">
                     <h2 className="mb-4 font-display text-base font-bold text-white">
                         {tr('Нова станція')}
                     </h2>

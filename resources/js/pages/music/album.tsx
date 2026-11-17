@@ -71,7 +71,7 @@ export default function MusicAlbum({ album }: { album: Album }) {
             <SongList
                 tracks={album.tracks}
                 variant="numbered"
-                className="mt-5"
+                className="mt-3.5"
             />
             <p className="am-footnote px-[var(--am-gutter)] pt-3 text-[var(--am-label2)]">
                 {tr('{n} пісень, {length}', {

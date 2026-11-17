@@ -85,7 +85,7 @@ class GradientText extends StatelessWidget {
 /// Картка — матове скло iOS: справжнє розмиття фону з насиченням, матова тонировка, грань,
 /// блік угорі й м'яка тінь назовні (ArcticGlassContainer).
 class Glass extends StatelessWidget {
-  const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = AppRadii.card, this.onTap, this.gradient, this.border, this.overlay, super.key});
+  const Glass({required this.child, this.padding = const EdgeInsets.all(11), this.radius = AppRadii.card, this.onTap, this.gradient, this.border, this.overlay, super.key});
   final Widget child;
   /// Шар поверх картки на весь її розмір (напр. жива рамка GameCon+).
   final Widget? overlay;
@@ -518,15 +518,15 @@ class Segmented extends StatelessWidget {
           ],
           AnimatedDefaultTextStyle(
             duration: _motion,
-            style: body(13.5, color: on ? ink : muted, weight: FontWeight.w600).copyWith(height: 1.2),
+            style: body(12, color: on ? ink : muted, weight: FontWeight.w600).copyWith(height: 1.2),
             child: Text(option.label, maxLines: 1, softWrap: false),
           ),
           if (option.count != null) ...[
-            SizedBox(width: 6),
+            SizedBox(width: 5),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(color: fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(5)),
-              child: Text('${option.count}', maxLines: 1, softWrap: false, style: body(11, color: muted, weight: FontWeight.w600)),
+              child: Text('${option.count}', maxLines: 1, softWrap: false, style: body(10.5, color: muted, weight: FontWeight.w600)),
             ),
           ],
         ],
@@ -556,7 +556,7 @@ class Segmented extends StatelessWidget {
                     duration: _motion,
                     curve: Curves.easeOutCubic,
                     // Компактні пігулки: фільтри вміщуються без обрізань на півслові.
-                    padding: EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: option.id == selected ? _pill : _pill.copyWith(color: Colors.transparent),
                     child: content(option, option.id == selected),
                   ),
@@ -604,7 +604,7 @@ class Segmented extends StatelessWidget {
   }
 }
 
-/// Плавна зміна вмісту вкладки: старий вміст згасає, новий з’являється з легким зсувом.
+/// Плавна зміна вмісту вкладки: старий вміст згасає, новий з’являється з легким зсувом (SNAP).
 class Swap extends StatelessWidget {
   const Swap({required this.id, required this.child, super.key});
   final Object? id;
@@ -612,15 +612,22 @@ class Swap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduce = MediaQuery.disableAnimationsOf(context);
     return AnimatedSwitcher(
-      duration: Duration(milliseconds: 280),
+      duration: reduce ? Duration.zero : const Duration(milliseconds: 320),
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeInCubic,
       layoutBuilder: (current, previous) => Stack(alignment: Alignment.topCenter, children: [...previous, ?current]),
-      transitionBuilder: (child, animation) => FadeTransition(
-        opacity: animation,
-        child: SlideTransition(position: Tween(begin: Offset(0, 0.02), end: Offset.zero).animate(animation), child: child),
-      ),
+      transitionBuilder: (child, animation) {
+        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween(begin: const Offset(0, 0.018), end: Offset.zero).animate(curved),
+            child: child,
+          ),
+        );
+      },
       child: KeyedSubtree(key: ValueKey(id), child: child),
     );
   }
@@ -1196,7 +1203,9 @@ const tabletPortraitWidth = 680.0;
 const bottomBarSwap = Duration(milliseconds: 250);
 
 /// Сторінки розділу «Музика» з власною панеллю вкладок: там вона стоїть на місці острова.
-bool hasMusicTabs(Uri uri) => uri.queryParameters['user'] == null && RegExp(r'^/music(/(new|radio|library))?/?$').hasMatch(uri.path);
+/// Раніше: чи показувати нижні вкладки «Музики» замість острова. Тепер розділ у спільній оболонці.
+@Deprecated('Music uses TopBar + IslandNav; section pills are MusicNav in content')
+bool hasMusicTabs(Uri uri) => false;
 
 /// Розділ «Музика» (свій, не чужі аудіозаписи `?user=`): там своя шапка з виходом «Назад».
 bool isMusicSection(Uri uri) => uri.queryParameters['user'] == null && RegExp(r'^/music(/|$)').hasMatch(uri.path);

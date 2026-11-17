@@ -60,7 +60,7 @@ export default function AdminTeam({
 
             <form
                 onSubmit={add}
-                className="gc-solid mb-5 flex flex-wrap gap-2 rounded-2xl p-3"
+                className="gc-solid mb-3.5 flex flex-wrap gap-2 rounded-2xl p-3"
             >
                 <Input
                     value={form.data.username}
@@ -145,7 +145,7 @@ function RolesCard({
     const [editing, setEditing] = useState<StaffRole | 'new' | null>(null);
 
     return (
-        <section className="gc-solid mb-5 rounded-2xl p-4">
+        <section className="gc-solid mb-3.5 rounded-2xl p-4">
             <div className="flex items-center gap-3">
                 <h2 className="flex-1 font-display text-base font-bold text-white">
                     {tr('Ролі команди')}

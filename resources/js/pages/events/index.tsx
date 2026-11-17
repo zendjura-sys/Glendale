@@ -45,7 +45,7 @@ export default function EventsIndex({
         <>
             <Head title={tr('Календар подій')} />
             <div className="mb-4">
-                <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
+                <h1 className="flex items-center gap-2 font-display text-xl font-semibold text-white sm:text-2xl">
                     <CalendarDays className="size-6 text-sky-400" />{' '}
                     {tr('Календар подій')}
                 </h1>

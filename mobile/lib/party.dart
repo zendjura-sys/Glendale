@@ -358,6 +358,21 @@ class PartyScreen extends StatelessWidget {
             const SizedBox(height: 10),
             PartyCard(party: party),
             const SizedBox(height: 10),
+            if (party['time_poll'] is Map) ...[
+              _TimePoll(partyId: intOf(party['id']), poll: mapOf(party['time_poll']), canPick: mine, open: open, onChanged: reload),
+              const SizedBox(height: 10),
+            ],
+            if (joined && open && party['voice_room'] is Map) ...[
+              PrimaryButton(
+                label: tr('Зайти в голосову'),
+                icon: LucideIcons.mic,
+                onPressed: () async {
+                  final room = mapOf(party['voice_room']);
+                  await VoiceCall.instance.join(api, room, label: text(party['title']) ?? tr('Паті'), route: '/party/$id');
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
             if (!open)
               Glass(child: Text(tr('Оголошення закрите.'), style: body(14, color: muted)))
             else if (!joined && !full)
@@ -417,3 +432,98 @@ class PartyScreen extends StatelessWidget {
     );
   }
 }
+
+/// Голосування за час старту паті (`POST /site/party/{id}/time`).
+class _TimePoll extends StatelessWidget {
+  const _TimePoll({required this.partyId, required this.poll, required this.canPick, required this.open, required this.onChanged});
+  final int partyId;
+  final Map<String, dynamic> poll;
+  final bool canPick;
+  final bool open;
+  final Future<void> Function() onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final decided = poll['decided'] == true;
+    final options = maps(poll['options']);
+    final maxVotes = options.fold<int>(1, (m, o) => mathMax(m, intOf(o['votes'])));
+    final active = open && !decided;
+    return Glass(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.vote, size: 16, color: primary),
+              const SizedBox(width: 8),
+              Expanded(child: Text(decided ? tr('Час обрано голосуванням') : tr('Коли граємо?'), style: body(14, weight: FontWeight.w700))),
+            ],
+          ),
+          if (active) ...[
+            const SizedBox(height: 4),
+            Text(tr('Позначте всі зручні варіанти'), style: body(12, color: muted)),
+          ],
+          const SizedBox(height: 10),
+          for (final option in options)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Material(
+                color: card,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: !active
+                      ? null
+                      : () async {
+                          final mine = options.where((o) => o['mine'] == true).map((o) => intOf(o['id'])).toList();
+                          final id = intOf(option['id']);
+                          final next = mine.contains(id) ? mine.where((x) => x != id).toList() : [...mine, id];
+                          if (await attempt(context, () => AppScope.read(context).session.api.post(Api.site('/party/$partyId/time'), {'slots': next}))) {
+                            await onChanged();
+                          }
+                        },
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: intOf(option['votes']) / maxVotes,
+                          child: DecoratedBox(decoration: BoxDecoration(color: primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12))),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        child: Row(
+                          children: [
+                            Icon(option['mine'] == true ? LucideIcons.circleCheck : LucideIcons.circle, size: 16, color: option['mine'] == true ? primary : muted),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(partyWhen(option['starts_at']), style: body(13, weight: FontWeight.w600))),
+                            Text('${intOf(option['votes'])}', style: body(12, color: muted)),
+                            if (canPick && active) ...[
+                              const SizedBox(width: 8),
+                              GhostButton(
+                                label: tr('Закріпити'),
+                                compact: true,
+                                expand: false,
+                                onPressed: () async {
+                                  if (await attempt(context, () => AppScope.read(context).session.api.post(Api.site('/party/$partyId/time/${option['id']}')))) {
+                                    await onChanged();
+                                  }
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+int mathMax(int a, int b) => a > b ? a : b;

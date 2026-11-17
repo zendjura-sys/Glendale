@@ -83,7 +83,7 @@ export default function GameNightsIndex({
             <div className="mx-auto w-full max-w-3xl px-4 py-6">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
+                        <h1 className="flex items-center gap-2 font-display text-xl font-semibold text-white sm:text-2xl">
                             <CalendarClock className="size-6 text-sky-400" />
                             {tr('Ігровий вечір')}
                         </h1>

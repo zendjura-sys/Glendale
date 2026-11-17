@@ -205,7 +205,7 @@ export default function AdminBroadcasts({
 
             <form
                 onSubmit={send}
-                className="gc-solid mb-5 space-y-3 rounded-2xl p-4"
+                className="gc-solid mb-3.5 space-y-3 rounded-2xl p-4"
             >
                 <div className="flex flex-wrap gap-2">
                     {(Object.keys(audiences) as Audience[]).map((a) => (

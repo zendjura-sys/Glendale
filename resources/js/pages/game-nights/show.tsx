@@ -155,8 +155,8 @@ export default function GameNightShow({ night }: { night: Night }) {
                     <ArrowLeft className="size-4" />
                     {tr('Ігрові вечори')}
                 </Link>
-                <section className="gc-solid rounded-2xl p-5">
-                    <h1 className="font-display text-2xl font-semibold text-white">
+                <section className="gc-solid rounded-2xl p-3.5">
+                    <h1 className="font-display text-xl font-semibold text-white sm:text-2xl">
                         {night.title}
                     </h1>
                     <p className="mt-1 text-sm text-white/50">

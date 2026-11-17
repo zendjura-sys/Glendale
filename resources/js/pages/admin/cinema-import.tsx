@@ -170,7 +170,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                 )}
             />
 
-            <div className="gc-solid mb-5 space-y-3 rounded-2xl p-4">
+            <div className="gc-solid mb-3.5 space-y-3 rounded-2xl p-4">
                 <div className="flex flex-wrap items-center gap-2">
                     {(['kodik', 'videoseed', 'flixcdn'] as const).map((p) => (
                         <button

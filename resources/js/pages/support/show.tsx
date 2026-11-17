@@ -38,7 +38,7 @@ export default function SupportTicketPage({
                     <ArrowLeft className="size-4" />
                     {tr('Мої звернення')}
                 </Link>
-                <div className="gc-solid rounded-2xl p-4 sm:p-5">
+                <div className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                             <h1 className="font-display text-lg font-semibold text-white">
@@ -50,7 +50,7 @@ export default function SupportTicketPage({
                         </div>
                         <StatusPill status={ticket.status} />
                     </div>
-                    <div className="mt-5">
+                    <div className="mt-3.5">
                         <Thread messages={messages} mineIsStaff={false} />
                     </div>
                 </div>

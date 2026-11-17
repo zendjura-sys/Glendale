@@ -102,18 +102,80 @@ class PersonCard extends StatelessWidget {
     final mutual = intOf(user['mutual']);
     final subtitle = mutual > 0 ? '$mutual ${plural(mutual, 'спільний друг', 'спільні друзі', 'спільних друзів')}' : (text(user['city']) ?? '@${user['username']}');
     return Glass(
-      padding: const EdgeInsets.fromLTRB(10, 18, 10, 14),
+      padding: const EdgeInsets.fromLTRB(10, 14, 10, 12),
       onTap: () => context.push('/u/${user['username']}'),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Avatar(url: text(user['avatar_url']), name: name, size: 76, online: user['is_online'] == true),
-          const SizedBox(height: 12),
-          FitText(name, style: body(14.5, weight: FontWeight.w700), textAlign: TextAlign.center),
-          const SizedBox(height: 3),
-          FitText(subtitle, style: body(12, color: muted)),
-          const SizedBox(height: 12),
+          Avatar(url: text(user['avatar_url']), name: name, size: 56, online: user['is_online'] == true),
+          const SizedBox(height: 8),
+          FitText(name, style: body(13, weight: FontWeight.w700), textAlign: TextAlign.center),
+          const SizedBox(height: 2),
+          FitText(subtitle, style: body(11, color: muted)),
+          const SizedBox(height: 8),
           FriendAction(username: '${user['username']}', relation: text(user['relation']) ?? 'none', compact: true, onChanged: onChanged),
+        ],
+      ),
+    );
+  }
+}
+
+/// Компактна строка друга — еталон списку «Друзі».
+class FriendListRow extends StatelessWidget {
+  const FriendListRow({required this.user, this.onChanged, super.key});
+  final Map<String, dynamic> user;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = text(user['first_name']) ?? text(user['name']) ?? tr('Гравець');
+    final mutual = intOf(user['mutual']);
+    final subtitle = mutual > 0
+        ? '$mutual ${plural(mutual, 'спільний друг', 'спільні друзі', 'спільних друзів')}'
+        : (text(user['city']) ?? '@${user['username']}');
+    final relation = text(user['relation']) ?? 'none';
+    return Glass(
+      padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => context.push('/u/${user['username']}'),
+            child: Avatar(url: text(user['avatar_url']), name: name, size: 48, online: user['is_online'] == true),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => context.push('/u/${user['username']}'),
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FitText(name, style: body(13, weight: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  FitText(subtitle, style: body(11, color: muted)),
+                ],
+              ),
+            ),
+          ),
+          if (relation == 'incoming')
+            FriendAction(username: '${user['username']}', relation: relation, compact: true, onChanged: onChanged)
+          else ...[
+            RoundIcon(
+              icon: LucideIcons.messageCircle,
+              size: 32,
+              onTap: () async {
+                try {
+                  final chat = await AppScope.of(context).session.api.post('/api/v1/messages/with/${user['username']}');
+                  if (context.mounted) context.push('/messages/${chat['id']}');
+                } catch (e) {
+                  if (context.mounted) toast(context, e);
+                }
+              },
+              tooltip: tr('Написати'),
+            ),
+            const SizedBox(width: 4),
+            FriendAction(username: '${user['username']}', relation: relation, compact: true, onChanged: onChanged),
+          ],
         ],
       ),
     );
@@ -231,19 +293,33 @@ class _FriendsScreenState extends State<FriendsScreen> {
           padding: const EdgeInsets.all(12),
           child: Column(
             children: [
+              // Три головні вкладки — рівні комірки, текст+лічильник завжди вміщуються.
               Segmented(
-                scroll: true,
                 options: [
-                  SegmentOption('all', tr('Усі друзі'), icon: LucideIcons.usersRound, count: counts['all']),
-                  SegmentOption('online', tr('Онлайн'), icon: LucideIcons.radio, count: counts['online']),
-                  SegmentOption('requests', tr('Заявки'), icon: LucideIcons.inbox, count: intOf(counts['requests']) > 0 ? counts['requests'] : null),
-                  SegmentOption('outgoing', tr('Надіслані'), icon: LucideIcons.send, count: intOf(counts['outgoing']) > 0 ? counts['outgoing'] : null),
+                  SegmentOption('all', tr('Усі друзі'), count: counts['all']),
+                  SegmentOption('online', tr('Онлайн'), count: counts['online']),
+                  SegmentOption('requests', tr('Заявки'), count: intOf(counts['requests']) > 0 ? counts['requests'] : null),
                 ],
-                selected: tab,
+                selected: ['all', 'online', 'requests'].contains(tab) ? tab : 'all',
                 onSelect: (value) {
                   setState(() => tab = value);
                   _load(reset: true);
                 },
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GhostButton(
+                  label: '${tr('Надіслані')}${intOf(counts['outgoing']) > 0 ? ' ${counts['outgoing']}' : ''}',
+                  icon: LucideIcons.send,
+                  compact: true,
+                  expand: false,
+                  color: tab == 'outgoing' ? accent : muted,
+                  onPressed: () {
+                    setState(() => tab = 'outgoing');
+                    _load(reset: true);
+                  },
+                ),
               ),
               const SizedBox(height: 10),
               GcField(
@@ -272,15 +348,23 @@ class _FriendsScreenState extends State<FriendsScreen> {
             onAction: () => context.push('/people'),
           )
         else ...[
-          TwoColumns(children: [
-            for (final user in users)
-              PersonCard(
-                key: ValueKey('friend-${user['id']}'),
-                user: user,
-                onChanged: (_) => _load(reset: true),
-              ),
-          ]),
-          LoadMore(more: more && !loading, onMore: _load),
+          Swap(
+            id: tab,
+            child: Column(
+              children: [
+                for (final user in users)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: FriendListRow(
+                      key: ValueKey('friend-${user['id']}'),
+                      user: user,
+                      onChanged: (_) => _load(reset: true),
+                    ),
+                  ),
+                LoadMore(more: more && !loading, onMore: _load),
+              ],
+            ),
+          ),
         ],
         const SizedBox(height: 4),
         Glass(

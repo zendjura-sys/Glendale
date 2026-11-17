@@ -74,7 +74,7 @@ export default function Links({ items, filters, sources, stats }: Props) {
                 )}
             />
 
-            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mb-3.5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatCard
                     label={tr('Адрес')}
                     value={stats.total}

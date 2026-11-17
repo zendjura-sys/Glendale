@@ -148,7 +148,7 @@ export default function AdminSeasons({
                 }
             />
 
-            <form onSubmit={save} className="space-y-5">
+            <form onSubmit={save} className="space-y-3.5">
                 <section className="gc-solid grid gap-4 rounded-xl p-5 sm:grid-cols-2">
                     <label className="block space-y-1.5">
                         <span className="text-sm text-white/60">
@@ -379,7 +379,7 @@ export default function AdminSeasons({
                             backgroundImage: `linear-gradient(120deg, ${colors.join(', ')})`,
                         }}
                     >
-                        <div className="font-display text-2xl font-bold text-white">
+                        <div className="font-display text-xl font-bold text-white sm:text-2xl">
                             {title || tr('Без назви')}
                         </div>
                     </div>

@@ -88,12 +88,12 @@ export default function BillingPage({
     return (
         <>
             <Head title={tr('Оплата й підписки — GameCon+')} />
-            <div className="mx-auto max-w-3xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-3.5">
                 <PlusTabs current="billing" />
 
                 {opened && <OrderResult order={opened} />}
 
-                <section className="gc-solid rounded-2xl p-5 sm:p-7">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-7">
                     <p className="flex items-center gap-2 text-sm text-white/55">
                         <CreditCard className="size-4 text-indigo-300" />
                         {tr('Оплата карткою через monobank')}
@@ -109,7 +109,7 @@ export default function BillingPage({
                     </p>
                     <PaymentBadges className="mt-4" />
                     <BalanceTopUp balance={credit} enabled={available} />
-                    <div className="mt-5 flex flex-wrap gap-2">
+                    <div className="mt-3.5 flex flex-wrap gap-2">
                         <Link href="/plus" className={secondary}>
                             <PlusBadge className="size-4 rounded [&_svg]:size-3" />
                             {tr('Тарифи GameCon+')}
@@ -117,7 +117,7 @@ export default function BillingPage({
                     </div>
                 </section>
 
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <RefreshCw className="size-4 text-indigo-300" />
                         {tr('Автопродовження')}
@@ -138,7 +138,7 @@ export default function BillingPage({
                     </ul>
                 </section>
 
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <CreditCard className="size-4 text-indigo-300" />
                         {tr('Збережені картки')}
@@ -158,7 +158,7 @@ export default function BillingPage({
                     )}
                 </section>
 
-                <section className="gc-solid rounded-2xl p-5">
+                <section className="gc-solid rounded-2xl p-3.5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Історія оплат')}
                     </h2>
@@ -444,7 +444,7 @@ function BalanceTopUp({
     const packs = useKind('balance');
 
     return (
-        <div className="gc-solid-2 mt-5 rounded-2xl p-4">
+        <div className="gc-solid-2 mt-3.5 rounded-2xl p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm font-semibold text-white">
                     {tr('Баланс GameCon')}

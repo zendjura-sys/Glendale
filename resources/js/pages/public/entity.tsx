@@ -55,7 +55,7 @@ export default function PublicEntity({ entity }: { entity: Entity }) {
                             <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-[var(--background)]/70 to-transparent" />
                         </div>
                     )}
-                    <div className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-end sm:p-7">
+                    <div className="relative flex flex-col gap-3.5 p-5 sm:flex-row sm:items-end sm:p-7">
                         <div
                             className={
                                 poster

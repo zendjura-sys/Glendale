@@ -12,6 +12,7 @@ import 'posts.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'feed_pulse.dart';
+import 'newcomer_week.dart';
 import 'status.dart';
 import 'stories.dart';
 import 'theme.dart';
@@ -138,6 +139,7 @@ class _FeedScreenState extends State<FeedScreen> {
     final widgets = (AppScope.of(context).session.me?['home_widgets'] is List) ? {for (final w in AppScope.of(context).session.me!['home_widgets'] as List) '$w'} : null;
     bool shows(String key) => widgets == null || widgets.contains(key);
     final tomorrow = maps(pager.first['tomorrow']);
+    final newcomer = pager.first['newcomer'] is Map ? mapOf(pager.first['newcomer']) : null;
     final languages = (pager.first['languages'] is List ? pager.first['languages'] as List : const []).map((l) => '$l').toList();
     return ScreenScroll(
       onRefresh: _reload,
@@ -145,6 +147,16 @@ class _FeedScreenState extends State<FeedScreen> {
         const IncidentBanner(),
         StoriesStrip(key: stories),
         FeedPulse(key: pulse),
+        if (newcomer != null) ...[
+          NewcomerWeekCard(
+            data: newcomer,
+            onHide: () async {
+              await hideNewcomerWeek(context);
+              if (mounted) setState(() => pager.first.remove('newcomer'));
+            },
+          ),
+          const SizedBox(height: 12),
+        ],
         if (AppScope.of(context).session.wrappedYear case final year?) ...[WrappedBanner(year: year), const SizedBox(height: 12)],
         if (tomorrow.isNotEmpty) ...[_TomorrowCard(events: tomorrow), const SizedBox(height: 12)],
         Composer(onPosted: _reload),
