@@ -10,6 +10,7 @@ import {
     Podcast,
     Sparkles,
     Ticket,
+    Video,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -40,6 +41,14 @@ type Show = {
     host: UserCard | null;
 };
 
+type LiveCastStream = {
+    id: number;
+    title: string;
+    category: string | null;
+    viewers: number;
+    host: UserCard | null;
+};
+
 export type ContinueItem = {
     kind: 'movie' | 'track' | 'game' | 'draft';
     title: string;
@@ -58,6 +67,7 @@ export type SideWidgetsData = {
     } | null;
     giveaways: Giveaway[] | null;
     gamecast: { live: number; listeners: number; shows: Show[] } | null;
+    livecast: { live: number; viewers: number; streams: LiveCastStream[] } | null;
 };
 
 let cache: SideWidgetsData | null = null;
@@ -404,10 +414,75 @@ function GameCastCard({
     );
 }
 
+/** LiveCast біля стрічки: живі відеостріми (окремо від GameCast). */
+function LiveCastCard({
+    data,
+    index,
+}: {
+    data: NonNullable<SideWidgetsData['livecast']>;
+    index: number;
+}) {
+    return (
+        <Card
+            icon={Video}
+            tone={data.live > 0 ? 'text-emerald-400' : 'text-teal-400'}
+            title="LiveCast"
+            href="/livecast"
+            index={index}
+            aside={
+                data.live > 0 ? (
+                    <span className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-emerald-300">
+                        <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+                        {tr('{n} в ефірі', { n: data.live })}
+                    </span>
+                ) : undefined
+            }
+        >
+            {data.streams.length === 0 ? (
+                <Link
+                    href="/livecast"
+                    className="block rounded-xl bg-white/[0.04] p-3 text-sm text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                >
+                    {tr('Поки ніхто не стрімить — відкрийте LiveCast')}
+                </Link>
+            ) : (
+                <ul className="space-y-2">
+                    {data.streams.map((s) => (
+                        <li key={s.id}>
+                            <Link
+                                href={`/livecast/${s.id}`}
+                                className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-transparent p-2.5 transition hover:from-emerald-500/20"
+                            >
+                                {s.host && (
+                                    <UserAvatar user={s.host} size="sm" />
+                                )}
+                                <span className="min-w-0 flex-1">
+                                    <span className="block truncate text-sm font-semibold text-white">
+                                        {s.title}
+                                    </span>
+                                    <span className="block truncate text-xs text-white/50">
+                                        {s.category
+                                            ? s.category
+                                            : (s.host?.name ?? tr('Стрім'))}
+                                    </span>
+                                </span>
+                                <span className="shrink-0 text-xs text-emerald-300/80 tabular-nums">
+                                    {tr('{n} гляд.', { n: s.viewers })}
+                                </span>
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </Card>
+    );
+}
+
 /** Порядок віджетів; нові додаються сюди — і самі заповнюють вільні колонки. */
 export const WIDGET_ORDER = [
     'continue',
     'gamecast',
+    'livecast',
     'music',
     'cinema',
     'giveaways',
@@ -520,7 +595,7 @@ export function ContinueList({
 }
 
 /**
- * Віджети ПК: «Продовжити», GameCast, музика, «Що подивитися» (ШІ або за смаком), роздачі.
+ * Віджети ПК: «Продовжити», GameCast, LiveCast, музика, «Що подивитися», роздачі.
  * only — які саме показати (щоб розкласти по колонках); без нього — усі по порядку.
  */
 export function SideWidgets({
@@ -552,6 +627,14 @@ export function SideWidgets({
                             <GameCastCard
                                 key={key}
                                 data={data.gamecast}
+                                index={i}
+                            />
+                        ) : null;
+                    case 'livecast':
+                        return data.livecast ? (
+                            <LiveCastCard
+                                key={key}
+                                data={data.livecast}
                                 index={i}
                             />
                         ) : null;
@@ -620,13 +703,17 @@ export function RailWidgets() {
     return (
         <SideWidgets
             data={data}
-            only={onFeed ? (['cinema', 'giveaways'] as const) : WIDGET_ORDER}
+            only={
+                onFeed
+                    ? (['music', 'cinema', 'giveaways'] as const)
+                    : WIDGET_ORDER
+            }
             className="space-y-4"
         />
     );
 }
 
-/** Третя колонка стрічки: на 3 колонках — усі віджети, на 4 — перша половина. */
+/** Третя колонка стрічки: на 3 колонках — усі віджети, на 4 — LiveCast + GameCast. */
 export function FeedColumnWidgets({ data }: { data: SideWidgetsData | null }) {
     const four = useMedia('(min-width: 2400px)');
 
@@ -634,7 +721,9 @@ export function FeedColumnWidgets({ data }: { data: SideWidgetsData | null }) {
         <SideWidgets
             data={data}
             only={
-                four ? (['gamecast', 'music'] as const) : exceptContinue(true)
+                four
+                    ? (['gamecast', 'livecast'] as const)
+                    : exceptContinue(true)
             }
             className="space-y-4"
         />

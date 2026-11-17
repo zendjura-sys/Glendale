@@ -3,6 +3,7 @@
 namespace App\Services\Broadcasts;
 
 use App\Models\Livecast;
+use App\Models\LivecastIntegration;
 use App\Models\LivecastMessage;
 use App\Models\User;
 use App\Services\Voice\LiveKit;
@@ -37,13 +38,13 @@ class LiveCastService
             'host_id' => $host->id,
             'title' => $title,
             'category' => $category,
-            'donations' => DonationPresets::sanitize($donations ?? []),
+            'donations' => $this->donationLinksFor($host, $donations),
             'status' => Livecast::LIVE,
             'started_at' => now(),
             'viewers' => 0,
             'peak_viewers' => 0,
         ]);
-        Cache::forget('livecast.pulse');
+        $this->forgetCaches();
 
         return $stream;
     }
@@ -62,7 +63,7 @@ class LiveCastService
         $publish = $host && $canPublish;
         $identity = 'u'.$user->id;
         $this->touch($livecast, $user);
-        Cache::forget('livecast.pulse');
+        $this->forgetCaches();
 
         return [
             'url' => (string) $this->livekit->url(),
@@ -92,7 +93,7 @@ class LiveCastService
         }
         $livecast->update(['status' => Livecast::ENDED, 'ended_at' => now(), 'viewers' => 0]);
         $this->livekit->deleteRoom($livecast->livekitName());
-        Cache::forget('livecast.pulse');
+        $this->forgetCaches();
     }
 
     public function leave(Livecast $livecast, User $user): void
@@ -217,6 +218,28 @@ class LiveCastService
     }
 
     /**
+     * Підставити лінки Donatik/Donatello з інтеграцій ведучого, якщо в start() їх не передали.
+     *
+     * @return list<array{provider: string, name: string, url: string}>
+     */
+    public function donationLinksFor(User $host, ?array $donations = null): array
+    {
+        $given = DonationPresets::sanitize($donations ?? []);
+        if ($given !== []) {
+            return $given;
+        }
+
+        $fromIntegrations = [];
+        foreach (LivecastIntegration::query()->where('user_id', $host->id)->whereNotNull('page_url')->get() as $row) {
+            foreach (DonationPresets::sanitize([['provider' => $row->provider, 'url' => $row->page_url]]) as $link) {
+                $fromIntegrations[] = $link;
+            }
+        }
+
+        return $fromIntegrations;
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function live(int $limit = 40): array
@@ -266,6 +289,7 @@ class LiveCastService
             'kind' => $m->kind ?: LivecastMessage::CHAT,
             'gift_key' => $m->gift_key,
             'gift' => $gift,
+            'meta' => $m->meta,
             'body' => $m->body,
             'created_at' => $m->created_at?->toIso8601String(),
             'user' => $m->user?->toCard(),
@@ -281,6 +305,12 @@ class LiveCastService
         $cutoff = time() - self::SEEN_SECONDS;
         $ids = array_filter($ids, static fn (int $at) => $at >= $cutoff);
         Cache::put($key, $ids, self::SEEN_SECONDS + 15);
+    }
+
+    private function forgetCaches(): void
+    {
+        Cache::forget('livecast.pulse');
+        Cache::forget('widgets:livecast');
     }
 
     private function countViewers(Livecast $livecast): int

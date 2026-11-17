@@ -4,11 +4,13 @@ namespace App\Services\Feed;
 
 use App\Models\GameBacklog;
 use App\Models\GameGiveaway;
+use App\Models\Livecast;
 use App\Models\LiveShow;
 use App\Models\Movie;
 use App\Models\Post;
 use App\Models\Track;
 use App\Models\User;
+use App\Services\Broadcasts\LiveCastService;
 use App\Services\Cinema\AiPicks;
 use App\Services\Games\Giveaways;
 use App\Services\Music\MusicCatalog;
@@ -21,7 +23,7 @@ use Illuminate\Support\Str;
 
 /**
  * Віджети ПК і планшета біля стрічки: музика (продовжити / нове), «Що подивитися» (ШІ),
- * роздачі ігор і GameCast в ефірі. Кожен — лише якщо його розділ увімкнено.
+ * роздачі ігор, GameCast і LiveCast в ефірі. Кожен — лише якщо його розділ увімкнено.
  */
 class SideWidgets
 {
@@ -40,6 +42,7 @@ class SideWidgets
             'giveaways' => $modules->enabled('games') ? Cache::remember('widgets:giveaways', 600, fn () => app(Giveaways::class)->active(3)
                 ->map(fn (GameGiveaway $g) => $g->toCard())->values()->all()) : null,
             'gamecast' => $plugins->on('live_shows') ? $this->gamecast() : null,
+            'livecast' => $plugins->on('livecast') ? $this->livecast() : null,
         ];
     }
 
@@ -116,6 +119,22 @@ class SideWidgets
             ...$shows->pulse(),
             'shows' => Cache::remember('widgets:gamecast', 30, fn () => LiveShow::query()->where('status', LiveShow::LIVE)
                 ->latest('id')->limit(3)->get()->map(fn (LiveShow $s) => $shows->card($s))->values()->all()),
+        ];
+    }
+
+    /**
+     * LiveCast у віджеті стрічки: пульс + до 3 живих стрімів.
+     *
+     * @return array{live: int, viewers: int, streams: list<array<string, mixed>>}
+     */
+    private function livecast(): array
+    {
+        $casts = app(LiveCastService::class);
+
+        return [
+            ...$casts->pulse(),
+            'streams' => Cache::remember('widgets:livecast', 30, fn () => Livecast::query()->where('status', Livecast::LIVE)
+                ->latest('started_at')->limit(3)->get()->map(fn (Livecast $s) => $casts->card($s))->values()->all()),
         ];
     }
 }

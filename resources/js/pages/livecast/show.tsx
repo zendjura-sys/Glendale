@@ -34,6 +34,13 @@ type ChatMsg = {
     kind: string;
     gift_key: string | null;
     gift: StreamGift | null;
+    meta?: {
+        provider?: string;
+        donor?: string;
+        amount?: number;
+        currency?: string;
+        message?: string;
+    } | null;
     body: string;
     created_at: string | null;
     user: UserCard | null;
@@ -295,6 +302,8 @@ export default function LiveCastShow(initial: State) {
                                     "flex gap-2 text-sm",
                                     m.kind === "gift" &&
                                         "rounded-xl bg-rose-500/10 px-2 py-1.5",
+                                    m.kind === "donation" &&
+                                        "rounded-xl bg-emerald-500/15 px-2 py-1.5",
                                 )}
                             >
                                 {m.user ? (
@@ -307,17 +316,26 @@ export default function LiveCastShow(initial: State) {
                                     <div className="mt-0.5 size-7 shrink-0 rounded-full bg-white/10" />
                                 )}
                                 <div className="min-w-0">
-                                    <span className="font-semibold text-white/80">
-                                        {m.user?.name ?? "…"}
-                                    </span>{" "}
-                                    {m.kind === "gift" && m.gift ? (
-                                        <span className="font-semibold text-rose-200">
-                                            {m.gift.emoji} {m.gift.label}
-                                        </span>
-                                    ) : (
-                                        <span className="break-words text-white/70">
+                                    {m.kind === "donation" ? (
+                                        <span className="break-words font-semibold text-emerald-200">
                                             {m.body}
                                         </span>
+                                    ) : (
+                                        <>
+                                            <span className="font-semibold text-white/80">
+                                                {m.user?.name ?? "…"}
+                                            </span>{" "}
+                                            {m.kind === "gift" && m.gift ? (
+                                                <span className="font-semibold text-rose-200">
+                                                    {m.gift.emoji}{" "}
+                                                    {m.gift.label}
+                                                </span>
+                                            ) : (
+                                                <span className="break-words text-white/70">
+                                                    {m.body}
+                                                </span>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>

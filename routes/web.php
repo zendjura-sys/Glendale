@@ -72,8 +72,9 @@ use App\Http\Controllers\LegalController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
-use App\Http\Controllers\LiveNowController;
 use App\Http\Controllers\LiveCastController;
+use App\Http\Controllers\LiveCastIntegrationController;
+use App\Http\Controllers\LiveNowController;
 use App\Http\Controllers\LiveShowController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\LoginRewardController;
@@ -380,18 +381,25 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('me/author-stats', [CreatorController::class, 'stats'])->middleware('throttle:30,1')->name('author-stats');
     Route::get('settings/pixel-avatar', [CreatorController::class, 'pixel'])->name('pixel-avatar');
     // LiveCast — нативні відеостріми (окремо від GameCast).
-    Route::prefix('livecast')->name('livecast.')->controller(LiveCastController::class)->whereNumber('livecast')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('pulse', 'pulse')->middleware('throttle:60,1')->name('pulse');
-        Route::post('/', 'store')->middleware('throttle:6,1')->name('store');
-        Route::get('{livecast}', 'show')->name('show');
-        Route::get('{livecast}/state', 'state')->middleware('throttle:120,1')->name('state');
-        Route::post('{livecast}/join', 'join')->middleware('throttle:20,1')->name('join');
-        Route::post('{livecast}/leave', 'leave')->name('leave');
-        Route::post('{livecast}/end', 'end')->name('end');
-        Route::post('{livecast}/messages', 'message')->middleware('throttle:60,1')->name('messages');
-        Route::post('{livecast}/gifts', 'gift')->middleware('throttle:30,1')->name('gifts');
-        Route::put('{livecast}/donations', 'donations')->middleware('throttle:20,1')->name('donations');
+    Route::prefix('livecast')->name('livecast.')->whereNumber('livecast')->group(function () {
+        Route::controller(LiveCastIntegrationController::class)->group(function () {
+            Route::get('integrations', 'index')->name('integrations.index');
+            Route::put('integrations/{provider}', 'update')->whereIn('provider', ['donatik', 'donatello'])->middleware('throttle:30,1')->name('integrations.update');
+            Route::post('integrations/{provider}/test', 'test')->whereIn('provider', ['donatik', 'donatello'])->middleware('throttle:10,1')->name('integrations.test');
+        });
+        Route::controller(LiveCastController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('pulse', 'pulse')->middleware('throttle:60,1')->name('pulse');
+            Route::post('/', 'store')->middleware('throttle:6,1')->name('store');
+            Route::get('{livecast}', 'show')->name('show');
+            Route::get('{livecast}/state', 'state')->middleware('throttle:120,1')->name('state');
+            Route::post('{livecast}/join', 'join')->middleware('throttle:20,1')->name('join');
+            Route::post('{livecast}/leave', 'leave')->name('leave');
+            Route::post('{livecast}/end', 'end')->name('end');
+            Route::post('{livecast}/messages', 'message')->middleware('throttle:60,1')->name('messages');
+            Route::post('{livecast}/gifts', 'gift')->middleware('throttle:30,1')->name('gifts');
+            Route::put('{livecast}/donations', 'donations')->middleware('throttle:20,1')->name('donations');
+        });
     });
     // Шоу наживо: сцена, гості з питанням на таймері, слухачі.
     Route::prefix('shows')->name('shows.')->controller(LiveShowController::class)->whereNumber(['show', 'user'])->group(function () {

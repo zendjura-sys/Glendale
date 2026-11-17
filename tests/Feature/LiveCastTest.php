@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Livecast;
+use App\Models\LivecastIntegration;
 use App\Models\LivecastMessage;
 use App\Models\User;
 use App\Services\Auth\ApiTokens;
@@ -143,5 +144,116 @@ class LiveCastTest extends TestCase
             ->assertJsonPath('donation_presets.0.key', 'donatik')
             ->assertJsonPath('donation_presets.1.key', 'donatello')
             ->assertJsonCount(2, 'donation_presets');
+    }
+
+    public function test_integrations_save_and_donatello_webhook_posts_to_live_chat(): void
+    {
+        $host = User::factory()->create();
+
+        $this->actingAs($host)->putJson(route('livecast.integrations.update', 'donatello'), [
+            'page_url' => 'https://donatello.to/raidboss',
+            'api_token' => 'tok-donatello-test',
+            'webhook_key' => 'secret-webhook-key',
+        ])->assertOk()
+            ->assertJsonPath('integrations.1.provider', 'donatello')
+            ->assertJsonPath('integrations.1.has_api_token', true)
+            ->assertJsonPath('integrations.1.has_webhook_key', true)
+            ->assertJsonPath('integrations.1.page_url', 'https://donatello.to/raidboss');
+
+        $integration = LivecastIntegration::query()->where('user_id', $host->id)->where('provider', 'donatello')->sole();
+        $this->assertNotEmpty($integration->hook_id);
+        $this->assertStringContainsString('/api/webhooks/livecast/donatello/'.$integration->hook_id, $integration->webhookUrl());
+
+        // Без явного URL — підставляється page_url з інтеграції.
+        $this->withToken($this->appToken($host))->postJson('/api/v1/site/livecast', ['title' => 'Boss raid'])
+            ->assertCreated()
+            ->assertJsonPath('broadcast.donations.0.provider', 'donatello')
+            ->assertJsonPath('broadcast.donations.0.url', 'https://donatello.to/raidboss');
+
+        $this->postJson('/api/webhooks/livecast/donatello/'.$integration->hook_id, [
+            'pubId' => 'pub-1',
+            'clientName' => 'Oleh',
+            'message' => 'GG',
+            'amount' => 50,
+            'currency' => 'UAH',
+        ], ['X-Key' => 'secret-webhook-key'])
+            ->assertOk()
+            ->assertJsonPath('message', 'Donation processed')
+            ->assertJsonPath('posted', true);
+
+        $msg = LivecastMessage::query()->where('kind', LivecastMessage::DONATION)->sole();
+        $this->assertSame('donatello', $msg->meta['provider'] ?? null);
+        $this->assertSame('pub-1', $msg->meta['external_id'] ?? null);
+        $this->assertStringContainsString('Oleh', $msg->body);
+        $this->assertStringContainsString('50', $msg->body);
+
+        // Повтор того самого pubId — без дубля.
+        $this->postJson('/api/webhooks/livecast/donatello/'.$integration->hook_id, [
+            'pubId' => 'pub-1',
+            'clientName' => 'Oleh',
+            'amount' => 50,
+            'currency' => 'UAH',
+        ], ['X-Key' => 'secret-webhook-key'])
+            ->assertOk()
+            ->assertJsonPath('posted', false);
+        $this->assertSame(1, LivecastMessage::query()->where('kind', LivecastMessage::DONATION)->count());
+
+        $this->postJson('/api/webhooks/livecast/donatello/'.$integration->hook_id, [
+            'pubId' => 'pub-2',
+            'amount' => 10,
+        ], ['X-Key' => 'wrong'])
+            ->assertUnauthorized();
+    }
+
+    public function test_donatik_webhook_and_token_test(): void
+    {
+        $host = User::factory()->create();
+        Http::fake([
+            'voice.gamecon.test/twirp/*' => Http::response([], 200),
+            'api.donatik.ua/donations' => Http::response(['data' => []], 200),
+        ]);
+
+        $this->actingAs($host)->putJson(route('livecast.integrations.update', 'donatik'), [
+            'page_url' => 'https://donatik.ua/streamer',
+            'api_token' => 'tok-donatik',
+            'webhook_key' => 'donatik-secret',
+        ])->assertOk();
+
+        $this->actingAs($host)->postJson(route('livecast.integrations.test', 'donatik'))
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('provider', 'donatik');
+
+        $integration = LivecastIntegration::query()->where('provider', 'donatik')->sole();
+        $this->withToken($this->appToken($host))->postJson('/api/v1/site/livecast', ['title' => 'Farm'])->assertCreated();
+
+        $this->postJson('/api/webhooks/livecast/donatik/'.$integration->hook_id, [
+            'id' => 'd-9',
+            'name' => 'Anna',
+            'sum' => 100,
+            'curr' => 'UAH',
+            'comment' => 'Nice',
+        ], ['Authorization' => 'Bearer donatik-secret'])
+            ->assertOk()
+            ->assertJsonPath('posted', true);
+
+        $this->assertSame(1, LivecastMessage::query()->where('kind', LivecastMessage::DONATION)->count());
+        $this->assertStringContainsString('Anna', LivecastMessage::query()->sole()->body);
+    }
+
+    public function test_feed_widgets_include_livecast_streams(): void
+    {
+        $host = User::factory()->create();
+        $viewer = User::factory()->create();
+        $this->withToken($this->appToken($host))->postJson('/api/v1/site/livecast', [
+            'title' => 'Widget stream',
+            'category' => 'FPS',
+        ])->assertCreated();
+
+        $this->actingAs($viewer)->getJson('/feed/widgets')
+            ->assertOk()
+            ->assertJsonPath('livecast.live', 1)
+            ->assertJsonPath('livecast.streams.0.title', 'Widget stream')
+            ->assertJsonPath('livecast.streams.0.category', 'FPS');
     }
 }

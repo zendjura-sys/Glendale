@@ -68,10 +68,13 @@ return [
         'token' => env('MONOBANK_ACQUIRING_TOKEN'),
     ],
 
-    // Donatello: донати для поповнення рахунку. Токен зазвичай задають в адмінці (Інтеграції → Donatello).
+    // Donatello / Donatik — LiveCast (колбеки + REST). Токени зберігає стрімер у /livecast/integrations.
     'donatello' => [
         'token' => env('DONATELLO_TOKEN'),
         'url' => env('DONATELLO_URL', 'https://donatello.to/api/v1'),
+    ],
+    'donatik' => [
+        'url' => env('DONATIK_URL', 'https://api.donatik.ua'),
     ],
 
     'deepl' => [

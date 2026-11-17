@@ -361,28 +361,34 @@ class _LiveCastShowScreenState extends State<LiveCastShowScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Container(
-              padding: text(m['kind']) == 'gift' ? const EdgeInsets.symmetric(horizontal: 8, vertical: 6) : EdgeInsets.zero,
+              padding: (text(m['kind']) == 'gift' || text(m['kind']) == 'donation')
+                  ? const EdgeInsets.symmetric(horizontal: 8, vertical: 6)
+                  : EdgeInsets.zero,
               decoration: text(m['kind']) == 'gift'
                   ? BoxDecoration(color: danger.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12))
-                  : null,
+                  : text(m['kind']) == 'donation'
+                      ? BoxDecoration(color: const Color(0xFF34D399).withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12))
+                      : null,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Avatar(url: text(mapOf(m['user'])['avatar_url']), name: text(mapOf(m['user'])['name']) ?? '?', size: 28),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text.rich(
-                      TextSpan(children: [
-                        TextSpan(text: '${text(mapOf(m['user'])['name']) ?? '…'} ', style: body(13, weight: FontWeight.w700)),
-                        if (text(m['kind']) == 'gift' && mapOf(m['gift']).isNotEmpty)
-                          TextSpan(
-                            text: '${text(mapOf(m['gift'])['emoji']) ?? ''} ${text(mapOf(m['gift'])['label']) ?? ''}',
-                            style: body(13, color: danger, weight: FontWeight.w700),
-                          )
-                        else
-                          TextSpan(text: text(m['body']) ?? '', style: body(13, color: ink.withValues(alpha: 0.85))),
-                      ]),
-                    ),
+                    child: text(m['kind']) == 'donation'
+                        ? Text(text(m['body']) ?? '', style: body(13, color: const Color(0xFF34D399), weight: FontWeight.w700))
+                        : Text.rich(
+                            TextSpan(children: [
+                              TextSpan(text: '${text(mapOf(m['user'])['name']) ?? '…'} ', style: body(13, weight: FontWeight.w700)),
+                              if (text(m['kind']) == 'gift' && mapOf(m['gift']).isNotEmpty)
+                                TextSpan(
+                                  text: '${text(mapOf(m['gift'])['emoji']) ?? ''} ${text(mapOf(m['gift'])['label']) ?? ''}',
+                                  style: body(13, color: danger, weight: FontWeight.w700),
+                                )
+                              else
+                                TextSpan(text: text(m['body']) ?? '', style: body(13, color: ink.withValues(alpha: 0.85))),
+                            ]),
+                          ),
                   ),
                 ],
               ),
