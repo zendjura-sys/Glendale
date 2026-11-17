@@ -580,12 +580,30 @@ function IncidentBanner() {
 /** Остання сторінка сайту поза «Музикою» — куди веде «‹ Назад» у розділі (layouts/music-layout.tsx). */
 export const LAST_PAGE_KEY = 'gc:last-page';
 
+/** Відкритий діалог / канал: без футера й нижнього доку — композер біля низу екрана. */
+function isChatImmersive(url: string): boolean {
+    return (
+        /^\/messages\/\d+/.test(url) ||
+        url.startsWith('/messages/with/') ||
+        url.startsWith('/messages/saved') ||
+        /^\/c\/[^/]+\/channels(\/|$)/.test(url)
+    );
+}
+
+function isMessagesSection(url: string): boolean {
+    return (
+        url.startsWith('/messages') || /^\/c\/[^/]+\/channels(\/|$)/.test(url)
+    );
+}
+
 export default function SocialLayout({ children }: PropsWithChildren) {
     const { auth, modules, airAlerts } = usePage().props;
     const { url } = usePage();
     const { current } = usePlayer();
     useStreamerMode();
     const paletteOn = usePlugin('command_palette');
+    const chatImmersive = isChatImmersive(url);
+    const hideSiteChrome = isMessagesSection(url);
 
     useEffect(() => {
         if (url.startsWith('/music')) {
@@ -598,6 +616,16 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             // Приватний режим без сховища — «Назад» поведе в стрічку.
         }
     }, [url]);
+
+    useEffect(() => {
+        document.documentElement.classList.toggle(
+            'gc-chat-immersive',
+            chatImmersive,
+        );
+
+        return () =>
+            document.documentElement.classList.remove('gc-chat-immersive');
+    }, [chatImmersive]);
 
     // Сторінка в панелі «поруч» (розділений екран) — лише вміст, без шапки, меню й плеєра.
     if (isPanelView()) {
@@ -612,7 +640,12 @@ export default function SocialLayout({ children }: PropsWithChildren) {
 
     return (
         <VkProvider>
-            <div className="gc-vk-page relative min-h-dvh">
+            <div
+                className={cn(
+                    'gc-vk-page relative min-h-dvh',
+                    chatImmersive && 'gc-chat-immersive',
+                )}
+            >
                 <PaletteSync />
                 {modules.includes('messages') && (
                     <>
@@ -627,7 +660,11 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <div
                     className={cn(
                         'gc-vk-shell gc-split-shift mx-auto flex max-w-[var(--gc-shell-max)] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
-                        current ? 'pb-44 md:pb-28' : 'pb-24 md:pb-10',
+                        chatImmersive
+                            ? 'pb-0 md:pb-4'
+                            : current
+                              ? 'pb-44 md:pb-28'
+                              : 'pb-24 md:pb-10',
                     )}
                 >
                     <GamerDock
@@ -656,12 +693,14 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                             {/* Лише {children} анімуються; Topbar/MobileNav — поза motion (fixed). */}
                             <GcPageTransition>{children}</GcPageTransition>
                         </NavigationSkeleton>
-                        <SiteFooter className="glass-matte gc-footer-card mb-4" />
+                        {!hideSiteChrome && (
+                            <SiteFooter className="glass-matte gc-footer-card mb-4" />
+                        )}
                     </main>
                     {/* FHD+: третя колонка на всьому сайті; /feed і кіно мають свій aside. */}
-                    <ContextRail />
+                    {!chatImmersive && <ContextRail />}
                     {/* 4K+: четверта колонка. */}
-                    <SideRail />
+                    {!chatImmersive && <SideRail />}
                 </div>
                 <VoiceBar />
                 {modules.includes('music') && (
@@ -672,7 +711,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 )}
                 <BillingHost />
                 <PhonePrompt />
-                <MobileNav />
+                {!chatImmersive && <MobileNav />}
                 <FeedbackDialog />
                 <KeyboardShortcuts username={auth.user.username} />
                 {paletteOn && (

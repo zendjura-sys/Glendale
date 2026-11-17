@@ -29,6 +29,7 @@ import {
     ProfileSectionTabs,
 } from '@/components/profile/profile-sections';
 import type { ProfileSection } from '@/components/profile/profile-sections';
+import { ProfileVisitorsCarousel } from '@/components/profile/profile-visitors';
 import { BadgeStrip } from '@/components/profile/tiered-badges';
 import type { TieredBadge } from '@/components/profile/tiered-badges';
 import { EmbedButton } from '@/components/gc/embed-button';
@@ -40,7 +41,6 @@ import {
     CalendarDays,
     HeartHandshake,
     Newspaper,
-    Eye,
     Camera,
     Cake,
     QrCode,
@@ -1219,51 +1219,11 @@ export default function ProfileShow({
                     >
                         <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:h-fit xl:w-[320px]">
                             {showVisitors && (
-                                <Widget title={tr('Хто заходив')} icon={Eye}>
-                                    <Deferred
-                                        data="visitors"
-                                        fallback={
-                                            <p className="px-1 text-sm text-white/45">
-                                                …
-                                            </p>
-                                        }
-                                    >
-                                        {safeVisitors.length === 0 ? (
-                                            <p className="px-1 text-sm text-white/45">
-                                                {tr('Поки ніхто не заходив.')}
-                                            </p>
-                                        ) : (
-                                            <div className="scrollbar-none flex items-center gap-3.5 overflow-x-auto py-1">
-                                                {safeVisitors.map((visitor) => (
-                                                    <Link
-                                                        key={visitor.id}
-                                                        href={`/${visitor.username}`}
-                                                        className="flex w-[68px] shrink-0 flex-col items-center gap-1.5 text-center transition hover:opacity-90"
-                                                    >
-                                                        <UserAvatar
-                                                            user={visitor}
-                                                            size="md"
-                                                            className="!size-11"
-                                                        />
-                                                        <span className="w-full">
-                                                            <span className="block max-w-[68px] truncate text-[11px] font-medium text-white">
-                                                                {
-                                                                    visitor.first_name
-                                                                }
-                                                            </span>
-                                                            <span className="block max-w-[68px] truncate text-[10px] text-white/40">
-                                                                {formatDate(
-                                                                    visitor.visited_at,
-                                                                    false,
-                                                                )}
-                                                            </span>
-                                                        </span>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </Deferred>
-                                </Widget>
+                                <div className="gc-solid rounded-2xl px-4 pt-3.5 pb-3.5 ring-1 ring-white/[0.05]">
+                                    <ProfileVisitorsCarousel
+                                        visitors={safeVisitors}
+                                    />
+                                </div>
                             )}
                             {liveOn && stream && (
                                 <ProfileStream stream={stream} />

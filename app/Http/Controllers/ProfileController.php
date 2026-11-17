@@ -234,8 +234,9 @@ class ProfileController extends Controller
             'anniversaryYears' => $friendship?->accepted_at ? now()->year - $friendship->accepted_at->year : 0,
             'birthdayToday' => $birthdayToday,
             'showVisitors' => $showVisitors,
+            // Одразу в props (не defer): міст застосунку /api/v1/site не підвантажує deferred, а 12 карток дешеві.
             'visitors' => $showVisitors
-                ? Inertia::defer(fn () => ProfileVisit::query()
+                ? ProfileVisit::query()
                     ->where('user_id', $user->id)
                     ->with('visitor')
                     ->orderByDesc('visited_at')
@@ -253,7 +254,7 @@ class ProfileController extends Controller
                     })
                     ->filter()
                     ->values()
-                    ->all())
+                    ->all()
                 : [],
             'blockOrder' => ProfileBlocks::visible($user->pref('profile_blocks')),
             'canMessage' => $viewer !== null && $messenger->canMessage($viewer, $user),

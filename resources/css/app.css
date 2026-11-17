@@ -6962,10 +6962,29 @@ html[data-theme='light'] :root.gc-vk .gc-vk-tabbar.ios27-glass-capsule,
 }
 .app-header-wrapper {
     box-sizing: border-box;
+    z-index: 100;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+    padding-bottom: 12px;
+    /* Маска над капсулою: контент не просвічує між верхом екрана і пошуком. */
+    background: linear-gradient(
+        to bottom,
+        #07090e 35%,
+        rgba(7, 9, 14, 0.75) 75%,
+        transparent 100%
+    ) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     transform: none !important;
     filter: none !important;
+}
+html[data-theme='light'] .app-header-wrapper,
+:root[data-theme='light'] .app-header-wrapper {
+    background: linear-gradient(
+        to bottom,
+        #eef2f8 35%,
+        rgba(238, 242, 248, 0.82) 75%,
+        transparent 100%
+    ) !important;
 }
 .app-header-wrapper .ios27-glass-capsule.ios-header-pill {
     width: 100%;

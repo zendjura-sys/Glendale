@@ -785,6 +785,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ]),
           ),
         ],
+        if (open && maps(data['visitors']).isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Glass(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              CardTitle(
+                tr('Хто заходив'),
+                icon: LucideIcons.eye,
+                trailing: '${maps(data['visitors']).length}',
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 92,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: maps(data['visitors']).length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 14),
+                  itemBuilder: (context, i) {
+                    final visitor = maps(data['visitors'])[i];
+                    final dateLabel = shortStamp(visitor['visited_at']);
+                    return GestureDetector(
+                      onTap: () {
+                        final u = text(visitor['username']);
+                        if (u != null) context.push('/u/$u');
+                      },
+                      child: SizedBox(
+                        width: 64,
+                        child: Column(children: [
+                          Avatar(
+                            url: text(visitor['avatar_url']),
+                            name: text(visitor['name']) ?? '?',
+                            size: 52,
+                            online: visitor['is_online'] == true,
+                          ),
+                          const SizedBox(height: 6),
+                          FitText(text(visitor['first_name']) ?? text(visitor['name']) ?? '', style: body(11, color: soft, weight: FontWeight.w600)),
+                          if (dateLabel.isNotEmpty) FitText(dateLabel, style: body(10, color: muted)),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ]),
+          ),
+        ],
         if (open && friends.isNotEmpty) ...[
           const SizedBox(height: 12),
           Glass(

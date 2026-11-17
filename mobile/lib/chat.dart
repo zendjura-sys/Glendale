@@ -1021,8 +1021,11 @@ class _ChatScreenState extends State<ChatScreen> {
             ? (tr('Відповідь {v}', {'v': text(mapOf(replyTo!['user'])['first_name']) ?? ''}), text(replyTo!['preview']) ?? '', LucideIcons.reply)
             : null;
     return Container(
-      padding: EdgeInsets.fromLTRB(8, 6, 8, 8 + ShellChrome.bottomOf(context)),
-      decoration: BoxDecoration(border: Border(top: BorderSide(color: line))),
+      padding: EdgeInsets.fromLTRB(10, 8, 10, 8 + math.max(ShellChrome.bottomOf(context), 8)),
+      decoration: BoxDecoration(
+        color: const Color(0xD907090E),
+        border: Border(top: BorderSide(color: line.withValues(alpha: 0.7))),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1078,19 +1081,16 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
             ),
+          // Три елементи: вкладення · капсула тексту · мікрофон/надіслати
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: recorder.active
-                    ? _recordingBar()
-                    : Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        if (editing == null) RoundIcon(icon: LucideIcons.paperclip, onTap: _attach, color: soft, tooltip: tr('Вкладення')),
-                        const SizedBox(width: 4),
-                        Expanded(child: _field()),
-                      ]),
-              ),
-              const SizedBox(width: 6),
+              if (editing == null && !recorder.active) ...[
+                RoundIcon(icon: LucideIcons.paperclip, onTap: _attach, color: soft, size: 42, tooltip: tr('Вкладення')),
+                const SizedBox(width: 8),
+              ],
+              Expanded(child: recorder.active ? _recordingBar() : _field()),
+              const SizedBox(width: 8),
               _trailing(),
             ],
           ),
@@ -1188,25 +1188,30 @@ class _ChatScreenState extends State<ChatScreen> {
       controller: input,
       focusNode: focus,
       minLines: 1,
-      maxLines: 6,
+      maxLines: 5,
       textCapitalization: TextCapitalization.sentences,
       onChanged: (_) => setState(() {}),
-      style: body(16),
+      style: body(15),
       decoration: InputDecoration(
-        hintText: tr('Напишіть повідомлення…'),
-        hintStyle: body(14.5, color: faint),
+        hintText: tr('Повідомлення...'),
+        hintStyle: body(15, color: faint),
         filled: true,
-        fillColor: field,
+        fillColor: const Color(0xE612151E),
         isDense: true,
-        contentPadding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: primary, width: 1.4)),
+        contentPadding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+        // Без «подвійної» акцентної рамки — лише м’який білий контур у фокусі.
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.24))),
         suffixIcon: editing == null || aiWriter
             ? Row(mainAxisSize: MainAxisSize.min, children: [
-                // ШІ-редактор: іконка з крижаним світінням (плагін ai_writer, як на сайті).
                 if (aiWriter) AiWriterButton(input: input),
-                if (editing == null) IconButton(onPressed: _stickers, icon: Icon(LucideIcons.smile, color: muted)),
+                if (editing == null)
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _stickers,
+                    icon: Icon(LucideIcons.smile, size: 20, color: muted),
+                  ),
               ])
             : null,
       ),
