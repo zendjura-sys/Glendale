@@ -1,5 +1,6 @@
 import { RpDossier } from '@/components/gc/rp-dossier';
 import { GameCastTile } from '@/components/gc/gamecast-button';
+import { LiveCastTile } from '@/components/gc/livecast-button';
 import type { RailData } from '@/components/gc/rail-widgets';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
@@ -89,19 +90,21 @@ function Tile({
     title,
     hint,
     tone,
+    className,
 }: {
     href: string;
     icon: ComponentType<{ className?: string }>;
     title: string;
     hint: string;
     tone: string;
+    className?: string;
 }) {
     return (
         <Link
             prefetch={navPrefetch()}
             cacheFor="2m"
             href={href}
-            className={cn(inner, 'flex flex-col gap-2 p-3')}
+            className={cn(inner, 'flex flex-col gap-2 p-3', className)}
         >
             <Icon className={cn('size-5', tone)} />
             <span className="min-w-0">
@@ -466,8 +469,9 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                             tone="text-cyan-400"
                         />
                     )}
-                    {/* GameCast — жива кнопка на ширину двох плиток */}
+                    {/* GameCast / LiveCast — живі кнопки на ширину двох плиток */}
                     <GameCastTile className="col-span-2" />
+                    <LiveCastTile className="col-span-2" />
                 </div>
             </section>
 

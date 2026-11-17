@@ -34,6 +34,7 @@ import 'engagement.dart';
 import 'fun.dart';
 import 'awards.dart';
 import 'gamecast.dart';
+import 'livecast.dart';
 import 'movie_extras.dart';
 import 'game_extras.dart' show MyGameNewsScreen;
 import 'game_guides.dart';
@@ -288,6 +289,8 @@ Future<void> main() async {
           GoRoute(path: '/podcasts', builder: (_, _) => const PodcastsScreen()),
           GoRoute(path: '/shows', builder: (_, state) => GameCastScreen(key: ValueKey(state.uri.queryParameters['topic']), topic: state.uri.queryParameters['topic'])),
           GoRoute(path: '/shows/:id', builder: (_, state) => GameCastShowScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id']!) ?? 0)),
+          GoRoute(path: '/livecast', builder: (_, _) => const LiveCastScreen()),
+          GoRoute(path: '/livecast/:id', builder: (_, state) => LiveCastShowScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(path: '/ideas', builder: (_, _) => const IdeasScreen()),
           GoRoute(path: '/series/:id', builder: (_, s) => SeriesScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),
           GoRoute(path: '/configs', builder: (_, s) => ConfigsScreen(game: s.uri.queryParameters['game'])),

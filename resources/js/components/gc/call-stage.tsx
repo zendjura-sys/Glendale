@@ -4,10 +4,14 @@ import { useVoice } from '@/lib/voice';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-/** Сцена відеодзвінка: камери й демонстрація екрана поверх сайту. */
+/** Сцена відео: дзвінки й LiveCast (камери / екран) поверх сайту. */
 export function CallStage() {
     const voice = useVoice();
-    if (voice.kind !== 'call' || voice.videos.length === 0) return null;
+    if (
+        (voice.kind !== 'call' && voice.kind !== 'broadcast') ||
+        voice.videos.length === 0
+    )
+        return null;
 
     const tiles = [...voice.videos].sort((a, b) => {
         if (a.screen !== b.screen) return a.screen ? -1 : 1;
