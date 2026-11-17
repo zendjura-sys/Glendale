@@ -42,6 +42,11 @@ class VoiceCall extends ChangeNotifier {
   bool micOn = false;
   bool micBlocked = false;
   bool deafened = false;
+
+  /// Слухач на «сцені»: говорить лише після запрошення, руку піднімає сам.
+  bool stageListener = false;
+  bool handRaised = false;
+  int stageEpoch = 0;
   Set<String> speaking = {};
   DateTime? connectedAt;
 
@@ -229,6 +234,9 @@ class VoiceCall extends ChangeNotifier {
     connectedAt = null;
     micOn = false;
     micBlocked = false;
+    stageListener = false;
+    handRaised = false;
+    stageEpoch = 0;
     speaking = {};
     notifyListeners();
   }
@@ -266,11 +274,36 @@ class VoiceCall extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Повертає текст підказки, якщо мікрофон забрав модератор.
+  /// Повертає текст підказки, якщо мікрофон зараз недоступний.
   String? toggleMic() {
-    if (micBlocked) return tr('Модератор вимкнув вам мікрофон.');
+    if (micBlocked) {
+      return stageListener ? tr('Ви слухач. Підніміть руку, щоб вас запросили на сцену.') : tr('Модератор вимкнув вам мікрофон.');
+    }
     unawaited(_setMic(!micOn));
     return null;
+  }
+
+  /// Слухач на «сцені»: null — руку змінено, інакше текст помилки.
+  Future<String?> toggleHand() async {
+    final api = _api;
+    final id = roomId;
+    if (api == null || id == null || kind != 'room' || !stageListener) return tr('Руку піднімають слухачі на сцені.');
+    try {
+      await api.post('/api/v1/voice/rooms/$id/hand', {'raised': !handRaised});
+      handRaised = !handRaised;
+      stageEpoch++;
+      notifyListeners();
+      return null;
+    } catch (e) {
+      return e is ApiException ? e.message : tr('Не вдалося змінити руку.');
+    }
+  }
+
+  void setStageRole({required bool listener, required bool hand}) {
+    if (stageListener == listener && handRaised == hand) return;
+    stageListener = listener;
+    handRaised = hand;
+    notifyListeners();
   }
 
   Future<void> toggleDeafen() async {
@@ -325,7 +358,7 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   }
 
   void _onCall() {
-    final key = '${call.status}:${call.roomId}';
+    final key = '${call.status}:${call.roomId}:${call.stageEpoch}';
     if (key != _seen && call.status != 'connecting') _load();
     _seen = key;
     if (mounted) setState(() {});
@@ -334,7 +367,9 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   Future<void> _load() async {
     try {
       final result = await api.get(path);
-      if (mounted) setState(() => data = result);
+      if (!mounted) return;
+      _syncStage(result);
+      setState(() => data = result);
     } catch (_) {
       // Немає доступу або голос вимкнено — панель просто не показуємо.
     }
@@ -343,9 +378,28 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   Future<void> _run(Future<Map<String, dynamic>> Function() action) async {
     try {
       final result = await action();
-      if (mounted) setState(() => data = result);
+      if (!mounted) return;
+      _syncStage(result);
+      setState(() => data = result);
     } catch (e) {
       if (mounted) toast(context, e);
+    }
+  }
+
+  /// Роль у кімнаті, до якої зараз підключені: слухач бачить руку й на панелі розмови.
+  void _syncStage(Map<String, dynamic> result) {
+    if (call.kind != 'room' || call.roomId == null) return;
+    final meId = AppScope.read(context).session.myId;
+    final manage = result['can_manage'] == true;
+    for (final room in maps(result['rooms'])) {
+      if (intOf(room['id']) != call.roomId) continue;
+      Map<String, dynamic>? me;
+      for (final person in maps(room['participants'])) {
+        if (intOf(person['id']) == meId) me = person;
+      }
+      final listener = room['stage'] == true && !manage && me != null && me['speaker'] != true;
+      call.setStageRole(listener: listener, hand: listener && me['hand'] == true);
+      return;
     }
   }
 
@@ -355,11 +409,15 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   }
 
   Future<void> _roomMenu(Map<String, dynamic> room) async {
+    final stageOn = AppScope.read(context).session.pluginOn('voice_stage');
+    final stage = room['stage'] == true;
     final action = await showGcSheet<String>(
       context,
       title: text(room['name']),
       builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
         _SheetAction(icon: LucideIcons.pencil, label: tr('Перейменувати'), onTap: () => Navigator.pop(sheet, 'rename')),
+        if (stageOn)
+          _SheetAction(icon: LucideIcons.presentation, label: stage ? tr('Вимкнути сцену') : tr('Зробити сценою'), onTap: () => Navigator.pop(sheet, 'stage')),
         if (room['system'] != true) _SheetAction(icon: LucideIcons.trash2, label: tr('Видалити'), danger: true, onTap: () => Navigator.pop(sheet, 'delete')),
       ]),
     );
@@ -368,6 +426,8 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
     if (action == 'rename') {
       final name = (await askText(context, tr('Нова назва'), initial: text(room['name']) ?? ''))?.trim();
       if (name != null && name.isNotEmpty) await _run(() => api.patch('/api/v1/voice/rooms/$id', {'name': name}));
+    } else if (action == 'stage') {
+      await _run(() => api.patch('/api/v1/voice/rooms/$id', {'stage': !stage}));
     } else if (action == 'delete' && await confirm(context, tr('Видалити кімнату «{v}»?', {'v': text(room['name'])}), danger: true, action: tr('Видалити'))) {
       await _run(() => api.delete('/api/v1/voice/rooms/$id'));
     }
@@ -375,10 +435,18 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
 
   Future<void> _memberMenu(Map<String, dynamic> room, Map<String, dynamic> person) async {
     final muted = person['muted'] == true;
+    final stage = room['stage'] == true;
+    final speaker = person['speaker'] == true;
     final action = await showGcSheet<String>(
       context,
       title: text(person['name']),
       builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
+        if (stage)
+          _SheetAction(
+            icon: LucideIcons.presentation,
+            label: speaker ? tr('Повернути в слухачі') : tr('Запросити на сцену'),
+            onTap: () => Navigator.pop(sheet, speaker ? 'listener' : 'speaker'),
+          ),
         _SheetAction(icon: muted ? LucideIcons.mic : LucideIcons.micOff, label: muted ? tr('Дозволити мікрофон') : tr('Вимкнути мікрофон'), onTap: () => Navigator.pop(sheet, muted ? 'unmute' : 'mute')),
         _SheetAction(icon: LucideIcons.userX, label: tr('Виключити з кімнати'), danger: true, onTap: () => Navigator.pop(sheet, 'kick')),
       ]),
@@ -419,9 +487,17 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   Widget _room(Map<String, dynamic> room, bool enabled, bool manage) {
     final id = intOf(room['id']);
     final locked = room['locked'] == true;
+    final stage = room['stage'] == true;
     final here = call.kind == 'room' && call.roomId == id && call.active;
     final people = maps(room['participants']);
     final count = intOf(room['count']);
+    final meId = AppScope.read(context).session.myId;
+    Map<String, dynamic>? me;
+    for (final person in people) {
+      if (intOf(person['id']) == meId) me = person;
+    }
+    final mine = me;
+    final listenerHere = stage && here && !manage && mine != null && mine['speaker'] != true;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Material(
@@ -441,12 +517,19 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
               if (here && call.status == 'connecting')
                 const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
               else
-                Icon(locked ? LucideIcons.lock : LucideIcons.volume2, size: 18, color: locked ? faint : (here ? green : muted)),
+                Icon(locked ? LucideIcons.lock : (stage ? LucideIcons.presentation : LucideIcons.volume2), size: 18, color: locked ? faint : (here ? green : muted)),
               const SizedBox(width: 10),
               Expanded(
                 child: FitText(text(room['name']) ?? '', style: body(14.5, color: locked ? faint : (here ? ink : soft), weight: here ? FontWeight.w700 : FontWeight.w500)),
               ),
-              if (count > 0) Text('$count', style: body(12.5, color: muted)),
+              if (stage)
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(color: gold.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(999)),
+                  child: Text(tr('Сцена'), style: body(10.5, color: gold, weight: FontWeight.w700)),
+                ),
+              if (count > 0) Padding(padding: const EdgeInsets.only(left: 6), child: Text('$count', style: body(12.5, color: muted))),
               if (manage) ...[
                 const SizedBox(width: 4),
                 InkResponse(onTap: () => _roomMenu(room), radius: 18, child: Icon(LucideIcons.ellipsis, size: 18, color: faint)),
@@ -455,6 +538,18 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
           ),
         ),
       ),
+      if (listenerHere)
+        Padding(
+          padding: const EdgeInsets.only(left: 36, right: 8, bottom: 4),
+          child: Row(children: [
+            Expanded(child: Text(tr('Ви слухач.'), style: body(12.5, color: muted))),
+            TextButton.icon(
+              onPressed: () => _run(() => api.post('/api/v1/voice/rooms/$id/hand', {'raised': mine['hand'] != true})),
+              icon: Icon(LucideIcons.hand, size: 16, color: mine['hand'] == true ? gold : ink),
+              label: Text(mine['hand'] == true ? tr('Опустити руку') : tr('Підняти руку'), style: body(12.5, color: mine['hand'] == true ? gold : ink, weight: FontWeight.w700)),
+            ),
+          ]),
+        ),
       for (final person in people)
         Padding(
           padding: const EdgeInsets.only(left: 34, right: 4, bottom: 2),
@@ -475,7 +570,10 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(child: FitText(text(person['name']) ?? '', style: body(13, color: soft))),
-                if (person['muted'] == true) const Icon(LucideIcons.micOff, size: 15, color: dangerSoft),
+                if (stage && person['hand'] == true) Tooltip(message: tr('Підняв руку'), child: const Icon(LucideIcons.hand, size: 15, color: gold)),
+                if (stage && person['speaker'] != true && person['hand'] != true)
+                  Tooltip(message: tr('Слухач'), child: Icon(LucideIcons.headphones, size: 15, color: faint)),
+                if (person['muted'] == true) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(LucideIcons.micOff, size: 15, color: dangerSoft)),
               ]),
             ),
           ),
@@ -561,6 +659,19 @@ class _VoiceBarState extends State<VoiceBar> {
                     FitText(call.status == 'connecting' ? tr('Підключення…') : (call.kind == 'call' ? '${call.label} · ${_elapsed(call.connectedAt)}' : call.label), style: body(12, color: muted)),
                   ]),
                 ),
+                if (call.stageListener)
+                  _BarButton(
+                    icon: LucideIcons.hand,
+                    selected: call.handRaised,
+                    tooltip: call.handRaised ? tr('Опустити руку') : tr('Підняти руку'),
+                    onTap: call.status == 'connected'
+                        ? () {
+                            unawaited(call.toggleHand().then((hint) {
+                              if (hint != null && context.mounted) toast(context, hint);
+                            }));
+                          }
+                        : null,
+                  ),
                 _BarButton(
                   icon: call.micOn ? LucideIcons.mic : LucideIcons.micOff,
                   active: call.micOn,
@@ -589,17 +700,18 @@ class _VoiceBarState extends State<VoiceBar> {
 }
 
 class _BarButton extends StatelessWidget {
-  const _BarButton({required this.icon, required this.tooltip, required this.onTap, this.active = true, this.leave = false});
+  const _BarButton({required this.icon, required this.tooltip, required this.onTap, this.active = true, this.leave = false, this.selected = false});
   final IconData icon;
   final String tooltip;
   final VoidCallback? onTap;
   final bool active;
   final bool leave;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    final bg = leave ? danger : (active ? palette.fg.withValues(alpha: 0.06) : danger.withValues(alpha: 0.16));
-    final fg = leave ? Colors.white : (active ? ink : dangerSoft);
+    final bg = leave ? danger : (selected ? gold.withValues(alpha: 0.22) : (active ? palette.fg.withValues(alpha: 0.06) : danger.withValues(alpha: 0.16)));
+    final fg = leave ? Colors.white : (selected ? gold : (active ? ink : dangerSoft));
     return Padding(
       padding: const EdgeInsets.only(left: 6),
       child: Tooltip(

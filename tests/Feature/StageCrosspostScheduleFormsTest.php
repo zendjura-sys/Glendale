@@ -8,6 +8,7 @@ use App\Models\CrosspostTarget;
 use App\Models\User;
 use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
+use App\Services\Auth\ApiTokens;
 use App\Services\CommunityService;
 use App\Services\Profile\StreamSchedule;
 use App\Support\Settings\SiteSettings;
@@ -65,6 +66,38 @@ class StageCrosspostScheduleFormsTest extends TestCase
         $this->assertTrue($row->speaker);
         $this->assertNull($row->hand_raised_at);
         Http::assertSent(fn ($request) => str_ends_with($request->url(), '/UpdateParticipant') && $request['permission']['canPublish'] === true);
+    }
+
+    public function test_app_voice_stage_raise_hand_promote_and_return_to_listeners(): void
+    {
+        $settings = app(SiteSettings::class);
+        $settings->put(['livekit_url' => 'wss://voice.gamecon.test', 'livekit_api_key' => 'APIgamecon']);
+        $settings->putSecret('livekit_api_secret', 'test-livekit-secret-0123456789');
+        Http::fake(['voice.gamecon.test/twirp/*' => Http::response([], 200)]);
+
+        $owner = User::factory()->create();
+        $community = $this->community($owner);
+        $listener = User::factory()->create();
+        app(CommunityService::class)->join($community, $listener);
+        $room = VoiceRoom::query()->create(['owner_type' => 'community', 'owner_id' => $community->id, 'name' => 'Подкаст']);
+        $lead = app(ApiTokens::class)->issue($owner);
+        $hear = app(ApiTokens::class)->issue($listener);
+
+        $this->withToken($hear)->patchJson("/api/v1/voice/rooms/{$room->id}", ['stage' => true])->assertForbidden();
+        $turned = $this->withToken($lead)->patchJson("/api/v1/voice/rooms/{$room->id}", ['stage' => true])->assertOk()->json('rooms');
+        $this->assertTrue(collect($turned)->firstWhere('id', $room->id)['stage']);
+
+        VoiceParticipant::query()->updateOrCreate(['voice_room_id' => $room->id, 'user_id' => $listener->id], ['joined_at' => now()]);
+        $this->withToken($hear)->postJson("/api/v1/voice/rooms/{$room->id}/hand", ['raised' => true])->assertOk();
+        $this->assertNotNull(VoiceParticipant::query()->where('user_id', $listener->id)->value('hand_raised_at'));
+
+        $this->withToken($lead)->postJson("/api/v1/voice/rooms/{$room->id}/members/{$listener->id}", ['action' => 'speaker'])->assertOk();
+        $row = VoiceParticipant::query()->where('user_id', $listener->id)->first();
+        $this->assertTrue($row->speaker);
+        $this->assertNull($row->hand_raised_at);
+
+        $this->withToken($lead)->postJson("/api/v1/voice/rooms/{$room->id}/members/{$listener->id}", ['action' => 'listener'])->assertOk();
+        $this->assertFalse(VoiceParticipant::query()->where('user_id', $listener->id)->value('speaker'));
     }
 
     public function test_own_public_post_goes_to_discord_webhook(): void
