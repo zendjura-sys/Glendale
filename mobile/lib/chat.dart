@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ai_tools.dart';
 import 'api.dart';
@@ -27,6 +28,36 @@ import 'voice_room.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 import 'skeletons.dart';
+
+/// Чернетка незакінченого повідомлення — лише на цьому пристрої (як `gc-draft:chat:{id}` у localStorage сайту).
+/// Порожній текст прибирає запис. Список бесід слухає [changed], щоб показати «Чернетка: …».
+class ChatDrafts {
+  static final changed = ValueNotifier<int>(0);
+  static final _tails = <int, Future<void>>{};
+
+  static String key(int id) => 'gc-draft:chat:$id';
+
+  static String read(SharedPreferences prefs, int id) => prefs.getString(key(id)) ?? '';
+
+  /// Записи одного чату йдуть чергою, щоб старіший текст не перезаписав новіший.
+  static Future<void> write(SharedPreferences prefs, int id, String text) {
+    final previous = _tails[id] ?? Future<void>.value();
+    final next = previous.then((_) => _commit(prefs, id, text), onError: (_, _) => _commit(prefs, id, text));
+    _tails[id] = next;
+    return next;
+  }
+
+  static Future<void> _commit(SharedPreferences prefs, int id, String text) async {
+    final store = text.trim().isEmpty ? null : text;
+    if (store == prefs.getString(key(id))) return;
+    if (store == null) {
+      await prefs.remove(key(id));
+    } else {
+      await prefs.setString(key(id), store);
+    }
+    changed.value++;
+  }
+}
 
 // ───────────────────────── Список бесід ─────────────────────────
 
@@ -141,6 +172,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               else
                 for (final conversation in shown)
                   _ConversationRow(
+                    key: ValueKey(conversation['id']),
                     conversation: conversation,
                     active: split && intOf(conversation['id']) == selected,
                     onOpen: split ? () => setState(() => selected = intOf(conversation['id'])) : null,
@@ -153,25 +185,74 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 }
 
-class _ConversationRow extends StatelessWidget {
-  const _ConversationRow({required this.conversation, this.active = false, this.onOpen});
+class _ConversationRow extends StatefulWidget {
+  const _ConversationRow({required this.conversation, this.active = false, this.onOpen, super.key});
   final Map<String, dynamic> conversation;
   final bool active;
   final VoidCallback? onOpen;
 
   @override
+  State<_ConversationRow> createState() => _ConversationRowState();
+}
+
+class _ConversationRowState extends State<_ConversationRow> {
+  String draft = '';
+
+  @override
+  void initState() {
+    super.initState();
+    ChatDrafts.changed.addListener(_onDrafts);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    draft = _read();
+  }
+
+  @override
+  void didUpdateWidget(_ConversationRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.conversation['id'] != widget.conversation['id']) draft = _read();
+  }
+
+  @override
+  void dispose() {
+    ChatDrafts.changed.removeListener(_onDrafts);
+    super.dispose();
+  }
+
+  String _read() => ChatDrafts.read(AppScope.read(context).session.prefs, intOf(widget.conversation['id']));
+
+  void _onDrafts() {
+    if (!mounted) return;
+    final next = _read();
+    if (next != draft) setState(() => draft = next);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final conversation = widget.conversation;
     final last = conversation['last_message'] is Map ? mapOf(conversation['last_message']) : null;
     final peer = conversation['peer'] is Map ? mapOf(conversation['peer']) : null;
     final group = conversation['type'] == 'group';
     final unread = intOf(conversation['unread']);
     final title = text(conversation['title']) ?? tr('Бесіда');
     final prefix = last == null ? '' : (last['is_own'] == true ? tr('Ви: ') : (group && text(last['author']) != null ? '${last['author']}: ' : ''));
+    final preview = draft.trim().isNotEmpty
+        ? TextSpan(children: [
+            TextSpan(text: tr('Чернетка:'), style: body(13, color: danger, weight: FontWeight.w600)),
+            TextSpan(text: ' ${draft.split('\n').first}'),
+          ])
+        : TextSpan(children: [
+            TextSpan(text: prefix, style: body(13, color: soft.withValues(alpha: 0.8))),
+            TextSpan(text: text(last?['preview']) ?? tr('Немає повідомлень')),
+          ]);
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: onOpen ?? () => context.push('/messages/${conversation['id']}'),
+      onTap: widget.onOpen ?? () => context.push('/messages/${conversation['id']}'),
       child: Container(
-        decoration: active ? BoxDecoration(color: primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)) : null,
+        decoration: widget.active ? BoxDecoration(color: primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)) : null,
         child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
         child: Row(
@@ -198,10 +279,7 @@ class _ConversationRow extends StatelessWidget {
                   Row(children: [
                     Expanded(
                       child: Text.rich(
-                        TextSpan(children: [
-                          TextSpan(text: prefix, style: body(13, color: soft.withValues(alpha: 0.8))),
-                          TextSpan(text: text(last?['preview']) ?? tr('Немає повідомлень')),
-                        ]),
+                        preview,
                         maxLines: 2,
                         overflow: TextOverflow.fade,
                         style: body(13, color: muted),
@@ -399,6 +477,11 @@ class _ChatScreenState extends State<ChatScreen> {
   final scroll = ScrollController();
   final input = TextEditingController();
   final focus = FocusNode();
+  SharedPreferences? _prefs;
+  String? _draftCache;
+  bool _drafts = false;
+  bool _draftListening = false;
+  Timer? _draftTimer;
   Map<String, dynamic>? replyTo;
   Map<String, dynamic>? editing;
   final images = <XFile>[];
@@ -423,7 +506,10 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     recorder.addListener(_onRecorder);
     recorder.onLimit = () => _stopVoice(send: true);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _armDrafts();
+      _load();
+    });
     unawaited(Push.instance?.seenChat(widget.id));
     poll = Timer.periodic(const Duration(seconds: 4), (_) => _refresh());
     scroll.addListener(() {
@@ -434,6 +520,10 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     poll?.cancel();
+    _draftTimer?.cancel();
+    if (_draftListening) input.removeListener(_scheduleDraft);
+    // Останні символи могли ще не встигнути зберегтися (пауза 300 мс). Редагування чужого тексту не пишемо.
+    if (_drafts && editing == null && _prefs != null) unawaited(ChatDrafts.write(_prefs!, widget.id, input.text));
     scroll.dispose();
     input.dispose();
     focus.dispose();
@@ -445,6 +535,48 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _onRecorder() {
     if (mounted) setState(() {});
+  }
+
+  /// Як useDraft на сайті: підставити збережене, якщо поле порожнє, далі писати з паузою 300 мс.
+  /// Ключа `local_drafts` у профілі застосунку може не бути — тоді чернетки увімкнені, як дефолт сайту.
+  void _armDrafts() {
+    if (!mounted || _prefs != null) return;
+    final session = AppScope.read(context).session;
+    _prefs = session.prefs;
+    final plugins = session.me?['plugins'];
+    _drafts = plugins is! Map || !plugins.containsKey('local_drafts') || plugins['local_drafts'] == true;
+    if (!_drafts) return;
+    final saved = ChatDrafts.read(session.prefs, widget.id);
+    _draftCache = saved;
+    if (saved.isNotEmpty && input.text.trim().isEmpty && editing == null) {
+      input.value = TextEditingValue(text: saved, selection: TextSelection.collapsed(offset: saved.length));
+      setState(() {});
+    }
+    input.addListener(_scheduleDraft);
+    _draftListening = true;
+  }
+
+  void _scheduleDraft() {
+    if (!_drafts || editing != null) return;
+    // Пам’ять одразу, SharedPreferences — з паузою, як localStorage на сайті.
+    _draftCache = input.text;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(milliseconds: 300), _flushDraft);
+  }
+
+  void _flushDraft() {
+    _draftTimer?.cancel();
+    if (!_drafts || editing != null) return;
+    _draftCache ??= input.text;
+    final prefs = _prefs;
+    if (prefs == null) return;
+    unawaited(ChatDrafts.write(prefs, widget.id, _draftCache!));
+  }
+
+  /// Повернути чернетку в поле (після редагування повідомлення поле знову порожнє).
+  void _fillDraft() {
+    final saved = _drafts ? (_draftCache ?? '') : '';
+    input.value = TextEditingValue(text: saved, selection: TextSelection.collapsed(offset: saved.length));
   }
 
   Future<void> _load() async {
@@ -536,6 +668,7 @@ class _ChatScreenState extends State<ChatScreen> {
           input.clear();
           images.clear();
           files.clear();
+          _flushDraft();
         }
         replyTo = null;
       });
@@ -558,7 +691,7 @@ class _ChatScreenState extends State<ChatScreen> {
         final index = messages.indexWhere((m) => m['id'] == message['id']);
         if (index >= 0 && data['message'] is Map) messages[index] = mapOf(data['message']);
         editing = null;
-        input.clear();
+        _fillDraft();
       });
     } catch (e) {
       if (mounted) toast(context, e);
@@ -657,8 +790,9 @@ class _ChatScreenState extends State<ChatScreen> {
   void _reply(Map<String, dynamic> message) {
     unawaited(HapticFeedback.lightImpact());
     setState(() {
-      if (editing != null) input.clear();
+      final wasEditing = editing != null;
       editing = null;
+      if (wasEditing) _fillDraft();
       replyTo = message;
     });
     focus.requestFocus();
@@ -807,6 +941,7 @@ class _ChatScreenState extends State<ChatScreen> {
         await Clipboard.setData(ClipboardData(text: text(message['body']) ?? ''));
         if (mounted) toast(context, tr('Скопійовано.'));
       case 'edit':
+        _flushDraft();
         setState(() {
           replyTo = null;
           editing = message;
@@ -1120,9 +1255,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   onPressed: () => setState(() {
-                    if (editing != null) input.clear();
+                    final wasEditing = editing != null;
                     editing = null;
                     replyTo = null;
+                    if (wasEditing) _fillDraft();
                   }),
                   icon: Icon(LucideIcons.x, size: 18, color: muted),
                 ),
