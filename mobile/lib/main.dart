@@ -35,6 +35,7 @@ import 'awards.dart';
 import 'gamecast.dart';
 import 'movie_extras.dart';
 import 'game_extras.dart' show MyGameNewsScreen;
+import 'game_guides.dart';
 import 'game_reviews.dart';
 import 'game_tools.dart';
 import 'status.dart';
@@ -373,7 +374,26 @@ Future<void> main() async {
               GoRoute(path: 'backlog', builder: (_, _) => const BacklogScreen(), routes: [
                 GoRoute(path: ':username', builder: (_, state) => BacklogScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username'])),
               ]),
-              GoRoute(path: ':slug', builder: (_, state) => GameScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!)),
+              GoRoute(
+                path: ':slug',
+                builder: (_, state) => GameScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!),
+                routes: [
+                  GoRoute(
+                    path: 'guides',
+                    builder: (_, state) => GameGuidesScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!),
+                    routes: [
+                      GoRoute(
+                        path: ':id',
+                        builder: (_, state) => GameGuideScreen(
+                          key: ValueKey('${state.pathParameters['slug']}/${state.pathParameters['id']}'),
+                          slug: state.pathParameters['slug']!,
+                          id: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ],
           ),
           GoRoute(

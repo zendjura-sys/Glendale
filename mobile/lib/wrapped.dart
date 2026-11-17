@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'api.dart';
 import 'i18n.dart';
@@ -13,7 +13,7 @@ import 'widgets.dart';
 
 // «Підсумки року» — як на сайті (pages/wrapped.tsx): історія з карток, дотик праворуч — далі,
 // ліворуч — назад, утримання — пауза, картки йдуть самі. Порожні розділи пропускаються.
-// Дані — через міст /api/v1/site/wrapped. Поділитися картинкою — на сайті (кнопка відкриває його).
+// Дані — через міст /api/v1/site/wrapped. Поділитися — нативний Share з посиланням на картку.
 
 const _slideTime = Duration(seconds: 7);
 
@@ -535,10 +535,17 @@ class _StoryState extends State<_Story> with SingleTickerProviderStateMixin {
         ),
         const SizedBox(height: 18),
         _Button(
-          label: tr('Поділитися на сайті'),
+          label: tr('Поділитися'),
           icon: LucideIcons.share2,
           light: true,
-          onTap: () => launchUrl(Uri.parse('${Api.root}/wrapped'), mode: LaunchMode.externalApplication),
+          onTap: () {
+            final name = text(user['name']) ?? 'GameCon';
+            final url = '${Api.root}/wrapped';
+            SharePlus.instance.share(ShareParams(
+              text: tr('Мій {year} у GameCon — {persona}. {url}', {'year': year, 'persona': persona.$1, 'url': url}),
+              subject: tr('{name}: підсумки {year}', {'name': name, 'year': year}),
+            ));
+          },
         ),
         const SizedBox(height: 10),
         _Button(label: tr('До стрічки'), icon: LucideIcons.messageCircle, onTap: widget.onClose),

@@ -132,6 +132,7 @@ use App\Http\Controllers\SteamImportController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TeammateController;
+use App\Http\Controllers\ThanksController;
 use App\Http\Controllers\TierListController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TournamentController;
@@ -281,6 +282,8 @@ Route::prefix('v1')->group(function () {
             Route::post('{story}/view', [StoryController::class, 'view'])->whereNumber('story')->middleware('throttle:240,1');
             Route::post('{story}/react', [StoryController::class, 'react'])->whereNumber('story')->middleware('throttle:30,1');
             Route::post('{story}/reply', [StoryController::class, 'reply'])->whereNumber('story')->middleware('throttle:30,1');
+            Route::post('{story}/vote', [StoryController::class, 'vote'])->whereNumber('story')->middleware('throttle:30,1');
+            Route::get('{story}/poll', [StoryController::class, 'poll'])->whereNumber('story')->middleware('throttle:120,1');
             Route::get('{story}/viewers', [StoryController::class, 'viewers'])->whereNumber('story');
             Route::delete('{story}', [StoryController::class, 'destroy'])->whereNumber('story');
         });
@@ -675,6 +678,10 @@ Route::prefix('v1')->group(function () {
             Route::get('games/pc', [GameDealsController::class, 'pcShow'])->middleware('module:games');
             Route::put('games/pc', [GameDealsController::class, 'pcSave'])->middleware(['module:games', 'throttle:30,1']);
             Route::get('games/{game}', [GameController::class, 'show'])->middleware('module:games');
+            // Гіди на сторінці гри й «Дякую» під гідом або коментарем — ті самі дії, що на сайті.
+            Route::post('games/{game}/guides', [GameController::class, 'guide'])->middleware(['module:games', 'throttle:20,1']);
+            Route::delete('games/{game}/guides/{guide}', [GameController::class, 'deleteGuide'])->whereNumber('guide')->middleware('module:games');
+            Route::post('thanks', [ThanksController::class, 'store'])->middleware('throttle:60,1');
             Route::post('ideas', [IdeaController::class, 'store'])->middleware('throttle:5,1');
             Route::post('ideas/{idea}/vote', [IdeaController::class, 'toggleVote'])->middleware('throttle:60,1');
             Route::get('settings/account-type', [AccountTypeController::class, 'edit']);
@@ -726,6 +733,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('posts/{post}/hide', [PostController::class, 'hide'])->whereNumber('post');
                 Route::post('posts/{post}/mute', [PostController::class, 'mute'])->whereNumber('post');
                 Route::post('posts/{post}/poll', [PostController::class, 'vote'])->whereNumber('post')->middleware('throttle:60,1');
+                // Опитування в історії: голос і живі результати — ті самі дії, що stories.vote / stories.poll на сайті.
+                Route::post('stories/{story}/vote', [StoryController::class, 'vote'])->whereNumber('story')->middleware('throttle:30,1');
+                Route::get('stories/{story}/poll', [StoryController::class, 'poll'])->whereNumber('story')->middleware('throttle:120,1');
                 Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->whereNumber('comment');
                 Route::post('comments/{comment}/like', [CommentController::class, 'like'])->whereNumber('comment')->middleware('throttle:120,1');
                 Route::post('comments/{comment}/visibility', [CommentController::class, 'visibility'])->whereNumber('comment')->middleware('throttle:60,1');
@@ -962,6 +972,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/', [CommunityController::class, 'destroy']);
                 Route::get('settings', [CommunityController::class, 'edit']);
                 Route::patch('settings', [CommunityController::class, 'update']);
+                Route::patch('settings/rules', [CommunityController::class, 'updateRules']);
                 Route::put('settings/access', [CommunityController::class, 'updateAccess']);
                 Route::post('ai/description', [AiController::class, 'description'])->middleware('throttle:10,1');
                 Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover']);

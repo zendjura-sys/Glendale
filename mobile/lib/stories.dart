@@ -211,7 +211,11 @@ Future<bool?> showStoryComposer(BuildContext context, Api api) async {
   if (!context.mounted) return false;
 
   final caption = TextEditingController();
+  final pollQuestion = TextEditingController();
+  final pollOptions = [TextEditingController(), TextEditingController()];
   var privacy = 'friends';
+  var pollOn = false;
+  final pollsOn = AppScope.read(context).session.pluginOn('story_polls');
   final publish = await showGcSheet<bool>(
     context,
     title: video ? tr('Відео в історію') : tr('Фото в історію'),
@@ -224,19 +228,55 @@ Future<bool?> showStoryComposer(BuildContext context, Api api) async {
           selected: privacy,
           onSelect: (v) => setSheet(() => privacy = v),
         ),
+        if (pollsOn) ...[
+          const SizedBox(height: 10),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: pollOn,
+            onChanged: (v) => setSheet(() => pollOn = v),
+            title: Text(tr('Опитування'), style: body(14.5, weight: FontWeight.w600)),
+            subtitle: Text(tr('Питання й 2–4 варіанти'), style: body(12, color: muted)),
+          ),
+          if (pollOn) ...[
+            GcField(controller: pollQuestion, label: tr('Питання'), maxLines: 2),
+            const SizedBox(height: 8),
+            for (var i = 0; i < pollOptions.length; i++) ...[
+              if (i > 0) const SizedBox(height: 6),
+              GcField(controller: pollOptions[i], label: tr('Варіант {n}', {'n': i + 1})),
+            ],
+            if (pollOptions.length < 4)
+              TextButton.icon(
+                onPressed: () => setSheet(() => pollOptions.add(TextEditingController())),
+                icon: Icon(LucideIcons.plus, size: 16),
+                label: Text(tr('Ще варіант')),
+              ),
+          ],
+        ],
         const SizedBox(height: 14),
         PrimaryButton(label: tr('Опублікувати'), icon: LucideIcons.send, onPressed: () => Navigator.pop(sheet, true)),
       ]),
     ),
   );
-  if (publish != true || !context.mounted) return false;
+  if (publish != true || !context.mounted) {
+    caption.dispose();
+    pollQuestion.dispose();
+    for (final o in pollOptions) {
+      o.dispose();
+    }
+    return false;
+  }
   try {
+    final filledOptions = [for (final o in pollOptions) if (o.text.trim().isNotEmpty) o.text.trim()];
     await api.upload(
       '/api/v1/stories',
       {
         if (caption.text.trim().isNotEmpty) 'caption': caption.text.trim(),
         'privacy': privacy,
         if (duration != null && duration > 0) 'duration': '$duration',
+        if (pollOn && pollQuestion.text.trim().isNotEmpty && filledOptions.length >= 2) ...{
+          'poll_question': pollQuestion.text.trim(),
+          for (var i = 0; i < filledOptions.length; i++) 'poll_options[$i]': filledOptions[i],
+        },
       },
       [await http.MultipartFile.fromPath('media', file.path, filename: file.name)],
     );
@@ -245,6 +285,149 @@ Future<bool?> showStoryComposer(BuildContext context, Api api) async {
   } catch (e) {
     if (context.mounted) toast(context, e);
     return false;
+  } finally {
+    caption.dispose();
+    pollQuestion.dispose();
+    for (final o in pollOptions) {
+      o.dispose();
+    }
+  }
+}
+
+/// Опитування в історії — як StoryPollCard на сайті.
+class _StoryPollCard extends StatefulWidget {
+  const _StoryPollCard({
+    required this.storyId,
+    required this.own,
+    required this.initial,
+    required this.api,
+    required this.onChange,
+    required this.onInteract,
+    required this.onIdle,
+  });
+  final int storyId;
+  final bool own;
+  final Map<String, dynamic> initial;
+  final Api api;
+  final ValueChanged<Map<String, dynamic>> onChange;
+  final VoidCallback onInteract;
+  final VoidCallback onIdle;
+
+  @override
+  State<_StoryPollCard> createState() => _StoryPollCardState();
+}
+
+class _StoryPollCardState extends State<_StoryPollCard> {
+  late Map<String, dynamic> poll = Map<String, dynamic>.from(widget.initial);
+  bool busy = false;
+  Timer? refresh;
+
+  bool get reveal => widget.own || poll['voted'] != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (reveal) _startRefresh();
+  }
+
+  @override
+  void didUpdateWidget(_StoryPollCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.storyId != widget.storyId || oldWidget.initial != widget.initial) {
+      poll = Map<String, dynamic>.from(widget.initial);
+      refresh?.cancel();
+      if (reveal) _startRefresh();
+    }
+  }
+
+  @override
+  void dispose() {
+    refresh?.cancel();
+    super.dispose();
+  }
+
+  void _startRefresh() {
+    refresh?.cancel();
+    refresh = Timer.periodic(const Duration(seconds: 4), (_) async {
+      try {
+        final data = await widget.api.get('/api/v1/stories/${widget.storyId}/poll');
+        final next = data['poll'];
+        if (next is Map && mounted) {
+          setState(() => poll = Map<String, dynamic>.from(next));
+          widget.onChange(poll);
+        }
+      } catch (_) {}
+    });
+  }
+
+  Future<void> _vote(int option) async {
+    if (busy || widget.own || poll['voted'] != null) return;
+    widget.onInteract();
+    setState(() => busy = true);
+    try {
+      final data = await widget.api.post('/api/v1/stories/${widget.storyId}/vote', {'option': option});
+      final next = data['poll'];
+      if (next is Map && mounted) {
+        setState(() {
+          poll = Map<String, dynamic>.from(next);
+          busy = false;
+        });
+        widget.onChange(poll);
+        _startRefresh();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => busy = false);
+        toast(context, e);
+      }
+    } finally {
+      widget.onIdle();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final options = maps(poll['options']);
+    final total = intOf(poll['total']);
+    final voted = poll['voted'];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(16)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(text(poll['question']) ?? '', style: body(14, color: Colors.white, weight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        for (var i = 0; i < options.length; i++) ...[
+          if (i > 0) const SizedBox(height: 6),
+          Builder(builder: (context) {
+            final opt = options[i];
+            final label = text(opt['text']) ?? '${opt}';
+            final votes = opt['votes'];
+            final percent = opt['percent'];
+            return Material(
+              color: voted == i ? const Color(0xFF0EA5E9) : Colors.white12,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: reveal ? null : () => unawaited(_vote(i)),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(children: [
+                    Expanded(child: Text(label, style: body(13.5, color: Colors.white, weight: FontWeight.w600))),
+                    if (reveal && votes != null)
+                      Text('${intOf(votes)}${percent != null ? ' · ${intOf(percent)}%' : ''}', style: body(12, color: Colors.white70)),
+                  ]),
+                ),
+              ),
+            );
+          }),
+        ],
+        if (reveal) ...[
+          const SizedBox(height: 6),
+          Text(tr('Голосів: {n}', {'n': total}), style: body(12, color: Colors.white60)),
+        ],
+      ]),
+    );
   }
 }
 
@@ -492,16 +675,31 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                   IconButton(onPressed: () => Navigator.of(context).maybePop(), icon: const Icon(LucideIcons.x, color: Colors.white, size: 26)),
                 ]),
               ),
-              if (text(current['caption']) != null)
+              if (text(current['caption']) != null || current['poll'] is Map)
                 Positioned(
                   left: 16,
                   right: 16,
                   bottom: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(12)),
-                    child: Text(current['caption'], textAlign: TextAlign.center, style: body(14, color: Colors.white)),
-                  ),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    if (current['poll'] is Map)
+                      _StoryPollCard(
+                        storyId: intOf(current['id']),
+                        own: own,
+                        initial: mapOf(current['poll']),
+                        api: widget.api,
+                        onChange: (poll) => setState(() => current['poll'] = poll),
+                        onInteract: _pause,
+                        onIdle: _resume,
+                      ),
+                    if (text(current['caption']) != null) ...[
+                      if (current['poll'] is Map) const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(12)),
+                        child: Text(current['caption'], textAlign: TextAlign.center, style: body(14, color: Colors.white)),
+                      ),
+                    ],
+                  ]),
                 ),
             ]),
           ),

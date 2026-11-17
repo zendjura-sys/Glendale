@@ -428,6 +428,29 @@ class GameScreen extends StatelessWidget {
               ]),
             ),
             if (AppScope.of(context).session.pluginOn('game_reviews')) GameReviewsSection(slug: slug),
+            if (AppScope.of(context).session.pluginOn('game_guides') && maps(data['guides']).isNotEmpty)
+              _section(tr('Гайди гравців'), LucideIcons.bookOpen, [
+                for (final g in maps(data['guides']))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Glass(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(text(g['title']) ?? '', style: body(15, weight: FontWeight.w700)),
+                        const SizedBox(height: 6),
+                        Text(text(g['body']) ?? '', style: body(13.5, color: soft).copyWith(height: 1.4)),
+                        const SizedBox(height: 8),
+                        Row(children: [
+                          Avatar(url: text(mapOf(g['user'])['avatar_url']), name: text(mapOf(g['user'])['name']) ?? '?', size: 28),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(text(mapOf(g['user'])['name']) ?? '', style: body(12.5, color: muted))),
+                          if (g['can_thank'] == true || intOf(g['thanks']) > 0 || g['thanked'] == true)
+                            ThanksButton(kind: 'guide', id: intOf(g['id']), thanked: g['thanked'] == true, count: intOf(g['thanks'])),
+                        ]),
+                      ]),
+                    ),
+                  ),
+              ]),
             if (videos.isNotEmpty || shots.isNotEmpty)
               _section(tr('Трейлери й скриншоти'), LucideIcons.images, [
                 SizedBox(
@@ -520,6 +543,19 @@ class GameScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(child: Text(tr('Скриншоти гравців'), style: body(15, weight: FontWeight.w600))),
                     Text(compact(data['screenshots']), style: body(13, color: muted)),
+                  ]),
+                ),
+              ),
+            if (AppScope.of(context).session.pluginOn('game_guides'))
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Glass(
+                  onTap: () => context.push('/games/$slug/guides'),
+                  child: Row(children: [
+                    const Icon(LucideIcons.bookOpen, size: 20, color: Color(0xFF38BDF8)),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(tr('Гіди'), style: body(15, weight: FontWeight.w600))),
+                    if (maps(data['guides']).isNotEmpty) Text(compact(maps(data['guides']).length), style: body(13, color: muted)),
                   ]),
                 ),
               ),

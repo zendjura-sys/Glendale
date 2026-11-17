@@ -12,6 +12,7 @@ use App\Models\PartyPost;
 use App\Models\Post;
 use App\Models\User;
 use App\Models\VoiceRoom;
+use App\Services\Auth\ApiTokens;
 use App\Services\CommunityService;
 use App\Services\Messenger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,6 +83,40 @@ class BatchBFeaturesTest extends TestCase
             ->where('guides.0.thanks', 1)->where('guides.0.thanked', true)->where('guides.0.can_thank', true));
 
         $this->actingAs($reader)->postJson('/thanks', ['kind' => 'guide', 'id' => $guide->id])->assertJsonPath('thanked', false)->assertJsonPath('count', 0);
+    }
+
+    public function test_app_bridge_publishes_guides_and_thanks(): void
+    {
+        [$author, $reader] = User::factory()->count(2)->create();
+        $game = Game::query()->create(['slug' => 'apex', 'name' => 'Apex', 'letter' => 'A', 'category' => 'pc', 'is_published' => true]);
+        $post = Post::query()->create(['author_id' => $author->id, 'wall_type' => 'user', 'wall_id' => $author->id, 'body' => 'Пост', 'visibility' => 'public']);
+        $comment = Comment::query()->create(['post_id' => $post->id, 'user_id' => $author->id, 'body' => 'Порада']);
+        $authorToken = app(ApiTokens::class)->issue($author, 'android');
+        $readerToken = app(ApiTokens::class)->issue($reader, 'android');
+
+        $this->withToken($authorToken)->postJson("/api/v1/site/games/{$game->slug}/guides", [
+            'title' => 'Як стріляти',
+            'body' => 'Цільтесь у голову.',
+        ])->assertOk()->assertJsonPath('ok', true)->assertJsonPath('message', 'Гід опубліковано.');
+
+        $guide = GameGuide::query()->sole();
+        $this->withToken($readerToken)->getJson("/api/v1/site/games/{$game->slug}")
+            ->assertOk()
+            ->assertJsonPath('guides.0.id', $guide->id)
+            ->assertJsonPath('guides.0.title', 'Як стріляти')
+            ->assertJsonPath('guides.0.can_thank', true)
+            ->assertJsonPath('guides.0.thanked', false)
+            ->assertJsonPath('guides.0.thanks', 0);
+
+        $this->withToken($readerToken)->postJson('/api/v1/site/thanks', ['kind' => 'guide', 'id' => $guide->id])
+            ->assertOk()->assertJsonPath('thanked', true)->assertJsonPath('count', 1);
+        $this->withToken($readerToken)->postJson('/api/v1/site/thanks', ['kind' => 'comment', 'id' => $comment->id])
+            ->assertOk()->assertJsonPath('thanked', true)->assertJsonPath('count', 1);
+        $this->withToken($authorToken)->postJson('/api/v1/site/thanks', ['kind' => 'guide', 'id' => $guide->id])->assertUnprocessable();
+
+        $this->withToken($authorToken)->deleteJson("/api/v1/site/games/{$game->slug}/guides/{$guide->id}")
+            ->assertOk()->assertJsonPath('ok', true)->assertJsonPath('message', 'Гід видалено.');
+        $this->assertSame(0, GameGuide::query()->count());
     }
 
     public function test_party_invite_link_joins_party(): void

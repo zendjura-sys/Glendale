@@ -26,6 +26,17 @@ String communityKind(Map<String, dynamic> c) => c['type'] == 'public' ? tr('Пу
 String membersLabel(Map<String, dynamic> c, int n) =>
     c['type'] == 'public' ? plural(n, 'підписник', 'підписники', 'підписників') : plural(n, 'учасник', 'учасники', 'учасників');
 
+/// Питання анкети вступу. Картка спільноти віддає список, форма налаштувань — текст по рядках.
+List<String> communityJoinQuestions(Map<String, dynamic> c) {
+  final raw = c['join_questions'];
+  if (raw is List) {
+    return [for (final item in raw) if (text(item) case final q?) q];
+  }
+  final block = text(raw);
+  if (block == null) return const [];
+  return [for (final line in block.split('\n')) if (line.trim().isNotEmpty) line.trim()];
+}
+
 // ───────────────────────── Каталог ─────────────────────────
 
 class CommunitiesScreen extends StatefulWidget {
@@ -270,6 +281,15 @@ class _JoinButtonState extends State<JoinButton> {
       widget.onChanged?.call(next);
       return;
     }
+    // Анкета вступу (join_forms): відповіді в тілі join, як на сайті.
+    final questions = _joinQuestions(widget.community);
+    if (status == null && questions.isNotEmpty && AppScope.read(context).session.pluginOn('join_forms')) {
+      final next = await _joinWithAnswers(api, slug, questions);
+      if (next == null || !mounted) return;
+      setState(() => status = next);
+      widget.onChanged?.call(next);
+      return;
+    }
     setState(() => busy = true);
     try {
       final data = status == null ? await api.post('/api/v1/communities/$slug/join') : await api.delete('/api/v1/communities/$slug/join');
@@ -281,6 +301,80 @@ class _JoinButtonState extends State<JoinButton> {
     } finally {
       if (mounted) setState(() => busy = false);
     }
+  }
+
+  static List<String> _joinQuestions(Map<String, dynamic> c) {
+    final raw = c['join_questions'];
+    if (raw is List) return [for (final q in raw) if (text(q) != null) text(q)!];
+    if (raw is String && raw.trim().isNotEmpty) {
+      return [for (final line in raw.split('\n')) if (line.trim().isNotEmpty) line.trim()];
+    }
+    return const [];
+  }
+
+  Future<String?> _joinWithAnswers(Api api, Object? slug, List<String> questions) async {
+    final answers = [for (final _ in questions) TextEditingController()];
+    var error = '';
+    var busy = false;
+    final next = await showGcSheet<String>(
+      context,
+      title: tr('Анкета вступу'),
+      subtitle: tr('Відповідайте на запитання адміністрації — і заявку буде надіслано.'),
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) {
+          Future<void> submit() async {
+            if (busy) return;
+            final filled = [for (final a in answers) a.text.trim()];
+            if (filled.any((a) => a.isEmpty)) {
+              setSheet(() => error = tr('Заповніть усі поля.'));
+              return;
+            }
+            setSheet(() {
+              busy = true;
+              error = '';
+            });
+            try {
+              final data = await api.post('/api/v1/communities/$slug/join', {'answers': filled});
+              if (sheet.mounted) Navigator.pop(sheet, text(data['membership']) ?? 'pending');
+            } catch (e) {
+              if (sheet.mounted) {
+                setSheet(() {
+                  busy = false;
+                  error = '$e';
+                });
+              }
+            }
+          }
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < questions.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 10),
+                  Text(questions[i], style: body(13.5, weight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  GcField(controller: answers[i], label: tr('Ваша відповідь'), maxLines: 3, minLines: 1),
+                ],
+                if (error.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(error, style: body(12.5, color: dangerSoft)),
+                ],
+                const SizedBox(height: 14),
+                PrimaryButton(label: tr('Подати заявку'), icon: LucideIcons.clipboardList, busy: busy, onPressed: busy ? null : () => unawaited(submit())),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final a in answers) {
+        a.dispose();
+      }
+    });
+    return next;
   }
 
   /// Вступ у спільноту з паролем. Помилка лишається в шторці, щоб можна було спробувати ще раз.
@@ -384,13 +478,25 @@ class _JoinButtonState extends State<JoinButton> {
     if (role == 'owner' || c['managed'] == true && status == 'active') {
       return Pill(label: role == 'owner' ? tr('Власник') : tr('Керуєте'), icon: LucideIcons.crown, color: gold);
     }
-    // Пароль (і ще немає правил на цей крок) — кнопка «Вступити», як PasswordDialog на сайті.
+    // Пароль / анкета (і ще немає правил на цей крок) — як на сайті.
     final passwordGate = status == null && c['has_password'] == true && c['rules_accept'] != true;
-    final joinLabel = passwordGate ? tr('Вступити') : (public ? tr('Підписатися') : (c['privacy'] == 'closed' ? tr('Подати заявку') : tr('Вступити')));
+    final formGate = status == null && !passwordGate && _joinQuestions(c).isNotEmpty && AppScope.read(context).session.pluginOn('join_forms');
+    final joinLabel = passwordGate
+        ? tr('Вступити')
+        : (formGate || c['privacy'] == 'closed'
+            ? tr('Подати заявку')
+            : (public ? tr('Підписатися') : tr('Вступити')));
     return switch (status) {
       'active' => GhostButton(label: public ? tr('Ви підписані') : tr('Ви учасник'), icon: LucideIcons.check, compact: true, expand: false, onPressed: busy ? null : _toggle),
       'pending' => GhostButton(label: tr('Заявку надіслано'), icon: LucideIcons.clock, compact: true, expand: false, color: muted, onPressed: busy ? null : _toggle),
-      _ => PrimaryButton(label: joinLabel, icon: passwordGate ? LucideIcons.keyRound : null, compact: true, expand: false, busy: busy, onPressed: _toggle),
+      _ => PrimaryButton(
+          label: joinLabel,
+          icon: passwordGate ? LucideIcons.keyRound : (formGate ? LucideIcons.clipboardList : null),
+          compact: true,
+          expand: false,
+          busy: busy,
+          onPressed: _toggle,
+        ),
     };
   }
 }
@@ -982,7 +1088,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
           Glass(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
             child: Column(children: [
-              for (final member in items)
+              for (final member in items) ...[
                 UserTile(
                   user: member,
                   subtitle: tab == 'requests' ? tr('Заявка {v}', {'v': ago(member['joined_at'])}) : (communityRoles[member['role']] ?? '') + (member['is_friend'] == true ? tr(' · ваш друг') : ''),
@@ -995,10 +1101,34 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
                           ? IconButton(onPressed: () => _memberMenu(member), icon: Icon(LucideIcons.ellipsis, color: muted))
                           : null,
                 ),
+                if (tab == 'requests') _RequestAnswers(answers: maps(member['answers'])),
+              ],
             ]),
           ),
         LoadMore(more: more && !loading, onMore: _load),
       ],
+    );
+  }
+}
+
+/// Відповіді анкети під заявкою — щоб адмін бачив, що людина написала.
+class _RequestAnswers extends StatelessWidget {
+  const _RequestAnswers({required this.answers});
+  final List<Map<String, dynamic>> answers;
+
+  @override
+  Widget build(BuildContext context) {
+    if (answers.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(56, 0, 12, 10),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        for (final a in answers) ...[
+          Text(text(a['question']) ?? '', style: body(12, color: muted, weight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(text(a['answer']) ?? text(a['text']) ?? '$a', style: body(13, color: soft)),
+          const SizedBox(height: 6),
+        ],
+      ]),
     );
   }
 }
@@ -1021,6 +1151,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
   final description = TextEditingController();
   final website = TextEditingController();
   final city = TextEditingController();
+  final joinQuestions = TextEditingController();
   String type = 'group';
   String privacy = 'open';
   String wall = 'open';
@@ -1035,7 +1166,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
 
   @override
   void dispose() {
-    for (final c in [name, slug, status, description, website, city]) {
+    for (final c in [name, slug, status, description, website, city, joinQuestions]) {
       c.dispose();
     }
     super.dispose();
@@ -1056,6 +1187,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
         description.text = text(c['description']) ?? '';
         website.text = text(c['website']) ?? '';
         city.text = text(c['city']) ?? '';
+        joinQuestions.text = text(c['join_questions']) ?? (c['join_questions'] is List ? (c['join_questions'] as List).map((e) => '$e').where((s) => s.trim().isNotEmpty).join('\n') : '');
         type = text(c['type']) ?? 'group';
         privacy = text(c['privacy']) ?? 'open';
         wall = text(c['wall']) ?? 'open';
@@ -1080,6 +1212,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
         'description': description.text.trim(),
         'website': website.text.trim(),
         'city': city.text.trim(),
+        'join_questions': joinQuestions.text.trim(),
       });
       if (!mounted) return;
       toast(context, text(result['message']) ?? tr('Збережено.'));
@@ -1162,6 +1295,14 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
             LabeledField(label: tr('Сайт'), child: GcField(controller: website, label: 'https://', keyboard: TextInputType.url)),
             const SizedBox(height: 10),
             LabeledField(label: tr('Місто'), child: GcField(controller: city, label: tr('Місто'))),
+            if (privacy == 'closed' || type != 'public') ...[
+              const SizedBox(height: 10),
+              LabeledField(
+                label: tr('Анкета вступу'),
+                hint: tr('Кожне питання з нового рядка (до 5). Порожньо — без анкети.'),
+                child: GcField(controller: joinQuestions, label: tr('Питання для заявки'), maxLines: 6, minLines: 3),
+              ),
+            ],
           ]),
         ),
         const SizedBox(height: 12),

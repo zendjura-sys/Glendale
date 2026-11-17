@@ -145,6 +145,8 @@ String appPathFor(String? sitePath) {
       return '/games/steam-import';
     case 'games' when rest(1) == 'backlog' || rest(1) == 'deals':
       return path;
+    case 'games' when rest(2) == 'guides':
+      return path;
     case 'games':
     case 'clans':
       return parts.length > 2 && rest(1) != 'create' ? '/$head/${rest(1)}' : '$path$query';

@@ -33,6 +33,23 @@ const _icons = <String, IconData>{
   'megaphone': LucideIcons.megaphone,
 };
 
+/// Як на сайті: рідкісний бейдж — менш ніж у 10% людей.
+const _rareThreshold = 10.0;
+
+String? _rarityLabel(Map<String, dynamic> b) {
+  final raw = b['rarity'];
+  if (raw is! num) return null;
+  final rarity = raw.toDouble();
+  if (rarity >= _rareThreshold) return null;
+  final p = rarity < 1 ? '<1' : '${rarity.round()}';
+  return tr('є у {p}% людей', {'p': p});
+}
+
+String _rarityTip(Map<String, dynamic> b) {
+  final label = _rarityLabel(b);
+  return label == null ? '' : ' · $label';
+}
+
 /// Рівень (досвід до наступного) і бейджі за активність — у профілі.
 class AchievementsPanel extends StatefulWidget {
   const AchievementsPanel({required this.data, required this.isSelf, super.key});
@@ -103,11 +120,11 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 10,
             crossAxisSpacing: 8,
-            childAspectRatio: 0.82,
+            childAspectRatio: 0.72,
             children: [
               for (final b in shown)
                 Tooltip(
-                  message: '${b['title']} — ${b['text']}${b['earned'] == true ? '' : ' (${b['progress']}/${b['target']})'}',
+                  message: '${b['title']} — ${b['text']}${b['earned'] == true ? '' : ' (${b['progress']}/${b['target']})'}${_rarityTip(b)}',
                   triggerMode: TooltipTriggerMode.tap,
                   child: Column(children: [
                     Container(
@@ -122,6 +139,11 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
                     ),
                     const SizedBox(height: 5),
                     FitText(text(b['title']) ?? '', style: body(11, color: b['earned'] == true ? soft : faint), textAlign: TextAlign.center, maxLines: 2),
+                    if (_rarityLabel(b) != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(_rarityLabel(b)!, style: body(9.5, color: const Color(0xFFFDE68A).withValues(alpha: 0.8)), textAlign: TextAlign.center, maxLines: 1),
+                      ),
                   ]),
                 ),
             ],
