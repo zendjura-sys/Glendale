@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gamecon/account.dart';
 import 'package:gamecon/chat.dart';
+import 'package:gamecon/chat_extras.dart';
 import 'package:gamecon/shell.dart';
 import 'package:gamecon/state.dart';
 import 'package:gamecon/theme.dart';
@@ -58,6 +59,33 @@ Map<String, dynamic> _respond(http.Request request) {
 }
 
 void main() {
+  test('бот, гість і право банити гостя', () {
+    expect(messageIsBot({'bot': {'name': 'ШІ'}}), isTrue);
+    expect(messageIsBot({'is_bot': true}), isTrue);
+    expect(messageIsBot({'bot': true}), isTrue);
+    expect(messageIsBot({'user': {'is_bot': true, 'name': 'Вітання'}}), isTrue);
+    expect(messageIsBot({'body': 'привіт', 'user': {'id': 2, 'name': 'Олег'}}), isFalse);
+    expect(messageBotName({'bot': {'name': 'ШІ'}}), 'ШІ');
+    expect(messageBotName({'is_bot': true}), 'Бот');
+    expect(messageIsGuest({'guest': {'name': 'Мандрівник'}}), isTrue);
+    expect(messageIsGuest({'is_guest': true}), isTrue);
+    expect(messageIsGuest({'user': {'id': 2}}), isFalse);
+    expect(conversationIsGuestOrSupport({'guest_chat': true, 'type': 'group'}), isTrue);
+    expect(conversationIsGuestOrSupport({'support': true, 'type': 'direct'}), isTrue);
+    expect(conversationIsGuestOrSupport({'type': 'support'}), isTrue);
+    expect(conversationIsGuestOrSupport({'kind': 'guest'}), isTrue);
+    expect(conversationIsGuestOrSupport({'guest_chat': false, 'type': 'group'}), isFalse);
+    expect(conversationIsGuestOrSupport({'community_channel_id': 4}), isTrue);
+
+    const guest = {'guest': {'name': 'Мандрівник'}};
+    expect(canOfferGuestBan({'guest_chat': true, 'can_ban_guest': true, 'type': 'group'}, guest, ipBansOn: true, isAdmin: false, myRole: 'member'), isTrue);
+    expect(canOfferGuestBan({'guest_chat': false, 'can_ban_guest': true, 'type': 'direct'}, guest, ipBansOn: true, isAdmin: true, myRole: 'member'), isFalse);
+    expect(canOfferGuestBan({'guest_chat': true, 'can_ban_guest': false, 'type': 'group'}, guest, ipBansOn: true, isAdmin: false, myRole: 'owner'), isFalse);
+    expect(canOfferGuestBan({'type': 'group'}, guest, ipBansOn: true, isAdmin: false, myRole: 'owner'), isTrue);
+    expect(canOfferGuestBan({'guest_chat': true, 'can_ban_guest': true}, {'body': 'привіт', 'user': {'id': 2}}, ipBansOn: true, isAdmin: true), isFalse);
+    expect(canOfferGuestBan({'support': true, 'can_ban_guest': true, 'type': 'direct'}, guest, ipBansOn: false, isAdmin: true), isFalse);
+  });
+
   final out = Platform.environment['GC_SHOTS'];
 
   setUpAll(() async {
@@ -196,6 +224,123 @@ void main() {
       }
       expect(calls.where((c) => c.contains('/react') && c.contains('😂')).length, 2);
       expect(find.text('😂'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
+    }, () => MockClient((request) async => http.Response(jsonEncode(respond(request)), 200, headers: {'content-type': 'application/json; charset=utf-8'})));
+  });
+
+  testWidgets('матеріали чату, позначка бота й бан гостя', (tester) async {
+    var banned = false;
+    Map<String, dynamic> respond(http.Request request) {
+      final path = request.url.path;
+      if (path.endsWith('/ban-guest')) {
+        banned = true;
+        return {'message': 'Гостя заблоковано.'};
+      }
+      if (path.endsWith('/shared')) {
+        final kind = request.url.queryParameters['kind'] ?? 'media';
+        if (kind == 'links') {
+          return {
+            'items': [
+              {'id': '4-abc', 'message_id': 4, 'url': 'https://example.com/raid', 'host': 'example.com', 'author': 'ШІ', 'created_at': '2026-10-31T18:00:00Z'},
+            ],
+            'next': null,
+            'counts': {'media': 1, 'files': 0, 'links': 1, 'voice': 0},
+          };
+        }
+        return {
+          'items': [
+            {'id': 9, 'message_id': 4, 'type': 'image', 'url': 'https://gamecon.online/storage/a.jpg', 'author': 'ШІ', 'created_at': '2026-10-31T18:00:00Z'},
+          ],
+          'next': null,
+          'counts': {'media': 1, 'files': 0, 'links': 1, 'voice': 0},
+        };
+      }
+      if (path.endsWith('/api/v1/messages/5')) {
+        return {
+          'conversation': {
+            'id': 5, 'type': 'group', 'title': 'Гостьовий', 'avatar_url': null, 'peer': null, 'can_write': true, 'is_muted': false,
+            'my_role': 'owner', 'members_count': 2, 'read_up_to': 0, 'members': [], 'guest_chat': true, 'can_ban_guest': true, 'community_channel_id': 8,
+          },
+          'history': {
+            'has_more': false,
+            'messages': [
+              {'id': 4, 'conversation_id': 5, 'type': 'text', 'body': 'Привіт, новенький!', 'user': null, 'bot': {'name': 'ШІ'}, 'is_bot': true, 'reply_to': null, 'attachments': [], 'created_at': '2026-10-31T18:12:00Z', 'reactions': []},
+              if (!banned) {'id': 6, 'conversation_id': 5, 'type': 'text', 'body': 'Можна в клан?', 'user': null, 'guest': {'name': 'Мандрівник'}, 'reply_to': null, 'attachments': [], 'created_at': '2026-10-31T18:13:00Z', 'reactions': []},
+            ],
+          },
+        };
+      }
+      return {'ok': true};
+    }
+
+    await http.runWithClient(() async {
+      SharedPreferences.setMockInitialValues({'whats_new': whatsNewVersion});
+      final prefs = await SharedPreferences.getInstance();
+      final session = Session(prefs)
+        ..me = {'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny', 'role': 'admin', 'plugins': {'chat_media_panel': true, 'ip_bans': true}};
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      tester.view.padding = const FakeViewPadding(top: 120, bottom: 60);
+      addTearDown(tester.view.reset);
+      final router = GoRouter(initialLocation: '/messages/5', routes: [
+        ShellRoute(
+          builder: (_, _, child) => AppShell(session: session, player: TrackPlayer()..session = session, child: child),
+          routes: [GoRoute(path: '/messages/5', builder: (_, _) => const ChatScreen(id: 5))],
+        ),
+      ]);
+      await tester.pumpWidget(MaterialApp.router(debugShowCheckedModeBanner: false, theme: gameConTheme(), routerConfig: router));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('бот'), findsOneWidget);
+      expect(find.text('ШІ'), findsOneWidget);
+      expect(find.text('гість'), findsOneWidget);
+
+      await tester.tap(find.text('Гостьовий'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('Матеріали чату'), findsWidgets);
+      await tester.tap(find.text('Матеріали чату').last);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('Медіа'), findsOneWidget);
+      expect(find.text('Посилання'), findsOneWidget);
+      await tester.tap(find.text('Посилання'));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('https://example.com/raid'), findsOneWidget);
+      await tester.tap(find.byIcon(LucideIcons.x).last);
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      if (find.byIcon(LucideIcons.x).evaluate().isNotEmpty) {
+        await tester.tap(find.byIcon(LucideIcons.x).last);
+        for (var i = 0; i < 8; i++) {
+          await tester.pump(const Duration(milliseconds: 50));
+        }
+      }
+
+      await tester.longPress(find.text('Можна в клан?'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('Заблокувати гостя'), findsOneWidget);
+      await tester.tap(find.text('Заблокувати гостя'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('Заблокувати гостя «Мандрівник»'), findsOneWidget);
+      await tester.tap(find.text('Заблокувати'));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(banned, isTrue);
+      expect(find.text('Можна в клан?'), findsNothing);
 
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 5));

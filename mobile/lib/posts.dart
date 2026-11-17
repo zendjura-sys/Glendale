@@ -567,14 +567,18 @@ class _SheetAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: color == ink ? muted : color),
-      title: Text(
-        label,
-        style: body(15, color: color, weight: FontWeight.w500),
+    // Скляна шторка малює фон DecoratedBox-ом без Material: ListTile інакше свариться, що сплеск не видно.
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        leading: Icon(icon, color: color == ink ? muted : color),
+        title: Text(
+          label,
+          style: body(15, color: color, weight: FontWeight.w500),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        onTap: onTap,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      onTap: onTap,
     );
   }
 }

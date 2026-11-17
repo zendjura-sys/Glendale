@@ -902,6 +902,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final canPin = session.pluginOn('chat_pins') && (chat['can_pin'] == true || (!group && chat['can_pin'] != false));
     final pinned = maps(chat['pins']).any((p) => intOf(p['id']) == intOf(message['id']));
     final reactionsOn = session.pluginOn('message_reactions') && message['type'] != 'system';
+    final canBan = canOfferGuestBan(chat, message, ipBansOn: session.pluginOn('ip_bans'), isAdmin: session.isAdmin, myRole: text(chat['my_role']));
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
@@ -915,6 +916,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (own && hasText && message['type'] == 'text') SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
           if (own) SheetAction(icon: LucideIcons.trash2, label: tr('Видалити'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
           if (!own && hasText && I18n.translate) SheetAction(icon: LucideIcons.languages, label: tr('Перекласти'), onTap: () => Navigator.pop(sheet, 'translate')),
+          if (canBan) SheetAction(icon: LucideIcons.ban, label: tr('Заблокувати гостя'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'ban')),
           if (!own) SheetAction(icon: LucideIcons.flag, label: tr('Поскаржитися'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'report')),
         ]),
       ),
@@ -956,6 +958,8 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       case 'report':
         await _report(message);
+      case 'ban':
+        await _banGuest(message);
       case 'translate':
         await _translate(message);
     }
@@ -1041,6 +1045,23 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       if (mounted) toast(context, e);
     }
+  }
+
+  /// Бан гостя гостьового чату: той самий строк і «на всьому сайті», що в діалозі сайту. Повідомлення зникає.
+  Future<void> _banGuest(Map<String, dynamic> message) async {
+    final session = AppScope.read(context).session;
+    final staff = session.isAdmin || session.me?['role'] == 'moderator';
+    final channelId = int.tryParse('${conversation?['community_channel_id']}');
+    final guestChat = conversation?['guest_chat'] == true || (channelId != null && channelId > 0);
+    final banned = await confirmGuestBan(
+      context,
+      conversationId: widget.id,
+      messageId: intOf(message['id']),
+      guestName: messageGuestName(message),
+      canEverywhere: staff,
+      preferEverywhere: staff && !guestChat,
+    );
+    if (banned && mounted) setState(() => messages.removeWhere((m) => m['id'] == message['id']));
   }
 
   /// Скарга на повідомлення — потрапляє в Адмінку → Модерація (а в чаті сім’ї — ще й керівництву).
@@ -1132,7 +1153,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     onPressed: _editNote,
                     icon: Icon(LucideIcons.stickyNote, color: text(chat['note']) != null ? const Color(0xFFFCD34D) : muted),
                   ),
-                if (group) IconButton(tooltip: tr('Меню бесіди'), onPressed: _chatMenu, icon: Icon(LucideIcons.ellipsisVertical, color: muted)),
+                if (group || session.pluginOn('chat_media_panel')) IconButton(tooltip: tr('Меню бесіди'), onPressed: _chatMenu, icon: Icon(LucideIcons.ellipsisVertical, color: muted)),
               ]),
             ),
             Divider(height: 1, color: line),
@@ -1428,21 +1449,29 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// Меню бесіди: «Підсумок від ШІ» (плагін ai_summary, лише для груп — як на сайті) і відомості про бесіду.
+  /// Меню бесіди: матеріали чату, «Підсумок від ШІ» (групи) і відомості про бесіду.
   Future<void> _chatMenu() async {
-    final summary = AppScope.read(context).session.aiOn('ai_summary');
+    final session = AppScope.read(context).session;
+    final summary = session.aiOn('ai_summary') && conversation?['type'] == 'group';
+    final shared = session.pluginOn('chat_media_panel');
+    final group = conversation?['type'] == 'group';
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (shared) SheetAction(icon: LucideIcons.folderOpen, label: tr('Матеріали чату'), onTap: () => Navigator.pop(sheet, 'shared')),
           if (summary) SheetAction(icon: LucideIcons.sparkles, label: tr('Підсумок від ШІ'), color: cyan, onTap: () => Navigator.pop(sheet, 'summary')),
-          SheetAction(icon: LucideIcons.info, label: tr('Учасники й налаштування'), onTap: () => Navigator.pop(sheet, 'members')),
+          if (group) SheetAction(icon: LucideIcons.info, label: tr('Учасники й налаштування'), onTap: () => Navigator.pop(sheet, 'members')),
         ]),
       ),
     );
-    if (!mounted || choice == null) return;
+    if (!mounted) return;
+    if (choice == null) return;
+    if (choice == 'shared') await showChatShared(context, conversationId: widget.id, onJump: _jumpTo);
+    if (!mounted) return;
     if (choice == 'summary') await showAiSummary(context, widget.id);
+    if (!mounted) return;
     if (choice == 'members') await _showMembers();
   }
 
@@ -1459,6 +1488,7 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (sheet) => _GroupInfo(
         conversation: chat,
         myId: myId,
+        onJump: _jumpTo,
         onChanged: () async {
           await _load();
         },
@@ -1697,6 +1727,10 @@ class _Bubble extends StatelessWidget {
     }
     final user = mapOf(message['user']);
     final rank = user['family_rank'] is Map ? mapOf(user['family_rank']) : null;
+    final bot = messageIsBot(message);
+    final guest = !bot && messageIsGuest(message);
+    final authorName = bot ? messageBotName(message) : (guest ? messageGuestName(message) : (text(user['name']) ?? ''));
+    final showAuthor = !own && (group || bot || guest);
     final attachments = maps(message['attachments']);
     final photos = attachments.where((a) => a['type'] == 'image' && a['view_once'] != true).toList();
     final once = attachments.where((a) => a['view_once'] == true).toList();
@@ -1718,12 +1752,14 @@ class _Bubble extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (group && !own)
+        if (showAuthor)
           Padding(
             padding: const EdgeInsets.only(bottom: 3),
             child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              Text(text(user['name']) ?? '', style: body(12.5, color: const Color(0xFF9AA8FF), weight: FontWeight.w700)),
-              if (rank != null) Pill(label: '${rank['rank']} ${rank['title'] ?? ''}'.trim(), color: muted),
+              Text(authorName, style: body(12.5, color: bot ? const Color(0xFF7CC8FF) : (guest ? muted : const Color(0xFF9AA8FF)), weight: FontWeight.w700)),
+              if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+              if (guest) Pill(label: tr('гість'), color: muted),
+              if (rank != null && !bot && !guest) Pill(label: '${rank['rank']} ${rank['title'] ?? ''}'.trim(), color: muted),
             ]),
           ),
         if (reply != null)
@@ -1782,7 +1818,12 @@ class _Bubble extends StatelessWidget {
 
     final bubble = sticker != null
         ? Column(crossAxisAlignment: own ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
-            if (group && !own) Text(text(user['name']) ?? '', style: body(12, color: const Color(0xFF9AA8FF), weight: FontWeight.w700)),
+            if (showAuthor)
+              Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                Text(authorName, style: body(12, color: bot ? const Color(0xFF7CC8FF) : const Color(0xFF9AA8FF), weight: FontWeight.w700)),
+                if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+                if (guest) Pill(label: tr('гість'), color: muted),
+              ]),
             SizedBox(width: 130, height: 130, child: NetImage(text(sticker['url']), fit: BoxFit.contain)),
             meta,
           ])
@@ -1808,8 +1849,19 @@ class _Bubble extends StatelessWidget {
         mainAxisAlignment: own ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (group && !own) ...[
-            GestureDetector(onTap: () => context.push('/u/${user['username']}'), child: Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? '?', size: 30)),
+          if (showAuthor && group) ...[
+            if (bot)
+              Container(
+                width: 30,
+                height: 30,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: primary.withValues(alpha: 0.2), shape: BoxShape.circle),
+                child: const Icon(LucideIcons.bot, size: 16, color: Color(0xFF7CC8FF)),
+              )
+            else if (guest)
+              Avatar(name: authorName, size: 30)
+            else
+              GestureDetector(onTap: () => context.push('/u/${user['username']}'), child: Avatar(url: text(user['avatar_url']), name: authorName.isEmpty ? '?' : authorName, size: 30)),
             const SizedBox(width: 6),
           ],
           Flexible(
@@ -2267,11 +2319,12 @@ class _StickerPickerState extends State<_StickerPicker> {
 
 /// Інформація про групу: назва, фото, учасники (додати / видалити), вихід.
 class _GroupInfo extends StatefulWidget {
-  const _GroupInfo({required this.conversation, required this.myId, required this.onChanged, required this.onLeft});
+  const _GroupInfo({required this.conversation, required this.myId, required this.onChanged, required this.onLeft, required this.onJump});
   final Map<String, dynamic> conversation;
   final int? myId;
   final Future<void> Function() onChanged;
   final VoidCallback onLeft;
+  final ValueChanged<int> onJump;
 
   @override
   State<_GroupInfo> createState() => _GroupInfoState();
@@ -2358,6 +2411,18 @@ class _GroupInfoState extends State<_GroupInfo> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       children: [
+        if (AppScope.read(context).session.pluginOn('chat_media_panel'))
+          Material(
+            type: MaterialType.transparency,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(LucideIcons.images, color: accent),
+              title: Text(tr('Матеріали чату'), style: body(15, weight: FontWeight.w600)),
+              subtitle: Text(tr('Фото, файли, посилання й голосові'), style: body(12, color: muted)),
+              trailing: Icon(LucideIcons.chevronRight, size: 18, color: faint),
+              onTap: () => showChatShared(context, conversationId: id, onJump: widget.onJump),
+            ),
+          ),
         if (manager)
           Row(children: [
             Expanded(child: GhostButton(label: tr('Назва'), icon: LucideIcons.pencil, compact: true, onPressed: _rename)),
