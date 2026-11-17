@@ -147,11 +147,14 @@ class VoiceRooms
                 if (! $user instanceof User) {
                     continue;
                 }
+                $leads = $this->canManage($user, $owner);
                 $people[] = [
                     ...$user->toCard(),
                     'name' => $names[$user->id] ?? $user->name,
                     'muted' => $participant->muted,
-                    'speaker' => ! $room->is_stage || $participant->speaker || $this->canManage($user, $owner),
+                    // На сцені говорять спікери й керівники. Керівника не «повертають у слухачі».
+                    'speaker' => ! $room->is_stage || $participant->speaker || $leads,
+                    'manager' => $leads,
                     'hand' => $room->is_stage && $participant->hand_raised_at !== null,
                     'joined_at' => $participant->joined_at->toIso8601String(),
                 ];
@@ -398,10 +401,16 @@ class VoiceRooms
     /** Керівник запрошує слухача на сцену або повертає в слухачі. */
     public function speaker(VoiceRoom $room, User $target, bool $speaker): void
     {
+        $owner = $this->ownerOf($room);
+        // Керівник і так може говорити: не забираємо в нього мікрофон дією «у слухачі».
+        if ($this->canManage($target, $owner)) {
+            return;
+        }
+        $muted = (bool) VoiceParticipant::query()->where('voice_room_id', $room->id)->where('user_id', $target->id)->value('muted');
         VoiceParticipant::query()->where('voice_room_id', $room->id)->where('user_id', $target->id)
             ->update(['speaker' => $speaker, 'hand_raised_at' => null]);
-        $this->livekit->setCanPublish($room->livekitName(), $this->identity($target), $speaker);
-        $this->changed($this->ownerOf($room));
+        $this->livekit->setCanPublish($room->livekitName(), $this->identity($target), $speaker && ! $muted);
+        $this->changed($owner);
     }
 
     public function kick(VoiceRoom $room, User $target): void

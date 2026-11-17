@@ -180,9 +180,16 @@ class VoiceCall extends ChangeNotifier {
         })
         ..on<ParticipantPermissionsUpdatedEvent>((e) {
           if (e.participant != next.localParticipant) return;
-          micBlocked = !e.permissions.canPublish;
-          if (micBlocked) micOn = false;
-          notifyListeners();
+          // Запросили на сцену або повернули в слухачі: LiveKit міняє canPublish.
+          final blocked = !e.permissions.canPublish;
+          final changed = micBlocked != blocked;
+          micBlocked = blocked;
+          if (changed) stageEpoch++;
+          if (blocked && (changed || micOn)) {
+            unawaited(_setMic(false));
+          } else {
+            notifyListeners();
+          }
         })
         ..on<RoomDisconnectedEvent>((e) {
           if (_room != next) return;
@@ -397,8 +404,15 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
       for (final person in maps(room['participants'])) {
         if (intOf(person['id']) == meId) me = person;
       }
-      final listener = room['stage'] == true && !manage && me != null && me['speaker'] != true;
+      final onStage = room['stage'] == true;
+      final listener = onStage && !manage && me != null && me['speaker'] != true;
+      final becameSpeaker = onStage && !manage && me != null && me['speaker'] == true;
+      final wasListener = call.stageListener;
       call.setStageRole(listener: listener, hand: listener && me['hand'] == true);
+      // Лише запрошення на сцену, не вимкнення режиму й не зникнення зі списку.
+      if (wasListener && becameSpeaker && call.status == 'connected' && mounted) {
+        toast(context, tr('Ви на сцені.'));
+      }
       return;
     }
   }
@@ -437,11 +451,12 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
     final muted = person['muted'] == true;
     final stage = room['stage'] == true;
     final speaker = person['speaker'] == true;
+    final lead = person['manager'] == true;
     final action = await showGcSheet<String>(
       context,
       title: text(person['name']),
       builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
-        if (stage)
+        if (stage && !lead)
           _SheetAction(
             icon: LucideIcons.presentation,
             label: speaker ? tr('Повернути в слухачі') : tr('Запросити на сцену'),
@@ -497,7 +512,6 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
       if (intOf(person['id']) == meId) me = person;
     }
     final mine = me;
-    final listenerHere = stage && here && !manage && mine != null && mine['speaker'] != true;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Material(
@@ -538,7 +552,7 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
           ),
         ),
       ),
-      if (listenerHere)
+      if (stage && here && !manage && mine != null && mine['speaker'] != true)
         Padding(
           padding: const EdgeInsets.only(left: 36, right: 8, bottom: 4),
           child: Row(children: [
@@ -549,6 +563,11 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
               label: Text(mine['hand'] == true ? tr('Опустити руку') : tr('Підняти руку'), style: body(12.5, color: mine['hand'] == true ? gold : ink, weight: FontWeight.w700)),
             ),
           ]),
+        )
+      else if (stage && here && !manage && mine != null && mine['speaker'] == true)
+        Padding(
+          padding: const EdgeInsets.only(left: 36, right: 8, bottom: 4),
+          child: Text(tr('Ви на сцені.'), style: body(12.5, color: green, weight: FontWeight.w600)),
         ),
       for (final person in people)
         Padding(
@@ -571,6 +590,8 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
                 const SizedBox(width: 8),
                 Expanded(child: FitText(text(person['name']) ?? '', style: body(13, color: soft))),
                 if (stage && person['hand'] == true) Tooltip(message: tr('Підняв руку'), child: const Icon(LucideIcons.hand, size: 15, color: gold)),
+                if (stage && person['speaker'] == true && person['muted'] != true)
+                  Tooltip(message: tr('На сцені'), child: const Icon(LucideIcons.mic, size: 15, color: green)),
                 if (stage && person['speaker'] != true && person['hand'] != true)
                   Tooltip(message: tr('Слухач'), child: Icon(LucideIcons.headphones, size: 15, color: faint)),
                 if (person['muted'] == true) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(LucideIcons.micOff, size: 15, color: dangerSoft)),
