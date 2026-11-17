@@ -15,6 +15,7 @@ import 'package:gamecon/theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fonts.dart';
@@ -22,9 +23,9 @@ import 'support/fonts.dart';
 Map<String, dynamic> _user(int id, String name) => {'id': id, 'username': 'u$id', 'name': name, 'first_name': name.split(' ').first, 'avatar_url': null};
 final _requests = <String>[];
 
-Map<String, dynamic> _msg(int id, int user, String name, String? body, {Map<String, dynamic>? thread, List<Map<String, dynamic>> attachments = const []}) => {
+Map<String, dynamic> _msg(int id, int user, String name, String? body, {Map<String, dynamic>? thread, List<Map<String, dynamic>> attachments = const [], List<Map<String, dynamic>> reactions = const []}) => {
   'id': id, 'conversation_id': 5, 'type': 'text', 'body': body, 'user': _user(user, name), 'reply_to': null, 'preview': body ?? 'Фото',
-  'attachments': attachments, 'created_at': '2026-10-31T18:${10 + id}:00Z', 'edited_at': null, 'reactions': [], 'thread': thread, 'thread_root_id': null,
+  'attachments': attachments, 'created_at': '2026-10-31T18:${10 + id}:00Z', 'edited_at': null, 'reactions': reactions, 'thread': thread, 'thread_root_id': null,
 };
 
 Map<String, dynamic> _respond(http.Request request) {
@@ -119,4 +120,85 @@ void main() {
       }, () => MockClient((request) async => http.Response(jsonEncode(_respond(request)), 200, headers: {'content-type': 'application/json; charset=utf-8'})));
     });
   }
+
+  testWidgets('реакції: чіп, додати інший емодзі й зняти тапом', (tester) async {
+    final calls = <String>[];
+    var current = '🔥';
+    Map<String, dynamic> respond(http.Request request) {
+      calls.add('${request.method} ${request.url.path} ${request.body}');
+      if (request.url.path.endsWith('/react')) {
+        final body = jsonDecode(request.body) as Map;
+        final emoji = body['emoji'];
+        current = emoji == null || emoji == current ? '' : '$emoji';
+        return {
+          'message': _msg(2, 2, 'Олег Коваль', 'Хто сьогодні в рейд?', reactions: [
+            if (current.isNotEmpty) {'emoji': current, 'count': 1, 'user_ids': [1]},
+          ]),
+        };
+      }
+      if (request.url.path.endsWith('/api/v1/messages/5')) {
+        return {
+          'conversation': {
+            'id': 5, 'type': 'direct', 'title': 'Олег Коваль', 'avatar_url': null, 'peer': _user(2, 'Олег Коваль'),
+            'can_write': true, 'is_muted': false, 'read_up_to': 0,
+          },
+          'history': {
+            'has_more': false,
+            'messages': [
+              _msg(2, 2, 'Олег Коваль', 'Хто сьогодні в рейд?', reactions: [
+                {'emoji': '🔥', 'count': 2, 'user_ids': [1, 2]},
+              ]),
+            ],
+          },
+        };
+      }
+      return {'ok': true};
+    }
+
+    await http.runWithClient(() async {
+      SharedPreferences.setMockInitialValues({'whats_new': whatsNewVersion});
+      final prefs = await SharedPreferences.getInstance();
+      final session = Session(prefs)..me = {'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny', 'role': 'user', 'plugins': {'message_reactions': true}};
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      tester.view.padding = const FakeViewPadding(top: 120, bottom: 60);
+      addTearDown(tester.view.reset);
+      final router = GoRouter(initialLocation: '/messages/5', routes: [
+        ShellRoute(
+          builder: (_, _, child) => AppShell(session: session, player: TrackPlayer()..session = session, child: child),
+          routes: [GoRoute(path: '/messages/5', builder: (_, _) => const ChatScreen(id: 5))],
+        ),
+      ]);
+      await tester.pumpWidget(MaterialApp.router(debugShowCheckedModeBanner: false, theme: gameConTheme(), routerConfig: router));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('🔥'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.byIcon(LucideIcons.smilePlus), findsOneWidget);
+
+      await tester.tap(find.byIcon(LucideIcons.smilePlus));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('Реакція'), findsOneWidget);
+      await tester.tap(find.text('😂'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(calls.any((c) => c.contains('POST /api/v1/site/messages/5/messages/2/react') && c.contains('"emoji":"😂"')), isTrue);
+      expect(find.text('😂'), findsOneWidget);
+      expect(find.text('🔥'), findsNothing);
+
+      await tester.tap(find.text('😂'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(calls.where((c) => c.contains('/react') && c.contains('😂')).length, 2);
+      expect(find.text('😂'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
+    }, () => MockClient((request) async => http.Response(jsonEncode(respond(request)), 200, headers: {'content-type': 'application/json; charset=utf-8'})));
+  });
 }

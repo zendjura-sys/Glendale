@@ -413,6 +413,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final bubbleKeys = <int, GlobalKey>{};
   int? flashId;
   bool catchUpClosed = false;
+  final _reacting = <int>{};
 
   Api get api => AppScope.read(context).session.api;
   int? get myId => AppScope.read(context).session.myId;
@@ -766,11 +767,13 @@ class _ChatScreenState extends State<ChatScreen> {
     final threads = group && session.pluginOn('chat_threads');
     final canPin = session.pluginOn('chat_pins') && (chat['can_pin'] == true || (!group && chat['can_pin'] != false));
     final pinned = maps(chat['pins']).any((p) => intOf(p['id']) == intOf(message['id']));
+    final reactionsOn = session.pluginOn('message_reactions') && message['type'] != 'system';
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
         padding: EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (reactionsOn) _ReactionPicker(mine: _myReaction(message), onPick: (emoji) => Navigator.pop(sheet, emoji)),
           SheetAction(icon: LucideIcons.reply, label: tr('Відповісти'), onTap: () => Navigator.pop(sheet, 'reply')),
           if (threads) SheetAction(icon: LucideIcons.messagesSquare, label: tr('Відповісти в гілці'), onTap: () => Navigator.pop(sheet, 'thread')),
           if (canPin) SheetAction(icon: LucideIcons.pin, label: pinned ? tr('Відкріпити') : tr('Закріпити'), onTap: () => Navigator.pop(sheet, 'pin')),
@@ -783,6 +786,11 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
     if (!mounted || choice == null) return;
+    if (_messageReactions.contains(choice)) {
+      final mine = _myReaction(message);
+      await _react(message, choice == mine ? null : choice);
+      return;
+    }
     switch (choice) {
       case 'thread':
         await _openThread(message);
@@ -816,6 +824,50 @@ class _ChatScreenState extends State<ChatScreen> {
       case 'translate':
         await _translate(message);
     }
+  }
+
+  /// Емодзі, який поставила ця людина (одна реакція на повідомлення).
+  String? _myReaction(Map<String, dynamic> message) {
+    final me = myId;
+    if (me == null) return null;
+    for (final reaction in maps(message['reactions'])) {
+      final ids = reaction['user_ids'];
+      if (ids is List && ids.any((id) => intOf(id) == me)) return text(reaction['emoji']);
+    }
+    return null;
+  }
+
+  /// Поставити або замінити реакцію. null — зняти (той самий емодзі ще раз).
+  Future<void> _react(Map<String, dynamic> message, String? emoji) async {
+    final id = intOf(message['id']);
+    if (message['type'] == 'system' || _reacting.contains(id)) return;
+    _reacting.add(id);
+    try {
+      final data = await api.post(Api.site('/messages/${widget.id}/messages/$id/react'), {'emoji': emoji});
+      if (!mounted) return;
+      final updated = data['message'];
+      if (updated is Map) {
+        setState(() {
+          final index = messages.indexWhere((m) => intOf(m['id']) == id);
+          if (index >= 0) messages[index] = mapOf(updated);
+        });
+      }
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      _reacting.remove(id);
+    }
+  }
+
+  Future<void> _openReactions(Map<String, dynamic> message) async {
+    final mine = _myReaction(message);
+    final picked = await showGcSheet<String>(
+      context,
+      title: tr('Реакція'),
+      builder: (sheet) => _ReactionPicker(mine: mine, onPick: (emoji) => Navigator.pop(sheet, emoji)),
+    );
+    if (!mounted || picked == null) return;
+    await _react(message, picked == mine ? null : picked);
   }
 
   /// Гілка під повідомленням групи — у шторці; після закриття оновлюємо лічильник.
@@ -980,6 +1032,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               final day = _dayOf(message['created_at']);
                               final showDay = previous == null || _dayOf(previous['created_at']) != day;
                               final id = intOf(message['id']);
+                              final reactionsOn = session.pluginOn('message_reactions') && message['type'] != 'system';
                               final bubble = _Bubble(
                                 message: message,
                                 own: intOf(mapOf(message['user'])['id']) == myId,
@@ -989,6 +1042,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                 onQuote: _jumpTo,
                                 conversationId: widget.id,
                                 onThread: () => _openThread(message),
+                                canReact: reactionsOn,
+                                mine: _myReaction(message),
+                                onToggle: reactionsOn ? (emoji) => _react(message, emoji) : null,
+                                onAdd: reactionsOn ? () => _openReactions(message) : null,
                               );
                               return Column(key: bubbleKeys.putIfAbsent(id, GlobalKey.new), children: [
                                 if (showDay) _DayLabel(iso: message['created_at']),
@@ -1461,9 +1518,25 @@ class _SwipeToReplyState extends State<_SwipeToReply> with SingleTickerProviderS
   }
 }
 
+/// Той самий набір, що `MessageReaction::EMOJI` і пікер реакцій на сайті.
+const _messageReactions = ['👍', '❤️', '🔥', '😂', '😮', '😢', '🎉', '👎'];
+
 /// Повідомлення: текст, відповідь, фото, файли, голосове, стікер, контакт, системне.
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, required this.own, required this.group, required this.read, required this.onMenu, required this.onQuote, required this.conversationId, this.onThread});
+  const _Bubble({
+    required this.message,
+    required this.own,
+    required this.group,
+    required this.read,
+    required this.onMenu,
+    required this.onQuote,
+    required this.conversationId,
+    this.onThread,
+    this.canReact = false,
+    this.mine,
+    this.onToggle,
+    this.onAdd,
+  });
   final Map<String, dynamic> message;
   final bool own;
   final bool group;
@@ -1472,6 +1545,10 @@ class _Bubble extends StatelessWidget {
   final ValueChanged<int> onQuote;
   final int conversationId;
   final VoidCallback? onThread;
+  final bool canReact;
+  final String? mine;
+  final ValueChanged<String>? onToggle;
+  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -1599,9 +1676,139 @@ class _Bubble extends StatelessWidget {
             GestureDetector(onTap: () => context.push('/u/${user['username']}'), child: Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? '?', size: 30)),
             const SizedBox(width: 6),
           ],
-          Flexible(child: GestureDetector(onLongPress: onMenu, child: bubble)),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: own ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                GestureDetector(onLongPress: onMenu, child: bubble),
+                _ReactionRow(reactions: maps(message['reactions']), own: own, mine: mine, canReact: canReact, onToggle: onToggle, onAdd: onAdd),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// Пікер із восьми емодзі чату. Повтор уже своєї реакції знімає її.
+class _ReactionPicker extends StatelessWidget {
+  const _ReactionPicker({required this.mine, required this.onPick});
+  final String? mine;
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 2,
+        runSpacing: 2,
+        children: [
+          for (final emoji in _messageReactions)
+            GestureDetector(
+              onTap: () => onPick(emoji),
+              child: Semantics(
+                button: true,
+                selected: emoji == mine,
+                label: tr('Реакція {emoji}', {'emoji': emoji}),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: emoji == mine ? primary.withValues(alpha: 0.25) : null,
+                    shape: BoxShape.circle,
+                    border: emoji == mine ? Border.all(color: primary.withValues(alpha: 0.6)) : null,
+                  ),
+                  child: Text(emoji, style: const TextStyle(fontSize: 22)),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Чіпи під повідомленням: емодзі й кількість. Своя реакція підсвічена; тап перемикає її.
+class _ReactionRow extends StatelessWidget {
+  const _ReactionRow({required this.reactions, required this.own, required this.mine, required this.canReact, this.onToggle, this.onAdd});
+  final List<Map<String, dynamic>> reactions;
+  final bool own;
+  final String? mine;
+  final bool canReact;
+  final ValueChanged<String>? onToggle;
+  final VoidCallback? onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final chips = [for (final reaction in reactions) if (text(reaction['emoji']) != null) reaction];
+    if (chips.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        alignment: own ? WrapAlignment.end : WrapAlignment.start,
+        children: [
+          for (final reaction in chips)
+            _ReactionChip(
+              emoji: text(reaction['emoji'])!,
+              count: intOf(reaction['count']),
+              selected: text(reaction['emoji']) == mine,
+              onTap: canReact && onToggle != null ? () => onToggle!(text(reaction['emoji'])!) : null,
+            ),
+          if (canReact && onAdd != null)
+            Tooltip(
+              message: tr('Реакція'),
+              child: GestureDetector(
+                onTap: onAdd,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.07), shape: BoxShape.circle),
+                  child: Icon(LucideIcons.smilePlus, size: 15, color: muted),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReactionChip extends StatelessWidget {
+  const _ReactionChip({required this.emoji, required this.count, required this.selected, this.onTap});
+  final String emoji;
+  final int count;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: selected ? primary.withValues(alpha: 0.25) : fg.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(999),
+        border: selected ? Border.all(color: primary.withValues(alpha: 0.6)) : null,
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(emoji, style: const TextStyle(fontSize: 14, height: 1.2)),
+        if (count > 1) ...[
+          const SizedBox(width: 4),
+          Text('$count', style: body(12, color: selected ? ink : muted, weight: FontWeight.w600)),
+        ],
+      ]),
+    );
+    if (onTap == null) return chip;
+    return GestureDetector(
+      onTap: onTap,
+      child: Semantics(button: true, selected: selected, label: tr('Реакція {emoji}', {'emoji': emoji}), child: chip),
     );
   }
 }

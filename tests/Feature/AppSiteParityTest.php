@@ -177,6 +177,17 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->putJson("/api/v1/site/messages/{$chat->id}/note", ['note' => 'Рейд у п’ятницю'])->assertOk();
         $this->withToken($token)->getJson("/api/v1/messages/{$chat->id}")->assertOk()
             ->assertJsonPath('conversation.note', 'Рейд у п’ятницю')->assertJsonPath('conversation.pins.0.id', $root->id);
+
+        // Реакції в застосунку йдуть тим самим мостом, що й на сайті: одна на людину, повтор знімає.
+        $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('user.plugins.message_reactions', true);
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/messages/{$root->id}/react", ['emoji' => '🔥'])
+            ->assertOk()->assertJsonPath('message.reactions.0.emoji', '🔥')->assertJsonPath('message.reactions.0.user_ids', [$owner->id]);
+        $history = $this->withToken($token)->getJson("/api/v1/messages/{$chat->id}")->assertOk()->json('history.messages');
+        $card = collect($history)->firstWhere('id', $root->id);
+        $this->assertSame('🔥', $card['reactions'][0]['emoji']);
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/messages/{$root->id}/react", ['emoji' => '🔥'])
+            ->assertOk()->assertJsonCount(0, 'message.reactions');
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/messages/{$root->id}/react", ['emoji' => '💩'])->assertUnprocessable();
     }
 
     public function test_app_reaches_fun_features(): void
