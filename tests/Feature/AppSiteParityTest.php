@@ -184,7 +184,11 @@ class AppSiteParityTest extends TestCase
             ->assertJsonPath('user.plugins.message_reactions', true)
             ->assertJsonPath('user.plugins.account_switcher', true)
             ->assertJsonPath('user.plugins.chat_media_panel', true)
-            ->assertJsonPath('user.plugins.ip_bans', true);
+            ->assertJsonPath('user.plugins.ip_bans', true)
+            ->assertJsonPath('user.plugins.chat_backgrounds', true)
+            ->assertJsonPath('user.plugins.chat_restrictions', true)
+            ->assertJsonPath('user.plugins.chat_welcome_bot', true)
+            ->assertJsonPath('user.plugins.chat_autoposter', true);
         $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/messages/{$root->id}/react", ['emoji' => '🔥'])
             ->assertOk()->assertJsonPath('message.reactions.0.emoji', '🔥')->assertJsonPath('message.reactions.0.user_ids', [$owner->id]);
         $history = $this->withToken($token)->getJson("/api/v1/messages/{$chat->id}")->assertOk()->json('history.messages');
@@ -346,9 +350,12 @@ class AppSiteParityTest extends TestCase
         $token = $this->app_token($owner);
 
         $this->withToken($token)->getJson("/api/v1/site/messages/{$chat->id}/shared?kind=links")->assertOk()->assertJsonStructure(['items', 'counts']);
-        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/members/{$member->username}/restrict", ['kind' => 'timeout', 'minutes' => 5])->assertSuccessful();
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/members/{$member->username}/restrict", ['kind' => 'timeout', 'minutes' => 5])->assertOk()->assertJsonPath('ok', true);
         $this->assertNotNull($chat->participants()->where('user_id', $member->id)->value('timeout_until'));
-        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/background", ['preset' => 'dots'])->assertSuccessful();
+        $this->withToken($token)->deleteJson("/api/v1/site/messages/{$chat->id}/members/{$member->username}/restrict")->assertOk()->assertJsonPath('ok', true);
+        $this->withToken($token)->postJson("/api/v1/site/messages/{$chat->id}/background", ['preset' => 'dots'])->assertOk()
+            ->assertJsonPath('my_background', 'dots')
+            ->assertJsonPath('background.preset', 'dots');
         $this->withToken($token)->putJson("/api/v1/site/messages/{$chat->id}/bots/welcome", ['enabled' => true, 'body' => 'Привіт, {name}!'])->assertOk();
         $this->withToken($token)->getJson("/api/v1/site/messages/{$chat->id}/bots")->assertOk()->assertJsonPath('welcome.body', 'Привіт, {name}!');
 

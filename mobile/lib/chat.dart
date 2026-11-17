@@ -903,6 +903,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final pinned = maps(chat['pins']).any((p) => intOf(p['id']) == intOf(message['id']));
     final reactionsOn = session.pluginOn('message_reactions') && message['type'] != 'system';
     final canBan = canOfferGuestBan(chat, message, ipBansOn: session.pluginOn('ip_bans'), isAdmin: session.isAdmin, myRole: text(chat['my_role']));
+    final canRestrict = !own && canOfferChatRestrict(chat, message, restrictionsOn: session.pluginOn('chat_restrictions'));
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
@@ -916,6 +917,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (own && hasText && message['type'] == 'text') SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
           if (own) SheetAction(icon: LucideIcons.trash2, label: tr('Видалити'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
           if (!own && hasText && I18n.translate) SheetAction(icon: LucideIcons.languages, label: tr('Перекласти'), onTap: () => Navigator.pop(sheet, 'translate')),
+          if (canRestrict) SheetAction(icon: LucideIcons.gavel, label: tr('Тайм-аут або виключення'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'restrict')),
           if (canBan) SheetAction(icon: LucideIcons.ban, label: tr('Заблокувати гостя'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'ban')),
           if (!own) SheetAction(icon: LucideIcons.flag, label: tr('Поскаржитися'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'report')),
         ]),
@@ -960,6 +962,9 @@ class _ChatScreenState extends State<ChatScreen> {
         await _report(message);
       case 'ban':
         await _banGuest(message);
+      case 'restrict':
+        final user = mapOf(message['user']);
+        if (await showChatRestrict(context, conversationId: widget.id, user: user) && mounted) await _refresh();
       case 'translate':
         await _translate(message);
     }
@@ -1101,6 +1106,10 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     final group = chat['type'] == 'group';
     final session = AppScope.of(context).session;
+    final backgroundsOn = session.pluginOn('chat_backgrounds');
+    final botsOn = group && chatCanModerate(chat) && chatBotsOn(session);
+    final timeout = chatTimeoutText(chat['timeout_until']);
+    final locked = chat['can_write'] == false || timeout != null;
     final peer = chat['peer'] is Map ? mapOf(chat['peer']) : null;
     final readUpTo = intOf(chat['read_up_to']);
     final reversed = messages.reversed.toList();
@@ -1153,7 +1162,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     onPressed: _editNote,
                     icon: Icon(LucideIcons.stickyNote, color: text(chat['note']) != null ? const Color(0xFFFCD34D) : muted),
                   ),
-                if (group || session.pluginOn('chat_media_panel')) IconButton(tooltip: tr('Меню бесіди'), onPressed: _chatMenu, icon: Icon(LucideIcons.ellipsisVertical, color: muted)),
+                if (group || session.pluginOn('chat_media_panel') || backgroundsOn || botsOn) IconButton(tooltip: tr('Меню бесіди'), onPressed: _chatMenu, icon: Icon(LucideIcons.ellipsisVertical, color: muted)),
               ]),
             ),
             Divider(height: 1, color: line),
@@ -1174,6 +1183,10 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: Stack(
                 children: [
+                  if (backgroundsOn)
+                    Positioned.fill(
+                      child: IgnorePointer(child: ChatBackdrop(background: chat['background'] is Map ? mapOf(chat['background']) : null)),
+                    ),
                   Positioned.fill(
                     child: messages.isEmpty
                         ? QuietEmpty(icon: LucideIcons.hand, text: tr('Напишіть перше повідомлення'))
@@ -1208,7 +1221,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 300),
                                   decoration: BoxDecoration(color: flashId == id ? primary.withValues(alpha: 0.16) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
-                                  child: message['type'] == 'system' || chat['can_write'] == false ? bubble : _SwipeToReply(onReply: () => _reply(message), child: bubble),
+                                  child: message['type'] == 'system' || locked ? bubble : _SwipeToReply(onReply: () => _reply(message), child: bubble),
                                 ),
                               ]);
                             },
@@ -1231,7 +1244,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
             ),
-            if (chat['can_write'] == false)
+            if (timeout != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 14, 16, 16 + ShellChrome.bottomOf(context)),
+                child: Text(timeout, textAlign: TextAlign.center, style: body(13, color: muted)),
+              )
+            else if (chat['can_write'] == false)
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(tr('Ви не можете написати цьому користувачу.'), textAlign: TextAlign.center, style: body(13, color: muted)),
@@ -1449,26 +1467,43 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  /// Меню бесіди: матеріали чату, «Підсумок від ШІ» (групи) і відомості про бесіду.
+  /// Меню бесіди: матеріали, фон, боти (групи), «Підсумок від ШІ» і відомості про бесіду.
   Future<void> _chatMenu() async {
     final session = AppScope.read(context).session;
-    final summary = session.aiOn('ai_summary') && conversation?['type'] == 'group';
+    final chat = conversation ?? const <String, dynamic>{};
+    final group = chat['type'] == 'group';
+    final summary = session.aiOn('ai_summary') && group;
     final shared = session.pluginOn('chat_media_panel');
-    final group = conversation?['type'] == 'group';
+    final backgrounds = session.pluginOn('chat_backgrounds');
+    final bots = group && chatCanModerate(chat) && chatBotsOn(session);
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           if (shared) SheetAction(icon: LucideIcons.folderOpen, label: tr('Матеріали чату'), onTap: () => Navigator.pop(sheet, 'shared')),
+          if (backgrounds) SheetAction(icon: LucideIcons.wallpaper, label: tr('Фон чату'), onTap: () => Navigator.pop(sheet, 'background')),
+          if (bots) SheetAction(icon: LucideIcons.bot, label: tr('Боти бесіди'), onTap: () => Navigator.pop(sheet, 'bots')),
           if (summary) SheetAction(icon: LucideIcons.sparkles, label: tr('Підсумок від ШІ'), color: cyan, onTap: () => Navigator.pop(sheet, 'summary')),
           if (group) SheetAction(icon: LucideIcons.info, label: tr('Учасники й налаштування'), onTap: () => Navigator.pop(sheet, 'members')),
         ]),
       ),
     );
-    if (!mounted) return;
-    if (choice == null) return;
+    if (!mounted || choice == null) return;
     if (choice == 'shared') await showChatShared(context, conversationId: widget.id, onJump: _jumpTo);
+    if (!mounted) return;
+    if (choice == 'background') {
+      final saved = await showChatBackground(
+        context,
+        conversationId: widget.id,
+        current: text(conversation?['my_background']),
+        shared: text(conversation?['shared_background']),
+        canShare: chatCanModerate(conversation ?? chat),
+      );
+      if (saved != null && mounted && conversation != null) setState(() => applyChatBackground(conversation!, saved));
+    }
+    if (!mounted) return;
+    if (choice == 'bots') await showChatBots(context, widget.id);
     if (!mounted) return;
     if (choice == 'summary') await showAiSummary(context, widget.id);
     if (!mounted) return;
@@ -2405,24 +2440,96 @@ class _GroupInfoState extends State<_GroupInfo> {
     }
   }
 
+  bool _canRestrict(Map<String, dynamic> member) {
+    if (!manager || intOf(member['id']) == widget.myId || member['role'] == 'owner') return false;
+    if (member['role'] == 'admin' && widget.conversation['my_role'] != 'owner') return false;
+    return text(member['username']) != null;
+  }
+
+  Future<void> _lift(Map<String, dynamic> member) async {
+    if (!await attempt(context, () => api.delete(Api.site('/messages/$id/members/${member['username']}/restrict')))) return;
+    if (!mounted) return;
+    setState(() {
+      final index = members.indexWhere((item) => item['id'] == member['id']);
+      if (index >= 0) members[index] = {...members[index], 'timeout_until': null};
+    });
+    await widget.onChanged();
+  }
+
+  Future<void> _restrict(Map<String, dynamic> member) async {
+    if (!await showChatRestrict(context, conversationId: id, user: member) || !mounted) return;
+    await widget.onChanged();
+    if (!mounted) return;
+    final fresh = await api.get('/api/v1/messages/$id');
+    if (mounted) setState(() => members = maps(mapOf(fresh['conversation'])['members']));
+  }
+
+  Future<void> _background() async {
+    final saved = await showChatBackground(
+      context,
+      conversationId: id,
+      current: text(widget.conversation['my_background']),
+      shared: text(widget.conversation['shared_background']),
+      canShare: manager,
+    );
+    if (saved == null || !mounted) return;
+    applyChatBackground(widget.conversation, saved);
+    await widget.onChanged();
+  }
+
+  Widget _tool(IconData icon, String title, String subtitle, VoidCallback onTap) {
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(icon, color: accent),
+        title: Text(title, style: body(15, weight: FontWeight.w600)),
+        subtitle: Text(subtitle, style: body(12, color: muted)),
+        trailing: Icon(LucideIcons.chevronRight, size: 18, color: faint),
+        onTap: onTap,
+      ),
+    );
+  }
+
+  Widget? _memberTools(Map<String, dynamic> member) {
+    final session = AppScope.read(context).session;
+    final restrictions = session.pluginOn('chat_restrictions');
+    final timedOut = text(member['timeout_until']) != null;
+    final canRemove = manager && intOf(member['id']) != widget.myId && member['role'] != 'owner';
+    final canRestrict = restrictions && _canRestrict(member);
+    if (!timedOut && !canRemove && !canRestrict) return null;
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      if (timedOut && restrictions && manager)
+        TextButton(
+          onPressed: () => _lift(member),
+          style: TextButton.styleFrom(visualDensity: VisualDensity.compact, foregroundColor: const Color(0xFFFDE68A), padding: const EdgeInsets.symmetric(horizontal: 8)),
+          child: Text(tr('Зняти'), style: body(12, color: const Color(0xFFFDE68A), weight: FontWeight.w700)),
+        )
+      else if (timedOut)
+        Pill(label: tr('Тайм-аут'), icon: LucideIcons.clock, color: const Color(0xFFFDE68A)),
+      if (canRestrict)
+        IconButton(
+          tooltip: tr('Тайм-аут або виключення'),
+          onPressed: () => _restrict(member),
+          icon: Icon(LucideIcons.gavel, color: muted, size: 18),
+        ),
+      if (canRemove) IconButton(onPressed: () => _remove(member), icon: Icon(LucideIcons.userRoundMinus, color: muted, size: 20)),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final me = members.where((m) => intOf(m['id']) == widget.myId).firstOrNull;
+    final session = AppScope.read(context).session;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       children: [
-        if (AppScope.read(context).session.pluginOn('chat_media_panel'))
-          Material(
-            type: MaterialType.transparency,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(LucideIcons.images, color: accent),
-              title: Text(tr('Матеріали чату'), style: body(15, weight: FontWeight.w600)),
-              subtitle: Text(tr('Фото, файли, посилання й голосові'), style: body(12, color: muted)),
-              trailing: Icon(LucideIcons.chevronRight, size: 18, color: faint),
-              onTap: () => showChatShared(context, conversationId: id, onJump: widget.onJump),
-            ),
-          ),
+        if (session.pluginOn('chat_media_panel'))
+          _tool(LucideIcons.images, tr('Матеріали чату'), tr('Фото, файли, посилання й голосові'), () => showChatShared(context, conversationId: id, onJump: widget.onJump)),
+        if (session.pluginOn('chat_backgrounds'))
+          _tool(LucideIcons.wallpaper, tr('Фон чату'), manager ? tr('Для мене або для всіх') : tr('Особистий фон бачите лише ви.'), _background),
+        if (manager && chatBotsOn(session))
+          _tool(LucideIcons.bot, tr('Боти бесіди'), tr('Привітання, автопости й ШІ-бот'), () => showChatBots(context, id)),
         if (manager)
           Row(children: [
             Expanded(child: GhostButton(label: tr('Назва'), icon: LucideIcons.pencil, compact: true, onPressed: _rename)),
@@ -2440,9 +2547,7 @@ class _GroupInfoState extends State<_GroupInfo> {
               'admin' => tr('Адміністратор'),
               _ => '@${member['username']}',
             },
-            trailing: manager && intOf(member['id']) != widget.myId && member['role'] != 'owner'
-                ? IconButton(onPressed: () => _remove(member), icon: Icon(LucideIcons.userRoundMinus, color: muted, size: 20))
-                : null,
+            trailing: _memberTools(member),
           ),
         const SizedBox(height: 12),
         if (me != null) DangerButton(label: tr('Вийти з бесіди'), icon: LucideIcons.logOut, expand: true, onPressed: () => _remove(me)),

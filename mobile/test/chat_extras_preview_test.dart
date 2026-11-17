@@ -346,4 +346,183 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     }, () => MockClient((request) async => http.Response(jsonEncode(respond(request)), 200, headers: {'content-type': 'application/json; charset=utf-8'})));
   });
+
+  test('фон, боти й тайм-аут: прапорці й текст', () {
+    expect(chatCanModerate({'type': 'group', 'my_role': 'owner'}), isTrue);
+    expect(chatCanModerate({'type': 'group', 'my_role': 'admin'}), isTrue);
+    expect(chatCanModerate({'type': 'group', 'my_role': 'member'}), isFalse);
+    expect(chatCanModerate({'type': 'direct', 'my_role': 'owner'}), isFalse);
+    expect(chatBackgroundLabel('aurora'), 'Сяйво');
+    expect(chatBackgroundLabel('waves'), 'Хвилі');
+    expect(chatTimeoutText(null), isNull);
+    expect(chatTimeoutText('2000-01-01T00:00:00Z'), isNull);
+    expect(chatTimeoutText('2099-06-01T15:30:00Z'), contains('Адміністратори заборонили вам писати тут до'));
+    expect(canOfferChatRestrict({'type': 'direct', 'my_role': 'owner'}, {'user': {'username': 'a'}}, restrictionsOn: true), isFalse);
+    expect(canOfferChatRestrict({'type': 'group', 'my_role': 'member'}, {'user': {'username': 'a'}}, restrictionsOn: true), isFalse);
+    expect(canOfferChatRestrict({'type': 'group', 'my_role': 'admin'}, {'type': 'text', 'user': {'username': 'a'}}, restrictionsOn: false), isFalse);
+    expect(canOfferChatRestrict({'type': 'group', 'my_role': 'admin'}, {'type': 'text', 'user': {'username': 'a'}}, restrictionsOn: true), isTrue);
+    expect(canOfferChatRestrict({'type': 'group', 'my_role': 'owner'}, {'bot': {'name': 'ШІ'}, 'user': {'username': 'a'}}, restrictionsOn: true), isFalse);
+    final chat = <String, dynamic>{'my_background': 'dots', 'background': null};
+    applyChatBackground(chat, {'background': {'preset': 'ocean', 'image': null}, 'my_background': 'ocean', 'shared_background': null});
+    expect(chat['my_background'], 'ocean');
+    expect(chat['shared_background'], isNull);
+    expect((chat['background'] as Map)['preset'], 'ocean');
+  });
+
+  testWidgets('фон чату, боти, тайм-аут і зняття обмеження', (tester) async {
+    final calls = <String>[];
+    Map<String, dynamic> respond(http.Request request) {
+      final path = request.url.path;
+      calls.add('${request.method} $path ${request.body}');
+      if (path.endsWith('/background')) {
+        final body = jsonDecode(request.body) as Map;
+        return {'ok': true, 'background': {'preset': body['preset'], 'image': null}, 'my_background': body['preset'], 'shared_background': null};
+      }
+      if (path.endsWith('/bots')) {
+        return {
+          'welcome_on': true,
+          'posts_on': true,
+          'ai_on': false,
+          'welcome': {'id': 1, 'enabled': true, 'bot_name': 'Бот', 'body': 'Привіт, {name}!'},
+          'ai': null,
+          'posts': [],
+        };
+      }
+      if (path.endsWith('/restrict')) return {'ok': true};
+      if (path.endsWith('/api/v1/messages/5')) {
+        return {
+          'conversation': {
+            'id': 5,
+            'type': 'group',
+            'title': 'Рейд',
+            'avatar_url': null,
+            'peer': null,
+            'can_write': true,
+            'is_muted': false,
+            'my_role': 'owner',
+            'members_count': 2,
+            'read_up_to': 0,
+            'timeout_until': '2099-06-01T15:30:00Z',
+            'background': null,
+            'my_background': null,
+            'shared_background': null,
+            'members': [
+              {'id': 1, 'username': 'tonny', 'name': 'Тоні Старк', 'role': 'owner'},
+              {'id': 2, 'username': 'oleh', 'name': 'Олег Коваль', 'role': 'member', 'timeout_until': '2099-01-01T12:00:00Z'},
+            ],
+          },
+          'history': {
+            'has_more': false,
+            'messages': [
+              {'id': 8, 'conversation_id': 5, 'type': 'text', 'body': 'Беру хіла', 'user': {'id': 2, 'username': 'oleh', 'name': 'Олег Коваль'}, 'reply_to': null, 'attachments': [], 'created_at': '2026-10-31T18:20:00Z', 'reactions': []},
+            ],
+          },
+        };
+      }
+      return {'ok': true};
+    }
+
+    await http.runWithClient(() async {
+      SharedPreferences.setMockInitialValues({'whats_new': whatsNewVersion});
+      final prefs = await SharedPreferences.getInstance();
+      final session = Session(prefs)
+        ..me = {
+          'id': 1,
+          'name': 'Тоні Старк',
+          'first_name': 'Тоні',
+          'username': 'tonny',
+          'role': 'user',
+          'plugins': {'chat_backgrounds': true, 'chat_restrictions': true, 'chat_welcome_bot': true, 'chat_autoposter': true},
+        };
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      tester.view.padding = const FakeViewPadding(top: 120, bottom: 60);
+      addTearDown(tester.view.reset);
+      final router = GoRouter(initialLocation: '/messages/5', routes: [
+        ShellRoute(
+          builder: (_, _, child) => AppShell(session: session, player: TrackPlayer()..session = session, child: child),
+          routes: [GoRoute(path: '/messages/5', builder: (_, _) => const ChatScreen(id: 5))],
+        ),
+      ]);
+      await tester.pumpWidget(MaterialApp.router(debugShowCheckedModeBanner: false, theme: gameConTheme(), routerConfig: router));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.textContaining('Адміністратори заборонили вам писати тут до'), findsOneWidget);
+      expect(find.text('Напишіть повідомлення…'), findsNothing);
+
+      await tester.tap(find.byTooltip('Меню бесіди'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('Фон чату'), findsOneWidget);
+      expect(find.text('Боти бесіди'), findsOneWidget);
+      await tester.tap(find.text('Фон чату'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('Для мене'), findsOneWidget);
+      expect(find.text('Для всіх'), findsOneWidget);
+      expect(find.text('Особистий фон бачите лише ви.'), findsOneWidget);
+      await tester.tap(find.text('Сяйво'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(calls.any((call) => call.contains('POST /api/v1/site/messages/5/background') && call.contains('"preset":"aurora"')), isTrue);
+      await tester.tap(find.widgetWithIcon(IconButton, LucideIcons.x));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      await tester.tap(find.byTooltip('Меню бесіди'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.tap(find.text('Боти бесіди'));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(calls.any((call) => call.contains('GET /api/v1/site/messages/5/bots')), isTrue);
+      expect(find.text('Вітати кожного, хто приєднався'), findsOneWidget);
+      expect(find.text('Привіт, {name}!'), findsOneWidget);
+      expect(find.text('Автопости'), findsOneWidget);
+      expect(find.text('ШІ-бот'), findsNothing);
+      await tester.tap(find.widgetWithIcon(IconButton, LucideIcons.x));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      await tester.longPress(find.text('Беру хіла'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('Тайм-аут або виключення'), findsOneWidget);
+      await tester.tap(find.text('Тайм-аут або виключення'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('Читає, але не пише.'), findsOneWidget);
+      expect(find.text('Виключити на час'), findsOneWidget);
+      await tester.tap(find.text('5 хвилин').first);
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(calls.any((call) => call.contains('POST /api/v1/site/messages/5/members/oleh/restrict') && call.contains('"kind":"timeout"') && call.contains('"minutes":5')), isTrue);
+
+      await tester.tap(find.text('Рейд'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text('Зняти'), findsOneWidget);
+      expect(find.text('Боти бесіди'), findsWidgets);
+      await tester.tap(find.text('Зняти'));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(calls.any((call) => call.contains('DELETE /api/v1/site/messages/5/members/oleh/restrict')), isTrue);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
+    }, () => MockClient((request) async => http.Response(jsonEncode(respond(request)), 200, headers: {'content-type': 'application/json; charset=utf-8'})));
+  });
 }
