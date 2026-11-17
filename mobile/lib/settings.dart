@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'affiliation_badges.dart' show showBadgeOrder;
+import 'two_factor.dart';
 import 'api.dart';
 import 'family_widget.dart';
 import 'nav_items.dart';
@@ -397,6 +398,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
         ),
       ],
+      if (AppScope.read(context).session case final session when session.pluginOn('stream_schedule') || session.pluginOn('crossposting') || session.pluginOn('author_subscriptions')) ...[
+        const SizedBox(height: 12),
+        Glass(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+          child: Column(children: [
+            if (session.pluginOn('stream_schedule'))
+              ListTile(
+                leading: Icon(LucideIcons.calendarClock, color: accent),
+                title: Text(tr('Розклад стрімів'), style: body(14.5, weight: FontWeight.w600)),
+                subtitle: Text(tr('Коли ви в ефірі — глядачі бачать найближчий стрім'), style: body(12, color: faint)),
+                trailing: Icon(LucideIcons.chevronRight, color: faint),
+                onTap: () => context.push('/settings/stream-schedule'),
+              ),
+            if (session.pluginOn('crossposting'))
+              ListTile(
+                leading: Icon(LucideIcons.send, color: accent),
+                title: Text(tr('Автопостинг'), style: body(14.5, weight: FontWeight.w600)),
+                subtitle: Text(tr('Записи й старт стріму в Discord або Telegram'), style: body(12, color: faint)),
+                trailing: Icon(LucideIcons.chevronRight, color: faint),
+                onTap: () => context.push('/settings/crosspost'),
+              ),
+            if (session.pluginOn('author_subscriptions'))
+              ListTile(
+                leading: Icon(LucideIcons.heartHandshake, color: accent),
+                title: Text(tr('Підписки'), style: body(14.5, weight: FontWeight.w600)),
+                subtitle: Text(tr('Платні рівні для підписників'), style: body(12, color: faint)),
+                trailing: Icon(LucideIcons.chevronRight, color: faint),
+                onTap: () => context.push('/settings/subscriptions'),
+              ),
+          ]),
+        ),
+      ],
       const SizedBox(height: 12),
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -464,7 +497,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   List<Widget> _security() {
-    final me = session.me ?? {};
     return [
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -514,15 +546,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ]),
       ),
       const SizedBox(height: 12),
-      Glass(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          CardTitle(tr('Двофакторний захист'), icon: LucideIcons.shieldCheck),
-          const SizedBox(height: 8),
-          Text(me['two_factor'] == true ? tr('Увімкнено. Під час входу застосунок попросить код.') : tr('Вимкнено. Увімкніть на сайті в розділі «Безпека».'), style: body(13.5, color: soft)),
-          const SizedBox(height: 10),
-          GhostButton(label: tr('Відкрити на сайті'), icon: LucideIcons.externalLink, onPressed: () => launchUrl(Uri.parse('${Api.root}/settings/security'), mode: LaunchMode.externalApplication)),
-        ]),
-      ),
+      const TwoFactorCard(),
       const SizedBox(height: 12),
       Glass(
         border: danger.withValues(alpha: 0.3),

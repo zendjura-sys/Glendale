@@ -19,6 +19,7 @@ import 'cinema.dart';
 import 'movie_screen.dart';
 import 'clans.dart';
 import 'communities.dart';
+import 'creator.dart';
 import 'connect.dart';
 import 'app_lock.dart';
 import 'developer.dart';
@@ -312,6 +313,16 @@ Future<void> main() async {
           GoRoute(path: '/tools/nicknames', builder: (_, _) => const NicknamesScreen()),
           GoRoute(path: '/memes/new', builder: (_, _) => const MemeScreen()),
           GoRoute(path: '/settings/links', builder: (_, _) => const BioLinksScreen()),
+          GoRoute(path: '/settings/subscriptions', builder: (_, _) => const AuthorTiersScreen()),
+          GoRoute(path: '/settings/stream-schedule', builder: (_, _) => const StreamScheduleScreen()),
+          GoRoute(
+            path: '/settings/crosspost',
+            builder: (_, state) => CrosspostScreen(
+              ownerType: state.uri.queryParameters['type'] == 'server' ? 'server' : 'user',
+              ownerId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
+            ),
+          ),
+          GoRoute(path: '/me/author-stats', builder: (_, _) => const AuthorStatsScreen()),
           GoRoute(path: '/settings/connected-apps', builder: (_, _) => const ConnectedAppsScreen()),
           GoRoute(path: '/authenticator', builder: (_, _) => const AuthenticatorScreen()),
           GoRoute(path: '/settings/app-lock', builder: (_, _) => const AppLockSettingsScreen()),

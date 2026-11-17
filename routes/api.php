@@ -15,8 +15,10 @@ use App\Http\Controllers\Api\MediaApiController;
 use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
 use App\Http\Controllers\Api\SubscriptionStatusController;
+use App\Http\Controllers\Api\TwoFactorApiController;
 use App\Http\Controllers\Api\WidgetApiController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\AuthorSubscriptionController;
 use App\Http\Controllers\AvatarCharacterController;
 use App\Http\Controllers\BioLinksController;
 use App\Http\Controllers\Bots;
@@ -262,6 +264,14 @@ Route::prefix('v1')->group(function () {
         Route::put('me/password', [SocialApiController::class, 'password']);
         Route::get('me/connections', [SocialApiController::class, 'connections']);
         Route::delete('me/connections/{provider}', [SocialApiController::class, 'unlink'])->whereIn('provider', ['discord', 'google']);
+
+        // Двофакторний захист: ті самі шляхи, що Fortify на сайті (/user/two-factor-…).
+        Route::post('user/two-factor-authentication', [TwoFactorApiController::class, 'store'])->middleware('throttle:6,1');
+        Route::delete('user/two-factor-authentication', [TwoFactorApiController::class, 'destroy'])->middleware('throttle:6,1');
+        Route::post('user/confirmed-two-factor-authentication', [TwoFactorApiController::class, 'confirm'])->middleware('throttle:6,1');
+        Route::get('user/two-factor-qr-code', [TwoFactorApiController::class, 'qrCode']);
+        Route::get('user/two-factor-secret-key', [TwoFactorApiController::class, 'secretKey']);
+        Route::match(['get', 'post'], 'user/two-factor-recovery-codes', [TwoFactorApiController::class, 'recoveryCodes'])->middleware('throttle:6,1');
 
         // Акаунт: пристрої й сесії, журнал входів, заморожування, оскарження, скарги й відгуки.
         Route::get('me/security', [AccountApiController::class, 'show']);
@@ -691,7 +701,12 @@ Route::prefix('v1')->group(function () {
             Route::delete('settings/account-type/links/{link}', [AccountTypeController::class, 'remove'])->whereNumber('link');
             Route::post('settings/verification', [AccountTypeController::class, 'verify'])->middleware('throttle:5,1');
             Route::get('me/author-stats', [CreatorController::class, 'stats'])->middleware('throttle:30,1');
+            Route::get('settings/stream-schedule', [SetupController::class, 'scheduleShow'])->middleware('throttle:60,1');
             Route::put('settings/stream-schedule', [SetupController::class, 'schedule'])->middleware('throttle:30,1');
+            // Рівні автора. Купівля підписки лишається на сайті (правила Google Play).
+            Route::get('settings/subscriptions', [AuthorSubscriptionController::class, 'settings']);
+            Route::put('settings/subscriptions/tiers', [AuthorSubscriptionController::class, 'saveTiers'])->middleware('throttle:20,1');
+            Route::patch('author-subscriptions/{user}', [AuthorSubscriptionController::class, 'autoRenew']);
             Route::prefix('crosspost/{type}/{id}')->whereIn('type', ['user', 'server'])->whereNumber('id')->group(function () {
                 Route::get('/', [CrosspostController::class, 'index']);
                 Route::post('/', [CrosspostController::class, 'store'])->middleware('throttle:10,1');
