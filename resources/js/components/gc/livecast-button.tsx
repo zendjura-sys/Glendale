@@ -1,11 +1,11 @@
-import { Link } from "@inertiajs/react";
-import { ChevronRight } from "lucide-react";
-import { m, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
-import { tr } from "@/lib/i18n";
-import { usePlugin } from "@/lib/plugins";
-import { cn } from "@/lib/utils";
+import { Link } from '@inertiajs/react';
+import { ChevronRight } from 'lucide-react';
+import { m, useReducedMotion } from 'motion/react';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
+import { cn } from '@/lib/utils';
 
 type Pulse = { live: number; viewers: number };
 
@@ -24,7 +24,7 @@ function usePulse(on: boolean): Pulse | null {
             if (document.hidden) return;
             if (!loading || Date.now() - loadedAt > 25_000) {
                 loadedAt = Date.now();
-                loading = api<Pulse>("GET", "/livecast/pulse").then((p) => {
+                loading = api<Pulse>('GET', '/livecast/pulse').then((p) => {
                     cached = p;
 
                     return p;
@@ -68,7 +68,7 @@ function StreamBars({
     return (
         <span
             aria-hidden
-            className={cn("flex items-center gap-[3px]", className)}
+            className={cn('flex items-center gap-[3px]', className)}
         >
             {BARS.slice(0, count).map((frames, i) => (
                 <m.span
@@ -90,7 +90,7 @@ function StreamBars({
                             : {
                                   duration: live ? 0.9 + i * 0.1 : 2.6,
                                   repeat: Infinity,
-                                  ease: "easeInOut",
+                                  ease: 'easeInOut',
                               }
                     }
                 />
@@ -113,14 +113,14 @@ function OnAir({ live }: { live: boolean }) {
                     transition={{
                         duration: 1.6,
                         repeat: Infinity,
-                        ease: "easeOut",
+                        ease: 'easeOut',
                     }}
                 />
             )}
             <span
                 className={cn(
-                    "relative size-2.5 rounded-full",
-                    live ? "bg-rose-500" : "bg-white/30",
+                    'relative size-2.5 rounded-full',
+                    live ? 'bg-rose-500' : 'bg-white/30',
                 )}
             />
         </span>
@@ -128,15 +128,15 @@ function OnAir({ live }: { live: boolean }) {
 }
 
 function summary(pulse: Pulse | null): string {
-    if (!pulse) return tr("Стріми камерою чи екраном");
-    if (pulse.live === 0) return tr("Ніхто не стрімить — будьте першими");
+    if (!pulse) return tr('Стріми камерою чи екраном');
+    if (pulse.live === 0) return tr('Ніхто не стрімить — будьте першими');
 
     if (pulse.viewers === 0)
-        return tr("{streams} наживо — зайдіть першими", {
+        return tr('{streams} наживо — зайдіть першими', {
             streams: pulse.live,
         });
 
-    return tr("{streams} наживо · {people} дивляться", {
+    return tr('{streams} наживо · {people} дивляться', {
         streams: pulse.live,
         people: pulse.viewers,
     });
@@ -147,7 +147,7 @@ function summary(pulse: Pulse | null): string {
  * зі скількома стрімами/глядачами зараз.
  */
 export function LiveCastTile({ className }: { className?: string }) {
-    const on = usePlugin("livecast");
+    const on = usePlugin('livecast');
     const pulse = usePulse(on);
     const reduce = useReducedMotion();
     const live = (pulse?.live ?? 0) > 0;
@@ -157,7 +157,7 @@ export function LiveCastTile({ className }: { className?: string }) {
         <Link
             href="/livecast"
             className={cn(
-                "group relative flex items-center gap-3 overflow-hidden rounded-[1.35rem] bg-[#141a33] p-3.5 text-left transition active:scale-[0.99]",
+                'group relative flex items-center gap-3 overflow-hidden rounded-[1.35rem] bg-[#141a33] p-3.5 text-left transition active:scale-[0.99]',
                 className,
             )}
         >
@@ -165,21 +165,21 @@ export function LiveCastTile({ className }: { className?: string }) {
                 <m.span
                     aria-hidden
                     className="pointer-events-none absolute -inset-y-6 w-40 rounded-full bg-rose-500/20 blur-2xl"
-                    initial={{ x: "-40%" }}
-                    animate={{ x: ["-40%", "260%", "-40%"] }}
+                    initial={{ x: '-40%' }}
+                    animate={{ x: ['-40%', '260%', '-40%'] }}
                     transition={{
                         duration: 9,
                         repeat: Infinity,
-                        ease: "easeInOut",
+                        ease: 'easeInOut',
                     }}
                 />
             )}
             <span
                 className={cn(
-                    "relative grid size-12 shrink-0 place-items-center rounded-2xl",
+                    'relative grid size-12 shrink-0 place-items-center rounded-2xl',
                     live
-                        ? "bg-rose-500/15 text-rose-300"
-                        : "bg-white/[0.06] text-rose-300/80",
+                        ? 'bg-rose-500/15 text-rose-300'
+                        : 'bg-white/[0.06] text-rose-300/80',
                 )}
             >
                 <StreamBars live={live} count={5} className="h-6" />
@@ -192,7 +192,7 @@ export function LiveCastTile({ className }: { className?: string }) {
                     <OnAir live={live} />
                     {live && (
                         <span className="text-[10px] font-bold text-rose-300">
-                            {tr("НАЖИВО")}
+                            {tr('НАЖИВО')}
                         </span>
                     )}
                 </span>

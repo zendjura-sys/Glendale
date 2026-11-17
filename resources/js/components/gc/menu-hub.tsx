@@ -1,8 +1,8 @@
-import { RpDossier } from "@/components/gc/rp-dossier";
-import { GameCastTile } from "@/components/gc/gamecast-button";
-import { LiveCastTile } from "@/components/gc/livecast-button";
-import type { RailData } from "@/components/gc/rail-widgets";
-import { Link, router, usePage } from "@inertiajs/react";
+import { RpDossier } from '@/components/gc/rp-dossier';
+import { GameCastTile } from '@/components/gc/gamecast-button';
+import { LiveCastTile } from '@/components/gc/livecast-button';
+import type { RailData } from '@/components/gc/rail-widgets';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bookmark,
     ChevronDown,
@@ -30,25 +30,25 @@ import {
     Swords,
     UserPlus,
     UsersRound,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import type { ComponentType, ReactNode } from "react";
-import { AccountSwitcher } from "@/components/gc/account-switcher";
-import { openFeedback } from "@/components/gc/site-extras";
-import { LanguageSelect } from "@/components/gc/language-switcher";
-import { ModuleIcon } from "@/components/gc/module-icon";
-import { PlusBadge, plusNameProps } from "@/components/gc/plus";
-import { StatusDialog } from "@/components/gc/status-dialog";
-import { SoundRow } from "@/components/gc/sound-toggle";
-import { ThemeRow } from "@/components/gc/theme-toggle";
-import { UserAvatar } from "@/components/gc/user-avatar";
-import { VerifiedBadge } from "@/components/gc/verified-badge";
-import { api } from "@/lib/api";
-import { tr } from "@/lib/i18n";
-import { forgetOfflinePages } from "@/lib/offline";
-import { usePlugin } from "@/lib/plugins";
-import { navPrefetch } from "@/lib/prefetch";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { ComponentType, ReactNode } from 'react';
+import { AccountSwitcher } from '@/components/gc/account-switcher';
+import { openFeedback } from '@/components/gc/site-extras';
+import { LanguageSelect } from '@/components/gc/language-switcher';
+import { ModuleIcon } from '@/components/gc/module-icon';
+import { PlusBadge, plusNameProps } from '@/components/gc/plus';
+import { StatusDialog } from '@/components/gc/status-dialog';
+import { SoundRow } from '@/components/gc/sound-toggle';
+import { ThemeRow } from '@/components/gc/theme-toggle';
+import { UserAvatar } from '@/components/gc/user-avatar';
+import { VerifiedBadge } from '@/components/gc/verified-badge';
+import { api } from '@/lib/api';
+import { tr } from '@/lib/i18n';
+import { forgetOfflinePages } from '@/lib/offline';
+import { usePlugin } from '@/lib/plugins';
+import { navPrefetch } from '@/lib/prefetch';
+import { cn } from '@/lib/utils';
 
 type Hub = {
     alerts: {
@@ -62,27 +62,27 @@ type Hub = {
         items: number;
         low_stock: number;
         pending_reports: number;
-        dossier?: NonNullable<NonNullable<RailData["me"]>["family"]>;
+        dossier?: NonNullable<NonNullable<RailData['me']>['family']>;
     } | null;
 };
 
 /** Розділи, що вже мають свою плитку в хабі, — у «Ще розділи» їх не дублюємо. */
 const IN_HUB = new Set([
-    "profile",
-    "servers",
-    "clans",
-    "party",
-    "games",
-    "music",
-    "cinema",
-    "communities",
-    "photos",
-    "phone",
-    "families",
+    'profile',
+    'servers',
+    'clans',
+    'party',
+    'games',
+    'music',
+    'cinema',
+    'communities',
+    'photos',
+    'phone',
+    'families',
 ]);
 
-const block = "gc-solid rounded-2xl p-3";
-const inner = "gc-solid-2 rounded-xl transition hover:bg-[var(--gc-l3)]";
+const block = 'gc-solid rounded-2xl p-3';
+const inner = 'gc-solid-2 rounded-xl transition hover:bg-[var(--gc-l3)]';
 
 function Tile({
     href,
@@ -104,9 +104,9 @@ function Tile({
             prefetch={navPrefetch()}
             cacheFor="2m"
             href={href}
-            className={cn(inner, "flex flex-col gap-2 p-3", className)}
+            className={cn(inner, 'flex flex-col gap-2 p-3', className)}
         >
-            <Icon className={cn("size-5", tone)} />
+            <Icon className={cn('size-5', tone)} />
             <span className="min-w-0">
                 <span className="block truncate text-[13px] font-semibold text-white">
                     {title}
@@ -133,8 +133,8 @@ function Row({
     danger?: boolean;
 }) {
     const cls = cn(
-        "flex min-h-11 w-full items-center gap-3 rounded-xl px-2.5 text-left text-[14px] font-medium transition hover:bg-[var(--gc-l2)]",
-        danger ? "text-red-400" : "text-white/85",
+        'flex min-h-11 w-full items-center gap-3 rounded-xl px-2.5 text-left text-[14px] font-medium transition hover:bg-[var(--gc-l2)]',
+        danger ? 'text-red-400' : 'text-white/85',
     );
     const content = (
         <>
@@ -166,17 +166,17 @@ function Row({
 export function MenuHub({ onClose }: { onClose: () => void }) {
     const { auth, airAlerts, modules, nav } = usePage().props;
     const user = auth.user;
-    const supportOn = usePlugin("support_tickets");
+    const supportOn = usePlugin('support_tickets');
     const [hub, setHub] = useState<Hub | null>(null);
     const [system, setSystem] = useState(false);
     const [more, setMore] = useState(false);
     const [statusOpen, setStatusOpen] = useState(false);
-    const statusOn = usePlugin("status_emoji");
-    const profilePinned = (user.nav_tabs ?? []).includes("profile");
+    const statusOn = usePlugin('status_emoji');
+    const profilePinned = (user.nav_tabs ?? []).includes('profile');
     const on = (key: string) => modules.includes(key);
 
     useEffect(() => {
-        void api<Hub>("GET", "/me/hub")
+        void api<Hub>('GET', '/me/hub')
             .then(setHub)
             .catch(() => undefined);
     }, []);
@@ -257,21 +257,21 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         <button
                             type="button"
                             onClick={() => setStatusOpen(true)}
-                            title={tr("Встановити статус")}
-                            aria-label={tr("Встановити статус")}
+                            title={tr('Встановити статус')}
+                            aria-label={tr('Встановити статус')}
                             className={cn(
                                 inner,
-                                "flex size-10 shrink-0 items-center justify-center text-lg",
+                                'flex size-10 shrink-0 items-center justify-center text-lg',
                             )}
                         >
-                            {user.status_emoji ?? "🙂"}
+                            {user.status_emoji ?? '🙂'}
                         </button>
                     )}
                     <AccountSwitcher
                         variant="quick"
                         rowClass={cn(
                             inner,
-                            "flex size-10 shrink-0 items-center justify-center text-sky-400",
+                            'flex size-10 shrink-0 items-center justify-center text-sky-400',
                         )}
                     />
                 </div>
@@ -286,20 +286,20 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         </span>
                         <span
                             className={cn(
-                                "shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                                'shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
                                 plusActive
-                                    ? "bg-emerald-400/15 text-emerald-400"
-                                    : "bg-[var(--gc-l3)] text-white/60",
+                                    ? 'bg-emerald-400/15 text-emerald-400'
+                                    : 'bg-[var(--gc-l3)] text-white/60',
                             )}
                         >
-                            {plusActive ? tr("Активний") : tr("Не активний")}
+                            {plusActive ? tr('Активний') : tr('Не активний')}
                         </span>
                     </div>
                     <div className="mt-2.5 flex items-center gap-3">
                         <span className="min-w-0 flex-1 text-xs text-white/60">
                             {plusActive
-                                ? tr("Ще {n} дн.", { n: plusDays })
-                                : tr("Рамки, ник, теми й більше")}
+                                ? tr('Ще {n} дн.', { n: plusDays })
+                                : tr('Рамки, ник, теми й більше')}
                         </span>
                         <Link
                             prefetch={navPrefetch()}
@@ -307,7 +307,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                             href="/plus"
                             className="shrink-0 rounded-lg bg-[var(--gc-active)] px-4 py-2 text-xs font-semibold text-sky-400"
                         >
-                            {plusActive ? tr("Продовжити") : tr("Оформити")}
+                            {plusActive ? tr('Продовжити') : tr('Оформити')}
                         </Link>
                     </div>
                 </div>
@@ -319,14 +319,14 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                     prefetch={navPrefetch()}
                     cacheFor="2m"
                     href="/alerts"
-                    className={cn(block, "flex items-center gap-3")}
+                    className={cn(block, 'flex items-center gap-3')}
                 >
                     <span
                         className={cn(
-                            "flex size-10 shrink-0 items-center justify-center rounded-xl",
+                            'flex size-10 shrink-0 items-center justify-center rounded-xl',
                             alerts && alerts.active_count > 0
-                                ? "bg-red-500/15 text-red-400"
-                                : "bg-emerald-400/15 text-emerald-400",
+                                ? 'bg-red-500/15 text-red-400'
+                                : 'bg-emerald-400/15 text-emerald-400',
                         )}
                     >
                         <Siren className="size-5" />
@@ -334,21 +334,21 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                     <span className="min-w-0 flex-1">
                         <span className="block text-[14px] font-semibold text-white">
                             {alerts && alerts.active_count > 0
-                                ? tr("Тривога в {n} обл.", {
+                                ? tr('Тривога в {n} обл.', {
                                       n: alerts.active_count,
                                   })
-                                : tr("Тривог немає")}
+                                : tr('Тривог немає')}
                         </span>
                         <span className="block truncate text-xs text-white/60">
                             {alerts?.region
                                 ? alerts.region.active
-                                    ? tr("{name}: тривога", {
+                                    ? tr('{name}: тривога', {
                                           name: alerts.region.name,
                                       })
-                                    : tr("{name}: спокійно", {
+                                    : tr('{name}: спокійно', {
                                           name: alerts.region.name,
                                       })
-                                : tr("Оберіть свій регіон на мапі")}
+                                : tr('Оберіть свій регіон на мапі')}
                         </span>
                     </span>
                     <ChevronRight className="size-4 text-white/50" />
@@ -356,18 +356,18 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
             )}
 
             {/* 3. Ігровий хаб і RP */}
-            <section className={cn(block, "space-y-2")}>
-                {on("families") &&
+            <section className={cn(block, 'space-y-2')}>
+                {on('families') &&
                     (family ? (
                         <Link
                             prefetch={navPrefetch()}
                             cacheFor="2m"
                             href={`/f/${family.slug}`}
-                            className={cn(inner, "block p-3")}
+                            className={cn(inner, 'block p-3')}
                         >
                             <span className="flex items-center gap-2 text-[13px] font-semibold text-white">
                                 <ShieldHalf className="size-4 text-sky-400" />
-                                {tr("Штаб сім’ї & Казна")}
+                                {tr('Штаб сім’ї & Казна')}
                                 <span className="ml-auto truncate text-xs font-normal text-white/60">
                                     {family.name}
                                 </span>
@@ -376,19 +376,19 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                                 <span className="rounded-lg bg-[var(--gc-l3)] p-2">
                                     <Coins className="mx-auto size-4 text-amber-400" />
                                     <span className="mt-1 block text-sm font-bold text-white tabular-nums">
-                                        {family.treasury.toLocaleString("uk")}
+                                        {family.treasury.toLocaleString('uk')}
                                     </span>
                                     <span className="block text-[10px] text-white/60">
-                                        {tr("Казна")}
+                                        {tr('Казна')}
                                     </span>
                                 </span>
                                 <span className="rounded-lg bg-[var(--gc-l3)] p-2">
                                     <Package
                                         className={cn(
-                                            "mx-auto size-4",
+                                            'mx-auto size-4',
                                             family.low_stock > 0
-                                                ? "text-amber-400"
-                                                : "text-emerald-400",
+                                                ? 'text-amber-400'
+                                                : 'text-emerald-400',
                                         )}
                                     />
                                     <span className="mt-1 block text-sm font-bold text-white tabular-nums">
@@ -396,10 +396,10 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                                     </span>
                                     <span className="block text-[10px] text-white/60">
                                         {family.low_stock > 0
-                                            ? tr("Закінчується: {n}", {
+                                            ? tr('Закінчується: {n}', {
                                                   n: family.low_stock,
                                               })
-                                            : tr("Склад у нормі")}
+                                            : tr('Склад у нормі')}
                                     </span>
                                 </span>
                                 <span className="rounded-lg bg-[var(--gc-l3)] p-2">
@@ -408,7 +408,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                                         {family.pending_reports}
                                     </span>
                                     <span className="block text-[10px] text-white/60">
-                                        {tr("Звітів на перевірці")}
+                                        {tr('Звітів на перевірці')}
                                     </span>
                                 </span>
                             </span>
@@ -418,54 +418,54 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                             prefetch={navPrefetch()}
                             cacheFor="2m"
                             href="/families"
-                            className={cn(inner, "flex items-center gap-3 p-3")}
+                            className={cn(inner, 'flex items-center gap-3 p-3')}
                         >
                             <ShieldHalf className="size-5 text-sky-400" />
                             <span className="min-w-0 flex-1">
                                 <span className="block text-[13px] font-semibold text-white">
-                                    {tr("Штаб сім’ї & Казна")}
+                                    {tr('Штаб сім’ї & Казна')}
                                 </span>
                                 <span className="block text-[11px] text-white/60">
-                                    {tr("Знайдіть сім’ю або створіть свою")}
+                                    {tr('Знайдіть сім’ю або створіть свою')}
                                 </span>
                             </span>
                             <ChevronRight className="size-4 text-white/50" />
                         </Link>
                     ))}
                 <div className="grid grid-cols-2 gap-2">
-                    {on("servers") && (
+                    {on('servers') && (
                         <Tile
                             href="/servers"
                             icon={Server}
-                            title={tr("Сервери GTA")}
-                            hint={tr("Онлайн і моніторинг")}
+                            title={tr('Сервери GTA')}
+                            hint={tr('Онлайн і моніторинг')}
                             tone="text-sky-400"
                         />
                     )}
-                    {on("clans") && (
+                    {on('clans') && (
                         <Tile
                             href="/clans"
                             icon={Swords}
-                            title={tr("Клани & Війни")}
-                            hint={tr("Дипломатія й матчі")}
+                            title={tr('Клани & Війни')}
+                            hint={tr('Дипломатія й матчі')}
                             tone="text-amber-400"
                         />
                     )}
-                    {on("party") && (
+                    {on('party') && (
                         <Tile
                             href="/party"
                             icon={Radar}
-                            title={tr("Пошук паті")}
-                            hint={tr("Хто готовий грати")}
+                            title={tr('Пошук паті')}
+                            hint={tr('Хто готовий грати')}
                             tone="text-emerald-400"
                         />
                     )}
-                    {on("games") && (
+                    {on('games') && (
                         <Tile
                             href="/games"
                             icon={Gamepad2}
-                            title={tr("Ігри & FPS")}
-                            hint={tr("Перевірка ПК, беклог, роздачі")}
+                            title={tr('Ігри & FPS')}
+                            hint={tr('Перевірка ПК, беклог, роздачі')}
                             tone="text-cyan-400"
                         />
                     )}
@@ -476,19 +476,19 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
             </section>
 
             {/* 4. Медіа й спільнота */}
-            <section className={cn(block, "space-y-2")}>
+            <section className={cn(block, 'space-y-2')}>
                 <div className="grid grid-cols-4 gap-2">
                     {(
                         [
-                            ["music", "/music", Music, tr("Музика")],
-                            ["cinema", "/cinema", Clapperboard, tr("Кіно")],
+                            ['music', '/music', Music, tr('Музика')],
+                            ['cinema', '/cinema', Clapperboard, tr('Кіно')],
                             [
-                                "communities",
-                                "/communities",
+                                'communities',
+                                '/communities',
                                 UsersRound,
-                                tr("Спільноти"),
+                                tr('Спільноти'),
                             ],
-                            ["photos", "/photos", Image, tr("Фото")],
+                            ['photos', '/photos', Image, tr('Фото')],
                         ] as const
                     )
                         .filter(([key]) => on(key))
@@ -500,7 +500,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                                 href={href}
                                 className={cn(
                                     inner,
-                                    "flex flex-col items-center gap-1.5 px-1 py-2.5 text-center",
+                                    'flex flex-col items-center gap-1.5 px-1 py-2.5 text-center',
                                 )}
                             >
                                 <Icon className="size-5 text-sky-400" />
@@ -511,18 +511,18 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         ))}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                    {on("phone") && (
+                    {on('phone') && (
                         <Link
                             prefetch={navPrefetch()}
                             cacheFor="2m"
                             href="/phone"
                             className={cn(
                                 inner,
-                                "flex items-center gap-2 px-3 py-2.5 text-[13px] font-medium text-white/85",
+                                'flex items-center gap-2 px-3 py-2.5 text-[13px] font-medium text-white/85',
                             )}
                         >
                             <Phone className="size-4 text-emerald-400" />
-                            {tr("Телефон")}
+                            {tr('Телефон')}
                         </Link>
                     )}
                     <Link
@@ -531,11 +531,11 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                         href="/saved"
                         className={cn(
                             inner,
-                            "flex items-center gap-2 px-3 py-2.5 text-[13px] font-medium text-white/85",
+                            'flex items-center gap-2 px-3 py-2.5 text-[13px] font-medium text-white/85',
                         )}
                     >
                         <Bookmark className="size-4 text-amber-400" />
-                        {tr("Збережене")}
+                        {tr('Збережене')}
                     </Link>
                 </div>
                 {rest.length > 0 && (
@@ -546,11 +546,11 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                             onClick={() => setMore((v) => !v)}
                             className="flex w-full items-center gap-2 px-1 pt-1 text-xs font-semibold text-white/60"
                         >
-                            {tr("Ще розділи")}
+                            {tr('Ще розділи')}
                             <ChevronDown
                                 className={cn(
-                                    "ml-auto size-4 transition-transform",
-                                    more && "rotate-180",
+                                    'ml-auto size-4 transition-transform',
+                                    more && 'rotate-180',
                                 )}
                             />
                         </button>
@@ -564,7 +564,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                                         href={item.href}
                                         className={cn(
                                             inner,
-                                            "flex items-center gap-2 px-2.5 py-2 text-[13px] font-medium text-white/85",
+                                            'flex items-center gap-2 px-2.5 py-2 text-[13px] font-medium text-white/85',
                                         )}
                                     >
                                         <ModuleIcon
@@ -592,34 +592,34 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                     className="flex min-h-10 w-full items-center gap-3 px-2.5 text-left text-[14px] font-semibold text-white"
                 >
                     <Settings className="size-[18px] text-sky-400" />
-                    {tr("Система")}
+                    {tr('Система')}
                     <ChevronDown
                         className={cn(
-                            "ml-auto size-4 transition-transform",
-                            system && "rotate-180",
+                            'ml-auto size-4 transition-transform',
+                            system && 'rotate-180',
                         )}
                     />
                 </button>
                 {system && (
                     <div className="mt-1">
                         <Row href="/settings/profile" icon={Settings}>
-                            {tr("Налаштування")}
+                            {tr('Налаштування')}
                         </Row>
                         <Row href="/settings/navigation" icon={PanelBottom}>
-                            {tr("Налаштувати нижню панель")}
+                            {tr('Налаштувати нижню панель')}
                         </Row>
                         <Row href="/invite" icon={UserPlus}>
-                            {tr("Запросити друзів")}
+                            {tr('Запросити друзів')}
                         </Row>
                         <LanguageSelect className="mx-2.5 my-1.5" />
                         <ThemeRow />
                         <SoundRow />
                         <Row href="/help" icon={LifeBuoy}>
-                            {tr("Довідка")}
+                            {tr('Довідка')}
                         </Row>
                         {supportOn && (
                             <Row href="/support" icon={Headset}>
-                                {tr("Підтримка")}
+                                {tr('Підтримка')}
                             </Row>
                         )}
                         <Row
@@ -629,11 +629,11 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                                 openFeedback();
                             }}
                         >
-                            {tr("Відгук адмінам")}
+                            {tr('Відгук адмінам')}
                         </Row>
-                        {(user.is_admin || user.role === "moderator") && (
+                        {(user.is_admin || user.role === 'moderator') && (
                             <Row href="/admin" icon={ShieldCheck}>
-                                {tr("Адмін-панель")}
+                                {tr('Адмін-панель')}
                             </Row>
                         )}
                         <Row
@@ -641,10 +641,10 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                             danger
                             onClick={() => {
                                 forgetOfflinePages();
-                                router.post("/logout");
+                                router.post('/logout');
                             }}
                         >
-                            {tr("Вийти")}
+                            {tr('Вийти')}
                         </Row>
                     </div>
                 )}

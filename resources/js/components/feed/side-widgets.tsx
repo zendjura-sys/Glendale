@@ -67,7 +67,11 @@ export type SideWidgetsData = {
     } | null;
     giveaways: Giveaway[] | null;
     gamecast: { live: number; listeners: number; shows: Show[] } | null;
-    livecast: { live: number; viewers: number; streams: LiveCastStream[] } | null;
+    livecast: {
+        live: number;
+        viewers: number;
+        streams: LiveCastStream[];
+    } | null;
 };
 
 let cache: SideWidgetsData | null = null;
