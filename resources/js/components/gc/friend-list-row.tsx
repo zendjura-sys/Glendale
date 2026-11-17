@@ -20,6 +20,7 @@ import {
 import { plural } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { friendListAllowed } from '@/lib/modes';
+import { CONTENT_CACHE, contentPrefetch } from '@/lib/prefetch';
 import { cn } from '@/lib/utils';
 import type { FriendList, PersonCard as Person } from '@/types';
 import { FriendButton } from './friend-button';
@@ -57,8 +58,8 @@ export function FriendListRow({ person }: { person: Person }) {
         <div className="gc-list-row">
             <Link
                 href={`/${person.username}`}
-                prefetch="hover"
-                cacheFor="1m"
+                prefetch={contentPrefetch()}
+                cacheFor={CONTENT_CACHE}
                 className="shrink-0"
             >
                 <UserAvatar
@@ -72,8 +73,8 @@ export function FriendListRow({ person }: { person: Person }) {
             <div className="min-w-0 flex-1">
                 <Link
                     href={`/${person.username}`}
-                    prefetch="hover"
-                    cacheFor="1m"
+                    prefetch={contentPrefetch()}
+                    cacheFor={CONTENT_CACHE}
                     className="flex min-w-0 items-center gap-1"
                 >
                     <span
