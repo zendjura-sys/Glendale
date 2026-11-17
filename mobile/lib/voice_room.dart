@@ -72,8 +72,8 @@ class VoiceCall extends ChangeNotifier {
 
   bool get active => status != 'idle';
 
-  /// У дзвінку є відео або демонстрація екрана — показуємо сцену.
-  bool get hasVideo => kind == 'call' && videos.isNotEmpty;
+  /// У дзвінку або LiveCast є відео / екран — показуємо сцену.
+  bool get hasVideo => (kind == 'call' || kind == 'broadcast') && videos.isNotEmpty;
 
   /// Голосова кімната сім’ї чи спільноти.
   Future<void> join(Api api, Map<String, dynamic> room, {required String label, required String route, void Function(Object error)? onError}) async {
@@ -108,6 +108,24 @@ class VoiceCall extends ChangeNotifier {
         roomName = title;
         label = 'GameCast';
         route = '/shows/$id';
+      },
+    );
+  }
+
+  /// LiveCast: нативний відеострім (ведучий публікує, глядачі дивляться).
+  Future<void> broadcast(Api api, int id, String title, {void Function(Object error)? onError}) async {
+    if (kind == 'broadcast' && roomId == id && active) return;
+    await _connect(
+      api,
+      () => api.post(Api.site('/livecast/$id/join')),
+      onError: onError,
+      failure: tr('Не вдалося підключитися до LiveCast.'),
+      meta: () {
+        kind = 'broadcast';
+        roomId = id;
+        roomName = title;
+        label = 'LiveCast';
+        route = '/livecast/$id';
       },
     );
   }
@@ -271,6 +289,7 @@ class VoiceCall extends ChangeNotifier {
     final room = _room;
     final call = kind == 'call' ? callId : null;
     final showId = kind == 'show' ? roomId : null;
+    final broadcastId = kind == 'broadcast' ? roomId : null;
     final api = _api;
     _room = null;
     await room?.disconnect();
@@ -278,6 +297,7 @@ class VoiceCall extends ChangeNotifier {
     // Співрозмовник побачить кінець дзвінка одразу, не чекаючи вебхука LiveKit.
     if (call != null && api != null) unawaited(api.post('/api/v1/calls/$call/leave').then((_) => null, onError: (_) => null));
     if (showId != null && api != null) unawaited(api.post(Api.site('/shows/$showId/leave')).then((_) => null, onError: (_) => null));
+    if (broadcastId != null && api != null) unawaited(api.post(Api.site('/livecast/$broadcastId/leave')).then((_) => null, onError: (_) => null));
   }
 
   Future<void> _reset() async {
@@ -363,12 +383,14 @@ class VoiceCall extends ChangeNotifier {
     return null;
   }
 
-  /// Камера в дзвінку: null — ок, інакше текст помилки.
+  bool get _videoSurface => kind == 'call' || kind == 'broadcast';
+
+  /// Камера в дзвінку / LiveCast: null — ок, інакше текст помилки.
   Future<String?> toggleCamera() async {
-    if (kind != 'call') return tr('Відео доступне лише в дзвінках.');
+    if (!_videoSurface) return tr('Відео доступне в дзвінках і LiveCast.');
     if (micBlocked) return tr('Немає права публікувати відео.');
     final local = _room?.localParticipant;
-    if (local == null) return tr('Спочатку підключіться до дзвінка.');
+    if (local == null) return tr('Спочатку підключіться.');
     final next = !cameraOn;
     try {
       await local.setCameraEnabled(
@@ -411,10 +433,10 @@ class VoiceCall extends ChangeNotifier {
 
   /// Демонстрація екрана (Android / desktop). На iOS потрібен Broadcast Upload Extension.
   Future<String?> toggleScreenShare() async {
-    if (kind != 'call') return tr('Демонстрація екрана доступна в дзвінках.');
+    if (!_videoSurface) return tr('Демонстрація екрана доступна в дзвінках і LiveCast.');
     if (micBlocked) return tr('Немає права публікувати відео.');
     final local = _room?.localParticipant;
-    if (local == null) return tr('Спочатку підключіться до дзвінка.');
+    if (local == null) return tr('Спочатку підключіться.');
     if (screenShareOn) {
       try {
         await local.setScreenShareEnabled(false);
@@ -856,7 +878,7 @@ class _VoiceBarState extends State<VoiceBar> {
                         }
                       : null,
                 ),
-                if (call.kind == 'call') ...[
+                if (call.kind == 'call' || call.kind == 'broadcast') ...[
                   _BarButton(
                     icon: call.cameraOn ? LucideIcons.video : LucideIcons.videoOff,
                     active: call.cameraOn,

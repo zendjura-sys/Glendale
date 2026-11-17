@@ -29,6 +29,7 @@ import {
     Swords,
     UserPlus,
     UsersRound,
+    Video,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ComponentType, ReactNode } from 'react';
@@ -89,19 +90,21 @@ function Tile({
     title,
     hint,
     tone,
+    className,
 }: {
     href: string;
     icon: ComponentType<{ className?: string }>;
     title: string;
     hint: string;
     tone: string;
+    className?: string;
 }) {
     return (
         <Link
             prefetch={navPrefetch()}
             cacheFor="2m"
             href={href}
-            className={cn(inner, 'flex flex-col gap-2 p-3')}
+            className={cn(inner, 'flex flex-col gap-2 p-3', className)}
         >
             <Icon className={cn('size-5', tone)} />
             <span className="min-w-0">
@@ -164,6 +167,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
     const { auth, airAlerts, modules, nav } = usePage().props;
     const user = auth.user;
     const supportOn = usePlugin('support_tickets');
+    const livecastOn = usePlugin('livecast');
     const [hub, setHub] = useState<Hub | null>(null);
     const [system, setSystem] = useState(false);
     const [more, setMore] = useState(false);
@@ -468,6 +472,16 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                     )}
                     {/* GameCast — жива кнопка на ширину двох плиток */}
                     <GameCastTile className="col-span-2" />
+                    {livecastOn && (
+                        <Tile
+                            href="/livecast"
+                            icon={Video}
+                            title="LiveCast"
+                            hint={tr('Стріми камерою чи екраном')}
+                            tone="text-rose-400"
+                            className="col-span-2"
+                        />
+                    )}
                 </div>
             </section>
 

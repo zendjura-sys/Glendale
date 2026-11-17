@@ -40,8 +40,8 @@ export type VoiceVideoTile = {
 
 export type VoiceState = {
     status: 'idle' | 'connecting' | 'connected';
-    kind: 'room' | 'call' | 'show' | null;
-    /** Голосова кімната (kind = room) або шоу (kind = show). */
+    kind: 'room' | 'call' | 'show' | 'broadcast' | null;
+    /** Голосова кімната / шоу / LiveCast. */
     roomId: number | null;
     /** Дзвінок і його бесіда (kind = call). */
     callId: number | null;
@@ -462,10 +462,34 @@ export async function joinShow(show: { id: number; title: string }) {
     );
 }
 
+/** LiveCast: нативний відеострім (ведучий публікує, глядачі дивляться). */
+export async function joinBroadcast(stream: { id: number; title: string }) {
+    if (
+        state.kind === 'broadcast' &&
+        state.roomId === stream.id &&
+        state.status !== 'idle'
+    )
+        return;
+
+    await connect(
+        () => api<Access>('POST', `/livecast/${stream.id}/join`),
+        {
+            kind: 'broadcast',
+            roomId: stream.id,
+            roomName: stream.title,
+            label: 'LiveCast',
+            href: `/livecast/${stream.id}`,
+            owner: null,
+        },
+        tr('Не вдалося підключитися до LiveCast'),
+    );
+}
+
 export async function leaveVoice() {
     const current = room;
     const callId = state.kind === 'call' ? state.callId : null;
     const showId = state.kind === 'show' ? state.roomId : null;
+    const broadcastId = state.kind === 'broadcast' ? state.roomId : null;
     room = null;
     await current?.disconnect().catch(() => undefined);
     cleanup();
@@ -474,6 +498,14 @@ export async function leaveVoice() {
         void api('POST', `/calls/${callId}/leave`).catch(() => undefined);
     if (showId)
         void api('POST', `/shows/${showId}/leave`).catch(() => undefined);
+    if (broadcastId)
+        void api('POST', `/livecast/${broadcastId}/leave`).catch(
+            () => undefined,
+        );
+}
+
+function canPublishVideo(): boolean {
+    return state.kind === 'call' || state.kind === 'broadcast';
 }
 
 async function setMic(on: boolean) {
@@ -509,7 +541,7 @@ export function toggleDeafen() {
 }
 
 async function setCamera(on: boolean) {
-    if (!room || state.kind !== 'call') return;
+    if (!room || !canPublishVideo()) return;
     try {
         await room.localParticipant.setCameraEnabled(on);
         set({ cameraOn: on });
@@ -525,8 +557,8 @@ export function toggleCamera() {
 
         return;
     }
-    if (state.kind !== 'call') {
-        toast(tr('Відео доступне лише в дзвінках'));
+    if (!canPublishVideo()) {
+        toast(tr('Відео доступне в дзвінках і LiveCast'));
 
         return;
     }
@@ -534,7 +566,7 @@ export function toggleCamera() {
 }
 
 async function setScreenShare(on: boolean) {
-    if (!room || state.kind !== 'call') return;
+    if (!room || !canPublishVideo()) return;
     try {
         await room.localParticipant.setScreenShareEnabled(on, {
             audio: true,
@@ -552,8 +584,8 @@ export function toggleScreenShare() {
 
         return;
     }
-    if (state.kind !== 'call') {
-        toast(tr('Демонстрація екрана доступна в дзвінках'));
+    if (!canPublishVideo()) {
+        toast(tr('Демонстрація екрана доступна в дзвінках і LiveCast'));
 
         return;
     }

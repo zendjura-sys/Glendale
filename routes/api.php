@@ -76,6 +76,7 @@ use App\Http\Controllers\LevelController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
 use App\Http\Controllers\LiveNowController;
+use App\Http\Controllers\LiveCastController;
 use App\Http\Controllers\LiveShowController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\LoginRewardController;
@@ -805,6 +806,18 @@ Route::prefix('v1')->group(function () {
             Route::delete('ready', [ReadyToPlayController::class, 'destroy']);
             Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1');
             Route::put('me/presence', [StatusController::class, 'presence'])->middleware('throttle:30,1');
+            // LiveCast — нативні відеостріми (окремо від GameCast).
+            Route::prefix('livecast')->controller(LiveCastController::class)->whereNumber('livecast')->group(function () {
+                Route::get('/', 'index');
+                Route::get('pulse', 'pulse')->middleware('throttle:60,1');
+                Route::post('/', 'store')->middleware('throttle:6,1');
+                Route::get('{livecast}', 'show');
+                Route::get('{livecast}/state', 'state')->middleware('throttle:120,1');
+                Route::post('{livecast}/join', 'join')->middleware('throttle:20,1');
+                Route::post('{livecast}/leave', 'leave');
+                Route::post('{livecast}/end', 'end');
+                Route::post('{livecast}/messages', 'message')->middleware('throttle:60,1');
+            });
             // Шоу наживо: сцена, гості з питанням на таймері, слухачі.
             Route::prefix('shows')->controller(LiveShowController::class)->whereNumber(['show', 'user'])->group(function () {
                 Route::get('/', 'index');

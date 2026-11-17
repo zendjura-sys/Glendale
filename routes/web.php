@@ -73,6 +73,7 @@ use App\Http\Controllers\LevelController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\ListenRoomController;
 use App\Http\Controllers\LiveNowController;
+use App\Http\Controllers\LiveCastController;
 use App\Http\Controllers\LiveShowController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\LoginRewardController;
@@ -378,6 +379,18 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::patch('ideas/{idea}', [IdeaController::class, 'status'])->name('ideas.status');
     Route::get('me/author-stats', [CreatorController::class, 'stats'])->middleware('throttle:30,1')->name('author-stats');
     Route::get('settings/pixel-avatar', [CreatorController::class, 'pixel'])->name('pixel-avatar');
+    // LiveCast — нативні відеостріми (окремо від GameCast).
+    Route::prefix('livecast')->name('livecast.')->controller(LiveCastController::class)->whereNumber('livecast')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('pulse', 'pulse')->middleware('throttle:60,1')->name('pulse');
+        Route::post('/', 'store')->middleware('throttle:6,1')->name('store');
+        Route::get('{livecast}', 'show')->name('show');
+        Route::get('{livecast}/state', 'state')->middleware('throttle:120,1')->name('state');
+        Route::post('{livecast}/join', 'join')->middleware('throttle:20,1')->name('join');
+        Route::post('{livecast}/leave', 'leave')->name('leave');
+        Route::post('{livecast}/end', 'end')->name('end');
+        Route::post('{livecast}/messages', 'message')->middleware('throttle:60,1')->name('messages');
+    });
     // Шоу наживо: сцена, гості з питанням на таймері, слухачі.
     Route::prefix('shows')->name('shows.')->controller(LiveShowController::class)->whereNumber(['show', 'user'])->group(function () {
         Route::get('/', 'index')->name('index');

@@ -31,6 +31,13 @@ class LiveKit
      */
     public const VOICE_SOURCES = ['microphone'];
 
+    /**
+     * Нативні стріми (окремо від GameCast): голос, камера, екран.
+     *
+     * @var list<string>
+     */
+    public const BROADCAST_SOURCES = ['microphone', 'camera', 'screen_share', 'screen_share_audio'];
+
     public function __construct(
         private readonly SiteSettings $settings,
         private readonly EdgeNode $edge,
@@ -132,9 +139,20 @@ class LiveKit
         return is_array($data) ? $data : null;
     }
 
-    /** Вимикає учаснику мікрофон (і не дає ввімкнути, доки модератор не дозволить). */
-    public function setCanPublish(string $room, string $identity, bool $allowed): bool
+    /**
+     * Дозволяє або забирає право публікувати.
+     *
+     * @param  list<string>|null  $sources  lowercase (microphone, camera…); null — лише мікрофон
+     */
+    public function setCanPublish(string $room, string $identity, bool $allowed, ?array $sources = null): bool
     {
+        $list = $allowed
+            ? array_values(array_map(
+                static fn (string $s) => strtoupper($s),
+                $sources ?? self::VOICE_SOURCES,
+            ))
+            : [];
+
         return $this->call('UpdateParticipant', $room, [
             'room' => $room,
             'identity' => $identity,
@@ -142,7 +160,7 @@ class LiveKit
                 'canPublish' => $allowed,
                 'canSubscribe' => true,
                 'canPublishData' => true,
-                'canPublishSources' => $allowed ? ['MICROPHONE'] : [],
+                'canPublishSources' => $list,
             ],
         ]);
     }

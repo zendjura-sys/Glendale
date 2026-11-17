@@ -89,7 +89,7 @@ export function VoiceBar() {
                         <MicOff className="size-4" />
                     )}
                 </button>
-                {voice.kind === 'call' && (
+                {(voice.kind === 'call' || voice.kind === 'broadcast') && (
                     <>
                         <button
                             type="button"

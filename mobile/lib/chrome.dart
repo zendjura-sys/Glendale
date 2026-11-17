@@ -1054,6 +1054,29 @@ class _MenuContentState extends State<MenuContent> {
           const SizedBox(height: 8),
           _gameCastTile(),
         ],
+        if (widget.session.pluginOn('livecast')) ...[
+          const SizedBox(height: 8),
+          _inner(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            onTap: () => widget.onGo('/livecast'),
+            child: Row(children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: _rose.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(LucideIcons.video, size: 22, color: _rose),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('LiveCast', style: body(15, weight: FontWeight.w800)),
+                  Text(tr('Стріми камерою чи екраном'), style: body(12, color: muted)),
+                ]),
+              ),
+              Icon(LucideIcons.chevronRight, size: 18, color: muted),
+            ]),
+          ),
+        ],
       ])),
 
       // 4. Медіа й спільнота

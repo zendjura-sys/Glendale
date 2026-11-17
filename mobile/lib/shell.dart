@@ -79,6 +79,8 @@ String appPathFor(String? sitePath) {
       return parts.length > 1 ? '/podcasts/${rest(1)}' : '/podcasts';
     case 'shows':
       return parts.length > 1 && RegExp(r'^\d+$').hasMatch(parts[1]) ? '/shows/${parts[1]}' : '/shows$query';
+    case 'livecast':
+      return parts.length > 1 && RegExp(r'^\d+$').hasMatch(parts[1]) ? '/livecast/${parts[1]}' : '/livecast';
     case 'ideas':
       return '/ideas';
     case 'status':
