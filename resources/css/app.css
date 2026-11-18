@@ -646,7 +646,7 @@ html[data-palette='copper'] {
     }
 
     .input-glass {
-        background-color: #101428;
+        background-color: #0c1220;
         border: 1px solid rgb(255 255 255 / 0.1);
         transition:
             border-color 0.2s,
@@ -656,9 +656,9 @@ html[data-palette='copper'] {
     .input-glass:focus,
     .input-glass:focus-within {
         outline: none;
-        background-color: #161b34;
-        border-color: rgb(124 140 255 / 0.55);
-        box-shadow: 0 0 0 4px rgb(109 93 252 / 0.16);
+        background-color: #101826;
+        border-color: rgb(47 123 255 / 0.55);
+        box-shadow: 0 0 0 3px rgb(47 123 255 / 0.18);
     }
 }
 
@@ -1176,13 +1176,17 @@ label:has(
  */
 /* Вхід і реєстрація — в темі сайту: поля з м'якою заливкою, тонкою рамкою й акцентним кільцем при фокусі. */
 .auth-card {
-    background: color-mix(in srgb, var(--card) 72%, transparent);
-    border: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent);
+    background: color-mix(
+        in srgb,
+        var(--matte-solid, #0a101c) 88%,
+        transparent
+    );
+    border: 1px solid rgb(255 255 255 / 0.1);
     box-shadow:
-        0 40px 90px -40px rgb(2 6 23 / 0.75),
-        inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent);
-    backdrop-filter: blur(22px) saturate(1.4);
-    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+        0 36px 80px -40px rgb(0 0 0 / 0.78),
+        inset 0 1px 0 rgb(255 255 255 / 0.1);
+    backdrop-filter: blur(24px) saturate(1.35);
+    -webkit-backdrop-filter: blur(24px) saturate(1.35);
 }
 :root[data-theme='light'] .auth-card {
     background: rgb(255 255 255 / 0.78);
@@ -3347,16 +3351,16 @@ html[data-text='xl'] {
 :root[data-skin='gamecon'] .glass-strong {
     background: linear-gradient(
         145deg,
-        rgb(32 34 40 / 0.92) 0%,
-        rgb(20 22 26 / 0.96) 100%
+        rgb(18 24 38 / 0.94) 0%,
+        rgb(10 14 24 / 0.96) 100%
     );
-    border: 1px solid rgb(255 255 255 / 0.08);
+    border: 1px solid rgb(255 255 255 / 0.09);
     box-shadow:
-        0 20px 40px -15px rgb(0 0 0 / 0.7),
-        inset 0 1px 0 0 rgb(255 255 255 / 0.16),
-        inset 0 0 20px rgb(255 255 255 / 0.02);
-    -webkit-backdrop-filter: blur(48px) saturate(190%) contrast(105%);
-    backdrop-filter: blur(48px) saturate(190%) contrast(105%);
+        0 20px 40px -18px rgb(0 0 0 / 0.72),
+        inset 0 1px 0 0 rgb(255 255 255 / 0.12),
+        inset 0 0 18px rgb(255 255 255 / 0.015);
+    -webkit-backdrop-filter: blur(44px) saturate(170%) contrast(104%);
+    backdrop-filter: blur(44px) saturate(170%) contrast(104%);
 }
 @layer components {
     .glass-matte {
@@ -6048,17 +6052,19 @@ html.gc-vk[data-theme='dark']
    Усе інше — 100% непрозорі матові поверхні, щоб текст не зливався з тлом під час прокрутки.
    Без рамок і тіней: ієрархія — щільністю відтінків і відступами. Акцент — небесний (sky).
    ========================================================================== */
+/* Quiet Arena cascade — entire authenticated site via --gc-* / VKUI bridges. */
 html:root.gc-vk[data-theme] {
-    --gc-page: #04070d;
-    --gc-l1: #0b1220;
-    --gc-l2: #121d31;
-    --gc-l3: #18263f;
-    --gc-active: #0b2942;
-    --gc-text: #f8fafc;
-    --gc-text-2: #94a3b8;
-    --gc-accent: #38bdf8;
-    --gc-accent-strong: #0ea5e9;
-    --gc-glass-bg: rgb(9 16 29 / 0.8);
+    --gc-page: #03050a;
+    --gc-l1: #0a101c;
+    --gc-l2: #101826;
+    --gc-l3: #162033;
+    --gc-active: color-mix(in oklab, #2f7bff 18%, #0a101c);
+    --gc-text: #f2f5fb;
+    --gc-text-2: #8b93a8;
+    --gc-hairline: rgb(255 255 255 / 0.08);
+    --gc-accent: #7eb6ff;
+    --gc-accent-strong: #2f7bff;
+    --gc-glass-bg: rgb(10 16 28 / 0.82);
     --vkui--color_background: var(--gc-page);
     --vkui--color_background_content: var(--gc-l1);
     --vkui--color_background_secondary: var(--gc-l2);
@@ -6066,8 +6072,8 @@ html:root.gc-vk[data-theme] {
     --vkui--color_background_tertiary: var(--gc-l2);
     --vkui--color_background_modal: var(--gc-l2);
     --vkui--color_field_background: var(--gc-l2);
-    --vkui--color_field_border_alpha: transparent;
-    --vkui--color_separator_primary: rgb(148 163 184 / 0.1);
+    --vkui--color_field_border_alpha: var(--gc-hairline);
+    --vkui--color_separator_primary: var(--gc-hairline);
     --vkui--color_text_primary: var(--gc-text);
     --vkui--color_text_secondary: var(--gc-text-2);
     --vkui--color_text_subhead: var(--gc-text-2);
@@ -6103,12 +6109,17 @@ html:root.gc-vk[data-theme] body {
     background-image: none !important;
 }
 
-/* Суцільні поверхні: рівень 1 — картка/секція, рівень 2 — вкладений блок, поле, плашка. */
+/* Суцільні поверхні: рівень 1 — картка/секція, рівень 2 — вкладений блок, поле, плашка.
+   Hairline via inset shadow so box size (window layout) stays unchanged. */
 .gc-solid {
     background: var(--gc-l1);
+    box-shadow:
+        inset 0 0 0 1px var(--gc-hairline, rgb(255 255 255 / 0.08)),
+        inset 0 1px 0 rgb(255 255 255 / 0.04);
 }
 .gc-solid-2 {
     background: var(--gc-l2);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
 }
 html:root.gc-vk[data-theme]
     :is(
@@ -6125,7 +6136,9 @@ html:root.gc-vk[data-theme]
     background: var(--gc-l1) !important;
     background-image: none !important;
     border: 0 !important;
-    box-shadow: none !important;
+    box-shadow:
+        inset 0 0 0 1px var(--gc-hairline),
+        inset 0 1px 0 rgb(255 255 255 / 0.04) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     border-radius: 16px !important;
@@ -6134,16 +6147,17 @@ html:root.gc-vk[data-theme]
     :is(.glass, [data-slot='card'], .ios-arctic-card, .gc-post, .gc-solid)
     :is(.glass, [data-slot='card'], .ios-arctic-card, .glass-matte):not(.am *) {
     background: var(--gc-l2) !important;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06) !important;
     border-radius: 12px !important;
 }
 @media (hover: hover) {
     html:root.gc-vk[data-theme]
         a:is(.glass, [data-slot='card'], .ios-arctic-card):not(.am *):hover {
         background: var(--gc-l3) !important;
-        box-shadow: none !important;
+        box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12) !important;
     }
 }
-/* Спливаючі меню й діалоги — суцільні (рівень 2), без тіней. */
+/* Menus / dialogs — solid L2 with quiet hairline (no layout change). */
 html:root.gc-vk[data-theme]
     :is(
         .ios-float,
@@ -6156,7 +6170,10 @@ html:root.gc-vk[data-theme]
     background: var(--gc-l2) !important;
     background-image: none !important;
     border: 0 !important;
-    box-shadow: none !important;
+    box-shadow:
+        inset 0 0 0 1px var(--gc-hairline),
+        inset 0 1px 0 rgb(255 255 255 / 0.06),
+        0 24px 48px -28px rgb(0 0 0 / 0.7) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
 }
@@ -6649,17 +6666,61 @@ html[data-theme='dark'] .am.am-in-site {
     background: transparent;
 }
 
-/* Картка «Офіційний застосунок»: темний градієнт, у світлій темі — світлий із синім відтінком. */
+/* Картка «Офіційний застосунок»: Quiet Arena blue depth. */
 .gc-app-promo {
-    background: linear-gradient(135deg, #123058 0%, #0c1a30 55%, #0a1322 100%);
+    background: linear-gradient(135deg, #0e1a30 0%, #0a1220 55%, #070b14 100%);
+    border: 1px solid rgb(255 255 255 / 0.08);
 }
 :root[data-theme='light'] .gc-app-promo {
-    background: linear-gradient(135deg, #e0f2fe 0%, #f5f9ff 55%, #eef2ff 100%);
+    background: linear-gradient(135deg, #e8f1ff 0%, #f5f8fc 55%, #eef3fa 100%);
 }
 :root[data-theme='light'] .gc-app-promo .gc-sparkle {
-    background-color: #38bdf8;
+    background-color: #2f7bff;
 }
-/* На темному тлі (data-on-dark) картка застосунку лишається темною й у світлій темі. */
 :root[data-theme='light'] [data-on-dark] .gc-app-promo {
-    background: linear-gradient(135deg, #123058 0%, #0c1a30 55%, #0a1322 100%);
+    background: linear-gradient(135deg, #0e1a30 0%, #0a1220 55%, #070b14 100%);
+}
+
+/* ==========================================================================
+   Quiet Arena — site-wide polish (materials only; window layout locked)
+   ========================================================================== */
+html:root.gc-vk[data-theme] .gc-side-link {
+    border-radius: 10px !important;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+html:root.gc-vk[data-theme] .gc-side-link[aria-current='page'] {
+    background: var(--gc-active) !important;
+    color: var(--gc-accent) !important;
+}
+html:root.gc-vk[data-theme] .gc-icon-button {
+    border-radius: 12px;
+    color: var(--gc-text-2);
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+html:root.gc-vk[data-theme] .gc-icon-button:hover {
+    background: var(--gc-l3);
+    color: var(--gc-text);
+}
+html:root.gc-vk[data-theme] .btn-glow,
+html:root.gc-vk[data-theme] .bg-primary {
+    background-color: var(--gc-accent-strong) !important;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16) !important;
+}
+html:root.gc-vk[data-theme] .gc-post {
+    letter-spacing: -0.01em;
+}
+html:root.gc-vk[data-theme] .gc-page h1,
+html:root.gc-vk[data-theme] .gc-page h2 {
+    letter-spacing: -0.025em;
+}
+/* Guest / marketing pages outside .gc-vk inherit Quiet Arena canvas */
+body {
+    background-color: var(--background);
+}
+.gc-post + .gc-post {
+    border-top-color: var(--gc-hairline, rgb(255 255 255 / 0.08));
 }

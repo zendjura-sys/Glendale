@@ -71,6 +71,14 @@ Keep the existing GameCon window format: guest island header, social
 tabbar / player capsules, and current breakpoint column rules. Visual polish
 changes materials and type — **not** panel placement or shell structure.
 
+## Site-wide cascade
+
+Authenticated UI reads Quiet Arena through `html.gc-vk` tokens
+(`--gc-page`, `--gc-l1/2/3`, `--gc-accent*`, `--gc-hairline`) bridged into
+VKUI. Guest/auth/marketing use the same `:root` / `gamecon` skin tokens and
+shared `.glass` / `.auth-card` / header island styles. Prefer token edits in
+`app.css` over one-off page recolors.
+
 ## Do / don't
 
 - Do: taste-skill house rules on new public pages; open-design for decks/audits;

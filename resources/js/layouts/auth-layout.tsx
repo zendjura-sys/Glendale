@@ -59,7 +59,7 @@ function AuthArt() {
     return (
         <div
             aria-hidden
-            className="mt-10 aspect-[16/10] w-full max-w-[30rem] rounded-3xl bg-cover bg-center shadow-[0_30px_80px_-30px_rgb(10_132_255/0.55)]"
+            className="mt-10 aspect-[16/10] w-full max-w-[30rem] rounded-3xl bg-cover bg-center shadow-[0_28px_64px_-36px_rgb(0_0_0_/_0.7)] ring-1 ring-white/10"
             style={{ backgroundImage: `url(${src})` }}
         />
     );
@@ -95,10 +95,13 @@ export default function AuthLayout({
                 <section className="hidden lg:block">
                     <AnimatePresence mode="wait" initial={false}>
                         <m.div key={`hero-${mode}`} {...fade}>
-                            <h2 className="font-display text-[clamp(2.4rem,4.2vw,4rem)] leading-[1.04] font-extrabold tracking-tight text-balance text-white">
+                            <p className="font-display text-lg font-semibold tracking-[-0.03em] text-[#7eb6ff]">
+                                GameCon
+                            </p>
+                            <h2 className="mt-2 font-display text-[clamp(2.4rem,4.2vw,4rem)] leading-[1.04] font-bold tracking-[-0.035em] text-balance text-white">
                                 {intro.title}
                             </h2>
-                            <p className="mt-4 max-w-[36ch] text-[17px] leading-relaxed text-white/60">
+                            <p className="mt-4 max-w-[36ch] text-[17px] leading-relaxed text-white/58">
                                 {intro.text}
                             </p>
                         </m.div>
@@ -110,11 +113,11 @@ export default function AuthLayout({
                     {/* Тонкий акцентний відблиск по верхньому краю картки. */}
                     <span
                         aria-hidden
-                        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,rgb(56_189_248/0.7),transparent)]"
+                        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,rgb(126_182_255/0.65),transparent)]"
                     />
                     <AnimatePresence mode="wait" initial={false}>
                         <m.div key={component} {...fade}>
-                            <h1 className="font-display text-[28px] leading-tight font-bold tracking-tight text-white">
+                            <h1 className="font-display text-[28px] leading-tight font-semibold tracking-[-0.03em] text-white">
                                 {title}
                             </h1>
                             {description && (
