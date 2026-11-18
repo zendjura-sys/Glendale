@@ -2,17 +2,17 @@
 version: 1
 name: GameCon
 description: |
-  Dark-first social network for gamers. Neon blue/indigo accents on deep void
-  canvases, Montserrat Variable for UI and display, glass surfaces, one job
-  per section. Product UI and real game moments carry the page — not abstract
-  mesh gradients alone.
+    Dark-first social network for gamers. Neon blue/indigo accents on deep void
+    canvases, Montserrat Variable for UI and display, glass surfaces, one job
+    per section. Product UI and real game moments carry the page — not abstract
+    mesh gradients alone.
 sources:
-  - design-refs/awesome-design-md/playstation/DESIGN.md
-  - design-refs/awesome-design-md/spotify/DESIGN.md
-  - open-design:discord (voice/chat depth model)
+    - design-refs/awesome-design-md/playstation/DESIGN.md
+    - design-refs/awesome-design-md/spotify/DESIGN.md
+    - open-design:discord (voice/chat depth model)
 skills:
-  - design-taste-frontend
-  - open-design
+    - design-taste-frontend
+    - open-design
 ---
 
 # GameCon design system
@@ -59,12 +59,12 @@ Use this file when restyling or building UI. Brand tokens live in
 
 ## Brand references in-repo
 
-| Brand        | Path                                              | Use when…                          |
-|--------------|---------------------------------------------------|------------------------------------|
-| PlayStation  | `design-refs/awesome-design-md/playstation/`      | Console / launch / chaptered dark  |
-| Spotify      | `design-refs/awesome-design-md/spotify/`          | Media-forward, bold type on dark   |
-| Apple        | `design-refs/awesome-design-md/apple/`            | Quiet premium product storytelling |
-| Nike         | `design-refs/awesome-design-md/nike/`             | Kinetic sport energy               |
-| SpaceX       | `design-refs/awesome-design-md/spacex/`           | Technical, sparse, high-contrast   |
-| Cursor       | `design-refs/awesome-design-md/cursor/`           | Dev-tool density                   |
-| Full set     | `design-refs/awesome-design-md/` (84 brands)      | «сделай в этом стиле»              |
+| Brand       | Path                                         | Use when…                          |
+| ----------- | -------------------------------------------- | ---------------------------------- |
+| PlayStation | `design-refs/awesome-design-md/playstation/` | Console / launch / chaptered dark  |
+| Spotify     | `design-refs/awesome-design-md/spotify/`     | Media-forward, bold type on dark   |
+| Apple       | `design-refs/awesome-design-md/apple/`       | Quiet premium product storytelling |
+| Nike        | `design-refs/awesome-design-md/nike/`        | Kinetic sport energy               |
+| SpaceX      | `design-refs/awesome-design-md/spacex/`      | Technical, sparse, high-contrast   |
+| Cursor      | `design-refs/awesome-design-md/cursor/`      | Dev-tool density                   |
+| Full set    | `design-refs/awesome-design-md/` (84 brands) | «сделай в этом стиле»              |

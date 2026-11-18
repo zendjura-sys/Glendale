@@ -4,319 +4,317 @@ name: Mercury Analysis
 description: An analysis of Mercury's design language — a fintech system that moves between a deep ink-violet night world on the homepage and a pale, near-white light world on its product and pricing pages, held together by one confident indigo action pill, soft translucent secondary pills, gently rounded cards and a quiet custom sans set at unusually light weights.
 
 colors:
-  primary: "#5266eb"
-  on-primary: "#ffffff"
-  periwinkle: "#9cb4e8"
-  canvas: "#fbfcfd"
-  surface: "#ffffff"
-  surface-tint: "#fbfbff"
-  lavender: "#edecfb"
-  night: "#171721"
-  night-raised: "#1e1e2a"
-  ink: "#28253b"
-  ink-secondary: "#554e7b"
-  on-dark: "#ededf3"
-  fog: "#c3c3cc"
-  slate: "#70707d"
+    primary: '#5266eb'
+    on-primary: '#ffffff'
+    periwinkle: '#9cb4e8'
+    canvas: '#fbfcfd'
+    surface: '#ffffff'
+    surface-tint: '#fbfbff'
+    lavender: '#edecfb'
+    night: '#171721'
+    night-raised: '#1e1e2a'
+    ink: '#28253b'
+    ink-secondary: '#554e7b'
+    on-dark: '#ededf3'
+    fog: '#c3c3cc'
+    slate: '#70707d'
 
 typography:
-  display:
-    fontFamily: arcadiaDisplay
-    fontSize: 52px
-    fontWeight: 480
-    lineHeight: 1.1
-    letterSpacing: 0
-  stat:
-    fontFamily: arcadiaDisplay
-    fontSize: 60px
-    fontWeight: 480
-    lineHeight: 1.1
-    letterSpacing: 0
-  heading-1:
-    fontFamily: arcadiaDisplay
-    fontSize: 42px
-    fontWeight: 480
-    lineHeight: 1.15
-    letterSpacing: 0.42px
-  heading-2:
-    fontFamily: arcadiaDisplay
-    fontSize: 28px
-    fontWeight: 480
-    lineHeight: 1.2
-    letterSpacing: 0.42px
-  lead:
-    fontFamily: arcadiaDisplay
-    fontSize: 24px
-    fontWeight: 480
-    lineHeight: 1.2
-    letterSpacing: 0.48px
-  body-lg:
-    fontFamily: arcadia
-    fontSize: 18px
-    fontWeight: 360
-    lineHeight: 1.35
-    letterSpacing: 0
-  body:
-    fontFamily: arcadia
-    fontSize: 16px
-    fontWeight: 400
-    lineHeight: 1.4
-    letterSpacing: 0
-  ui:
-    fontFamily: arcadia
-    fontSize: 16px
-    fontWeight: 420
-    lineHeight: 1
-    letterSpacing: 0
-  ui-sm:
-    fontFamily: arcadia
-    fontSize: 14px
-    fontWeight: 420
-    lineHeight: 1
-    letterSpacing: 0.07px
-  eyebrow:
-    fontFamily: arcadia
-    fontSize: 14px
-    fontWeight: 500
-    lineHeight: 1
-    letterSpacing: 0.28px
-  legal:
-    fontFamily: arcadia
-    fontSize: 12px
-    fontWeight: 400
-    lineHeight: 1.4
-    letterSpacing: 0.24px
+    display:
+        fontFamily: arcadiaDisplay
+        fontSize: 52px
+        fontWeight: 480
+        lineHeight: 1.1
+        letterSpacing: 0
+    stat:
+        fontFamily: arcadiaDisplay
+        fontSize: 60px
+        fontWeight: 480
+        lineHeight: 1.1
+        letterSpacing: 0
+    heading-1:
+        fontFamily: arcadiaDisplay
+        fontSize: 42px
+        fontWeight: 480
+        lineHeight: 1.15
+        letterSpacing: 0.42px
+    heading-2:
+        fontFamily: arcadiaDisplay
+        fontSize: 28px
+        fontWeight: 480
+        lineHeight: 1.2
+        letterSpacing: 0.42px
+    lead:
+        fontFamily: arcadiaDisplay
+        fontSize: 24px
+        fontWeight: 480
+        lineHeight: 1.2
+        letterSpacing: 0.48px
+    body-lg:
+        fontFamily: arcadia
+        fontSize: 18px
+        fontWeight: 360
+        lineHeight: 1.35
+        letterSpacing: 0
+    body:
+        fontFamily: arcadia
+        fontSize: 16px
+        fontWeight: 400
+        lineHeight: 1.4
+        letterSpacing: 0
+    ui:
+        fontFamily: arcadia
+        fontSize: 16px
+        fontWeight: 420
+        lineHeight: 1
+        letterSpacing: 0
+    ui-sm:
+        fontFamily: arcadia
+        fontSize: 14px
+        fontWeight: 420
+        lineHeight: 1
+        letterSpacing: 0.07px
+    eyebrow:
+        fontFamily: arcadia
+        fontSize: 14px
+        fontWeight: 500
+        lineHeight: 1
+        letterSpacing: 0.28px
+    legal:
+        fontFamily: arcadia
+        fontSize: 12px
+        fontWeight: 400
+        lineHeight: 1.4
+        letterSpacing: 0.24px
 
 rounded:
-  none: 0px
-  xs: 4px
-  sm: 8px
-  md: 12px
-  lg: 16px
-  xl: 32px
-  pill: 40px
-  full: 9999px
+    none: 0px
+    xs: 4px
+    sm: 8px
+    md: 12px
+    lg: 16px
+    xl: 32px
+    pill: 40px
+    full: 9999px
 
 spacing:
-  xs: 8px
-  sm: 12px
-  md: 16px
-  lg: 20px
-  xl: 24px
-  xxl: 32px
-  huge: 40px
-  section: 80px
-  section-lg: 128px
+    xs: 8px
+    sm: 12px
+    md: 16px
+    lg: 20px
+    xl: 24px
+    xxl: 32px
+    huge: 40px
+    section: 80px
+    section-lg: 128px
 
 components:
-  # ─── Brand-native components (extracted) ───
-  nav-bar:
-    backgroundColor: "{colors.night}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.ui}"
-    rounded: "{rounded.none}"
-    padding: "16px 32px"
-    height: 72px
+    # ─── Brand-native components (extracted) ───
+    nav-bar:
+        backgroundColor: '{colors.night}'
+        textColor: '{colors.on-dark}'
+        typography: '{typography.ui}'
+        rounded: '{rounded.none}'
+        padding: '16px 32px'
+        height: 72px
 
-  nav-link:
-    textColor: "{colors.on-dark}"
-    typography: "{typography.ui}"
-    rounded: "{rounded.pill}"
-    padding: "0px 20px"
-    height: 40px
+    nav-link:
+        textColor: '{colors.on-dark}'
+        typography: '{typography.ui}'
+        rounded: '{rounded.pill}'
+        padding: '0px 20px'
+        height: 40px
 
-  button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.on-primary}"
-    typography: "{typography.ui}"
-    rounded: "{rounded.xl}"
-    padding: "0px 20px"
-    height: 40px
+    button-primary:
+        backgroundColor: '{colors.primary}'
+        textColor: '{colors.on-primary}'
+        typography: '{typography.ui}'
+        rounded: '{rounded.xl}'
+        padding: '0px 20px'
+        height: 40px
 
-  button-glass-dark:
-    backgroundColor: "rgba(175, 178, 206, 0.2)"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.ui}"
-    rounded: "{rounded.pill}"
-    padding: "0px 20px"
-    height: 40px
+    button-glass-dark:
+        backgroundColor: 'rgba(175, 178, 206, 0.2)'
+        textColor: '{colors.on-dark}'
+        typography: '{typography.ui}'
+        rounded: '{rounded.pill}'
+        padding: '0px 20px'
+        height: 40px
 
-  button-tint-dark:
-    backgroundColor: "rgba(156, 180, 232, 0.2)"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.ui}"
-    rounded: "{rounded.pill}"
-    padding: "0px 20px"
-    height: 40px
+    button-tint-dark:
+        backgroundColor: 'rgba(156, 180, 232, 0.2)'
+        textColor: '{colors.on-dark}'
+        typography: '{typography.ui}'
+        rounded: '{rounded.pill}'
+        padding: '0px 20px'
+        height: 40px
 
-  button-tint-light:
-    backgroundColor: "rgba(82, 102, 235, 0.1)"
-    textColor: "{colors.ink}"
-    typography: "{typography.ui}"
-    rounded: "{rounded.pill}"
-    padding: "0px 20px"
-    height: 40px
+    button-tint-light:
+        backgroundColor: 'rgba(82, 102, 235, 0.1)'
+        textColor: '{colors.ink}'
+        typography: '{typography.ui}'
+        rounded: '{rounded.pill}'
+        padding: '0px 20px'
+        height: 40px
 
-  button-outline-light:
-    backgroundColor: "rgba(112, 115, 147, 0.1)"
-    textColor: "{colors.ink}"
-    typography: "{typography.ui}"
-    rounded: "{rounded.pill}"
-    padding: "0px 20px"
-    height: 40px
+    button-outline-light:
+        backgroundColor: 'rgba(112, 115, 147, 0.1)'
+        textColor: '{colors.ink}'
+        typography: '{typography.ui}'
+        rounded: '{rounded.pill}'
+        padding: '0px 20px'
+        height: 40px
 
-  button-small:
-    backgroundColor: "rgba(82, 102, 235, 0.1)"
-    textColor: "{colors.ink}"
-    typography: "{typography.ui-sm}"
-    rounded: "{rounded.pill}"
-    padding: "0px 16px"
-    height: 32px
+    button-small:
+        backgroundColor: 'rgba(82, 102, 235, 0.1)'
+        textColor: '{colors.ink}'
+        typography: '{typography.ui-sm}'
+        rounded: '{rounded.pill}'
+        padding: '0px 16px'
+        height: 32px
 
-  button-icon-round:
-    textColor: "{colors.on-dark}"
-    rounded: "{rounded.full}"
+    button-icon-round:
+        textColor: '{colors.on-dark}'
+        rounded: '{rounded.full}'
 
-  text-input:
-    textColor: "{colors.ink}"
-    typography: "{typography.ui}"
-    rounded: "{rounded.xl}"
-    padding: "0px 0px 0px 20px"
-    height: 46px
+    text-input:
+        textColor: '{colors.ink}'
+        typography: '{typography.ui}'
+        rounded: '{rounded.xl}'
+        padding: '0px 0px 0px 20px'
+        height: 46px
 
-  email-capture:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    typography: "{typography.ui}"
-    rounded: "{rounded.full}"
+    email-capture:
+        backgroundColor: '{colors.surface}'
+        textColor: '{colors.ink}'
+        typography: '{typography.ui}'
+        rounded: '{rounded.full}'
 
-  feature-card-dark:
-    backgroundColor: "{colors.night-raised}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.heading-2}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.xxl}"
+    feature-card-dark:
+        backgroundColor: '{colors.night-raised}'
+        textColor: '{colors.on-dark}'
+        typography: '{typography.heading-2}'
+        rounded: '{rounded.md}'
+        padding: '{spacing.xxl}'
 
-  feature-card-light:
-    backgroundColor: "{colors.lavender}"
-    textColor: "{colors.ink}"
-    typography: "{typography.heading-2}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.xxl}"
+    feature-card-light:
+        backgroundColor: '{colors.lavender}'
+        textColor: '{colors.ink}'
+        typography: '{typography.heading-2}'
+        rounded: '{rounded.md}'
+        padding: '{spacing.xxl}'
 
-  pricing-card:
-    backgroundColor: "{colors.surface-tint}"
-    textColor: "{colors.ink}"
-    typography: "{typography.heading-2}"
-    rounded: "{rounded.md}"
+    pricing-card:
+        backgroundColor: '{colors.surface-tint}'
+        textColor: '{colors.ink}'
+        typography: '{typography.heading-2}'
+        rounded: '{rounded.md}'
 
-  pricing-tier-column:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.none}"
+    pricing-tier-column:
+        backgroundColor: '{colors.surface}'
+        textColor: '{colors.ink}'
+        typography: '{typography.body}'
+        rounded: '{rounded.none}'
 
-  toggle-switch:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.ink-secondary}"
-    typography: "{typography.ui}"
-    rounded: "{rounded.full}"
+    toggle-switch:
+        backgroundColor: '{colors.primary}'
+        textColor: '{colors.ink-secondary}'
+        typography: '{typography.ui}'
+        rounded: '{rounded.full}'
 
-  accordion-row:
-    textColor: "{colors.ink}"
-    typography: "{typography.ui-sm}"
-    rounded: "{rounded.none}"
-    padding: "10px 0px"
+    accordion-row:
+        textColor: '{colors.ink}'
+        typography: '{typography.ui-sm}'
+        rounded: '{rounded.none}'
+        padding: '10px 0px'
 
-  eyebrow-label:
-    textColor: "{colors.ink-secondary}"
-    typography: "{typography.eyebrow}"
-    rounded: "{rounded.none}"
+    eyebrow-label:
+        textColor: '{colors.ink-secondary}'
+        typography: '{typography.eyebrow}'
+        rounded: '{rounded.none}'
 
-  stat-block:
-    textColor: "{colors.on-dark}"
-    typography: "{typography.stat}"
-    rounded: "{rounded.none}"
+    stat-block:
+        textColor: '{colors.on-dark}'
+        typography: '{typography.stat}'
+        rounded: '{rounded.none}'
 
-  quote-block:
-    textColor: "{colors.ink}"
-    typography: "{typography.lead}"
-    rounded: "{rounded.none}"
+    quote-block:
+        textColor: '{colors.ink}'
+        typography: '{typography.lead}'
+        rounded: '{rounded.none}'
 
-  logo-strip:
-    textColor: "{colors.on-dark}"
-    rounded: "{rounded.none}"
+    logo-strip:
+        textColor: '{colors.on-dark}'
+        rounded: '{rounded.none}'
 
-  site-footer:
-    backgroundColor: "{colors.night}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.legal}"
-    rounded: "{rounded.none}"
+    site-footer:
+        backgroundColor: '{colors.night}'
+        textColor: '{colors.on-dark}'
+        typography: '{typography.legal}'
+        rounded: '{rounded.none}'
 
-  # ─── Examples (illustrative, kit-mirror) ───
+    # ─── Examples (illustrative, kit-mirror) ───
 
-  ex-pricing-tier:
-    description: "Default Pricing tier card. Re-uses feature-card chrome with brand canvas-soft surface."
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    borderColor: "{colors.fog}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.xxl}"
-  ex-pricing-tier-featured:
-    description: "Featured/highlighted tier — polarity-flipped surface (dark fill + light text in light mode, light fill + dark text in dark mode)."
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.on-primary}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.xxl}"
-  ex-product-selector:
-    description: "What's Included summary card — re-purposed for SaaS / B2B verticals (NOT a literal product gallery)."
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.xl}"
-  ex-cart-drawer:
-    description: "Subscription summary — re-purposed for SaaS / B2B (line items per add-on, not literal cart)."
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.xl}"
-    item-divider: "{colors.fog}"
-  ex-app-shell-row:
-    description: "Sidebar nav row inside the App Shell example. Active state uses brand primary as the indicator."
-    backgroundColor: "{colors.canvas}"
-    activeIndicator: "{colors.primary}"
-    rounded: "{rounded.sm}"
-    padding: "{spacing.xs} {spacing.sm}"
-  ex-data-table-cell:
-    description: "Default data-table th + td chrome. Header uses mono-caps eyebrow typography; body uses body-sm."
-    headerBackground: "{colors.surface}"
-    headerTypography: "{typography.eyebrow}"
-    bodyTypography: "{typography.body}"
-    cellPadding: "{spacing.sm} {spacing.md}"
-    rowBorder: "{colors.fog}"
-  ex-auth-form-card:
-    description: "Sign-in / sign-up card. Re-uses feature-card chrome with text-input primitives inside."
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.xxl}"
-  ex-modal-card:
-    description: "Modal dialog surface — same chrome as feature-card with elevated shadow."
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.xxl}"
-  ex-empty-state-card:
-    description: "Empty-state illustration frame."
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.huge}"
-    captionTypography: "{typography.body}"
-  ex-toast:
-    description: "Toast notification surface — feature-card shape + medium shadow."
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.sm} {spacing.md}"
-    typography: "{typography.body}"
-
+    ex-pricing-tier:
+        description: 'Default Pricing tier card. Re-uses feature-card chrome with brand canvas-soft surface.'
+        backgroundColor: '{colors.surface}'
+        textColor: '{colors.ink}'
+        borderColor: '{colors.fog}'
+        rounded: '{rounded.md}'
+        padding: '{spacing.xxl}'
+    ex-pricing-tier-featured:
+        description: 'Featured/highlighted tier — polarity-flipped surface (dark fill + light text in light mode, light fill + dark text in dark mode).'
+        backgroundColor: '{colors.ink}'
+        textColor: '{colors.on-primary}'
+        rounded: '{rounded.md}'
+        padding: '{spacing.xxl}'
+    ex-product-selector:
+        description: "What's Included summary card — re-purposed for SaaS / B2B verticals (NOT a literal product gallery)."
+        backgroundColor: '{colors.surface}'
+        rounded: '{rounded.md}'
+        padding: '{spacing.xl}'
+    ex-cart-drawer:
+        description: 'Subscription summary — re-purposed for SaaS / B2B (line items per add-on, not literal cart).'
+        backgroundColor: '{colors.surface}'
+        rounded: '{rounded.md}'
+        padding: '{spacing.xl}'
+        item-divider: '{colors.fog}'
+    ex-app-shell-row:
+        description: 'Sidebar nav row inside the App Shell example. Active state uses brand primary as the indicator.'
+        backgroundColor: '{colors.canvas}'
+        activeIndicator: '{colors.primary}'
+        rounded: '{rounded.sm}'
+        padding: '{spacing.xs} {spacing.sm}'
+    ex-data-table-cell:
+        description: 'Default data-table th + td chrome. Header uses mono-caps eyebrow typography; body uses body-sm.'
+        headerBackground: '{colors.surface}'
+        headerTypography: '{typography.eyebrow}'
+        bodyTypography: '{typography.body}'
+        cellPadding: '{spacing.sm} {spacing.md}'
+        rowBorder: '{colors.fog}'
+    ex-auth-form-card:
+        description: 'Sign-in / sign-up card. Re-uses feature-card chrome with text-input primitives inside.'
+        backgroundColor: '{colors.surface}'
+        rounded: '{rounded.md}'
+        padding: '{spacing.xxl}'
+    ex-modal-card:
+        description: 'Modal dialog surface — same chrome as feature-card with elevated shadow.'
+        backgroundColor: '{colors.surface}'
+        rounded: '{rounded.md}'
+        padding: '{spacing.xxl}'
+    ex-empty-state-card:
+        description: 'Empty-state illustration frame.'
+        backgroundColor: '{colors.surface}'
+        rounded: '{rounded.md}'
+        padding: '{spacing.huge}'
+        captionTypography: '{typography.body}'
+    ex-toast:
+        description: 'Toast notification surface — feature-card shape + medium shadow.'
+        backgroundColor: '{colors.surface}'
+        rounded: '{rounded.md}'
+        padding: '{spacing.sm} {spacing.md}'
+        typography: '{typography.body}'
 ---
-
 
 ## Overview
 
@@ -327,6 +325,7 @@ One colour carries the actions in both worlds: Mercury Indigo (`{colors.primary}
 Typography is Mercury's own custom family: arcadiaDisplay for headlines and arcadia for text, set at unusually light variable weights (360 for body copy, 420 for UI, 480 for headlines). Nothing on the page is bold in the usual sense. Headlines get presence from size and a hair of extra tracking, not weight.
 
 **Key Characteristics:**
+
 - Two native surface worlds: a dark homepage (`{colors.night}` / `{colors.night-raised}`) and light product pages (`{colors.canvas}` / `{colors.lavender}`), both framed by the night nav and footer.
 - A single saturated action colour, `{colors.primary}`, on a `{rounded.xl}` pill.
 - Secondary actions as translucent capsules (`{rounded.pill}`) rather than outlines or grey buttons.
@@ -339,11 +338,13 @@ Typography is Mercury's own custom family: arcadiaDisplay for headlines and arca
 > Source pages analysed: the homepage, the pricing page, and the business-banking product page.
 
 ### Brand & Accent
+
 - **Mercury Indigo** (`{colors.primary}` — #5266eb): "Open account" pills, the annual-pricing toggle, the brand accent in plan names ("Plus", "Pro"), and the 10% tint behind light-world secondary pills.
 - **On Primary** (`{colors.on-primary}` — #ffffff): labels on indigo.
 - **Periwinkle** (`{colors.periwinkle}` — #9cb4e8): used at 20% opacity as the fill of the "Contact sales" pill on dark sections.
 
 ### Surface
+
 - **Canvas** (`{colors.canvas}` — #fbfcfd): light page background for the product and pricing pages.
 - **Surface** (`{colors.surface}` — #ffffff): tier columns inside the pricing card, and the email-capture field.
 - **Surface Tint** (`{colors.surface-tint}` — #fbfbff): the pricing comparison card wrapper, a whisper cooler than white.
@@ -352,6 +353,7 @@ Typography is Mercury's own custom family: arcadiaDisplay for headlines and arca
 - **Night Raised** (`{colors.night-raised}` — #1e1e2a): feature and spotlight cards on the dark homepage.
 
 ### Text
+
 - **Ink** (`{colors.ink}` — #28253b): headlines and body on light pages.
 - **Ink Secondary** (`{colors.ink-secondary}` — #554e7b): descriptions, captions and eyebrows on light pages.
 - **On Dark** (`{colors.on-dark}` — #ededf3): headlines and primary text on night surfaces.
@@ -361,99 +363,111 @@ Typography is Mercury's own custom family: arcadiaDisplay for headlines and arca
 ## Typography
 
 ### Font Family
+
 - **arcadiaDisplay**: Mercury's custom display face for headlines, stats and large quotes, at weight 480 with slight positive tracking at card sizes.
 - **arcadia**: the matching text face for body copy (360–400), UI labels and buttons (420), and small uppercase eyebrows (500).
 
 ### Hierarchy
 
-| Token | Family | Size | Weight | Line Height | Letter Spacing | Use |
-|---|---|---|---|---|---|---|
-| `{typography.stat}` | arcadiaDisplay | 60px | 480 | 1.1 | 0 | Large stat numerals ("300K+") |
-| `{typography.display}` | arcadiaDisplay | 52px | 480 | 1.1 | 0 | Hero headlines |
-| `{typography.heading-1}` | arcadiaDisplay | 42px | 480 | 1.15 | 0.42px | Section headlines |
-| `{typography.heading-2}` | arcadiaDisplay | 28px | 480 | 1.2 | 0.42px | Card titles, plan names |
-| `{typography.lead}` | arcadiaDisplay | 24px | 480 | 1.2 | 0.48px | Lead statements, pull quotes |
-| `{typography.body-lg}` | arcadia | 18px | 360 | 1.35 | 0 | Card descriptions, intro copy |
-| `{typography.body}` | arcadia | 16px | 400 | 1.4 | 0 | Default body copy |
-| `{typography.ui}` | arcadia | 16px | 420 | 1 | 0 | Buttons, nav, inputs |
-| `{typography.ui-sm}` | arcadia | 14px | 420 | 1 | 0.07px | Small pills, accordion labels |
-| `{typography.eyebrow}` | arcadia | 14px | 500 | 1 | 0.28px | Uppercase eyebrows ("COMPARE PLANS") |
-| `{typography.legal}` | arcadia | 12px | 400 | 1.4 | 0.24px | Disclaimers, footer fine print |
+| Token                    | Family         | Size | Weight | Line Height | Letter Spacing | Use                                  |
+| ------------------------ | -------------- | ---- | ------ | ----------- | -------------- | ------------------------------------ |
+| `{typography.stat}`      | arcadiaDisplay | 60px | 480    | 1.1         | 0              | Large stat numerals ("300K+")        |
+| `{typography.display}`   | arcadiaDisplay | 52px | 480    | 1.1         | 0              | Hero headlines                       |
+| `{typography.heading-1}` | arcadiaDisplay | 42px | 480    | 1.15        | 0.42px         | Section headlines                    |
+| `{typography.heading-2}` | arcadiaDisplay | 28px | 480    | 1.2         | 0.42px         | Card titles, plan names              |
+| `{typography.lead}`      | arcadiaDisplay | 24px | 480    | 1.2         | 0.48px         | Lead statements, pull quotes         |
+| `{typography.body-lg}`   | arcadia        | 18px | 360    | 1.35        | 0              | Card descriptions, intro copy        |
+| `{typography.body}`      | arcadia        | 16px | 400    | 1.4         | 0              | Default body copy                    |
+| `{typography.ui}`        | arcadia        | 16px | 420    | 1           | 0              | Buttons, nav, inputs                 |
+| `{typography.ui-sm}`     | arcadia        | 14px | 420    | 1           | 0.07px         | Small pills, accordion labels        |
+| `{typography.eyebrow}`   | arcadia        | 14px | 500    | 1           | 0.28px         | Uppercase eyebrows ("COMPARE PLANS") |
+| `{typography.legal}`     | arcadia        | 12px | 400    | 1.4         | 0.24px         | Disclaimers, footer fine print       |
 
 ### Principles
+
 - Light weights everywhere: body at 360, UI at 420, headlines at 480. Hierarchy comes from size and colour.
 - Headlines get a touch of positive tracking at card sizes instead of the usual negative tightening.
 - Uppercase is reserved for small eyebrows.
 
 ### Note on Font Substitutes
+
 arcadia and arcadiaDisplay are proprietary. Inter (variable, used at 350–480) is the closest open-source match for both. Keep the light weights, and add about 0.01em of tracking at display sizes to match arcadiaDisplay's open fit.
 
 ## Layout
 
 ### Spacing System
+
 - **Base unit**: 8px.
 - **Tokens**: `{spacing.xs}` 8px · `{spacing.sm}` 12px · `{spacing.md}` 16px · `{spacing.lg}` 20px · `{spacing.xl}` 24px · `{spacing.xxl}` 32px · `{spacing.huge}` 40px · `{spacing.section}` 80px · `{spacing.section-lg}` 128px.
 - Cards pad `{spacing.xxl}` and pills pad 20px horizontally. Sections are separated by `{spacing.section}` to `{spacing.section-lg}` of vertical space on every page.
 
 ### Grid & Container
+
 - Content is centered in a column of roughly 1100–1200px. Headlines are narrower (~600px) and centered.
 - Feature cards run in 2- and 3-up grids. The pricing card is a 3-column comparison table about 900px wide.
 - Split sections pair a text column with a product mockup.
 
 ### Whitespace Philosophy
+
 Generous vertical space and centered headlines give every section a calm, gallery-like pace. Cards rely on fill colour rather than borders to separate from the canvas.
 
 ### Responsive Strategy
 
 #### Breakpoints
-| Name | Width | Key Changes |
-|---|---|---|
-| Desktop | ≥ 1200px | Full nav with dropdown pills; 3-up grids; split sections side by side |
-| Laptop | 1024–1199px | Narrower container; headlines scale down fluidly |
-| Tablet | 768–1023px | Grids go 2-up; split sections stack |
-| Mobile | < 768px | Nav collapses to a menu; single-column cards; the pricing table becomes stacked tiers |
+
+| Name    | Width       | Key Changes                                                                           |
+| ------- | ----------- | ------------------------------------------------------------------------------------- |
+| Desktop | ≥ 1200px    | Full nav with dropdown pills; 3-up grids; split sections side by side                 |
+| Laptop  | 1024–1199px | Narrower container; headlines scale down fluidly                                      |
+| Tablet  | 768–1023px  | Grids go 2-up; split sections stack                                                   |
+| Mobile  | < 768px     | Nav collapses to a menu; single-column cards; the pricing table becomes stacked tiers |
 
 #### Touch Targets
+
 Pills are 40px tall and the email capture is 46px. On touch devices, pad hit areas to 44px.
 
 #### Collapsing Strategy
+
 - Nav dropdown pills collapse into a menu. The "Open account" pill stays visible.
 - Card grids reflow 3 → 2 → 1 columns.
 - Headline sizes are fluid and scale with the viewport.
 - The email capture stacks the field above the button on narrow screens.
 
 #### Image Behavior
+
 Product mockups and illustrations sit inside rounded cards (`{rounded.md}`) or float on the canvas. Hero photography on the homepage is full-bleed and fades into the night canvas.
 
 ## Elevation & Depth
 
-| Level | Treatment | Use |
-|---|---|---|
-| 0 — Flat | No shadow; separated by fill colour | Canvas, cards, pills |
-| 1 — Soft stack | Very faint layered shadow (≈2–9% ink) | Pricing card and product mockups on light pages |
-| 2 — Glow | Photography and luminous illustrations on `{colors.night}` | Homepage hero and feature art |
+| Level          | Treatment                                                  | Use                                             |
+| -------------- | ---------------------------------------------------------- | ----------------------------------------------- |
+| 0 — Flat       | No shadow; separated by fill colour                        | Canvas, cards, pills                            |
+| 1 — Soft stack | Very faint layered shadow (≈2–9% ink)                      | Pricing card and product mockups on light pages |
+| 2 — Glow       | Photography and luminous illustrations on `{colors.night}` | Homepage hero and feature art                   |
 
 Depth is almost entirely tonal: cards lift by one step of colour, not by shadow. The only shadows are hair-thin, low-opacity stacks under the pricing card and floating product mockups.
 
 ### Decorative Depth
+
 The dark homepage uses luminous, softly-lit 3D illustrations (glowing orbs, light trails, fingerprint patterns) that give the night canvas atmosphere without gradients in the UI chrome itself.
 
 ## Shapes
 
 ### Border Radius Scale
 
-| Token | Value | Use |
-|---|---|---|
-| `{rounded.none}` | 0px | Nav, footer, table columns |
-| `{rounded.xs}` | 4px | Small tags, checkboxes |
-| `{rounded.sm}` | 8px | Images, small controls, selects |
-| `{rounded.md}` | 12px | Feature cards, pricing card, regions |
-| `{rounded.lg}` | 16px | Larger panels and media frames |
-| `{rounded.xl}` | 32px | Primary "Open account" pill, input left edge |
-| `{rounded.pill}` | 40px | Secondary and nav pills |
-| `{rounded.full}` | 9999px | Round icon buttons, toggles, email capture |
+| Token            | Value  | Use                                          |
+| ---------------- | ------ | -------------------------------------------- |
+| `{rounded.none}` | 0px    | Nav, footer, table columns                   |
+| `{rounded.xs}`   | 4px    | Small tags, checkboxes                       |
+| `{rounded.sm}`   | 8px    | Images, small controls, selects              |
+| `{rounded.md}`   | 12px   | Feature cards, pricing card, regions         |
+| `{rounded.lg}`   | 16px   | Larger panels and media frames               |
+| `{rounded.xl}`   | 32px   | Primary "Open account" pill, input left edge |
+| `{rounded.pill}` | 40px   | Secondary and nav pills                      |
+| `{rounded.full}` | 9999px | Round icon buttons, toggles, email capture   |
 
 ### Photography Geometry
+
 Product screenshots and illustrations sit in `{rounded.md}` or `{rounded.lg}` frames. Hero photography is full-bleed. Customer logos appear as a flat monochrome strip.
 
 ## Components
@@ -519,39 +533,49 @@ Product screenshots and illustrations sit in `{rounded.md}` or `{rounded.lg}` fr
 > Auto-derived kit-mirror demonstration surfaces (`scripts/derive-examples-block.mjs`). Each `ex-*` entry references brand-native primitives so downstream consumers (`/preview-design`, `/generate-kit`) re-skin the same 10 surfaces consistently.
 
 **`ex-pricing-tier`** — Default Pricing tier card. Re-uses feature-card chrome with brand canvas-soft surface.
+
 - Properties: `backgroundColor`, `textColor`, `borderColor`, `rounded`, `padding`
 
 **`ex-pricing-tier-featured`** — Featured/highlighted tier — polarity-flipped surface (dark fill + light text in light mode, light fill + dark text in dark mode).
+
 - Properties: `backgroundColor`, `textColor`, `rounded`, `padding`
 
 **`ex-product-selector`** — What's Included summary card — re-purposed for SaaS / B2B verticals (NOT a literal product gallery).
+
 - Properties: `backgroundColor`, `rounded`, `padding`
 
 **`ex-cart-drawer`** — Subscription summary — re-purposed for SaaS / B2B (line items per add-on, not literal cart).
+
 - Properties: `backgroundColor`, `rounded`, `padding`, `item-divider`
 
 **`ex-app-shell-row`** — Sidebar nav row inside the App Shell example. Active state uses brand primary as the indicator.
+
 - Properties: `backgroundColor`, `activeIndicator`, `rounded`, `padding`
 
 **`ex-data-table-cell`** — Default data-table th + td chrome. Header uses mono-caps eyebrow typography; body uses body-sm.
+
 - Properties: `headerBackground`, `headerTypography`, `bodyTypography`, `cellPadding`, `rowBorder`
 
 **`ex-auth-form-card`** — Sign-in / sign-up card. Re-uses feature-card chrome with text-input primitives inside.
+
 - Properties: `backgroundColor`, `rounded`, `padding`
 
 **`ex-modal-card`** — Modal dialog surface — same chrome as feature-card with elevated shadow.
+
 - Properties: `backgroundColor`, `rounded`, `padding`
 
 **`ex-empty-state-card`** — Empty-state illustration frame.
+
 - Properties: `backgroundColor`, `rounded`, `padding`, `captionTypography`
 
 **`ex-toast`** — Toast notification surface — feature-card shape + medium shadow.
-- Properties: `backgroundColor`, `rounded`, `padding`, `typography`
 
+- Properties: `backgroundColor`, `rounded`, `padding`, `typography`
 
 ## Do's and Don'ts
 
 ### Do
+
 - Use `{colors.primary}` for the single most important action on a view, usually "Open account".
 - Make secondary actions translucent pills (`{rounded.pill}`): lavender-grey or periwinkle on dark, indigo or grey-violet tints on light.
 - Frame light pages with the `{colors.night}` nav and footer.
@@ -560,6 +584,7 @@ Product screenshots and illustrations sit in `{rounded.md}` or `{rounded.lg}` fr
 - Center section headlines and give sections `{spacing.section}` or more of vertical space.
 
 ### Don't
+
 - Don't use more than one solid `{colors.primary}` button in a group. Everything else stays translucent.
 - Don't set text in heavy bold weights. The brand never goes above 500.
 - Don't use hard outlined buttons or square corners on actions.
