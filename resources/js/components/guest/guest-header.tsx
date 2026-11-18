@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { CircleHelp } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { LanguageButton } from '@/components/gc/language-switcher';
 import { Logo } from '@/components/gc/logo';
 import { ThemeButton } from '@/components/gc/theme-toggle';
@@ -7,24 +8,40 @@ import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 /**
- * Шапка гостьових сторінок (головна, вхід, реєстрація, відкриті сторінки): та сама скрізь,
- * тож перехід між ними — без стрибків. Значок теми поруч із кнопками.
+ * Шапка гостьових сторінок: той самий острів-макет (liquid-glass bar),
+ * що й раніше — Quiet Arena лише згущує скло після скролу й додає верхній блік.
  */
 export function GuestHeader() {
     const page = usePage();
     const open = page.props.site?.registration_open !== false;
     const path = page.url.split('?')[0];
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 8);
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
 
     return (
         <header className="fixed inset-x-0 top-0 z-40 pt-[env(safe-area-inset-top)]">
-            <div className="liquid-glass liquid-glass--dense mx-2 mt-2 flex h-14 items-center gap-2 rounded-2xl px-3 sm:mx-3 sm:px-4 xl:mx-auto xl:max-w-[1240px]">
+            <div
+                className={cn(
+                    'liquid-glass liquid-glass--dense relative mx-2 mt-2 flex h-14 items-center gap-2 rounded-2xl px-3 transition-[background-color,box-shadow] duration-300 sm:mx-3 sm:px-4 xl:mx-auto xl:max-w-[1240px]',
+                    scrolled && 'shadow-[0_18px_48px_-24px_rgb(0_0_0_/_0.75)]',
+                )}
+            >
+                <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                />
                 <Link href="/" aria-label="GameCon" className="shrink-0">
-                    {/* На вузьких екранах — лише знак, щоб кнопки не вилазили за край. */}
                     <Logo compact className="min-[420px]:hidden" />
                     <Logo className="max-[419px]:hidden" />
                 </Link>
                 <nav className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1.5">
-                    {/* Довідка, мова й тема — тихі іконки поруч; на вузьких екранах лише іконки, а довідка (є й у футері) ховається до 400 px. */}
                     <Link
                         href="/help"
                         aria-label={tr('Довідка')}

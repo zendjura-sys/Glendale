@@ -66,12 +66,12 @@ function Reveal({
 
 function MockPost() {
     return (
-        <div className="glass-strong w-[330px] rounded-2xl p-4 shadow-[0_30px_80px_-30px_rgb(10_132_255/0.6)]">
+        <div className="glass-strong w-[330px] rounded-2xl p-4 shadow-[0_28px_64px_-36px_rgb(0_0_0_/_0.75)]">
             <div className="flex items-center gap-3">
                 {/* Макет без сторонніх картинок: перша сторінка не ходить на чужі сервери. */}
                 <span
                     aria-hidden
-                    className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 text-sm font-bold text-white"
+                    className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-[#2f7bff] to-[#1d4ed8] text-sm font-semibold text-white"
                 >
                     СМ
                 </span>
@@ -85,18 +85,18 @@ function MockPost() {
                     </div>
                 </div>
             </div>
-            <p className="mt-3 text-[13px] leading-relaxed text-white/75">
+            <p className="mt-3 text-[13px] leading-relaxed text-white/70">
                 {tr(
                     'Сім’я взяла бізвар! Дякую всім, хто був на зборі 🔥 У п’ятницю — турнір, записуйтесь.',
                 )}
             </p>
             <div
                 aria-hidden
-                className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_75%_25%,#38bdf8_0,#4f46e5_38%,#1e1b4b_70%,#0b1220_100%)]"
+                className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_72%_22%,#4d9bff_0%,#1e3a8a_42%,#0a1020_78%,#03050a_100%)]"
             >
                 <div className="absolute inset-x-6 bottom-5 h-2 rounded-full bg-white/20" />
                 <div className="absolute bottom-5 left-6 h-2 w-2/3 rounded-full bg-white/80" />
-                <Trophy className="absolute top-5 left-6 size-9 text-amber-300 drop-shadow-[0_0_16px_rgba(251,191,36,0.7)]" />
+                <Trophy className="absolute top-5 left-6 size-9 text-amber-300/90" />
             </div>
             <div className="mt-3 flex items-center gap-4 text-xs text-white/50">
                 <span className="flex items-center gap-1.5 text-rose-400">
@@ -401,16 +401,16 @@ export default function Welcome({
                     >
                         <p
                             data-enter
-                            className="font-display text-[clamp(1.15rem,2.4vw,1.65rem)] font-semibold tracking-[0.04em] text-sky-300/95"
+                            className="font-display text-[clamp(1.2rem,2.5vw,1.7rem)] font-semibold tracking-[-0.03em] text-[#7eb6ff]"
                         >
                             GameCon
                         </p>
-                        <h1 className="mt-3 font-display text-[clamp(2.6rem,6vw,4.8rem)] leading-[1.02] font-extrabold tracking-tight text-white">
+                        <h1 className="mt-3 font-display text-[clamp(2.6rem,6vw,4.8rem)] leading-[1.02] font-bold tracking-[-0.035em] text-white">
                             {tr('Твоя гра.')}
                             <br />
                             {tr('Твоя команда.')}
                         </h1>
-                        <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-white/60">
+                        <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-white/58">
                             {tagline ||
                                 tr(
                                     'Друзі, сервери GTA RP, сім’ї й клани, голосові кімнати, турніри та колекційні картки — усе, що потрібно, щоб грати не самому.',
@@ -466,7 +466,7 @@ export default function Welcome({
                     </m.div>
 
                     <div className="relative hidden h-[540px] lg:block">
-                        <div className="absolute inset-0 m-auto size-[440px] rounded-full bg-sky-500/20 blur-[100px]" />
+                        <div className="absolute inset-0 m-auto size-[420px] rounded-full bg-[#2f7bff]/14 blur-[110px]" />
                         <m.div
                             initial={reduce ? false : { opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -504,7 +504,7 @@ export default function Welcome({
                 </section>
 
                 <section className="mx-auto max-w-[1240px] px-5 pb-10">
-                    <Reveal className="glass grid grid-cols-3 divide-x divide-white/[0.08] rounded-2xl py-6">
+                    <Reveal className="glass grid grid-cols-3 divide-x divide-white/[0.07] rounded-2xl py-6">
                         {[
                             {
                                 value: compactNumber(stats.users),
@@ -520,10 +520,10 @@ export default function Welcome({
                             },
                         ].map((s) => (
                             <div key={s.label} className="text-center">
-                                <div className="font-display text-3xl font-bold text-white sm:text-4xl">
+                                <div className="font-display text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">
                                     {s.value}
                                 </div>
-                                <div className="mt-1 text-xs text-white/50">
+                                <div className="mt-1 text-xs text-white/48">
                                     {s.label}
                                 </div>
                             </div>
@@ -533,7 +533,7 @@ export default function Welcome({
 
                 <section className="mx-auto max-w-[1240px] px-5 py-16">
                     <Reveal className="max-w-2xl">
-                        <h2 className="font-display text-[clamp(1.9rem,3.6vw,2.8rem)] leading-tight font-bold text-white">
+                        <h2 className="font-display text-[clamp(1.9rem,3.6vw,2.8rem)] leading-tight font-semibold tracking-[-0.03em] text-white">
                             {tr('Усе для гри разом — в одному місці')}
                         </h2>
                         <p className="mt-3 text-white/55">
@@ -553,10 +553,10 @@ export default function Welcome({
                                     t.className,
                                 )}
                             >
-                                <span className="flex size-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-400">
+                                <span className="flex size-11 items-center justify-center rounded-xl bg-[#2f7bff]/14 text-[#7eb6ff]">
                                     <t.icon className="size-5" aria-hidden />
                                 </span>
-                                <h3 className="mt-4 text-lg font-semibold text-white">
+                                <h3 className="mt-4 text-lg font-semibold tracking-[-0.02em] text-white">
                                     {t.title}
                                 </h3>
                                 <p className="mt-1.5 text-sm leading-relaxed text-white/55">
@@ -617,14 +617,14 @@ export default function Welcome({
                             className="absolute inset-0"
                             style={{
                                 background:
-                                    'radial-gradient(120% 140% at 0% 0%, #2563eb 0%, transparent 55%), radial-gradient(90% 120% at 100% 100%, #4f46e5 0%, transparent 60%), #0b1220',
+                                    'radial-gradient(110% 120% at 8% 0%, rgb(47 123 255 / 0.35) 0%, transparent 52%), radial-gradient(90% 100% at 100% 100%, rgb(34 211 238 / 0.12) 0%, transparent 55%), #070b14',
                             }}
                         />
                         <div data-on-dark className="relative">
-                            <h2 className="font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-bold text-white">
+                            <h2 className="font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-semibold tracking-[-0.03em] text-white">
                                 {tr('Твоя команда вже тут')}
                             </h2>
-                            <p className="mx-auto mt-3 max-w-md text-white/70">
+                            <p className="mx-auto mt-3 max-w-md text-white/65">
                                 {tr(
                                     'Реєстрація займає хвилину. Без реклами в стрічці друзів.',
                                 )}
@@ -633,7 +633,7 @@ export default function Welcome({
                                 {canRegister && (
                                     <Link
                                         href={register()}
-                                        className="inline-flex h-13 items-center gap-2 rounded-2xl bg-white px-8 text-[15px] font-semibold text-[#0b1220]"
+                                        className="inline-flex h-13 items-center gap-2 rounded-2xl bg-white px-8 text-[15px] font-semibold text-[#03050a]"
                                     >
                                         {tr('Приєднатися безкоштовно')}
                                     </Link>

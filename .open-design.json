@@ -1,17 +1,18 @@
 {
     "version": 1,
     "designSystem": {
-        "slug": "discord",
-        "path": "design-systems/discord",
-        "note": "Voice/chat dark-first depth model. GameCon tokens override colors — see root DESIGN.md."
+        "slug": "linear-app",
+        "path": "design-systems/linear-app",
+        "note": "Quiet luxury depth. GameCon Quiet Arena tokens override — see DESIGN.md."
     },
     "skill": {
-        "slug": "saas-landing",
-        "path": "design-templates/saas-landing",
+        "slug": "web-prototype",
+        "path": "design-templates/web-prototype",
         "kind": "design-template",
         "mode": "prototype"
     },
     "projectDesignMd": "DESIGN.md",
     "awesomeDesignMd": "design-refs/awesome-design-md",
-    "boundAt": "2026-11-18T00:34:36Z"
+    "direction": "Quiet Arena",
+    "boundAt": "2026-11-18T00:50:00Z"
 }

@@ -168,51 +168,50 @@
 
 :root,
 .dark {
-    /* Матеріали (стиль Dune): морозне скло — звичайні картки; матова плита — меню, діалоги, острови. */
-    --glass: rgb(26 24 32 / 0.46);
-    --glass-rim: rgb(255 255 255 / 0.16);
-    --matte: rgb(36 33 38 / 0.94);
-    --matte-solid: rgb(36 33 38);
-    --background: #05070f;
-    --foreground: #eef1ff;
-    --card: rgb(255 255 255 / 0.035);
-    --card-foreground: #eef1ff;
-    --popover: #0d1222;
-    --popover-foreground: #eef1ff;
-    --primary: #6d7dff;
+    /* Quiet Arena: near-black canvas, hairline glass, one blue accent. */
+    --glass: rgb(14 18 28 / 0.55);
+    --glass-rim: rgb(255 255 255 / 0.1);
+    --matte: rgb(16 20 32 / 0.92);
+    --matte-solid: rgb(14 18 28);
+    --background: #03050a;
+    --foreground: #f4f6fb;
+    --card: rgb(255 255 255 / 0.03);
+    --card-foreground: #f4f6fb;
+    --popover: #0b0f18;
+    --popover-foreground: #f4f6fb;
+    --primary: #2f7bff;
     --primary-foreground: #ffffff;
-    --secondary: rgb(255 255 255 / 0.06);
-    --secondary-foreground: #e6e9f8;
-    --muted: rgb(255 255 255 / 0.05);
-    --muted-foreground: #8b93b3;
-    --accent: rgb(255 255 255 / 0.07);
-    --accent-foreground: #f4f6ff;
+    --secondary: rgb(255 255 255 / 0.055);
+    --secondary-foreground: #e8ecf6;
+    --muted: rgb(255 255 255 / 0.045);
+    --muted-foreground: #8b93a8;
+    --accent: rgb(255 255 255 / 0.06);
+    --accent-foreground: #f4f6fb;
     --destructive: #ff4d6d;
     --destructive-foreground: #ff8fa3;
-    --border: rgb(255 255 255 / 0.08);
+    --border: rgb(255 255 255 / 0.09);
     --input: rgb(255 255 255 / 0.1);
-    --ring: #7c8cff;
-    --chart-1: #4f8bff;
-    --chart-2: #a855f7;
-    --chart-3: #38e1ff;
+    --ring: #4d9bff;
+    --chart-1: #2f7bff;
+    --chart-2: #3d63ff;
+    --chart-3: #22d3ee;
     --chart-4: #f5c451;
-    --chart-5: #f04fd8;
+    --chart-5: #38bdf8;
     --radius: 0.875rem;
-    --sidebar: #070a16;
-    --sidebar-foreground: #dfe3f7;
-    --sidebar-primary: #6d7dff;
+    --sidebar: #060912;
+    --sidebar-foreground: #dfe3f0;
+    --sidebar-primary: #2f7bff;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: rgb(255 255 255 / 0.06);
+    --sidebar-accent: rgb(255 255 255 / 0.055);
     --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: rgb(255 255 255 / 0.07);
-    --sidebar-ring: #7c8cff;
+    --sidebar-border: rgb(255 255 255 / 0.08);
+    --sidebar-ring: #4d9bff;
 
     --gc-gradient: linear-gradient(
         120deg,
         var(--color-gc-blue) 0%,
-        var(--color-gc-indigo) 45%,
-        var(--color-gc-purple) 80%,
-        var(--color-gc-pink) 100%
+        var(--color-gc-indigo) 55%,
+        var(--color-gc-cyan) 100%
     );
 }
 
@@ -467,39 +466,47 @@ html[data-palette='copper'] {
 }
 
 @layer components {
-    /* Скляна панель: основна поверхня інтерфейсу */
+    /* Quiet Arena glass: hairline rim, soft depth, quiet specular. */
     .glass {
         position: relative;
         background:
             linear-gradient(
                 180deg,
-                rgb(255 255 255 / 0.07),
-                rgb(255 255 255 / 0.015) 45%
+                rgb(255 255 255 / 0.055),
+                rgb(255 255 255 / 0.012) 48%
             ),
             var(--glass);
         border: 1px solid var(--glass-rim);
         box-shadow:
-            inset 0 1px 0 rgb(255 255 255 / 0.14),
-            0 24px 60px -30px rgb(0 0 0 / 0.55);
-        -webkit-backdrop-filter: blur(30px) saturate(150%);
-        backdrop-filter: blur(30px) saturate(150%);
+            inset 0 1px 0 rgb(255 255 255 / 0.1),
+            0 20px 48px -28px rgb(0 0 0 / 0.65);
+        -webkit-backdrop-filter: blur(28px) saturate(140%);
+        backdrop-filter: blur(28px) saturate(140%);
+        transition:
+            transform 0.2s ease,
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+    a.glass:hover,
+    button.glass:hover {
+        border-color: rgb(255 255 255 / 0.14);
+        transform: translateY(-1px);
     }
 
-    /* Матова плита (як «Charging Stats»): майже непрозора, тепла, без яскравої рамки. */
     .glass-strong {
         background:
             linear-gradient(
                 180deg,
-                rgb(255 255 255 / 0.05),
+                rgb(255 255 255 / 0.04),
                 rgb(255 255 255 / 0.01) 50%
             ),
             var(--matte);
-        border: 1px solid rgb(255 255 255 / 0.06);
+        border: 1px solid rgb(255 255 255 / 0.08);
         box-shadow:
-            inset 0 1px 0 rgb(255 255 255 / 0.08),
-            0 30px 80px -30px rgb(0 0 0 / 0.75);
-        -webkit-backdrop-filter: blur(24px) saturate(130%);
-        backdrop-filter: blur(24px) saturate(130%);
+            inset 0 1px 0 rgb(255 255 255 / 0.07),
+            0 28px 70px -32px rgb(0 0 0 / 0.78);
+        -webkit-backdrop-filter: blur(22px) saturate(125%);
+        backdrop-filter: blur(22px) saturate(125%);
     }
 
     /* Градієнтна рамка через маску */
@@ -2788,39 +2795,37 @@ html[data-text='xl'] {
 
 :root[data-skin='gamecon'] {
     /*
-     * Шкала кутів — ледь заокруглені: значки 6, кнопки й поля 10, меню 10, картки 12, діалоги 14 px.
-     * rounded-2xl/3xl у розмітці теж дають 12 px — великих «бульбашок» немає.
+     * Quiet Arena radii: chips 6, controls 10, cards 12–14 — restrained, not bubbly.
      */
     --radius: 0.625rem;
     --radius-xl: 0.625rem;
     --radius-2xl: 0.75rem;
-    --radius-3xl: 0.75rem;
+    --radius-3xl: 0.875rem;
     --radius-chip: 0.375rem;
     --radius-control: 0.625rem;
     --radius-dialog: 0.875rem;
     --radius-menu: 0.625rem;
-    --background: #050913;
-    --foreground: #e9f0ff;
-    --card: rgb(255 255 255 / 0.04);
-    --card-foreground: #e9f0ff;
-    --popover: #0c1428;
-    --popover-foreground: #e9f0ff;
-    --muted-foreground: #8c9cc2;
-    --border: rgb(255 255 255 / 0.07);
-    --sidebar: #070d1c;
-    --glass: rgb(22 33 64 / 0.52);
-    --glass-rim: transparent;
-    --matte: rgb(12 19 37 / 0.9);
-    --matte-solid: #0d1427;
-    /* Плаский стиль: глибина — лише прозорість і розмиття; тінь — тільки в спливаючих меню. */
-    --gc-shadow: none;
-    --gc-float: 0 18px 48px -20px rgb(0 0 0 / 0.7);
+    --background: #03050a;
+    --foreground: #f2f5fb;
+    --card: rgb(255 255 255 / 0.035);
+    --card-foreground: #f2f5fb;
+    --popover: #0a101c;
+    --popover-foreground: #f2f5fb;
+    --muted-foreground: #8793ad;
+    --border: rgb(255 255 255 / 0.09);
+    --sidebar: #060a14;
+    --glass: rgb(12 18 32 / 0.58);
+    --glass-rim: rgb(255 255 255 / 0.09);
+    --matte: rgb(10 15 28 / 0.92);
+    --matte-solid: #0a101c;
+    --gc-shadow: 0 12px 36px -22px rgb(0 0 0 / 0.72);
+    --gc-float: 0 18px 48px -22px rgb(0 0 0 / 0.72);
     --gc-glow: transparent;
-    --gc-bar: rgb(9 14 30 / 0.9);
-    --gc-island: rgb(16 25 50 / 0.93);
-    --gc-island-shadow: 0 10px 30px -14px rgb(0 0 0 / 0.7);
-    --gc-hover: rgb(255 255 255 / 0.06);
-    --gc-active: color-mix(in oklab, var(--primary) 18%, transparent);
+    --gc-bar: rgb(6 10 18 / 0.92);
+    --gc-island: rgb(12 18 32 / 0.94);
+    --gc-island-shadow: 0 12px 32px -16px rgb(0 0 0 / 0.75);
+    --gc-hover: rgb(255 255 255 / 0.055);
+    --gc-active: color-mix(in oklab, var(--primary) 16%, transparent);
 }
 /* Розділ «Музика» (.am) зберігає власну шкалу кутів iOS — і для діалогів, що відкриваються з нього. */
 :root[data-skin='gamecon']:has(.am:not(.am-in-site)) {
@@ -3159,23 +3164,32 @@ html[data-text='xl'] {
     background-color: rgb(13 27 46 / 0.16);
 }
 
-/* ---------- Поверхні: матове скло без рамок ---------- */
+/* Quiet Arena surfaces: matte glass with quiet hairlines (not frameless neon). */
 :root[data-skin='gamecon'] .glass,
 :root[data-skin='gamecon'] .liquid-glass {
     background: var(--glass);
-    border-color: transparent;
-    box-shadow: var(--gc-shadow);
+    border-color: var(--glass-rim);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.08),
+        var(--gc-shadow);
 }
 :root[data-skin='gamecon'] .glass-strong {
     background: var(--matte);
-    border-color: transparent;
-    box-shadow: var(--gc-float);
+    border-color: var(--border);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.06),
+        var(--gc-float);
 }
 :root[data-skin='gamecon'] .liquid-glass--dense {
     background: var(--matte-solid);
-    box-shadow: var(--gc-float);
+    border-color: var(--glass-rim);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.1),
+        var(--gc-float);
 }
-:root[data-skin='gamecon'] .liquid-glass::after,
+:root[data-skin='gamecon'] .liquid-glass::after {
+    opacity: 0.55;
+}
 :root[data-skin='gamecon'] .liquid-glass__glare,
 :root[data-skin='gamecon'] .gradient-border::before,
 :root[data-skin='gamecon'] .glow-ring::before {
@@ -6223,11 +6237,11 @@ html:root.gc-vk[data-theme] .ios-glass-panel .ios-glass-panel {
     box-shadow: inset 0 1px 0 0 var(--gc-panel-hi) !important;
 }
 html:root.gc-vk[data-theme] {
-    --gc-panel-top: rgb(17 26 44 / 0.82);
-    --gc-panel-bottom: rgb(11 18 32 / 0.8);
-    --gc-panel-border: rgb(255 255 255 / 0.08);
-    --gc-panel-hi: rgb(255 255 255 / 0.15);
-    --gc-panel-shadow: 0 10px 30px rgb(0 0 0 / 0.5);
+    --gc-panel-top: rgb(14 20 34 / 0.86);
+    --gc-panel-bottom: rgb(8 12 22 / 0.84);
+    --gc-panel-border: rgb(255 255 255 / 0.1);
+    --gc-panel-hi: rgb(255 255 255 / 0.14);
+    --gc-panel-shadow: 0 12px 36px -10px rgb(0 0 0 / 0.55);
 }
 html:root.gc-vk[data-theme='light'] {
     --gc-panel-top: rgb(255 255 255 / 0.86);

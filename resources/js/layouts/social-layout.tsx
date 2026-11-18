@@ -261,7 +261,11 @@ function Topbar() {
         <header className="app-header-wrapper">
             {/* Шапка — плаваюча капсула з безбарвного матового скла (як острів-меню знизу); обгортка прозора. */}
             {/* Шапка — парящий скляний острів (одне з трьох місць зі склом: шапка, навбар, плеєр). */}
-            <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island [view-transition-name:gc-topbar]">
+            <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island relative [view-transition-name:gc-topbar]">
+                <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-white/22 to-transparent"
+                />
                 <Link
                     href="/feed"
                     className="flex shrink-0 items-center self-center md:mr-4"
@@ -478,10 +482,10 @@ function Announcement() {
     }
 
     return (
-        <div className="gradient-border glass mb-4 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm text-white/80">
+        <div className="glass mb-4 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm text-white/80">
             <Megaphone
                 aria-hidden
-                className="mt-0.5 size-4 shrink-0 text-gc-violet-300"
+                className="mt-0.5 size-4 shrink-0 text-[#7eb6ff]"
             />
             <p className="leading-relaxed whitespace-pre-line">
                 {site.announcement}
