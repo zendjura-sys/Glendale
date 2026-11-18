@@ -14,7 +14,6 @@ import {
     Newspaper,
     Podcast,
     Server,
-    Sparkles,
     Trophy,
     UsersRound,
 } from 'lucide-react';
@@ -400,19 +399,22 @@ export default function Welcome({
                         animate={{ opacity: 1, y: 0 }}
                         transition={motionOr(reduce, RISE)}
                     >
-                        <span className="glass inline-flex items-center gap-2 rounded-chip px-3.5 py-1.5 text-xs font-medium text-white/75">
-                            <Sparkles className="size-3.5 text-sky-400" />
-                            {tagline || tr('Соцмережа для тих, хто грає разом')}
-                        </span>
-                        <h1 className="mt-6 font-display text-[clamp(2.6rem,6vw,4.8rem)] leading-[1.02] font-extrabold tracking-tight text-white">
+                        <p
+                            data-enter
+                            className="font-display text-[clamp(1.15rem,2.4vw,1.65rem)] font-semibold tracking-[0.04em] text-sky-300/95"
+                        >
+                            GameCon
+                        </p>
+                        <h1 className="mt-3 font-display text-[clamp(2.6rem,6vw,4.8rem)] leading-[1.02] font-extrabold tracking-tight text-white">
                             {tr('Твоя гра.')}
                             <br />
                             {tr('Твоя команда.')}
                         </h1>
                         <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-white/60">
-                            {tr(
-                                'Друзі, сервери GTA RP, сім’ї й клани, голосові кімнати, турніри та колекційні картки — усе, що потрібно, щоб грати не самому.',
-                            )}
+                            {tagline ||
+                                tr(
+                                    'Друзі, сервери GTA RP, сім’ї й клани, голосові кімнати, турніри та колекційні картки — усе, що потрібно, щоб грати не самому.',
+                                )}
                         </p>
 
                         <div className="mt-9 grid gap-3 sm:flex sm:flex-wrap sm:items-center">
