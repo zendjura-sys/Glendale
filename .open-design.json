@@ -1,0 +1,17 @@
+{
+    "version": 1,
+    "designSystem": {
+        "slug": "discord",
+        "path": "design-systems/discord",
+        "note": "Voice/chat dark-first depth model. GameCon tokens override colors — see root DESIGN.md."
+    },
+    "skill": {
+        "slug": "saas-landing",
+        "path": "design-templates/saas-landing",
+        "kind": "design-template",
+        "mode": "prototype"
+    },
+    "projectDesignMd": "DESIGN.md",
+    "awesomeDesignMd": "design-refs/awesome-design-md",
+    "boundAt": "2026-11-18T00:34:36Z"
+}
