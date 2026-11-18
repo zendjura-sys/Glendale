@@ -1,9 +1,9 @@
 {
     "version": 1,
     "designSystem": {
-        "slug": "linear-app",
-        "path": "design-systems/linear-app",
-        "note": "Quiet luxury depth. GameCon Quiet Arena tokens override — see DESIGN.md."
+        "slug": "spotify",
+        "path": "design-systems/spotify",
+        "note": "Arena Black — Spotify theater darkness; GameCon blue as singular accent."
     },
     "skill": {
         "slug": "web-prototype",
@@ -13,6 +13,13 @@
     },
     "projectDesignMd": "DESIGN.md",
     "awesomeDesignMd": "design-refs/awesome-design-md",
-    "direction": "Quiet Arena",
-    "boundAt": "2026-11-18T00:50:00Z"
+    "direction": "Arena Black",
+    "twentyFirst": [
+        "sheen-pill-button",
+        "glow-button",
+        "input-group-glass",
+        "floating-glassmorphic-navbar",
+        "classy-hero"
+    ],
+    "boundAt": "2026-11-18T01:10:00Z"
 }

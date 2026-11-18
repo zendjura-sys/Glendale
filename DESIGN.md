@@ -1,88 +1,63 @@
 ---
-version: 2
+version: 3
 name: GameCon
-direction: Quiet Arena
+direction: Arena Black
 description: |
-    Premium dark-first social network for gamers. One refined blue accent on
-    near-black canvases, Montserrat Variable, hairline glass, product UI as
-    the hero. Quiet luxury (Linear + Apple) meets gaming social depth (Discord),
-    without neon rainbow decoration.
+    Radical premium social look. Spotify content-first darkness (#121212 theater)
+    + Linear quiet luxury + singular GameCon electric blue. Display = Unbounded
+    (expressive), UI = Manrope. Pills, heavy elevation, one accent — no neon rainbow.
 sources:
+    - design-refs/awesome-design-md/spotify/DESIGN.md
     - design-refs/awesome-design-md/linear.app/DESIGN.md
     - design-refs/awesome-design-md/apple/DESIGN.md
-    - design-refs/awesome-design-md/playstation/DESIGN.md
-    - design-refs/awesome-design-md/spotify/DESIGN.md
-    - open-design:discord (chat depth)
-    - 21st: floating glassmorphic navbar (header craft)
+    - 21st: classy-hero / floating glass navbar
 skills:
     - design-taste-frontend
     - open-design
     - frontend-design
 ---
 
-# GameCon — Quiet Arena
+# GameCon — Arena Black
 
-Tokens live in `resources/css/app.css` (`--color-gc-*`, `--glass`, skin
-`gamecon`). Do not invent a parallel palette.
+## Why this direction
 
-## Atmosphere
+A gaming social network should feel like a **night venue**: UI recedes into
+charcoal so people, clips, and rooms glow. Spotify’s theater + Linear’s craft
+beat generic “neon SaaS purple.”
 
-- Canvas: near-black `#03050a` → abyss `#070b14` → deep `#0c1220`.
-- Surfaces: charcoal glass with **hairline** rims (`rgb(255 255 255 / 0.08–0.12)`),
-  soft depth shadow — not neon frames, not rainbow gradients on chrome.
-- Single accent: GameCon blue `#2f7bff` (hover brighter). Mint/cyan only for
-  live / online / success. Gold only for rewards.
-- Product UI and real game moments carry marketing pages; atmospheric orbs stay
-  quiet (one soft wash, not multi-color mesh).
+## Palette (singular accent)
+
+| Role    | Hex       | Use                          |
+| ------- | --------- | ---------------------------- |
+| Void    | `#0a0a0a` | Page canvas                  |
+| Surface | `#121212` | Cards / posts (L1)           |
+| Raised  | `#181818` | Dock / menus (L2)            |
+| Hover   | `#222222` | L3                           |
+| Ink     | `#ffffff` | Primary text                 |
+| Mute    | `#a7a7a7` | Secondary                    |
+| Accent  | `#3d8bff` | CTA, active, links only      |
+| Live    | `#1ed760` | Online / voice (Spotify cue) |
+
+No decorative purple/pink gradients on chrome.
 
 ## Typography
 
-- Family: Montserrat Variable (self-hosted).
-- Display: semibold–bold (600–700), tracking `-0.03em` to `-0.04em`, not
-  extrabold-by-default.
-- Brand wordmark in the first viewport outranks any supporting headline.
-- Body 15–17px at `white/55–70`.
+- **Display:** Unbounded Variable — marketing heroes, page titles
+- **UI:** Manrope Variable — app chrome, body, forms
+- Display tracking tight (`-0.04em`), weight 600–700
+- Buttons: semibold, optional slight tracking (not ALL CAPS spam)
 
-## Shape & chrome
+## Shape
 
-- Controls: `rounded-control` / pills for floating bars.
-- Cards/panels: `rounded-2xl` with hairline + optional inset top highlight.
-- Primary CTA: solid `--primary`, inset highlight only — no glow bloom.
-- Floating header: liquid/ios glass island with top-edge specular line; denser
-  when scrolled (21st floating-navbar craft).
-
-## Motion
-
-- One hero entrance; section `Reveal` on scroll.
-- Hover: 2px lift on linked panels, button press, underline draw.
-- Respect `useReducedMotion` / data-saver.
-
-## Composition (welcome / marketing)
-
-1. First viewport: brand · one headline · one line · CTA group · one product visual.
-2. No card grid and no stat strip in the hero.
-3. Feature chapters below the fold — one job per section.
-4. Equal left/right edges (`max-w-[1240px]` guest, `--gc-shell-max` app).
+- Floating chrome: **full pills** (9999px) — header island, CTAs
+- Content cards: 16–20px radius, elevated shadow `0 8px 24px rgb(0 0 0 / 0.45)`
+- Inputs: soft pills / 14px radius
 
 ## Layout lock
 
-Keep the existing GameCon window format: guest island header, social
-`gc-vk-shell` columns (dock · main · side rail), floating ios glass topbar /
-tabbar / player capsules, and current breakpoint column rules. Visual polish
-changes materials and type — **not** panel placement or shell structure.
+Keep `gc-vk-shell` columns, dock · main · rail, floating topbar/tabbar/player,
+guest island header placement. Change materials and type only.
 
-## Site-wide cascade
+## Brand refs
 
-Authenticated UI reads Quiet Arena through `html.gc-vk` tokens
-(`--gc-page`, `--gc-l1/2/3`, `--gc-accent*`, `--gc-hairline`) bridged into
-VKUI. Guest/auth/marketing use the same `:root` / `gamecon` skin tokens and
-shared `.glass` / `.auth-card` / header island styles. Prefer token edits in
-`app.css` over one-off page recolors.
-
-## Do / don't
-
-- Do: taste-skill house rules on new public pages; open-design for decks/audits;
-  brand `DESIGN.md` under `design-refs/awesome-design-md/<slug>/` when asked
-  «в этом стиле».
-- Don't: purple-on-white SaaS kits, cream+serif terracotta, broadsheet hairlines,
-  multi-accent neon chrome, Inter/Roboto stacks.
+Put `design-refs/awesome-design-md/<brand>/DESIGN.md` in context for «в этом стиле».

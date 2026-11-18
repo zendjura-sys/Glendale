@@ -261,10 +261,10 @@ function Topbar() {
         <header className="app-header-wrapper">
             {/* Шапка — плаваюча капсула з безбарвного матового скла (як острів-меню знизу); обгортка прозора. */}
             {/* Шапка — парящий скляний острів (одне з трьох місць зі склом: шапка, навбар, плеєр). */}
-            <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island relative [view-transition-name:gc-topbar]">
+            <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island relative !rounded-full [view-transition-name:gc-topbar]">
                 <span
                     aria-hidden
-                    className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-white/22 to-transparent"
+                    className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"
                 />
                 <Link
                     href="/feed"
