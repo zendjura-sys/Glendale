@@ -93,11 +93,11 @@
     --color-void: #05070f;
     --color-abyss: #0a0e1c;
     --color-deep: #0f1426;
-    --color-neon-blue: #4f8bff;
-    --color-neon-indigo: #6d5dfc;
-    --color-neon-violet: #a855f7;
-    --color-neon-pink: #f04fd8;
-    --color-neon-cyan: #38e1ff;
+    --color-neon-blue: #3d8bff;
+    --color-neon-indigo: #3d8bff;
+    --color-neon-violet: #7eb6ff;
+    --color-neon-pink: #3d8bff;
+    --color-neon-cyan: #5eead4;
     --color-gold: #f5c451;
 
     --animate-aurora: aurora 22s ease-in-out infinite alternate;
@@ -630,18 +630,18 @@ html[data-palette='copper'] {
             ),
             rgb(255 255 255 / 0.03);
         box-shadow:
-            inset 0 0 0 1px rgb(124 140 255 / 0.25),
-            0 8px 24px -12px rgb(109 93 252 / 0.7);
+            inset 0 0 0 1px rgb(61 139 255 / 0.3),
+            0 8px 24px -12px rgb(61 139 255 / 0.45);
     }
 
     .ring-gradient {
         background: conic-gradient(
             from 180deg,
-            #4f8bff,
-            #a855f7,
-            #f04fd8,
-            #38e1ff,
-            #4f8bff
+            #3d8bff,
+            #7eb6ff,
+            #1ed760,
+            #5eead4,
+            #3d8bff
         );
     }
 
@@ -687,7 +687,7 @@ html[data-palette='copper'] {
 .gc-eq > span {
     width: 3px;
     border-radius: 2px;
-    background: linear-gradient(to top, #6d5dfc, #38e1ff);
+    background: linear-gradient(to top, #2f6fe0, #3d8bff);
     animation: gc-eq 0.9s ease-in-out infinite;
 }
 
@@ -3841,12 +3841,12 @@ html[data-text='xl'] {
     filter: none;
 }
 
-/* Аврора в стилі «GameCon»: неоновий синій уночі, крижане сяйво вдень. */
+/* Arena Black aurora — blue + live mint only (no purple/pink). */
 :root[data-skin='gamecon'] {
-    --aurora-1: #2a6cff;
-    --aurora-2: #3d4dff;
-    --aurora-3: #0ea5e9;
-    --aurora-4: #22d3ee;
+    --aurora-1: #3d8bff;
+    --aurora-2: #2f6fe0;
+    --aurora-3: #1ed760;
+    --aurora-4: #5eead4;
 }
 :root[data-skin='gamecon'][data-theme='light'] {
     --aurora-1: #7cb6ff;
@@ -3855,11 +3855,10 @@ html[data-text='xl'] {
     --aurora-4: #b7f0ff;
 }
 :root[data-skin='gamecon'][data-theme='light'] .gc-aurora .animate-aurora {
-    opacity: 0.5;
+    opacity: 0.4;
 }
-/* Неонове сяйво за склом у темній темі — помітніше, ніж в інших стилях. */
 :root[data-skin='gamecon'][data-theme='dark'] .gc-aurora .animate-aurora {
-    opacity: 0.3;
+    opacity: 0.18;
 }
 /* Затемнення під текстом на темних підкладках (герої кіно, обкладинки) лишається темним і вдень. */
 :root[data-theme='light']

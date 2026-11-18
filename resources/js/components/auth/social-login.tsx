@@ -42,7 +42,7 @@ export function useGoogleSignIn() {
 
 /** Плитка іншого способу входу: скло, кольорова іконка сервісу, однакова для всіх сервісів. */
 const tile =
-    'group flex h-12 w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm font-semibold text-white transition-colors hover:border-white/20 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60';
+    'group flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-white/10 bg-[#1f1f1f] px-4 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255_/_0.08)] transition-colors hover:border-white/20 hover:bg-[#222] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60';
 
 /**
  * Вхід через інші сервіси (Google, Discord) і ключ доступу — одним блоком плиток над формою пошти.

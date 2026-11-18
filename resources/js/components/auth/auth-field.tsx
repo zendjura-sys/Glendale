@@ -2,10 +2,10 @@ import { Link } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Input } from '@/components/ui/input';
+import { SheenPillButton } from '@/components/ui/sheen-pill-button';
 
 /**
- * Поле входу/реєстрації: м'яка заливка, тонка рамка, акцентне кільце при фокусі; іконка ліворуч.
- * Підпис — для читачів екрана (sr-only), видимий — плейсхолдер.
+ * Поле входу/реєстрації — 21st Input Group Glass craft (pill + icon).
  */
 export function AuthField({
     icon: Icon,
@@ -30,21 +30,22 @@ export function AuthField({
     );
 }
 
-/** Кнопка форми: на всю ширину, суцільна акцентна. */
+/** Submit — 21st Sheen Pill, full width. */
 export function AuthSubmit({
     children,
     disabled,
     ...props
 }: ComponentProps<'button'> & { children: ReactNode }) {
     return (
-        <button
+        <SheenPillButton
+            {...props}
             type="submit"
             disabled={disabled}
-            {...props}
-            className="btn-glow inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl px-6 text-[15px] font-semibold transition focus-visible:ring-2 focus-visible:ring-sky-400/60 focus-visible:outline-none disabled:opacity-60"
+            tone="primary"
+            className="h-12 w-full"
         >
             {children}
-        </button>
+        </SheenPillButton>
     );
 }
 
