@@ -1,70 +1,63 @@
 ---
-version: 1
+version: 3
 name: GameCon
+direction: Arena Black
 description: |
-    Dark-first social network for gamers. Neon blue/indigo accents on deep void
-    canvases, Montserrat Variable for UI and display, glass surfaces, one job
-    per section. Product UI and real game moments carry the page — not abstract
-    mesh gradients alone.
+    Radical premium social look. Spotify content-first darkness (#121212 theater)
+    + Linear quiet luxury + singular GameCon electric blue. Display = Unbounded
+    (expressive), UI = Manrope. Pills, heavy elevation, one accent — no neon rainbow.
 sources:
-    - design-refs/awesome-design-md/playstation/DESIGN.md
     - design-refs/awesome-design-md/spotify/DESIGN.md
-    - open-design:discord (voice/chat depth model)
+    - design-refs/awesome-design-md/linear.app/DESIGN.md
+    - design-refs/awesome-design-md/apple/DESIGN.md
+    - 21st: classy-hero / floating glass navbar
 skills:
     - design-taste-frontend
     - open-design
+    - frontend-design
 ---
 
-# GameCon design system
+# GameCon — Arena Black
 
-Use this file when restyling or building UI. Brand tokens live in
-`resources/css/app.css` (`--color-gc-*`, `--color-void`, `--font-sans`).
+## Why this direction
 
-## Atmosphere
+A gaming social network should feel like a **night venue**: UI recedes into
+charcoal so people, clips, and rooms glow. Spotify’s theater + Linear’s craft
+beat generic “neon SaaS purple.”
 
-- Dark-first: void `#070914` / abyss `#0a0e1c` / deep `#0f1426`.
-- Primary accent: GameCon blue `#4f8bff` → indigo `#6d5dfc` → violet `#a855f7`.
-- Success / live / voice: mint `#22d3a6` and cyan `#38e1ff`.
-- Commerce / reward: gold `#f5c451` / amber `#f5b342`.
-- Glass panels (`glass`, `glass-strong`) over the site background — not flat gray cards.
-- Shape: `rounded-2xl` for panels, `rounded-control` for inputs, `rounded-chip` for badges.
+## Palette (singular accent)
+
+| Role    | Hex       | Use                          |
+| ------- | --------- | ---------------------------- |
+| Void    | `#0a0a0a` | Page canvas                  |
+| Surface | `#121212` | Cards / posts (L1)           |
+| Raised  | `#181818` | Dock / menus (L2)            |
+| Hover   | `#222222` | L3                           |
+| Ink     | `#ffffff` | Primary text                 |
+| Mute    | `#a7a7a7` | Secondary                    |
+| Accent  | `#3d8bff` | CTA, active, links only      |
+| Live    | `#1ed760` | Online / voice (Spotify cue) |
+
+No decorative purple/pink gradients on chrome.
 
 ## Typography
 
-- UI + display: Montserrat Variable (self-hosted). No Inter / Roboto / system-only stacks.
-- Hero display: extrabold, tight tracking, clamp ~2.6–4.8rem, line-height ~1.02.
-- Body: 15–17px, white/60–75 on dark.
-- One clear hierarchy per section — brand or product name must outrank any supporting headline on marketing surfaces.
+- **Display:** Unbounded Variable — marketing heroes, page titles
+- **UI:** Manrope Variable — app chrome, body, forms
+- Display tracking tight (`-0.04em`), weight 600–700
+- Buttons: semibold, optional slight tracking (not ALL CAPS spam)
 
-## Motion
+## Shape
 
-- Prefer existing `RISE` / `Reveal` / `data-enter` patterns in `@/lib/motion`.
-- Hover: linked cards lift ~2px; buttons press; underlines draw. No tilt carousels.
-- Respect `useReducedMotion`.
+- Floating chrome: **full pills** (9999px) — header island, CTAs
+- Content cards: 16–20px radius, elevated shadow `0 8px 24px rgb(0 0 0 / 0.45)`
+- Inputs: soft pills / 14px radius
 
-## Composition (marketing / welcome)
+## Layout lock
 
-1. First viewport = one composition: brand, one headline, one short line, one CTA group, one dominant visual.
-2. No card grid in the hero. Feature tiles start below the fold.
-3. Imagery shows the product (feed mock, voice room, GameCast) — not empty gradient slabs.
-4. Equal left/right content edges inside the shell (`max-w-[1240px]` guest, `--gc-shell-max` app).
+Keep `gc-vk-shell` columns, dock · main · rail, floating topbar/tabbar/player,
+guest island header placement. Change materials and type only.
 
-## Do / don't
+## Brand refs
 
-- Do: follow `design-taste-frontend` house rules for new landing/marketing work; run its browser gate when shipping a new public page.
-- Do: when the user says «в стиле X», open `design-refs/awesome-design-md/<brand>/DESIGN.md` (apple, nike, spotify, spacex, playstation, …) and apply that palette/type/layout vocabulary without copying trademarks/logos.
-- Do: for decks, prototypes, brand audits — invoke the `open-design` skill (local catalogue at `~/.open-design-skill/repo`, binding in `.open-design.json`).
-- Don't: swap GameCon blue for generic purple-on-white SaaS kits, cream+serif terracotta kits, or broadsheet hairline newspaper layouts.
-- Don't: invent a second parallel token set — extend `@theme` in `app.css` and document here.
-
-## Brand references in-repo
-
-| Brand       | Path                                         | Use when…                          |
-| ----------- | -------------------------------------------- | ---------------------------------- |
-| PlayStation | `design-refs/awesome-design-md/playstation/` | Console / launch / chaptered dark  |
-| Spotify     | `design-refs/awesome-design-md/spotify/`     | Media-forward, bold type on dark   |
-| Apple       | `design-refs/awesome-design-md/apple/`       | Quiet premium product storytelling |
-| Nike        | `design-refs/awesome-design-md/nike/`        | Kinetic sport energy               |
-| SpaceX      | `design-refs/awesome-design-md/spacex/`      | Technical, sparse, high-contrast   |
-| Cursor      | `design-refs/awesome-design-md/cursor/`      | Dev-tool density                   |
-| Full set    | `design-refs/awesome-design-md/` (84 brands) | «сделай в этом стиле»              |
+Put `design-refs/awesome-design-md/<brand>/DESIGN.md` in context for «в этом стиле».

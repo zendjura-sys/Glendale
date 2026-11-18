@@ -26,9 +26,12 @@ Three toolkits are installed for UI / marketing / brand work:
 
 ## Source of truth
 
-- Project system: root `DESIGN.md` (GameCon tokens + composition rules).
+- Project system: root `DESIGN.md` (Quiet Arena tokens + composition rules).
 - CSS tokens: `resources/css/app.css` `@theme` / `--color-gc-*`.
 - Do not invent a parallel palette.
+- **Layout lock:** keep the existing window format (`gc-vk-shell` columns,
+  floating glass topbar/tabbar/player, guest island header). Polish materials
+  and type; do not rearrange panels.
 
 ## When to invoke
 

@@ -27,34 +27,34 @@ export function Aurora({
                 )}
                 style={{
                     background:
-                        'radial-gradient(circle at 30% 30%, var(--aurora-1, #3b6dff) 0%, transparent 60%)',
+                        'radial-gradient(circle at 30% 30%, var(--aurora-1, #3d8bff) 0%, transparent 60%)',
                 }}
             />
             <div
                 className={cn(
                     'absolute -top-[20%] right-[-25%] h-[70vmax] w-[70vmax] animate-aurora rounded-full blur-[130px] [animation-delay:-7s]',
-                    intense ? 'opacity-50' : 'opacity-25',
+                    intense ? 'opacity-40' : 'opacity-20',
                 )}
                 style={{
                     background:
-                        'radial-gradient(circle at 60% 40%, var(--aurora-2, #9b4dff) 0%, transparent 60%)',
+                        'radial-gradient(circle at 60% 40%, var(--aurora-2, #2f6fe0) 0%, transparent 60%)',
                 }}
             />
             <div
                 className={cn(
                     'absolute bottom-[-35%] left-[20%] h-[60vmax] w-[60vmax] animate-aurora rounded-full blur-[140px] [animation-delay:-13s]',
-                    intense ? 'opacity-40' : 'opacity-[0.18]',
+                    intense ? 'opacity-28' : 'opacity-[0.12]',
                 )}
                 style={{
                     background:
-                        'radial-gradient(circle at 50% 50%, var(--aurora-3, #e04fd0) 0%, transparent 60%)',
+                        'radial-gradient(circle at 50% 50%, var(--aurora-3, #1ed760) 0%, transparent 60%)',
                 }}
             />
             <div
-                className="absolute top-[40%] left-[-10%] h-[40vmax] w-[40vmax] animate-aurora rounded-full opacity-[0.12] blur-[120px] [animation-delay:-4s]"
+                className="absolute top-[40%] left-[-10%] h-[40vmax] w-[40vmax] animate-aurora rounded-full opacity-[0.1] blur-[120px] [animation-delay:-4s]"
                 style={{
                     background:
-                        'radial-gradient(circle, var(--aurora-4, #38e1ff) 0%, transparent 60%)',
+                        'radial-gradient(circle, var(--aurora-4, #5eead4) 0%, transparent 60%)',
                 }}
             />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,var(--background)_100%)]" />

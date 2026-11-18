@@ -1,17 +1,25 @@
 {
     "version": 1,
     "designSystem": {
-        "slug": "discord",
-        "path": "design-systems/discord",
-        "note": "Voice/chat dark-first depth model. GameCon tokens override colors — see root DESIGN.md."
+        "slug": "spotify",
+        "path": "design-systems/spotify",
+        "note": "Arena Black — Spotify theater darkness; GameCon blue as singular accent."
     },
     "skill": {
-        "slug": "saas-landing",
-        "path": "design-templates/saas-landing",
+        "slug": "web-prototype",
+        "path": "design-templates/web-prototype",
         "kind": "design-template",
         "mode": "prototype"
     },
     "projectDesignMd": "DESIGN.md",
     "awesomeDesignMd": "design-refs/awesome-design-md",
-    "boundAt": "2026-11-18T00:34:36Z"
+    "direction": "Arena Black",
+    "twentyFirst": [
+        "sheen-pill-button",
+        "glow-button",
+        "input-group-glass",
+        "floating-glassmorphic-navbar",
+        "classy-hero"
+    ],
+    "boundAt": "2026-11-18T01:10:00Z"
 }
