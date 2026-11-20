@@ -222,14 +222,24 @@ export function ModuleIcon({
 
     const Icon = icons[name] ?? Box;
     if (!on) {
-        return <Icon size={size} className={className} strokeWidth={2} {...props} />;
+        return (
+            <Icon
+                size={size}
+                className={className}
+                strokeWidth={2}
+                {...props}
+            />
+        );
     }
     const Animated = animated[name];
 
     return (
         <span
             ref={host}
-            className={cn('inline-flex shrink-0 items-center justify-center', className)}
+            className={cn(
+                'inline-flex shrink-0 items-center justify-center',
+                className,
+            )}
             style={{ width: size, height: size }}
         >
             {Animated ? (
