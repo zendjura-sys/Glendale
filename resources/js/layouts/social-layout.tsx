@@ -268,14 +268,14 @@ function useNavItems() {
     }));
 }
 
-/** ПК і планшет: розділи, «+» і меню (три смужки) — у шапці. */
+/** ПК і планшет: значки розділів і меню в шапці. */
 function HeaderSections() {
     const isActive = useIsActive();
     const items = useNavItems();
-
     const layout = usePage().props.engagement?.layout ?? [];
     const covered = layout.flatMap((w) => WIDGET_SECTIONS[w.key] ?? []);
 
+    // Шапка ПК і планшета: значки розділів, скільки вміщується, далі «М» (меню з рештою).
     return (
         <LiveDock
             items={items}
@@ -290,8 +290,10 @@ function HeaderSections() {
 function DockHost() {
     const isActive = useIsActive();
     const items = useNavItems();
+    const layout = usePage().props.engagement?.layout ?? [];
+    const covered = layout.flatMap((w) => WIDGET_SECTIONS[w.key] ?? []);
 
-    return <LiveDock items={items} isActive={isActive} />;
+    return <LiveDock items={items} isActive={isActive} covered={covered} />;
 }
 
 function Announcement() {

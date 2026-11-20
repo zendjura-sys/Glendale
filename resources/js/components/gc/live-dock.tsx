@@ -1,7 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { Gift, Headphones, Menu, Plus, ShieldAlert, Zap } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { MenuHub } from '@/components/gc/menu-hub';
 import { ModuleIcon } from '@/components/gc/module-icon';
@@ -14,6 +14,9 @@ import { usePlugin } from '@/lib/plugins';
 import { NAV_CACHE, navPrefetch } from '@/lib/prefetch';
 import { playNavTick } from '@/lib/sound-fx';
 import { cn } from '@/lib/utils';
+
+/** Ширина значка в шапці з проміжком, px (для підрахунку, скільки вміщується). */
+const HEADER_SLOT = 44;
 
 /** Віджет лобі → розділи, які він заміняє в навігації шапки. */
 export const WIDGET_SECTIONS: Record<string, string[]> = {
@@ -165,17 +168,33 @@ export function LiveDock({
     const slots = header ? [] : live;
 
     const fallback = ['feed', 'messages', 'friends', 'profile'];
-    // Шапка: розділ, чий віджет уже стоїть у лобі, з навігації зникає — місце бере наступний.
-    const shown = header
-        ? items.filter((i) => !covered.includes(i.key))
-        : items;
+    // Розділ, чий віджет уже стоїть у лобі, з навігації зникає — місце бере наступний.
+    const shown = items.filter((i) => !covered.includes(i.key));
     const wanted = auth.user.nav_tabs?.length ? auth.user.nav_tabs : fallback;
+    // Шапка: стільки значків, скільки вміщується; решта — у меню.
+    const [fit, setFit] = useState(0);
+    const barRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const el = barRef.current;
+        if (!header || !el) return;
+        const measure = () =>
+            setFit(
+                Math.max(
+                    0,
+                    Math.floor((el.clientWidth - HEADER_SLOT) / HEADER_SLOT),
+                ),
+            );
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [header]);
     const primary = [
         ...wanted
             .map((key) => shown.find((i) => i.key === key))
             .filter((i): i is DockItem => i !== undefined),
-        ...(header ? shown.filter((i) => !wanted.includes(i.key)) : []),
-    ].slice(0, 4);
+        ...shown.filter((i) => !wanted.includes(i.key)),
+    ].slice(0, header ? fit : 4);
     const rest = items.filter((i) => !primary.includes(i));
     const restBadge = rest.reduce((sum, i) => sum + i.badge, 0);
     const restActive = rest.some((i) => isActive(i.href, i.key));
@@ -287,7 +306,10 @@ export function LiveDock({
                         </m.div>
                     )}
                 </AnimatePresence>
-                <div className={header ? 'gc-header-bar' : 'gc-dock-bar'}>
+                <div
+                    ref={barRef}
+                    className={header ? 'gc-header-bar' : 'gc-dock-bar'}
+                >
                     {primary.map((item, index) => {
                         const active = !open && isActive(item.href, item.key);
                         const link = (
@@ -324,7 +346,8 @@ export function LiveDock({
                                 </span>
                             </Link>
                         );
-                        return index === Math.min(2, primary.length) - 1 ? (
+                        return !header &&
+                            index === Math.min(2, primary.length) - 1 ? (
                             <Fragment key={item.key}>
                                 {link}
                                 <CreateButton />
@@ -342,6 +365,8 @@ export function LiveDock({
                         onClick={() => setOpen((v) => !v)}
                         className={cn(
                             'gc-dock-item',
+                            // На ПК і планшеті меню — лише в шапці; у капсулі — розділи й «+».
+                            !header && 'gc-dock-menu',
                             (open || restActive) && 'is-active',
                         )}
                     >

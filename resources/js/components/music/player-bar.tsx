@@ -177,9 +177,10 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
             <div
                 className={cn(
                     'pointer-events-none fixed inset-x-0 z-[45] hidden px-6 md:block',
-                    // На ПК нижнього дока немає (розділи в шапці) — плеєр унизу вікна.
-                    'bottom-4',
-                    standalone && 'lg:left-[276px]',
+                    // Над плаваючою капсулою розділів; у «Музиці» (standalone) капсули немає.
+                    standalone
+                        ? 'bottom-4 lg:left-[276px]'
+                        : 'bottom-[calc(5.5rem+env(safe-area-inset-bottom))]',
                 )}
             >
                 {/* Меню «⋯» капсули відкриває діалоги (поділитися, відомості) — потрібен провайдер дій. */}
