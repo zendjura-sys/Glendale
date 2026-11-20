@@ -36,15 +36,12 @@ function useWideSearch(): boolean {
 
 export function QuickSearch({ className }: { className?: string }) {
     const wide = useWideSearch();
-    // Підказка — лише про розділи режиму людини: у «Класиці» немає ігор, кіно й серверів.
+    // Підказка — коротко й про людей: пошук і далі знаходить усе, що є в режимі людини.
     const { modules } = usePage().props;
     const scope = [
         tr('людей'),
-        modules.includes('games') && tr('ігор'),
-        modules.includes('cinema') && tr('кіно'),
-        modules.includes('music') && tr('музики'),
-        modules.includes('servers') && tr('серверів'),
         modules.includes('communities') && tr('спільнот'),
+        tr('дописів'),
     ].filter(Boolean);
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Result[]>([]);

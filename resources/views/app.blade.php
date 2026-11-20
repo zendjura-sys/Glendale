@@ -172,7 +172,7 @@
             <div class="gc-st" id="gc-splash-status">Ініціалізація GameCon OS...</div>
             <script>
                 (function () {
-                    var lines = ['Ініціалізація GameCon OS...', 'Синхронізація ігрового профілю...', 'Підключення до серверів та штабу...'];
+                    var lines = ['Ініціалізація GameCon OS...', 'Синхронізація профілю...', 'Підключення друзів і спільнот...'];
                     var i = 0, el = document.getElementById('gc-splash-status');
                     var skip = document.documentElement.classList.contains('gc-splash-skip');
                     var timer = skip ? 0 : setInterval(function () { i = (i + 1) % lines.length; if (el) el.textContent = lines[i]; }, 900);

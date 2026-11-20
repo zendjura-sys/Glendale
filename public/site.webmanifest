@@ -1,7 +1,7 @@
 {
     "name": "GameCon",
     "short_name": "GameCon",
-    "description": "Соціальна мережа для геймерів і кіноманів",
+    "description": "Соцмережа, де свої завжди поруч",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#0e0f13",

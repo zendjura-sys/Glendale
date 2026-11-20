@@ -79,7 +79,7 @@ export function LobbyHero({
             ? tr('Друзі вже в грі.')
             : online > 0
               ? tr('Друзі поруч.')
-              : tr('Що сьогодні граємо?');
+              : tr('Чим займемось сьогодні?');
     const facts = [
         online > 0 && tr('{count} друзів онлайн', { count: online }),
         event &&
@@ -101,7 +101,7 @@ export function LobbyHero({
             transition={motionOr(reduce, SNAP)}
         >
             <h1 className="gc-lobby-hero__title">
-                {greeting(new Date().getHours())}, {auth.user.first_name}.
+                {greeting(new Date().getHours())}, {auth.user.first_name}.{' '}
                 <span className="gc-lobby-hero__muted">{second}</span>
             </h1>
             {facts.length > 0 && (
@@ -391,7 +391,7 @@ export function WidgetBoard({
                                         <ToolButton
                                             label={
                                                 item.size === 'full'
-                                                    ? tr('Пів ширини')
+                                                    ? tr('Звичайний розмір')
                                                     : tr('На всю ширину')
                                             }
                                             onClick={() => resize(index)}

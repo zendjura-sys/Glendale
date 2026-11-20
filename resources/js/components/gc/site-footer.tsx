@@ -113,7 +113,7 @@ export function SiteFooter({
                             {name || 'GameCon'}
                         </p>
                         <p className="mt-0.5 text-xs text-white/50">
-                            {tr('Соцмережа для геймерів')}
+                            {tr('Соцмережа, де свої поруч')}
                         </p>
                     </div>
                     <Link

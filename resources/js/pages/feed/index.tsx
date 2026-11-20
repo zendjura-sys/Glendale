@@ -463,21 +463,23 @@ export default function Feed({
         <>
             <Head title={tr('Новини')} />
             <div className="space-y-8">
-                <LobbyHero rail={rail} events={tomorrow ?? []} />
-                <WhileAway data={whileAway} />
-                <WrappedBanner />
-                <SiteEventBanner />
-                <NowTiles
-                    rail={rail}
-                    streams={liveOn ? (streaming ?? []) : []}
-                    events={tomorrow ?? []}
-                />
-                <WidgetBoard
-                    layout={(engagement?.layout ?? []) as LayoutItem[]}
-                    available={available}
-                    render={renderWidget}
-                    editable={widgetsOn}
-                />
+                <div className="gc-lobby-wide space-y-8">
+                    <LobbyHero rail={rail} events={tomorrow ?? []} />
+                    <WhileAway data={whileAway} />
+                    <WrappedBanner />
+                    <SiteEventBanner />
+                    <NowTiles
+                        rail={rail}
+                        streams={liveOn ? (streaming ?? []) : []}
+                        events={tomorrow ?? []}
+                    />
+                    <WidgetBoard
+                        layout={(engagement?.layout ?? []) as LayoutItem[]}
+                        available={available}
+                        render={renderWidget}
+                        editable={widgetsOn}
+                    />
+                </div>
                 <section
                     aria-labelledby="gc-for-you"
                     className="mx-auto w-full max-w-[760px] space-y-4"

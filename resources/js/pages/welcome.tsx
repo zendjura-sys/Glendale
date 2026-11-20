@@ -4,8 +4,6 @@ import {
     BadgeCheck,
     CalendarDays,
     Crown,
-    Gamepad2,
-    Gift,
     Heart,
     Layers,
     Lock,
@@ -13,8 +11,8 @@ import {
     Mic,
     Newspaper,
     Podcast,
-    Server,
-    Trophy,
+    Phone,
+    Sparkles,
     UsersRound,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
@@ -80,21 +78,21 @@ function MockPost() {
                         {tr('Софія Мельник')}
                     </div>
                     <div className="flex items-center gap-1 text-xs text-[#1ed760]">
-                        <Gamepad2 className="size-3" />
-                        {tr('Грає в GTA V RP')}
+                        <span className="size-1.5 rounded-full bg-[#3ee0a8]" />
+                        {tr('Зараз онлайн')}
                     </div>
                 </div>
             </div>
             <p className="mt-3 text-[13px] leading-relaxed text-[#a7a7a7]">
                 {tr(
-                    'Сім’я взяла бізвар! Дякую всім, хто був на зборі 🔥 У п’ятницю — турнір, записуйтесь.',
+                    'Дякую всім, хто прийшов на вечірню зустріч 🔥 У п’ятницю — новий ефір, приєднуйтесь!',
                 )}
             </p>
             <div
                 aria-hidden
                 className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_70%_20%,#6d6afe_0%,#121212_55%,#0a0a0a_100%)]"
             >
-                <Trophy className="absolute top-5 left-6 size-9 text-[#ffd36b]" />
+                <Sparkles className="absolute top-5 left-6 size-9 text-[#ffd36b]" />
             </div>
             <div className="mt-3 flex items-center gap-4 text-xs text-[#a7a7a7]">
                 <span className="flex items-center gap-1.5 text-[#f3727f]">
@@ -113,7 +111,7 @@ function MockVoice() {
         <div className="w-[250px] rounded-3xl bg-[#181818] p-4 shadow-[0_16px_40px_rgb(0_0_0_/_0.55)] ring-1 ring-white/10">
             <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-white">
                 <Mic className="size-3.5 text-[#1ed760]" />
-                {tr('Голосовий «Рейд о 20:00»')}
+                {tr('Вечірня розмова о 20:00')}
             </div>
             <div className="flex -space-x-2">
                 {[0, 1, 2, 3].map((i) => (
@@ -129,27 +127,6 @@ function MockVoice() {
             <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
                 <div className="h-full w-2/3 rounded-full bg-[#1ed760]" />
             </div>
-        </div>
-    );
-}
-
-function MockCards() {
-    return (
-        <div className="flex gap-2">
-            {['N', 'R', 'U'].map((r, i) => (
-                <div
-                    key={r}
-                    className="flex h-28 w-20 flex-col justify-between rounded-2xl bg-[#1f1f1f] p-2 shadow-[0_12px_28px_rgb(0_0_0_/_0.5)] ring-1 ring-white/10"
-                    style={{ transform: `rotate(${(i - 1) * 6}deg)` }}
-                >
-                    <span className="text-[10px] font-bold text-[#6d6afe]">
-                        {r}
-                    </span>
-                    <span className="text-[11px] font-semibold text-white/80">
-                        GC
-                    </span>
-                </div>
-            ))}
         </div>
     );
 }
@@ -174,7 +151,7 @@ export default function Welcome({
             icon: Newspaper,
             title: tr('Стрічка й друзі'),
             text: tr(
-                'Пости, моменти з ігор, реакції й обговорення. Хто з друзів зараз грає — видно одразу.',
+                'Пости, фото й відео, реакції й живі обговорення. Хто з друзів поруч — видно одразу.',
             ),
             className: 'lg:col-span-2',
         },
@@ -182,20 +159,20 @@ export default function Welcome({
             icon: Mic,
             title: tr('Чати й голос'),
             text: tr(
-                'Особисті й групові чати, голосові кімнати, дзвінки й трансляції для команди.',
+                'Особисті й групові чати, голосові кімнати й дзвінки — для двох або для всієї компанії.',
             ),
         },
         {
-            icon: Server,
-            title: tr('Сервери GTA RP'),
+            icon: UsersRound,
+            title: tr('Спільноти'),
             text: tr(
-                'Каталог серверів з онлайном наживо, голосування, відгуки й перевірені сервери.',
+                'Свої сторінки з правилами, адмінами й подіями. Знайди однодумців або збери власне коло.',
             ),
             extra: (
                 <div className="mt-4 space-y-1.5" aria-hidden>
                     {[
-                        ['Quant RP', 84],
-                        ['Ukraine GTA 5', 41],
+                        [tr('Вечірні розмови'), 84],
+                        [tr('Фото дня'), 41],
                     ].map(([name, pct]) => (
                         <div key={name as string}>
                             <div className="flex justify-between text-[11px] text-[#a7a7a7]">
@@ -220,56 +197,51 @@ export default function Welcome({
         },
         {
             icon: Crown,
-            title: tr('Сім’ї, гільдії й клани'),
+            title: tr('Сім’ї та команди'),
             text: tr(
-                'Звіти, банк і склад, зміни й події, рейтинг сезону — штаб твоєї команди.',
+                'Спільний банк, звіти, чергування й події — штаб для тих, хто тримається разом.',
             ),
         },
         {
             icon: Layers,
-            title: tr('Колекційні картки'),
+            title: tr('Твоє лобі'),
             text: tr(
-                'Персонажі ігор і світів — 16 рангів від N до U. Набір щодня, картки за гру, обмін з друзями.',
+                'Головна збирається з віджетів, які ти розставляєш сам, а живі кнопки підказують, що відбувається просто зараз.',
             ),
             className: 'lg:col-span-2',
-            extra: (
-                <div className="mt-4 flex justify-end">
-                    <MockCards />
-                </div>
-            ),
         },
         {
             icon: CalendarDays,
-            title: tr('Турніри й події'),
+            title: tr('Події'),
             text: tr(
-                'Сітки турнірів, ігрові вечори, сезонні події з нагородами для профілю.',
+                'Зустрічі, ефіри й сезонні події з нагородами для профілю — нагадаємо вчасно.',
             ),
         },
         {
             icon: Podcast,
             title: 'GameCast',
             text: tr(
-                'Живі розмовні ефіри про ігри: ведучі, гості й слухачі. Формати 1 на 1, 2 на 2 або свій, #теми й питання з залу.',
+                'Живі розмовні ефіри: ведучі, гості й слухачі. Формати 1 на 1, 2 на 2 або свій, #теми й питання з залу.',
             ),
             className: 'lg:col-span-2',
         },
         {
-            icon: Gamepad2,
-            title: tr('Ігри й бібліотека'),
+            icon: Phone,
+            title: tr('Свій номер'),
             text: tr(
-                'Імпорт бібліотеки Steam, список «хочу/граю/пройшов», знижки й безкоштовні роздачі ігор.',
+                'Внутрішній номер для дзвінків і повідомлень: випадковий — безкоштовно, красивий — на вибір.',
             ),
             extra: (
                 <div
                     className="mt-4 flex items-center gap-2 rounded-full bg-white/[0.05] p-2.5 text-xs ring-1 ring-white/10"
                     aria-hidden
                 >
-                    <Gift className="size-4 shrink-0 text-[#1ed760]" />
+                    <Phone className="size-4 shrink-0 text-[#3ee0a8]" />
                     <span className="flex-1 truncate font-medium text-white/80">
-                        {tr('Роздача тижня')}
+                        +777 (01) 777-77-77
                     </span>
-                    <span className="rounded-full bg-[#1ed760]/15 px-2 py-0.5 font-semibold text-[#1ed760]">
-                        −100%
+                    <span className="rounded-full bg-[#3ee0a8]/15 px-2 py-0.5 font-semibold text-[#3ee0a8]">
+                        {tr('Золотий')}
                     </span>
                 </div>
             ),
@@ -285,7 +257,7 @@ export default function Welcome({
 
     return (
         <>
-            <Head title={tr('Соціальна мережа для гравців')} />
+            <Head title={tr('Соцмережа, де свої поруч')} />
             <SiteBackground />
             <Seasonal />
             <GuestHeader />
@@ -311,16 +283,16 @@ export default function Welcome({
                                 GameCon
                             </p>
                             <h1 className="mt-5 font-display text-[clamp(3rem,7.5vw,5.6rem)] leading-[0.95] font-semibold tracking-[-0.045em] text-white">
-                                {tr('Твоя гра.')}
+                                {tr('Твої люди.')}
                                 <br />
                                 <span className="text-[#6d6afe]">
-                                    {tr('Твоя команда.')}
+                                    {tr('Твоє місце.')}
                                 </span>
                             </h1>
                             <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-[#a7a7a7]">
                                 {tagline ||
                                     tr(
-                                        'Друзі, сервери GTA RP, сім’ї й клани, голосові кімнати, турніри та колекційні картки — усе, що потрібно, щоб грати не самому.',
+                                        'Друзі, спільноти й сім’ї, живі чати й голосові кімнати, події та ефіри — усе, щоб завжди бути поруч зі своїми.',
                                     )}
                             </p>
 
@@ -392,17 +364,6 @@ export default function Welcome({
                             >
                                 <MockVoice />
                             </m.div>
-                            <m.div
-                                initial={reduce ? false : { opacity: 0, y: 24 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={motionOr(reduce, {
-                                    ...RISE,
-                                    delay: 0.32,
-                                })}
-                                className="absolute right-8 bottom-6 z-20"
-                            >
-                                <MockCards />
-                            </m.div>
                         </div>
                     </div>
                 </section>
@@ -438,11 +399,11 @@ export default function Welcome({
                 <section className="mx-auto max-w-[1240px] px-5 py-16">
                     <Reveal className="max-w-2xl">
                         <h2 className="font-display text-[clamp(2rem,4vw,3.1rem)] leading-[1.05] font-semibold tracking-[-0.04em] text-white">
-                            {tr('Усе для гри разом — в одному місці')}
+                            {tr('Усе для спілкування — в одному місці')}
                         </h2>
                         <p className="mt-3 text-[#a7a7a7]">
                             {tr(
-                                'Від першого «го катку?» до турніру сім’ї: чати, сервери, команди й нагороди.',
+                                'Від першого «привіт» до вечора з усією компанією: чати, голос, спільноти й події.',
                             )}
                         </p>
                     </Reveal>
@@ -476,18 +437,18 @@ export default function Welcome({
                     <Reveal className="grid items-center gap-8 rounded-[28px] bg-[#121212] p-8 shadow-[0_12px_32px_rgb(0_0_0_/_0.45)] ring-1 ring-white/10 sm:p-10 lg:grid-cols-[1.2fr_1fr]">
                         <div>
                             <h2 className="font-display text-[clamp(1.7rem,3vw,2.4rem)] font-semibold tracking-[-0.035em] text-white">
-                                {tr('Для власників серверів і лідерів сімей')}
+                                {tr('Для лідерів спільнот і сімей')}
                             </h2>
                             <ul className="mt-5 space-y-3 text-sm text-[#a7a7a7]">
                                 {[
                                     tr(
-                                        'Віджет для сайту сервера: онлайн наживо, топ сімей, кнопка голосування.',
+                                        'Сторінка спільноти з правилами, адмінами, подіями й власною стіною.',
                                     ),
                                     tr(
-                                        'Значок перевіреного сервера й публічний рейтинг сімей.',
+                                        'Значок перевіреної спільноти й публічний рейтинг сімей.',
                                     ),
                                     tr(
-                                        'Штаб сім’ї: анкета новачка, зміни й чергування, підсумки сезону картинкою для Discord.',
+                                        'Штаб сім’ї: анкета новачка, чергування, спільний банк і підсумки сезону однією картинкою.',
                                     ),
                                 ].map((line) => (
                                     <li key={line} className="flex gap-3">
@@ -500,14 +461,14 @@ export default function Welcome({
                         <div className="flex flex-col items-start gap-3 lg:items-end">
                             <span className="flex items-center gap-2 text-sm text-[#a7a7a7]">
                                 <UsersRound className="size-4" />
-                                {tr('Безкоштовно для серверів і спільнот')}
+                                {tr('Безкоштовно для спільнот і сімей')}
                             </span>
                             {canRegister && (
                                 <SheenPillButton
                                     href={register.url()}
                                     tone="primary"
                                 >
-                                    {tr('Додати свій сервер')}
+                                    {tr('Створити спільноту')}
                                 </SheenPillButton>
                             )}
                         </div>
@@ -530,7 +491,7 @@ export default function Welcome({
                         />
                         <div data-on-dark className="relative">
                             <h2 className="font-display text-[clamp(2rem,4vw,3rem)] font-semibold tracking-[-0.04em] text-white">
-                                {tr('Твоя команда вже тут')}
+                                {tr('Твої вже тут')}
                             </h2>
                             <p className="mx-auto mt-3 max-w-md text-[#a7a7a7]">
                                 {tr(

@@ -67,7 +67,7 @@ class PageSeo
         $about = $open && is_string($user->about) ? trim($user->about) : '';
         $description = $about !== ''
             ? Str::limit(preg_replace('/\s+/u', ' ', $about) ?? $about, 200)
-            : $user->name.' (@'.$user->username.') у GameCon — соцмережі для геймерів.';
+            : $user->name.' (@'.$user->username.') у GameCon — соцмережі, де свої завжди поруч.';
 
         return [
             'seoTitle' => $user->name.' (@'.$user->username.')',
@@ -218,7 +218,7 @@ class PageSeo
 
         return [
             'seoTitle' => 'Застосунок GameCon для Android',
-            'seoDescription' => 'GameCon у телефоні: чати, голос, музика, кіно, сім’ї й сервери GTA — у застосунку для Android.',
+            'seoDescription' => 'GameCon у телефоні: друзі, чати й голосові кімнати, спільноти й сім’ї — завжди поруч у застосунку для Android.',
             'seoEntity' => array_filter([
                 '@type' => 'MobileApplication',
                 '@id' => url('/app').'#app',

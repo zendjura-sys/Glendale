@@ -38,7 +38,7 @@ class OgCards
         return $this->cached('u/'.$user->id.'-'.$this->profileVersion($user, $open), fn () => $this->render(
             $user->name,
             '@'.$user->username,
-            $about !== '' ? $about : 'Профіль у GameCon — соцмережі для геймерів',
+            $about !== '' ? $about : 'Профіль у GameCon — соцмережі, де свої завжди поруч',
             $user->avatar_path,
         ));
     }
@@ -51,7 +51,7 @@ class OgCards
         return $this->cached('c/'.$community->id.'-'.$this->communityVersion($community), fn () => $this->render(
             $community->name,
             $members.' '.$this->plural($members, ['учасник', 'учасники', 'учасників']),
-            $description !== '' ? $description : 'Спільнота в GameCon — соцмережі для геймерів',
+            $description !== '' ? $description : 'Спільнота в GameCon — соцмережі, де свої завжди поруч',
             $community->avatar_path,
         ));
     }

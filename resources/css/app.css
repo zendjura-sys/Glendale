@@ -7158,7 +7158,7 @@ html:root.gc-vk[data-theme] body {
 .gc-lobby-top__bar {
     pointer-events: auto;
     margin: 0 auto;
-    max-width: var(--gc-shell-max);
+    max-width: 1760px;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -7566,18 +7566,30 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
     font-size: 14px;
     font-weight: 700;
 }
+/* Чим ширше вікно — тим більше колонок віджетів (телефон 1, планшет 2, ПК 3, широкий 4–5). */
 .gc-widget-grid {
     display: grid;
     gap: 14px;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
     align-items: start;
 }
-@media (min-width: 900px) {
-    .gc-widget-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    .gc-widget-cell.is-full {
-        grid-column: 1 / -1;
+.gc-widget-cell.is-full {
+    grid-column: 1 / -1;
+}
+/* Віджет без даних (порожній компонент) не займає клітинку. */
+.gc-widget-cell:empty {
+    display: none;
+}
+/* Лобі ширше за звичайні сторінки: вміст не розтягується, а додаються колонки. */
+.gc-lobby-wide {
+    position: relative;
+    left: 50%;
+    width: min(calc(100vw - 24px), 1760px);
+    translate: -50% 0;
+}
+@media (min-width: 640px) {
+    .gc-lobby-wide {
+        width: min(calc(100vw - 48px), 1760px);
     }
 }
 .gc-widget-cell.is-editing {

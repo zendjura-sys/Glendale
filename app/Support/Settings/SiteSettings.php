@@ -15,13 +15,13 @@ class SiteSettings
     /** @var array<string, mixed> */
     public const DEFAULTS = [
         'site_name' => 'GameCon',
-        'tagline' => 'Соцмережа для тих, хто грає разом',
+        'tagline' => 'Соцмережа, де свої завжди поруч',
         // Офіційні сторінки сайту в соцмережах (по одній адресі в рядку) — для розмітки Schema «sameAs».
         'seo_same_as' => null,
         'app_links' => [],
         // Ідентифікатор потоку Google Analytics 4 (G-XXXXXXX); порожньо — аналітики немає.
         'analytics_ga_id' => null,
-        'seo_description' => 'GameCon — соціальна мережа для гравців: друзі, спільноти, сервери GTA RP, сімʼї й клани, турніри та колекційні картки.',
+        'seo_description' => 'GameCon — соцмережа, де свої завжди поруч: друзі, спільноти й сімʼї, живі чати й голосові кімнати, події та ефіри. На сайті й у застосунку.',
         'play_store_enabled' => false,
         'play_store_url' => null,
         'play_store_badge' => 'get',
