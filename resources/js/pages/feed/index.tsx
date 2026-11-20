@@ -49,19 +49,23 @@ import {
     VoiceCard,
 } from '@/components/gc/feed-pulse';
 import {
+    CategoryPicker,
     LobbyHero,
     NowPlayingWidget,
-    NowTiles,
-    WidgetBoard,
+    isNewIn,
+    shownIn,
+    useNowBlocks,
 } from '@/components/lobby/lobby';
-import type { LayoutItem } from '@/components/lobby/lobby';
-import { BentoCell } from '@/components/lobby/bento-feed';
+import type { LiveBlockData } from '@/components/lobby/lobby';
+import { BentoCell, LiveBlock } from '@/components/lobby/bento-feed';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { FriendActivity } from '@/components/feed/friend-activity';
 import { PromoBanner } from '@/components/feed/promo-banner';
 import {
     ContinueList,
     FeedColumnWidgets,
+    SideWidgets,
     useSideWidgets,
 } from '@/components/feed/side-widgets';
 import { WhileAway } from '@/components/feed/while-away';
@@ -474,136 +478,310 @@ export default function Feed({
         }
     };
 
-    return (
+    const [selectedState, setSelected] = useState<string[]>(
+        engagement?.categories ?? [],
+    );
+    // Живі блоки: категорія (розділ) + підкатегорія (функціонал), мітка в куті — що відбувається.
+    const selected = selectedState;
+    const nowBlocks = useNowBlocks({
+        rail,
+        streams: liveOn ? (streaming ?? []) : [],
+        events: tomorrow ?? [],
+        resume: continueItems[0] ?? null,
+    });
+    const media = (only: Parameters<typeof SideWidgets>[0]['only']) => (
+        <SideWidgets data={widgets} only={only} />
+    );
+    const WIDGETS: {
+        key: string;
+        category: string;
+        sub: string;
+        badge: string;
+        tone?: LiveBlockData['tone'];
+        wide?: boolean;
+        node: () => ReactNode;
+    }[] = [
+        {
+            key: 'alerts',
+            category: 'alerts',
+            sub: 'air',
+            badge: tr('Тривога'),
+            tone: 'alert',
+            node: () => renderWidget('alerts'),
+        },
+        {
+            key: 'player',
+            category: 'music',
+            sub: 'player',
+            badge: tr('Грає зараз'),
+            tone: 'live',
+            node: () => renderWidget('player'),
+        },
+        {
+            key: 'gamecast',
+            category: 'live',
+            sub: 'gamecast',
+            badge: 'GameCast',
+            tone: 'live',
+            node: () => media(['gamecast']),
+        },
+        {
+            key: 'livecast',
+            category: 'live',
+            sub: 'livecast',
+            badge: 'LiveCast',
+            tone: 'live',
+            node: () => media(['livecast']),
+        },
+        {
+            key: 'voice-card',
+            category: 'voice',
+            sub: 'rooms',
+            badge: tr('Голосові кімнати'),
+            tone: 'live',
+            node: () => renderWidget('voice'),
+        },
+        {
+            key: 'playing',
+            category: 'games',
+            sub: 'playing',
+            badge: tr('У грі'),
+            tone: 'live',
+            node: () => renderWidget('playing'),
+        },
+        {
+            key: 'requests',
+            category: 'friends',
+            sub: 'requests',
+            badge: tr('Заявки в друзі'),
+            tone: 'accent',
+            node: () => renderWidget('requests'),
+        },
+        {
+            key: 'pulse',
+            category: 'quests',
+            sub: 'daily',
+            badge: tr('Завдання дня'),
+            tone: 'accent',
+            node: () => renderWidget('pulse'),
+        },
+        {
+            key: 'stories',
+            category: 'moments',
+            sub: 'stories',
+            badge: tr('Історії'),
+            wide: true,
+            node: () => renderWidget('stories'),
+        },
+        {
+            key: 'contacts',
+            category: 'friends',
+            sub: 'contacts',
+            badge: tr('Друзі'),
+            node: () => renderWidget('contacts'),
+        },
+        {
+            key: 'online',
+            category: 'friends',
+            sub: 'online',
+            badge: tr('Онлайн'),
+            tone: 'live',
+            node: () => renderWidget('online'),
+        },
+        {
+            key: 'season',
+            category: 'quests',
+            sub: 'season',
+            badge: tr('Сезон'),
+            node: () => renderWidget('season'),
+        },
+        {
+            key: 'servers',
+            category: 'servers',
+            sub: 'top',
+            badge: tr('Онлайн'),
+            tone: 'live',
+            node: () => renderWidget('servers'),
+        },
+        {
+            key: 'music',
+            category: 'music',
+            sub: 'new',
+            badge: tr('Нова музика'),
+            node: () => media(['music']),
+        },
+        {
+            key: 'cinema',
+            category: 'cinema',
+            sub: 'watch',
+            badge: tr('Що подивитися'),
+            node: () => media(['cinema']),
+        },
+        {
+            key: 'picks',
+            category: 'cinema',
+            sub: 'picks',
+            badge: tr('Добірка'),
+            node: () => renderWidget('picks'),
+        },
+        {
+            key: 'same',
+            category: 'games',
+            sub: 'same',
+            badge: tr('Грають у те саме'),
+            node: () => renderWidget('same_game'),
+        },
+        {
+            key: 'giveaways',
+            category: 'games',
+            sub: 'giveaways',
+            badge: tr('Роздачі'),
+            node: () => media(['giveaways']),
+        },
+        {
+            key: 'suggestions',
+            category: 'friends',
+            sub: 'suggestions',
+            badge: tr('Можливо, знайомі'),
+            node: () => renderWidget('suggestions'),
+        },
+        {
+            key: 'birthdays',
+            category: 'friends',
+            sub: 'birthdays',
+            badge: tr('День народження'),
+            tone: 'accent',
+            node: () => renderWidget('birthdays'),
+        },
+    ];
+    const blocks: LiveBlockData[] = [
+        ...nowBlocks,
+        ...WIDGETS.map((w) => ({ ...w, node: w.node() })),
+    ].filter(
+        (b) =>
+            b.node !== null &&
+            b.node !== false &&
+            shownIn(selected, b.category, b.sub),
+    );
+    const catalog = engagement?.catalog ?? [];
+    const composeOn = shownIn(selected, 'feed', 'compose');
+    const postsOn = shownIn(selected, 'feed', 'posts');
+
+    const grid = (
         <>
-            <Head title={tr('Новини')} />
-            <div className="space-y-8">
-                <div className="gc-lobby-wide space-y-8">
+            <LiveBlock wide>
+                <div className="gc-lobby-hero-block">
                     <LobbyHero rail={rail} events={tomorrow ?? []} />
-                    <WhileAway data={whileAway} />
-                    <WrappedBanner />
-                    <SiteEventBanner />
-                    <NowTiles
-                        rail={rail}
-                        streams={liveOn ? (streaming ?? []) : []}
-                        events={tomorrow ?? []}
-                        resume={continueItems[0] ?? null}
-                    />
-                    <WidgetBoard
-                        layout={(engagement?.layout ?? []) as LayoutItem[]}
-                        available={available}
-                        render={renderWidget}
-                        editable={widgetsOn}
+                    <CategoryPicker
+                        selected={selectedState}
+                        onChange={setSelected}
                     />
                 </div>
-                <section
-                    aria-labelledby="gc-for-you"
-                    className="gc-lobby-wide space-y-4"
-                >
-                    <h2 id="gc-for-you" className="gc-lobby-label">
-                        {tr('Для вас')}
-                    </h2>
-                    <div className="max-w-[760px] space-y-4">
-                        {newcomer && <NewcomerWeek data={newcomer} />}
-                        <PostComposer />
-                        <PromoBanner />
-                    </div>
-                    <FeedTabs tab={tab} hasFriends={hasFriends} />
-                    {tab !== 'activity' && (
-                        <div className="flex flex-wrap items-center gap-2">
-                            <LanguageFilter
-                                tab={tab}
-                                lang={lang}
-                                languages={languages}
-                            />
-                            {tab === 'friends' && (
-                                <ChronoSwitch
-                                    onlyFriends={onlyFriends ?? false}
+            </LiveBlock>
+            {shownIn(selected, 'feed', 'while_away') && (
+                <LiveBlock wide badge={tr('Поки тебе не було')} tone="accent">
+                    <WhileAway data={whileAway} />
+                </LiveBlock>
+            )}
+            {shownIn(selected, 'events', 'soon') && (
+                <LiveBlock wide badge={tr('Подія')} tone="accent">
+                    <WrappedBanner />
+                    <SiteEventBanner />
+                </LiveBlock>
+            )}
+            {postsOn && (
+                <LiveBlock wide badge={tr('Стрічка')}>
+                    <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
+                        <FeedTabs tab={tab} hasFriends={hasFriends} />
+                        {tab !== 'activity' && (
+                            <>
+                                <LanguageFilter
+                                    tab={tab}
+                                    lang={lang}
+                                    languages={languages}
                                 />
-                            )}
-                        </div>
-                    )}
+                                {tab === 'friends' && (
+                                    <ChronoSwitch
+                                        onlyFriends={onlyFriends ?? false}
+                                    />
+                                )}
+                            </>
+                        )}
+                    </div>
+                    <PromoBanner />
+                </LiveBlock>
+            )}
+            {blocks.map((b) => (
+                <LiveBlock
+                    key={b.key}
+                    badge={b.badge}
+                    tone={b.tone}
+                    wide={b.wide}
+                    isNew={isNewIn(catalog, b.category, b.sub)}
+                >
+                    {b.node}
+                </LiveBlock>
+            ))}
+            {composeOn && (
+                <LiveBlock wide badge={tr('Новий допис')} tone="accent">
+                    {newcomer && <NewcomerWeek data={newcomer} />}
+                    <PostComposer />
+                </LiveBlock>
+            )}
+        </>
+    );
 
-                    {tab === 'discover' && !hasFriends && (
-                        <div className="gradient-border gc-solid flex items-center gap-4 rounded-2xl p-3.5">
-                            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-sky-500">
-                                <Sparkles className="size-6 text-white" />
-                            </span>
-                            <div className="text-sm">
-                                <p className="font-semibold text-white">
-                                    {tr('Ласкаво просимо в GameCon,')}{' '}
-                                    {auth.user.first_name}!
-                                </p>
-                                <p className="mt-0.5 text-white/55">
-                                    {tr(
-                                        "Поки що тут найпопулярніше за місяць. Додайте друзів, і їхні записи з'являться у вкладці «Друзі».",
-                                    )}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {tab === 'activity' ? (
-                        <FriendActivity />
-                    ) : posts.data.length === 0 ? (
-                        <EmptyState
-                            icon={
-                                tab === 'country'
-                                    ? Globe
-                                    : tab === 'friends'
-                                      ? Newspaper
-                                      : Compass
-                            }
-                            title={
-                                tab === 'topics'
-                                    ? topics?.length
-                                        ? tr('За вашими темами поки тихо')
-                                        : tr('Ви ще не стежите за темами')
-                                    : tab === 'country'
-                                      ? tr('Стрічка країни порожня')
-                                      : tab === 'friends'
-                                        ? tr('Стрічка поки порожня')
-                                        : tr('Тут ще нічого немає')
-                            }
-                            text={
-                                tab === 'topics'
-                                    ? tr(
-                                          'Торкніться #хештегу в записі й натисніть «Стежити» — такі записи збиратимуться тут.',
-                                      )
-                                    : tab === 'country' && !country
-                                      ? tr(
-                                            'Вкажіть країну в налаштуваннях профілю — і тут з’являться записи людей звідти.',
-                                        )
-                                      : tr(
-                                            'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
-                                        )
-                            }
-                            action={
-                                <Link
-                                    href="/people"
-                                    className="btn-glow inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
-                                >
-                                    <UserPlus className="size-4" />{' '}
-                                    {tr('Знайти друзів')}
-                                </Link>
-                            }
-                        />
-                    ) : (
-                        <InfiniteScroll
-                            data="posts"
-                            preserveUrl
-                            buffer={600}
-                            loading={<PostSkeleton />}
-                            className="gc-bento"
-                        >
-                            {posts.data.map((post) => (
-                                <BentoCell key={post.id} post={post}>
-                                    <PostCard post={post} />
-                                </BentoCell>
-                            ))}
-                        </InfiniteScroll>
-                    )}
-                </section>
+    return (
+        <>
+            <Head title={tr('Лобі')} />
+            <div className="gc-lobby-wide space-y-4">
+                {postsOn && tab !== 'activity' && posts.data.length > 0 ? (
+                    <InfiniteScroll
+                        data="posts"
+                        preserveUrl
+                        buffer={600}
+                        loading={<PostSkeleton />}
+                        className="gc-bento gc-lobby-bento"
+                    >
+                        {grid}
+                        {posts.data.map((post) => (
+                            <BentoCell
+                                key={post.id}
+                                post={post}
+                                badge={tr('Допис')}
+                            >
+                                <PostCard post={post} />
+                            </BentoCell>
+                        ))}
+                    </InfiniteScroll>
+                ) : (
+                    <div className="gc-bento gc-lobby-bento">{grid}</div>
+                )}
+                {postsOn && tab === 'activity' && <FriendActivity />}
+                {postsOn && tab !== 'activity' && posts.data.length === 0 && (
+                    <EmptyState
+                        icon={
+                            tab === 'country'
+                                ? Globe
+                                : tab === 'friends'
+                                  ? Newspaper
+                                  : Compass
+                        }
+                        title={tr('Стрічка поки порожня')}
+                        text={tr(
+                            'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
+                        )}
+                        action={
+                            <Link
+                                href="/people"
+                                className="gc-primary-btn h-10 px-5"
+                            >
+                                <UserPlus className="size-4" />{' '}
+                                {tr('Знайти друзів')}
+                            </Link>
+                        }
+                    />
+                )}
             </div>
         </>
     );

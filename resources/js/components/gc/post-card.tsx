@@ -289,7 +289,10 @@ export function PostCard({
                 </div>
 
                 <DropdownMenu>
-                    <DropdownMenuTrigger className="rounded-full p-1.5 text-white/40 transition outline-none hover:bg-[var(--gc-l3)] hover:text-white">
+                    <DropdownMenuTrigger
+                        data-post-menu
+                        className="rounded-full p-1.5 text-white/40 transition outline-none hover:bg-[var(--gc-l3)] hover:text-white"
+                    >
                         <MoreHorizontal className="size-5" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent

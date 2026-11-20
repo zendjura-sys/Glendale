@@ -112,6 +112,13 @@ declare module '@inertiajs/core' {
                 frame: { season: string; on: boolean } | null;
                 widgets: string[];
                 layout?: { key: string; size: 'half' | 'full' }[];
+                categories?: string[];
+                catalog?: {
+                    key: string;
+                    label: string;
+                    new?: boolean;
+                    subs: { key: string; label: string; new?: boolean }[];
+                }[];
             } | null;
             /** Режим «очима людини» (адміністратор переглядає сайт як ця людина). */
             viewAs?: { name: string; username: string } | null;

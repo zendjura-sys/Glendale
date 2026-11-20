@@ -48,15 +48,18 @@ export function useRowSpan(enabled = true) {
             ? undefined
             : { gridRowEnd: `span ${rows + BENTO_GAP}` };
 
-    return { ref, style };
+    return { ref, style, rows };
 }
 
 /** Клітинка бенто стрічки «Для вас». */
 export function BentoCell({
     post,
+    badge,
     children,
 }: {
     post: PostItem;
+    /** Мітка в куті (що це): «Допис». */
+    badge?: string;
     children: ReactNode;
 }) {
     const { ref, style } = useRowSpan();
@@ -69,7 +72,12 @@ export function BentoCell({
             )}
             style={style}
         >
-            <div ref={ref}>
+            <div ref={ref} className="gc-live-block">
+                {badge && (
+                    <span className="gc-live-badge">
+                        <span className="gc-live-badge__pill">{badge}</span>
+                    </span>
+                )}
                 <MediaCarouselContext.Provider value>
                     {children}
                 </MediaCarouselContext.Provider>
@@ -80,3 +88,57 @@ export function BentoCell({
 
 /** Проміжок між картками бенто, px (мінімальний — як у макеті). */
 export const BENTO_GAP = 6;
+
+/**
+ * Живий блок лобі: клітинка бенто з міткою в куті — що відбувається зараз
+ * (LIVE, GameCast, «Виконується зміна»…). Висота — за вмістом, ширина — 1 або 2 колонки.
+ */
+export function LiveBlock({
+    badge,
+    tone,
+    wide = false,
+    isNew = false,
+    children,
+}: {
+    badge?: string;
+    /** Додано за останні 7 днів — червона бірка «New!». */
+    isNew?: boolean;
+    tone?: 'live' | 'alert' | 'accent';
+    wide?: boolean;
+    children: ReactNode;
+}) {
+    const { ref, style, rows } = useRowSpan();
+
+    return (
+        <div
+            className={cn('gc-bento-cell', wide && 'is-wide')}
+            // Порожній блок (у категорії зараз нічого не відбувається) не займає місця.
+            style={rows !== null && rows <= 36 ? { display: 'none' } : style}
+        >
+            <div ref={ref} className="gc-live-block">
+                {(badge || isNew) && (
+                    <span className="gc-live-badge">
+                        {isNew && <span className="gc-new-tag">New!</span>}
+                        {badge && (
+                            <span
+                                className={cn(
+                                    'gc-live-badge__pill',
+                                    tone && `gc-live-badge--${tone}`,
+                                )}
+                            >
+                                {tone === 'live' || tone === 'alert' ? (
+                                    <span
+                                        className="gc-live-badge__dot"
+                                        aria-hidden
+                                    />
+                                ) : null}
+                                {badge}
+                            </span>
+                        )}
+                    </span>
+                )}
+                {children}
+            </div>
+        </div>
+    );
+}

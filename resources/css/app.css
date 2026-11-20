@@ -8473,3 +8473,188 @@ html[data-theme='light'] #gc-boot-root {
 .gc-ai-input:focus {
     box-shadow: inset 0 0 0 1.5px var(--gc-accent);
 }
+
+/* ---------- Лобі: одна бенто-мозаїка живих блоків (мітка в куті, «New!», вибір категорій) ---------- */
+.gc-live-block {
+    position: relative;
+}
+/* Мітка в «вирізі» правого верхнього кута блоку (як вкладка): фон вирізу — колір сторінки,
+   увігнуті заокруглення по боках роблять кут картки плавним. */
+.gc-live-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    /* Виріз росте з довжиною назви, але не ширший за блок (мінус місце під заокруглення). */
+    max-width: calc(100% - 28px);
+    padding: 0 0 6px 6px;
+    border-bottom-left-radius: 14px;
+    background: var(--gc-page);
+    pointer-events: none;
+}
+.gc-live-badge::before,
+.gc-live-badge::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: radial-gradient(
+        circle at 0 100%,
+        transparent 13.5px,
+        var(--gc-page) 14px
+    );
+}
+.gc-live-badge::before {
+    top: 0;
+    right: 100%;
+}
+.gc-live-badge::after {
+    top: 100%;
+    right: 0;
+}
+.gc-live-badge__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 9999px;
+    background: var(--gc-l2);
+    color: var(--gc-text-2);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.gc-live-badge .gc-new-tag {
+    flex-shrink: 0;
+}
+.gc-live-badge--live {
+    color: var(--gc-live);
+}
+.gc-live-badge--alert {
+    color: #fff;
+    background: var(--gc-alert);
+}
+.gc-live-badge--accent {
+    color: var(--gc-accent);
+}
+.gc-live-badge__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: currentColor;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .gc-live-badge--live .gc-live-badge__dot {
+        animation: gc-live-pulse 1.6s ease-in-out infinite;
+    }
+}
+@keyframes gc-live-pulse {
+    50% {
+        opacity: 0.35;
+    }
+}
+.gc-new-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 7px;
+    border-radius: 9999px;
+    background: #ef3b4d;
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+.gc-new-tag--corner {
+    position: absolute;
+    top: -9px;
+    left: 14px;
+    box-shadow: 0 0 0 3px var(--gc-page);
+    z-index: 3;
+    pointer-events: none;
+}
+.gc-lobby-bento
+    > .gc-bento-cell
+    > .gc-live-block
+    > :not(.gc-live-badge, .gc-new-tag) {
+    border-radius: 8px;
+}
+.gc-cat-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    border-radius: 8px;
+    background: var(--gc-l2);
+}
+.gc-cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 11px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gc-text-2);
+    box-shadow: inset 0 0 0 1px var(--gc-hairline);
+}
+.gc-cat-chip.is-main {
+    align-self: flex-start;
+    height: 32px;
+    font-size: 14px;
+}
+.gc-cat-chip.is-sub {
+    height: 26px;
+    font-size: 12px;
+}
+.gc-cat-chip.is-on {
+    color: var(--gc-text);
+    background: color-mix(in oklab, var(--gc-accent-strong) 22%, transparent);
+    box-shadow: inset 0 0 0 1px
+        color-mix(in oklab, var(--gc-accent-strong) 45%, transparent);
+}
+/* Смартфон: блоки на всю ширину (лише тут розтягування дозволене). */
+@media (max-width: 699px) {
+    .gc-bento,
+    .gc-widget-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+/* Вміст блоку з міткою починається під вирізом — текст не обрізається, кнопки не перекриваються. */
+.gc-lobby-bento .gc-live-block:has(> .gc-live-badge) {
+    padding-top: 30px;
+}
+/* Кожен блок лобі — картка: виріз із міткою завжди в межах блоку, навіть якщо вміст без фону. */
+.gc-lobby-bento .gc-live-block {
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--gc-l1);
+}
+
+.gc-lobby-hero-block {
+    padding: 20px 24px 24px;
+}
+@media (max-width: 699px) {
+    .gc-lobby-hero-block {
+        padding: 16px;
+    }
+}
+/* Блок — одна картка: внутрішні картки віджетів і дописів без власного фону й рамки (без шва під вирізом). */
+:root[data-skin] .gc-lobby-bento .gc-live-block > :not(.gc-live-badge),
+:root[data-skin]
+    .gc-lobby-bento
+    .gc-live-block
+    > :not(.gc-live-badge)
+    > :is(.gc-solid, .gc-post, section) {
+    background: transparent !important;
+    box-shadow: none !important;
+}

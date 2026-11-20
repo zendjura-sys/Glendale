@@ -312,7 +312,20 @@ function ChatTile({ chat }: { chat: NowData['chats'][number] }) {
     );
 }
 
-export function NowTiles({
+/** Живий блок лобі: категорія (для вибору людиною), мітка в куті (що відбувається) і вміст. */
+export type LiveBlockData = {
+    key: string;
+    /** Розділ (категорія) і функціонал розділу (підкатегорія) — як у config/lobby.php. */
+    category: string;
+    sub: string;
+    badge: string;
+    tone?: 'live' | 'alert' | 'accent';
+    wide?: boolean;
+    node: ReactNode;
+};
+
+/** Живі блоки «що відбувається зараз» з усіх розділів: голос, ефіри, події, зміни, бесіди, «де зупинились». */
+export function useNowBlocks({
     rail,
     streams,
     events,
@@ -329,166 +342,198 @@ export function NowTiles({
         image: string | null;
     } | null;
 }) {
-    const reduce = useReducedMotion();
     const now = useNow();
     const room = rail?.voice?.find((r) => r.count > 0);
     const stream = streams.find((s) => s.live);
     const event = events[0];
-    const tiles: ReactNode[] = [];
+    const tiles: LiveBlockData[] = [];
 
     if (room) {
-        tiles.push(
-            <Link
-                key="voice"
-                href={room.href}
-                className="gc-now-tile gc-now-tile--voice"
-            >
-                <span className="gc-now-tile__kicker">
-                    {tr('Голосова')} · {room.name}
-                </span>
-                <span className="gc-now-tile__title">
-                    {room.people[0]
-                        ? tr('{name} і ще {count}', {
-                              name: room.people[0].first_name,
-                              count: Math.max(0, room.count - 1),
-                          })
-                        : tr('{count} у кімнаті', { count: room.count })}
-                </span>
-                <span className="mt-auto flex items-end justify-between gap-3">
-                    <span className="flex -space-x-2">
-                        {room.people.slice(0, 3).map((p) => (
-                            <UserAvatar
-                                key={p.id}
-                                user={p}
-                                size="sm"
-                                showOnline={false}
-                            />
-                        ))}
+        tiles.push({
+            key: 'voice',
+            category: 'voice',
+            sub: 'rooms',
+            badge: tr('В ефірі'),
+            tone: 'live',
+            node: (
+                <Link
+                    key="voice"
+                    href={room.href}
+                    className="gc-now-tile gc-now-tile--voice"
+                >
+                    <span className="gc-now-tile__kicker">
+                        {tr('Голосова')} · {room.name}
                     </span>
-                    <span className="gc-now-tile__cta">
-                        <Headphones className="size-4" />
-                        {tr('Зайти')}
+                    <span className="gc-now-tile__title">
+                        {room.people[0]
+                            ? tr('{name} і ще {count}', {
+                                  name: room.people[0].first_name,
+                                  count: Math.max(0, room.count - 1),
+                              })
+                            : tr('{count} у кімнаті', { count: room.count })}
                     </span>
-                </span>
-            </Link>,
-        );
+                    <span className="mt-auto flex items-end justify-between gap-3">
+                        <span className="flex -space-x-2">
+                            {room.people.slice(0, 3).map((p) => (
+                                <UserAvatar
+                                    key={p.id}
+                                    user={p}
+                                    size="sm"
+                                    showOnline={false}
+                                />
+                            ))}
+                        </span>
+                        <span className="gc-now-tile__cta">
+                            <Headphones className="size-4" />
+                            {tr('Зайти')}
+                        </span>
+                    </span>
+                </Link>
+            ),
+        });
     }
     if (stream) {
-        tiles.push(
-            <a
-                key="stream"
-                href={stream.url}
-                target="_blank"
-                rel="noreferrer"
-                className="gc-now-tile gc-now-tile--live"
-            >
-                <span className="gc-now-tile__kicker">
-                    {stream.user?.first_name ?? stream.channel}
-                    {stream.viewers
-                        ? ` · ${tr('{count} глядачів', { count: stream.viewers })}`
-                        : ''}
-                </span>
-                <span className="gc-now-tile__badge">LIVE</span>
-                <span className="gc-now-tile__title line-clamp-2">
-                    {stream.title ?? stream.game ?? stream.platform_label}
-                </span>
-                <span className="mt-auto">
-                    <span className="gc-now-tile__cta">
-                        <Play className="size-4" />
-                        {tr('Дивитись')}
+        tiles.push({
+            key: 'stream',
+            category: 'live',
+            sub: 'streams',
+            badge: 'LIVE',
+            tone: 'alert',
+            node: (
+                <a
+                    key="stream"
+                    href={stream.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="gc-now-tile gc-now-tile--live"
+                >
+                    <span className="gc-now-tile__kicker">
+                        {stream.user?.first_name ?? stream.channel}
+                        {stream.viewers
+                            ? ` · ${tr('{count} глядачів', { count: stream.viewers })}`
+                            : ''}
                     </span>
-                </span>
-            </a>,
-        );
+                    <span className="gc-now-tile__title line-clamp-2">
+                        {stream.title ?? stream.game ?? stream.platform_label}
+                    </span>
+                    <span className="mt-auto">
+                        <span className="gc-now-tile__cta">
+                            <Play className="size-4" />
+                            {tr('Дивитись')}
+                        </span>
+                    </span>
+                </a>
+            ),
+        });
     }
     if (event) {
-        tiles.push(
-            <Link
-                key="event"
-                href={event.where?.url ?? '/feed'}
-                className="gc-now-tile"
-            >
-                <span className="gc-now-tile__kicker">
-                    {event.where?.name ?? event.type_label} ·{' '}
-                    {new Date(event.starts_at).toLocaleTimeString('uk-UA', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    })}
-                </span>
-                <span className="gc-now-tile__title line-clamp-2">
-                    {event.title}
-                </span>
-                <span className="mt-auto flex items-center gap-2 text-sm text-[var(--gc-text-2)]">
-                    <CalendarClock className="size-4" />
-                    {event.type_label}
-                </span>
-            </Link>,
-        );
+        tiles.push({
+            key: 'event',
+            category: 'events',
+            sub: 'mine',
+            badge: tr('Подія'),
+            tone: 'accent',
+            node: (
+                <Link
+                    key="event"
+                    href={event.where?.url ?? '/feed'}
+                    className="gc-now-tile"
+                >
+                    <span className="gc-now-tile__kicker">
+                        {event.where?.name ?? event.type_label} ·{' '}
+                        {new Date(event.starts_at).toLocaleTimeString('uk-UA', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        })}
+                    </span>
+                    <span className="gc-now-tile__title line-clamp-2">
+                        {event.title}
+                    </span>
+                    <span className="mt-auto flex items-center gap-2 text-sm text-[var(--gc-text-2)]">
+                        <CalendarClock className="size-4" />
+                        {event.type_label}
+                    </span>
+                </Link>
+            ),
+        });
     }
 
     for (const shift of now?.shifts ?? []) {
-        tiles.push(
-            <Link
-                key={`shift-${shift.id}`}
-                href={shift.href}
-                className={cn(
-                    'gc-now-tile',
-                    shift.live && 'gc-now-tile--shift',
-                )}
-            >
-                <span className="gc-now-tile__kicker">
-                    {shift.family} ·{' '}
-                    {shift.live
-                        ? tr('до {time}', { time: hm(shift.ends_at) })
-                        : tr('о {time}', { time: hm(shift.starts_at) })}
-                </span>
-                {shift.live && (
-                    <span className="gc-now-tile__badge gc-now-tile__badge--live">
-                        {tr('Йде')}
+        tiles.push({
+            key: `shift-${shift.id}`,
+            category: 'families',
+            sub: 'shifts',
+            badge: shift.live ? tr('Виконується зміна') : tr('Скоро зміна'),
+            tone: shift.live ? 'live' : 'accent',
+            node: (
+                <Link
+                    key={`shift-${shift.id}`}
+                    href={shift.href}
+                    className={cn(
+                        'gc-now-tile',
+                        shift.live && 'gc-now-tile--shift',
+                    )}
+                >
+                    <span className="gc-now-tile__kicker">
+                        {shift.family} ·{' '}
+                        {shift.live
+                            ? tr('до {time}', { time: hm(shift.ends_at) })
+                            : tr('о {time}', { time: hm(shift.starts_at) })}
                     </span>
-                )}
-                <span className="gc-now-tile__title line-clamp-2">
-                    {tr('Зміна')}: {shift.title}
-                </span>
-                <span className="mt-auto text-sm text-[var(--gc-text-2)]">
-                    {shift.mine
-                        ? tr('Ви бригадир')
-                        : shift.foreman
-                          ? tr('Бригадир: {name}', { name: shift.foreman })
-                          : tr('Вільна — можна взяти')}
-                    {shift.goal ? ` · ${shift.progress}/${shift.goal}` : ''}
-                </span>
-            </Link>,
-        );
+                    <span className="gc-now-tile__title line-clamp-2">
+                        {tr('Зміна')}: {shift.title}
+                    </span>
+                    <span className="mt-auto text-sm text-[var(--gc-text-2)]">
+                        {shift.mine
+                            ? tr('Ви бригадир')
+                            : shift.foreman
+                              ? tr('Бригадир: {name}', { name: shift.foreman })
+                              : tr('Вільна — можна взяти')}
+                        {shift.goal ? ` · ${shift.progress}/${shift.goal}` : ''}
+                    </span>
+                </Link>
+            ),
+        });
     }
     for (const chat of now?.chats ?? []) {
-        tiles.push(<ChatTile key={`chat-${chat.id}`} chat={chat} />);
+        tiles.push({
+            key: `chat-${chat.id}`,
+            category: 'messages',
+            sub: 'unread',
+            badge: tr('Нове повідомлення'),
+            tone: 'accent',
+            node: <ChatTile chat={chat} />,
+        });
     }
     if (resume) {
-        tiles.push(
-            <Link key="resume" href={resume.href} className="gc-now-tile">
-                <span className="gc-now-tile__kicker">
-                    {tr('Де ви зупинились')}
-                </span>
-                <span className="gc-now-tile__title line-clamp-2">
-                    {resume.title}
-                </span>
-                <span className="mt-auto flex items-center justify-between gap-3">
-                    <span className="truncate text-sm text-[var(--gc-text-2)]">
-                        {resume.hint}
+        tiles.push({
+            key: 'resume',
+            category: 'cinema',
+            sub: 'continue',
+            badge: tr('Продовжити'),
+            node: (
+                <Link href={resume.href} className="gc-now-tile">
+                    <span className="gc-now-tile__kicker">
+                        {tr('Де ви зупинились')}
                     </span>
-                    <span className="gc-now-tile__cta">
-                        <Play className="size-4" />
-                        {tr('Далі')}
+                    <span className="gc-now-tile__title line-clamp-2">
+                        {resume.title}
                     </span>
-                </span>
-            </Link>,
-        );
+                    <span className="mt-auto flex items-center justify-between gap-3">
+                        <span className="truncate text-sm text-[var(--gc-text-2)]">
+                            {resume.hint}
+                        </span>
+                        <span className="gc-now-tile__cta">
+                            <Play className="size-4" />
+                            {tr('Далі')}
+                        </span>
+                    </span>
+                </Link>
+            ),
+        });
     }
 
-    if (tiles.length === 0) return null;
-
-    return <NowRow tiles={tiles} reduce={!!reduce} />;
+    return tiles;
 }
 
 /** Ширина плитки «Зараз» і проміжок, px — плитки не розтягуються. */
@@ -928,5 +973,154 @@ export function NowPlayingWidget() {
                 </button>
             </div>
         </section>
+    );
+}
+
+type LobbyCategory = {
+    key: string;
+    label: string;
+    new?: boolean;
+    subs: { key: string; label: string; new?: boolean }[];
+};
+
+/** Нова (за останні 7 днів) категорія чи підкатегорія — червона бірка «New!». */
+export function isNewIn(
+    catalog: LobbyCategory[],
+    category: string,
+    sub?: string,
+): boolean {
+    const c = catalog.find((x) => x.key === category);
+    if (!c) return false;
+    return !!c.new || (!!sub && !!c.subs.find((s) => s.key === sub)?.new);
+}
+
+function NewTag() {
+    return <span className="gc-new-tag">New!</span>;
+}
+
+/** Чи показувати блок: увімкнена категорія і (якщо є) її підкатегорія. */
+export function shownIn(
+    selected: string[],
+    category: string,
+    sub?: string,
+): boolean {
+    if (!selected.includes(category)) return false;
+    return sub ? selected.includes(`${category}.${sub}`) : true;
+}
+
+/**
+ * Вибір категорій лобі: людина вмикає категорії й підкатегорії — блоки з’являються самі,
+ * коли в них щось відбувається. Окремі блоки обирати не треба.
+ */
+export function CategoryPicker({
+    selected,
+    onChange,
+}: {
+    selected: string[];
+    onChange: (next: string[]) => void;
+}) {
+    // Каталог розділів і їхнього функціоналу — із сервера (config/lobby.php), уже з урахуванням режиму.
+    const all: LobbyCategory[] = usePage().props.engagement?.catalog ?? [];
+    const [open, setOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    const save = (next: string[]) => {
+        const previous = selected;
+        onChange(next);
+        setSaving(true);
+        api('PUT', '/settings/lobby-categories', { categories: next })
+            .catch(() => {
+                onChange(previous);
+                toast.error(tr('Не вдалося зберегти лобі.'));
+            })
+            .finally(() => setSaving(false));
+    };
+    const toggleCategory = (c: LobbyCategory) => {
+        const subs = c.subs.map((s) => `${c.key}.${s.key}`);
+        if (selected.includes(c.key)) {
+            save(selected.filter((k) => k !== c.key));
+        } else {
+            // Увімкнули категорію без жодної підкатегорії — вмикаємо всі.
+            const hasSub = subs.some((k) => selected.includes(k));
+            save([...selected, c.key, ...(hasSub ? [] : subs)]);
+        }
+    };
+    const toggleSub = (key: string) =>
+        save(
+            selected.includes(key)
+                ? selected.filter((k) => k !== key)
+                : [...selected, key],
+        );
+
+    return (
+        <div className="mt-5">
+            <button
+                type="button"
+                aria-expanded={open}
+                onClick={() => setOpen((v) => !v)}
+                className="gc-ghost-btn"
+            >
+                <LayoutGrid className="size-4" />
+                {open ? tr('Готово') : tr('Що показувати')}
+            </button>
+            {open && (
+                <ul
+                    className="mt-3 grid gap-2 sm:grid-cols-2"
+                    aria-busy={saving}
+                    data-test="lobby-categories"
+                >
+                    {all.map((c) => {
+                        const on = selected.includes(c.key);
+                        return (
+                            <li key={c.key} className="gc-cat-group">
+                                <button
+                                    type="button"
+                                    aria-pressed={on}
+                                    onClick={() => toggleCategory(c)}
+                                    className={cn(
+                                        'gc-cat-chip is-main',
+                                        on && 'is-on',
+                                    )}
+                                >
+                                    {on ? (
+                                        <Eye className="size-3.5" />
+                                    ) : (
+                                        <EyeOff className="size-3.5" />
+                                    )}
+                                    {tr(c.label)}
+                                    {c.new && <NewTag />}
+                                </button>
+                                {on && c.subs.length > 1 && (
+                                    <span className="flex flex-wrap gap-1">
+                                        {c.subs.map((sub) => {
+                                            const key = `${c.key}.${sub.key}`;
+                                            const subOn =
+                                                selected.includes(key);
+                                            return (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    aria-pressed={subOn}
+                                                    onClick={() =>
+                                                        toggleSub(key)
+                                                    }
+                                                    className={cn(
+                                                        'gc-cat-chip is-sub',
+                                                        subOn && 'is-on',
+                                                    )}
+                                                >
+                                                    {tr(sub.label)}
+                                                    {sub.new && <NewTag />}
+                                                </button>
+                                            );
+                                        })}
+                                    </span>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </div>
     );
 }

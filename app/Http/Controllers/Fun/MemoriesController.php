@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Services\Engagement\Streaks;
 use App\Services\PostPresenter;
 use App\Support\Countries;
+use App\Support\Modules\ModuleManager;
+use App\Support\NetworkModes;
 use App\Support\Plugins\Plugins;
 use App\Support\Seasons;
 use Carbon\CarbonImmutable;
@@ -127,6 +129,87 @@ class MemoriesController extends Controller
         'pulse', 'stories', 'continue', 'requests', 'contacts', 'voice', 'servers', 'season',
         'online', 'playing', 'same_game', 'picks', 'suggestions', 'birthdays', 'media', 'alerts', 'player',
     ];
+
+    /**
+     * Усі ключі вибору лобі: категорії (розділи) і «категорія.підкатегорія» (функціонал розділу).
+     * Каталог — config/lobby.php.
+     *
+     * @return list<string>
+     */
+    public static function lobbyKeys(): array
+    {
+        $keys = [];
+        foreach ((array) config('lobby.categories') as $category => $def) {
+            $keys[] = (string) $category;
+            foreach (array_keys((array) ($def['subs'] ?? [])) as $sub) {
+                $keys[] = $category.'.'.$sub;
+            }
+        }
+
+        return $keys;
+    }
+
+    /**
+     * Каталог категорій для людини: лише розділи її режиму й увімкнених модулів.
+     *
+     * @return list<array{key: string, label: string, new: bool, subs: list<array{key: string, label: string, new: bool}>}>
+     */
+    public static function lobbyCatalog(User $user): array
+    {
+        $modules = app(NetworkModes::class)->modulesFor($user);
+        $out = [];
+        foreach ((array) config('lobby.categories') as $key => $def) {
+            $module = $def['module'] ?? null;
+            if ($module !== null && (! app(ModuleManager::class)->enabled($module) || ! in_array($module, $modules, true))) {
+                continue;
+            }
+            $subs = [];
+            foreach ((array) ($def['subs'] ?? []) as $sub => $item) {
+                $label = is_array($item) ? (string) ($item['label'] ?? $sub) : (string) $item;
+                $subs[] = ['key' => (string) $sub, 'label' => $label, 'new' => self::isNew(is_array($item) ? ($item['added'] ?? null) : null)];
+            }
+            $out[] = ['key' => (string) $key, 'label' => (string) $def['label'], 'new' => self::isNew($def['added'] ?? null), 'subs' => $subs];
+        }
+
+        return $out;
+    }
+
+    /** Додано за останні 7 днів — бірка «New!». */
+    private static function isNew(mixed $added): bool
+    {
+        if (! is_string($added) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $added)) {
+            return false;
+        }
+
+        return CarbonImmutable::parse($added)->addDays(7)->isFuture();
+    }
+
+    /**
+     * Вибір людини (без збереженого — усе ввімкнено).
+     *
+     * @return list<string>
+     */
+    public static function categories(User $user): array
+    {
+        $saved = $user->pref('lobby_categories');
+        if (! is_array($saved)) {
+            return self::lobbyKeys();
+        }
+
+        return array_values(array_intersect(self::lobbyKeys(), $saved));
+    }
+
+    public function lobbyCategories(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'categories' => ['present', 'array', 'max:'.count(self::lobbyKeys())],
+            'categories.*' => ['string', 'distinct', Rule::in(self::lobbyKeys())],
+        ]);
+        $user = $request->user();
+        $user->forceFill(['preferences' => [...($user->preferences ?? []), 'lobby_categories' => array_values($data['categories'])]])->save();
+
+        return response()->json(['ok' => true, 'categories' => self::categories($user), 'message' => 'Лобі збережено.']);
+    }
 
     /** Розклад за замовчуванням: спершу «що зараз», далі люди, далі решта. */
     public const LAYOUT_DEFAULT = [

@@ -555,6 +555,7 @@ Route::prefix('v1')->group(function () {
             Route::put('settings/event-frame', [MemoriesController::class, 'eventFrame'])->middleware('throttle:20,1');
             Route::put('settings/home-widgets', [MemoriesController::class, 'homeWidgets'])->middleware('throttle:30,1');
             Route::put('settings/home-layout', [MemoriesController::class, 'homeLayout'])->middleware('throttle:30,1');
+            Route::put('settings/lobby-categories', [MemoriesController::class, 'lobbyCategories'])->middleware('throttle:30,1');
             // Порядок значків біля ніка (сім'я, клани, гільдії).
             Route::get('settings/badges', [BadgeOrderController::class, 'show']);
             Route::put('settings/badges', [BadgeOrderController::class, 'update'])->middleware('throttle:30,1');
