@@ -81,6 +81,7 @@ use App\Http\Controllers\LiveCastDonationWebhookController;
 use App\Http\Controllers\LiveCastIntegrationController;
 use App\Http\Controllers\LiveNowController;
 use App\Http\Controllers\LiveShowController;
+use App\Http\Controllers\LobbyNowController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\LoginRewardController;
 use App\Http\Controllers\MessageController;
@@ -577,6 +578,7 @@ Route::prefix('v1')->group(function () {
                 Route::put('settings/profile-track', [SetupController::class, 'saveTrack'])->middleware('throttle:30,1');
                 Route::get('settings/profile-track', [SetupController::class, 'tracks'])->middleware('throttle:60,1');
                 Route::get('me/rail', RailController::class)->middleware('throttle:60,1');
+                Route::get('me/now', LobbyNowController::class)->middleware('throttle:60,1');
                 Route::get('me/hub', HubController::class)->middleware('throttle:60,1');
                 Route::get('alerts', [AirAlertController::class, 'state'])->middleware('throttle:120,1');
                 Route::get('alerts/state', [AirAlertController::class, 'state'])->middleware('throttle:120,1');

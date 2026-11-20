@@ -125,12 +125,13 @@ class MemoriesController extends Controller
      */
     public const LAYOUT_WIDGETS = [
         'pulse', 'stories', 'continue', 'requests', 'contacts', 'voice', 'servers', 'season',
-        'online', 'playing', 'same_game', 'picks', 'suggestions', 'birthdays', 'media', 'alerts',
+        'online', 'playing', 'same_game', 'picks', 'suggestions', 'birthdays', 'media', 'alerts', 'player',
     ];
 
     /** Розклад за замовчуванням: спершу «що зараз», далі люди, далі решта. */
     public const LAYOUT_DEFAULT = [
         ['key' => 'stories', 'size' => 'full'],
+        ['key' => 'player', 'size' => 'half'],
         ['key' => 'continue', 'size' => 'full'],
         ['key' => 'alerts', 'size' => 'full'],
         ['key' => 'requests', 'size' => 'half'],

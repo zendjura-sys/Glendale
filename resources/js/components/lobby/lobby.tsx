@@ -8,7 +8,12 @@ import {
     Headphones,
     LayoutGrid,
     Play,
+    Music,
+    Pause,
     Plus,
+    SkipBack,
+    SkipForward,
+    Send,
     RectangleHorizontal,
     Square,
 } from 'lucide-react';
@@ -18,6 +23,7 @@ import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import type { TomorrowEvent } from '@/components/gc/feed-extras';
 import { useRowSpan } from '@/components/lobby/bento-feed';
+import { next, prev, toggle, usePlayer } from '@/lib/player';
 import type { RailData } from '@/components/gc/rail-widgets';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import type { StreamInfo } from '@/components/streams/stream';
@@ -50,6 +56,7 @@ export function widgetTitle(key: string): string {
         suggestions: tr('Можливо, ви знайомі'),
         birthdays: tr('Дні народження'),
         media: tr('Музика, кіно й розіграші'),
+        player: tr('Зараз грає'),
     };
     return titles[key] ?? key;
 }
@@ -201,16 +208,129 @@ export function LobbyHero({
  * «Зараз»: живі плитки — голосова кімната з друзями, трансляція друга, найближча подія сім’ї.
  * Немає нічого живого — секції немає.
  */
+type NowData = {
+    shifts: {
+        id: number;
+        title: string;
+        family: string;
+        live: boolean;
+        starts_at: string;
+        ends_at: string;
+        foreman: string | null;
+        mine: boolean;
+        progress: number;
+        goal: number | null;
+        href: string;
+    }[];
+    chats: {
+        id: number;
+        title: string;
+        avatar_url: string | null;
+        unread: number;
+        preview: string | null;
+        author: string | null;
+        href: string;
+    }[];
+};
+
+const hm = (iso: string) =>
+    new Date(iso).toLocaleTimeString('uk-UA', {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+
+/** «Зараз» з усіх розділів (/me/now): зміни сім’ї й обговорення; оновлення раз на хвилину. */
+function useNow() {
+    const [data, setData] = useState<NowData | null>(null);
+    useEffect(() => {
+        const load = () =>
+            void api<NowData>('GET', '/me/now')
+                .then(setData)
+                .catch(() => undefined);
+        load();
+        const timer = window.setInterval(load, 60_000);
+        return () => window.clearInterval(timer);
+    }, []);
+    return data;
+}
+
+/** Плитка обговорення: останнє повідомлення й відповідь просто з лобі. */
+function ChatTile({ chat }: { chat: NowData['chats'][number] }) {
+    const [text, setText] = useState('');
+    const [sent, setSent] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const send = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!text.trim()) return;
+        setBusy(true);
+        api('POST', `/messages/${chat.id}`, { body: text.trim() })
+            .then(() => {
+                setText('');
+                setSent(true);
+            })
+            .catch(() => toast.error(tr('Не вдалося надіслати.')))
+            .finally(() => setBusy(false));
+    };
+
+    return (
+        <div className="gc-now-tile">
+            <Link href={chat.href} className="gc-now-tile__kicker">
+                {tr('Обговорення')} · {chat.title}
+                {chat.unread > 0 && ` · ${chat.unread}`}
+            </Link>
+            <Link href={chat.href} className="gc-now-tile__title line-clamp-2">
+                {chat.author ? `${chat.author}: ` : ''}
+                {chat.preview ?? tr('Нове повідомлення')}
+            </Link>
+            {sent ? (
+                <span className="mt-auto text-sm text-[var(--gc-live)]">
+                    {tr('Відповідь надіслано.')}
+                </span>
+            ) : (
+                <form onSubmit={send} className="mt-auto flex gap-2">
+                    <input
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        placeholder={tr('Відповісти…')}
+                        aria-label={tr('Відповідь у «{title}»', {
+                            title: chat.title,
+                        })}
+                        maxLength={2000}
+                        className="gc-now-input"
+                    />
+                    <button
+                        type="submit"
+                        disabled={busy || !text.trim()}
+                        className="gc-primary-btn"
+                        aria-label={tr('Надіслати')}
+                    >
+                        <Send className="size-4" />
+                    </button>
+                </form>
+            )}
+        </div>
+    );
+}
+
 export function NowTiles({
     rail,
     streams,
     events,
+    resume = null,
 }: {
     rail: RailData | null;
     streams: StreamInfo[];
     events: TomorrowEvent[];
+    /** «Де зупинились» — перший пункт «Продовжити» (серія, пісня, чернетка). */
+    resume?: {
+        title: string;
+        hint: string;
+        href: string;
+        image: string | null;
+    } | null;
 }) {
     const reduce = useReducedMotion();
+    const now = useNow();
     const room = rail?.voice?.find((r) => r.count > 0);
     const stream = streams.find((s) => s.live);
     const event = events[0];
@@ -301,6 +421,66 @@ export function NowTiles({
                 <span className="mt-auto flex items-center gap-2 text-sm text-[var(--gc-text-2)]">
                     <CalendarClock className="size-4" />
                     {event.type_label}
+                </span>
+            </Link>,
+        );
+    }
+
+    for (const shift of now?.shifts ?? []) {
+        tiles.push(
+            <Link
+                key={`shift-${shift.id}`}
+                href={shift.href}
+                className={cn(
+                    'gc-now-tile',
+                    shift.live && 'gc-now-tile--shift',
+                )}
+            >
+                <span className="gc-now-tile__kicker">
+                    {shift.family} ·{' '}
+                    {shift.live
+                        ? tr('до {time}', { time: hm(shift.ends_at) })
+                        : tr('о {time}', { time: hm(shift.starts_at) })}
+                </span>
+                {shift.live && (
+                    <span className="gc-now-tile__badge gc-now-tile__badge--live">
+                        {tr('Йде')}
+                    </span>
+                )}
+                <span className="gc-now-tile__title line-clamp-2">
+                    {tr('Зміна')}: {shift.title}
+                </span>
+                <span className="mt-auto text-sm text-[var(--gc-text-2)]">
+                    {shift.mine
+                        ? tr('Ви бригадир')
+                        : shift.foreman
+                          ? tr('Бригадир: {name}', { name: shift.foreman })
+                          : tr('Вільна — можна взяти')}
+                    {shift.goal ? ` · ${shift.progress}/${shift.goal}` : ''}
+                </span>
+            </Link>,
+        );
+    }
+    for (const chat of now?.chats ?? []) {
+        tiles.push(<ChatTile key={`chat-${chat.id}`} chat={chat} />);
+    }
+    if (resume) {
+        tiles.push(
+            <Link key="resume" href={resume.href} className="gc-now-tile">
+                <span className="gc-now-tile__kicker">
+                    {tr('Де ви зупинились')}
+                </span>
+                <span className="gc-now-tile__title line-clamp-2">
+                    {resume.title}
+                </span>
+                <span className="mt-auto flex items-center justify-between gap-3">
+                    <span className="truncate text-sm text-[var(--gc-text-2)]">
+                        {resume.hint}
+                    </span>
+                    <span className="gc-now-tile__cta">
+                        <Play className="size-4" />
+                        {tr('Далі')}
+                    </span>
                 </span>
             </Link>,
         );
@@ -587,5 +767,76 @@ function ToolButton({
         >
             {children}
         </button>
+    );
+}
+
+/** Живий віджет «Зараз грає»: обкладинка, перемотка й керування, не заходячи в «Музику». */
+export function NowPlayingWidget() {
+    const player = usePlayer();
+    const track = player.current;
+    if (!track) return null;
+    const pct =
+        player.duration > 0
+            ? Math.min(100, (player.position / player.duration) * 100)
+            : 0;
+
+    return (
+        <section className="gc-player-widget" aria-label={tr('Зараз грає')}>
+            {track.cover_url ? (
+                <img
+                    src={track.cover_url}
+                    alt=""
+                    className="size-16 shrink-0 rounded-md object-cover"
+                />
+            ) : (
+                <span className="flex size-16 shrink-0 items-center justify-center rounded-md bg-[var(--gc-l3)]">
+                    <Music className="size-6 text-[var(--gc-text-2)]" />
+                </span>
+            )}
+            <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-semibold">
+                    {track.title}
+                </p>
+                <p className="truncate text-sm text-[var(--gc-text-2)]">
+                    {track.artist}
+                </p>
+                <div className="mt-2 h-1 overflow-hidden rounded-full bg-[var(--gc-l3)]">
+                    <div
+                        className="h-full rounded-full bg-[var(--gc-accent)]"
+                        style={{ width: `${pct}%` }}
+                    />
+                </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+                <button
+                    type="button"
+                    onClick={prev}
+                    aria-label={tr('Попередній трек')}
+                    className="gc-widget-tool"
+                >
+                    <SkipBack className="size-4" />
+                </button>
+                <button
+                    type="button"
+                    onClick={toggle}
+                    aria-label={player.playing ? tr('Пауза') : tr('Грати')}
+                    className="gc-player-widget__play"
+                >
+                    {player.playing ? (
+                        <Pause className="size-5" />
+                    ) : (
+                        <Play className="size-5" />
+                    )}
+                </button>
+                <button
+                    type="button"
+                    onClick={next}
+                    aria-label={tr('Наступний трек')}
+                    className="gc-widget-tool"
+                >
+                    <SkipForward className="size-4" />
+                </button>
+            </div>
+        </section>
     );
 }

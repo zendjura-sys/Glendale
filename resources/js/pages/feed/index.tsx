@@ -48,7 +48,12 @@ import {
     useHub,
     VoiceCard,
 } from '@/components/gc/feed-pulse';
-import { LobbyHero, NowTiles, WidgetBoard } from '@/components/lobby/lobby';
+import {
+    LobbyHero,
+    NowPlayingWidget,
+    NowTiles,
+    WidgetBoard,
+} from '@/components/lobby/lobby';
 import type { LayoutItem } from '@/components/lobby/lobby';
 import { BentoCell } from '@/components/lobby/bento-feed';
 import type { ReactNode } from 'react';
@@ -206,7 +211,7 @@ export default function Feed({
     sameGame,
     birthdays,
 }: Props) {
-    const { auth } = usePage().props;
+    const { auth, modules } = usePage().props;
     // Режим соцмережі може ховати історії й трансляції друзів.
     const storiesOn = useFeature('stories');
     const widgetsOn = usePlugin('home_widgets');
@@ -361,6 +366,7 @@ export default function Feed({
         'suggestions',
         'birthdays',
         'media',
+        ...(modules.includes('music') ? ['player'] : []),
     ];
     const renderWidget = (key: string): ReactNode => {
         switch (key) {
@@ -396,6 +402,8 @@ export default function Feed({
                 return <ServersCard rail={rail} />;
             case 'season':
                 return <SeasonCard rail={rail} />;
+            case 'player':
+                return modules.includes('music') ? <NowPlayingWidget /> : null;
             case 'media':
                 return (
                     <FeedColumnWidgets
@@ -479,6 +487,7 @@ export default function Feed({
                         rail={rail}
                         streams={liveOn ? (streaming ?? []) : []}
                         events={tomorrow ?? []}
+                        resume={continueItems[0] ?? null}
                     />
                     <WidgetBoard
                         layout={(engagement?.layout ?? []) as LayoutItem[]}

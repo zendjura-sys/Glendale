@@ -1,5 +1,12 @@
 import { ChevronLeft, ChevronRight, ImageDown, Play, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { useDataSaver } from '@/lib/data-saver';
 import { tr } from '@/lib/i18n';
@@ -107,8 +114,12 @@ export function Lightbox({
 /**
  * Медіа поста: 1 — велике, 2 — пополам, 3 — велике + 2, 4–10 — карусель-альбом. Відео грають на місці.
  */
+/** У бенто лобі будь-який альбом (2+) — карусель: фото гортаються по горизонталі, не заходячи в запис. */
+export const MediaCarouselContext = createContext(false);
+
 export function MediaGrid({ items }: { items: Attachment[] }) {
     const [open, setOpen] = useState<number | null>(null);
+    const carousel = useContext(MediaCarouselContext);
     const saver = useDataSaver();
     const [shown, setShown] = useState(false);
 
@@ -135,7 +146,7 @@ export function MediaGrid({ items }: { items: Attachment[] }) {
     }
 
     // Альбом із 4+ фото/відео — карусель, гортається пальцем, стрілками й крапками.
-    if (items.length > 3) {
+    if (items.length > 3 || (carousel && items.length > 1)) {
         return (
             <>
                 <Carousel items={items} onOpen={setOpen} />

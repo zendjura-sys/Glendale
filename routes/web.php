@@ -77,6 +77,7 @@ use App\Http\Controllers\LiveCastController;
 use App\Http\Controllers\LiveCastIntegrationController;
 use App\Http\Controllers\LiveNowController;
 use App\Http\Controllers\LiveShowController;
+use App\Http\Controllers\LobbyNowController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\LoginRewardController;
 use App\Http\Controllers\Mail\UnsubscribeController;
@@ -1266,6 +1267,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('alerts/shelters', [AirAlertController::class, 'shelters'])->middleware('throttle:20,1')->name('alerts.shelters');
     // Четверта колонка на екранах 2K+: друзі онлайн і бесіди.
     Route::get('me/rail', RailController::class)->middleware('throttle:60,1')->name('rail');
+    Route::get('me/now', LobbyNowController::class)->middleware('throttle:60,1')->name('lobby.now');
     Route::get('me/hub', HubController::class)->middleware('throttle:60,1')->name('hub');
     Route::put('me/status', [StatusController::class, 'update'])->middleware('throttle:30,1')->name('status.update');
     Route::put('me/presence', [StatusController::class, 'presence'])->middleware('throttle:30,1')->name('presence.update');

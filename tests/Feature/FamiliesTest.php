@@ -626,4 +626,16 @@ class FamiliesTest extends TestCase
         $this->assertSame(2, $partner->fresh()->progress);
         $this->assertNull($shift->fresh()->completed_at);
     }
+
+    public function test_lobby_now_shows_running_and_upcoming_family_shifts(): void
+    {
+        FamilyShift::query()->create(['family_id' => $this->family->id, 'title' => 'Склад', 'member_id' => $this->leader->id, 'starts_at' => now()->subHour(), 'ends_at' => now()->addHour()]);
+        FamilyShift::query()->create(['family_id' => $this->family->id, 'title' => 'Вечірня', 'starts_at' => now()->addHours(3), 'ends_at' => now()->addHours(5)]);
+        FamilyShift::query()->create(['family_id' => $this->family->id, 'title' => 'Завтра', 'starts_at' => now()->addDays(2), 'ends_at' => now()->addDays(2)->addHour()]);
+
+        $this->actingAs($this->leader->user)->getJson('/me/now')->assertOk()
+            ->assertJsonCount(2, 'shifts')
+            ->assertJsonPath('shifts.0.title', 'Склад')->assertJsonPath('shifts.0.live', true)->assertJsonPath('shifts.0.mine', true)
+            ->assertJsonPath('shifts.1.title', 'Вечірня')->assertJsonPath('shifts.1.live', false);
+    }
 }

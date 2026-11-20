@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { PostItem } from '@/types';
 import { cn } from '@/lib/utils';
+import { MediaCarouselContext } from '@/components/gc/media-grid';
 
 /**
  * Форма клітинки бенто за вмістом запису: горизонтальне фото чи мозаїка — широка (2 колонки),
@@ -9,7 +10,6 @@ import { cn } from '@/lib/utils';
  */
 export function bentoShape(post: PostItem): 'wide' | 'normal' {
     const media = post.attachments ?? [];
-    if (media.length >= 3) return 'wide';
     const first = media[0];
     if (first?.width && first.height) {
         return first.width / first.height >= 1.2 ? 'wide' : 'normal';
@@ -69,7 +69,11 @@ export function BentoCell({
             )}
             style={style}
         >
-            <div ref={ref}>{children}</div>
+            <div ref={ref}>
+                <MediaCarouselContext.Provider value>
+                    {children}
+                </MediaCarouselContext.Provider>
+            </div>
         </div>
     );
 }
