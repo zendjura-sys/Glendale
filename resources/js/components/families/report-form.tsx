@@ -16,6 +16,7 @@ import { toMinor, uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { ReportConfig, ReportType, RosterEntry } from '@/types';
 import { btnPrimary, kyivDate, textareaClass } from './ui';
+import { FamilyAiHelper } from './ai-helper';
 import { tr } from '@/lib/i18n';
 
 type Tier = 'light' | 'medium' | 'heavy';
@@ -161,6 +162,28 @@ export function ReportForm({
 
     return (
         <div className="space-y-4">
+            <FamilyAiHelper<{
+                type: ReportType;
+                tier: Tier | null;
+                count: number;
+                event_date: string;
+                note: string;
+            }>
+                url={`/f/${action.split('/')[2] ?? ''}/ai/report`}
+                field="text"
+                label={tr('Опишіть словами — помічник заповнить звіт')}
+                placeholder={tr('Напр.: вчора зробили 3 середні контракти')}
+                button={tr('Заповнити')}
+                onResult={(r) => {
+                    if (allowed.includes(r.type)) form.setData('type', r.type);
+                    if (r.tier) form.setData('tier', r.tier);
+                    form.setData('count', r.count);
+                    if (days.includes(r.event_date)) {
+                        form.setData('event_date', r.event_date);
+                    }
+                    if (r.note) form.setData('description', r.note);
+                }}
+            />
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {(Object.keys(config.types) as ReportType[]).map((type) => {
                     const Icon = typeIcons[type];

@@ -7488,16 +7488,27 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
     box-shadow: 0 0 0 4px
         color-mix(in oklab, var(--gc-alert, #f2556b) 20%, transparent);
 }
+/* «Зараз»: плитки фіксованої ширини, без розтягування; порожні місця заповнює лише лобі (NowRow). */
 .gc-now-grid {
-    display: grid;
-    gap: 14px;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.gc-now-grid > * {
+    flex: 0 0 300px;
+    max-width: 100%;
+}
+.gc-now-tile--action {
+    min-height: 0;
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--gc-hairline);
+}
+.gc-now-tile--action:hover {
+    background: var(--gc-l1);
 }
 @media (max-width: 639px) {
     .gc-now-grid {
-        grid-auto-flow: column;
-        grid-template-columns: none;
-        grid-auto-columns: 82%;
+        flex-wrap: nowrap;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
         scrollbar-width: none;
@@ -7505,6 +7516,7 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
         padding: 0 12px;
     }
     .gc-now-grid > * {
+        flex: 0 0 82%;
         scroll-snap-align: start;
     }
 }
@@ -7579,7 +7591,9 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
     display: grid;
     column-gap: 6px;
     row-gap: 0;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    /* Колонки фіксованої ширини — віджети не розтягуються; дошка стає вужчою. */
+    grid-template-columns: repeat(auto-fill, minmax(0, 360px));
+    justify-content: start;
     grid-auto-rows: 1px;
     grid-auto-flow: row dense;
     align-items: start;
@@ -7812,7 +7826,8 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
 /* ---------- «Для вас»: бенто — форма картки за вмістом, мінімальні проміжки й радіуси ---------- */
 .gc-bento {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(0, 340px));
+    justify-content: start;
     grid-auto-rows: 1px;
     grid-auto-flow: row dense;
     column-gap: 6px;
@@ -7860,7 +7875,8 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
 .gc-widget-subgrid {
     display: grid;
     gap: 6px;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(0, 360px));
+    justify-content: start;
     align-items: start;
 }
 :root[data-skin] .gc-header-nav {
@@ -8308,7 +8324,8 @@ html[data-theme='light'] #gc-boot-root {
 .gc-family-grid {
     display: grid;
     gap: 6px;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(0, 340px));
+    justify-content: start;
 }
 .gc-family-card {
     border-radius: 8px;
@@ -8431,4 +8448,28 @@ html[data-theme='light'] #gc-boot-root {
 .gc-family-tab:focus-visible {
     outline: 2px solid var(--gc-accent);
     outline-offset: 2px;
+}
+
+/* ---------- Помічник сім’ї (ШІ) ---------- */
+.gc-ai-helper {
+    padding: 14px;
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--gc-accent-strong) 10%, var(--gc-l1));
+    box-shadow: inset 0 0 0 1px
+        color-mix(in oklab, var(--gc-accent-strong) 30%, transparent);
+    color: var(--gc-text);
+}
+.gc-ai-input {
+    min-width: 0;
+    padding: 0 14px;
+    border-radius: 10px;
+    background: var(--gc-l2);
+    color: var(--gc-text);
+    font-size: 14px;
+    outline: none;
+    box-shadow: inset 0 0 0 1px var(--gc-hairline);
+    resize: vertical;
+}
+.gc-ai-input:focus {
+    box-shadow: inset 0 0 0 1.5px var(--gc-accent);
 }

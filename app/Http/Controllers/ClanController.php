@@ -14,8 +14,11 @@ use App\Models\ClanShift;
 use App\Models\Game;
 use App\Models\User;
 use App\Notifications\ComeBackNudge;
+use App\Services\Ai\AiClient;
+use App\Services\Ai\AiException;
 use App\Services\Clans\ClanMvp;
 use App\Services\Clans\ClanService;
+use App\Services\Families\FamilyAi;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -325,6 +328,38 @@ class ClanController extends Controller
         $this->clans->update($clan, $actor, $data, $request->file('logo'));
 
         return $this->done('Налаштування збережено.');
+    }
+
+    /** ШІ-помічник: чернетка статуту клану чи гільдії (зберігає лідер звичайною формою). */
+    public function aiRules(Request $request, Clan $clan, FamilyAi $ai): JsonResponse
+    {
+        $this->aiReady($request, $clan);
+        $data = $request->validate(['brief' => ['nullable', 'string', 'max:1500']]);
+        try {
+            return response()->json(['text' => $ai->clanRules($clan, (string) ($data['brief'] ?? ''))]);
+        } catch (AiException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    /** ШІ-помічник: назви рангів у стилі лідера (чернетка). */
+    public function aiRanks(Request $request, Clan $clan, FamilyAi $ai): JsonResponse
+    {
+        $this->aiReady($request, $clan);
+        $data = $request->validate(['style' => ['required', 'string', 'min:3', 'max:500']]);
+        try {
+            return response()->json(['ranks' => $ai->clanRanks($clan, $data['style'])]);
+        } catch (AiException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    private function aiReady(Request $request, Clan $clan): void
+    {
+        app(Plugins::class)->ensure('family_ai');
+        abort_unless(app(AiClient::class)->configured(), 503, 'ШІ ще не підключено адміністрацією сайту.');
+        $me = $this->me($request, $clan);
+        abort_unless($this->clans->can($me, $clan, 'settings.manage'), 403, 'Статут і ранги змінює керівництво.');
     }
 
     public function news(Request $request, Clan $clan): RedirectResponse

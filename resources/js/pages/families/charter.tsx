@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { CircleCheck, ClipboardCheck, Plus, Scale, Trash2 } from 'lucide-react';
 import { FamilyShell } from '@/components/families/family-shell';
+import { FamilyAiHelper } from '@/components/families/ai-helper';
 import {
     Empty,
     Panel,
@@ -87,6 +88,20 @@ function CharterEditor({
                 className="space-y-4"
                 data-charter-editor
             >
+                <FamilyAiHelper<{ text: string; quiz: QuizItem[] }>
+                    url={`/f/${slug}/ai/charter`}
+                    field="brief"
+                    multiline
+                    label={tr('Статут від помічника')}
+                    placeholder={tr(
+                        'Що важливо: дисципліна, звіти, вступ, поведінка в RP… Помічник врахує опис сім’ї, ранги й типи звітів.',
+                    )}
+                    button={tr('Написати')}
+                    onResult={(r) => {
+                        form.setData('text', r.text);
+                        if (r.quiz.length > 0) form.setData('quiz', r.quiz);
+                    }}
+                />
                 <textarea
                     value={form.data.text}
                     onChange={(e) => form.setData('text', e.target.value)}

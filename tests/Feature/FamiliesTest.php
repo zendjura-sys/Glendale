@@ -30,6 +30,7 @@ use App\Services\ImageStorage;
 use App\Services\MessengerPresenter;
 use App\Services\PostPresenter;
 use App\Services\Profile\Affiliations;
+use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -662,5 +663,32 @@ class FamiliesTest extends TestCase
         $this->actingAs($viewer)->withHeaders(['X-Inertia' => 'true', 'X-Inertia-Partial-Component' => 'families/index', 'X-Inertia-Partial-Data' => 'top', 'X-Inertia-Version' => (string) Inertia::getVersion()])
             ->get('/families?tab=top')->assertOk()
             ->assertJsonPath('props.top.0.tag', 'SCL')->assertJsonPath('props.top.0.place', 1);
+    }
+
+    public function test_family_ai_drafts_charter_ranks_and_report_without_saving(): void
+    {
+        app(SiteSettings::class)->putSecret('ai_key', 'sk-ant-test-key');
+        $replies = [
+            json_encode(['text' => "# Статут\n1. Поважай своїх.", 'quiz' => [['q' => 'Хто вирішує виплати?', 'options' => ['Лідер', 'Будь-хто'], 'correct' => 0], ['q' => 'погане', 'options' => ['одна'], 'correct' => 0]]]),
+            json_encode(['ranks' => ['Пішак', 'Тінь', 'Клинок', 'Вартовий', 'Ловець', 'Ворон', 'Капо', 'Радник', 'Консильєрі', 'Дон']]),
+            'Ось: '.json_encode(['type' => 'contract', 'tier' => 'medium', 'count' => 3, 'event_date' => '2999-01-01', 'note' => 'Три контракти']),
+        ];
+        Http::fake(['api.anthropic.com/*' => function () use (&$replies) {
+            return Http::response(['content' => [['type' => 'text', 'text' => array_shift($replies)]], 'stop_reason' => 'end_turn']);
+        }]);
+        $mate = $this->member(1, 'Rocco_Lampone', '30003');
+        $titles = $this->family->rankTitles();
+
+        $this->actingAs($this->leaderUser)->postJson("/f/{$this->family->slug}/ai/charter", ['brief' => 'Сувора дисципліна'])->assertOk()
+            ->assertJsonPath('text', "# Статут\n1. Поважай своїх.")->assertJsonCount(1, 'quiz');
+        $this->actingAs($this->leaderUser)->postJson("/f/{$this->family->slug}/ai/ranks", ['style' => 'мафія 30-х'])->assertOk()
+            ->assertJsonPath('ranks.1', 'Пішак')->assertJsonPath('ranks.10', 'Дон');
+        // Звіт із тексту: дата з майбутнього не проходить — сьогодні.
+        $this->actingAs($mate->user)->postJson("/f/{$this->family->slug}/ai/report", ['text' => 'вчора 3 середні контракти'])->assertOk()
+            ->assertJsonPath('type', 'contract')->assertJsonPath('tier', 'medium')->assertJsonPath('count', 3)
+            ->assertJsonPath('event_date', now()->toDateString());
+        // Рядовий не може генерувати статут; ШІ нічого не зберіг.
+        $this->actingAs($mate->user)->postJson("/f/{$this->family->slug}/ai/charter", ['brief' => 'x'])->assertForbidden();
+        $this->assertSame($titles, $this->family->fresh()->rankTitles());
     }
 }

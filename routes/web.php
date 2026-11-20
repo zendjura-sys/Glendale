@@ -928,6 +928,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member')->name('members.update');
             Route::post('members/{member}/nudge', [ClanController::class, 'nudge'])->whereNumber('member')->middleware('throttle:20,1')->name('members.nudge');
             Route::post('settings', [ClanController::class, 'update'])->name('update');
+            Route::post('ai/rules', [ClanController::class, 'aiRules'])->middleware('throttle:10,1')->name('ai.rules');
+            Route::post('ai/ranks', [ClanController::class, 'aiRanks'])->middleware('throttle:10,1')->name('ai.ranks');
             Route::delete('/', [ClanController::class, 'destroy'])->name('destroy');
             Route::post('allies', [ClanController::class, 'ally'])->name('allies.store');
             Route::post('allies/{alliance}/accept', [ClanController::class, 'acceptAlly'])->whereNumber('alliance')->name('allies.accept');
@@ -1184,6 +1186,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('relations/{relation}/end', [Families\FamilyRelationController::class, 'end'])->whereNumber('relation')->withoutScopedBindings()->name('relations.end');
             Route::get('history', [Families\FamilyRelationController::class, 'history'])->name('history');
             Route::get('charter', [Families\FamilyCharterController::class, 'show'])->name('charter');
+            Route::post('ai/charter', [Families\FamilyAiController::class, 'charter'])->middleware('throttle:10,1')->name('ai.charter');
+            Route::post('ai/ranks', [Families\FamilyAiController::class, 'ranks'])->middleware('throttle:10,1')->name('ai.ranks');
+            Route::post('ai/report', [Families\FamilyAiController::class, 'report'])->middleware('throttle:20,1')->name('ai.report');
             Route::put('settings/charter', [Families\FamilyCharterController::class, 'update'])->name('settings.charter');
             Route::get('wiki', [Families\FamilyCharterController::class, 'wiki'])->name('wiki');
             Route::get('wiki/{slug}', [Families\FamilyCharterController::class, 'wiki'])->where('slug', '[a-z0-9-]{1,80}')->name('wiki.page');

@@ -14,6 +14,7 @@ import {
 import { useMemo, useState } from 'react';
 import { DiscordIcon } from '@/components/auth/brand-icons';
 import { FamilyShell } from '@/components/families/family-shell';
+import { FamilyAiHelper } from '@/components/families/ai-helper';
 import {
     Empty,
     Modal,
@@ -706,6 +707,28 @@ function RanksDialog({
                 </>
             }
         >
+            <div className="mb-3">
+                <FamilyAiHelper<{ ranks: Record<string, string> }>
+                    url={`/f/${action.split('/')[2] ?? ''}/ai/ranks`}
+                    field="style"
+                    label={tr('Назви рангів у вашому стилі')}
+                    placeholder={tr(
+                        'Напр.: італійська мафія 30-х, військова частина, кіберпанк-банда',
+                    )}
+                    button={tr('Придумати')}
+                    onResult={(r) =>
+                        form.setData(
+                            'titles',
+                            Array.from(
+                                { length: 10 },
+                                (_, i) =>
+                                    r.ranks[String(i + 1)] ??
+                                    form.data.titles[i],
+                            ),
+                        )
+                    }
+                />
+            </div>
             <label className="mb-3 flex flex-wrap items-center gap-2 text-sm text-white/60">
                 {tr('Шаблон назв:')}
                 <select

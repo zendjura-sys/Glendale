@@ -50,6 +50,7 @@ import {
 } from '@/components/gc/settings-kit';
 import type { LucideIcon } from 'lucide-react';
 import { LOCALE, tr } from '@/lib/i18n';
+import { FamilyAiHelper } from '@/components/families/ai-helper';
 
 type Member = {
     id: number;
@@ -1637,6 +1638,19 @@ function SettingsTab({
                         placeholder={tr('Опис')}
                         className={cn(area, 'mt-2')}
                     />
+                    <div className="mt-2">
+                        <FamilyAiHelper<{ text: string }>
+                            url={`/clans/${clan.slug}/ai/rules`}
+                            field="brief"
+                            multiline
+                            label={tr('Статут від помічника')}
+                            placeholder={tr(
+                                'Що важливо: вступ, події, внески, поведінка… Помічник врахує опис і ранги.',
+                            )}
+                            button={tr('Написати')}
+                            onResult={(r) => form.setData('rules', r.text)}
+                        />
+                    </div>
                     <textarea
                         value={form.data.rules}
                         rows={4}
@@ -1829,6 +1843,25 @@ function SettingsTab({
 
             <SettingsAnchor id="clan-ranks">
                 <Card title={tr('Ранги й права')} icon={Crown}>
+                    <div className="mb-3">
+                        <FamilyAiHelper<{ ranks: Record<string, string> }>
+                            url={`/clans/${clan.slug}/ai/ranks`}
+                            field="style"
+                            label={tr('Назви рангів у вашому стилі')}
+                            placeholder={tr(
+                                'Напр.: лицарський орден, космічний флот, піратська команда',
+                            )}
+                            button={tr('Придумати')}
+                            onResult={(r) =>
+                                form.setData(
+                                    'rank_titles',
+                                    form.data.rank_titles.map(
+                                        (t, i) => r.ranks[String(i + 1)] ?? t,
+                                    ),
+                                )
+                            }
+                        />
+                    </div>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                         {form.data.rank_titles.map((t, i) => (
                             <label key={i}>

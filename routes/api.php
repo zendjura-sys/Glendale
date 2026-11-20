@@ -982,6 +982,8 @@ Route::prefix('v1')->group(function () {
                     Route::post('leave', [ClanController::class, 'leave']);
                     Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member');
                     Route::post('settings', [ClanController::class, 'update']);
+                    Route::post('ai/rules', [ClanController::class, 'aiRules'])->middleware('throttle:10,1');
+                    Route::post('ai/ranks', [ClanController::class, 'aiRanks'])->middleware('throttle:10,1');
                     Route::delete('/', [ClanController::class, 'destroy']);
                     Route::post('news', [ClanController::class, 'news'])->middleware('throttle:20,1');
                     Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news');
@@ -1257,6 +1259,10 @@ Route::prefix('v1')->group(function () {
                     Route::post('relations/{relation}/end', [Families\FamilyRelationController::class, 'end'])->whereNumber('relation')->withoutScopedBindings();
                     Route::get('history', [Families\FamilyRelationController::class, 'history']);
                     Route::get('charter', [Families\FamilyCharterController::class, 'show']);
+                    // ШІ-помічник сім’ї: чернетки статуту, рангів і звіту.
+                    Route::post('ai/charter', [Families\FamilyAiController::class, 'charter'])->middleware('throttle:10,1');
+                    Route::post('ai/ranks', [Families\FamilyAiController::class, 'ranks'])->middleware('throttle:10,1');
+                    Route::post('ai/report', [Families\FamilyAiController::class, 'report'])->middleware('throttle:20,1');
                     Route::put('settings/charter', [Families\FamilyCharterController::class, 'update']);
                     Route::get('wiki', [Families\FamilyCharterController::class, 'wiki']);
                     Route::get('wiki/{slug}', [Families\FamilyCharterController::class, 'wiki'])->where('slug', '[a-z0-9-]{1,80}');

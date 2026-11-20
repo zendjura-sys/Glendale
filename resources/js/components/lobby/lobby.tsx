@@ -18,7 +18,7 @@ import {
     Square,
 } from 'lucide-react';
 import { LayoutGroup, m, useReducedMotion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import type { TomorrowEvent } from '@/components/gc/feed-extras';
@@ -488,13 +488,85 @@ export function NowTiles({
 
     if (tiles.length === 0) return null;
 
+    return <NowRow tiles={tiles} reduce={!!reduce} />;
+}
+
+/** Ширина плитки «Зараз» і проміжок, px — плитки не розтягуються. */
+const TILE = 300;
+const GAP = 6;
+
+/**
+ * Ряд «Зараз»: плитки фіксованої ширини. Порожнє місце в останньому ряду заповнюємо лише
+ * корисними діями (новий допис, тиммейти, події…); якщо доречних немає — розділ просто вужчий.
+ */
+function NowRow({ tiles, reduce }: { tiles: ReactNode[]; reduce: boolean }) {
+    const { modules } = usePage().props;
+    const ref = useRef<HTMLDivElement>(null);
+    const [cols, setCols] = useState(0);
+
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const measure = () =>
+            setCols(
+                Math.max(1, Math.floor((el.clientWidth + GAP) / (TILE + GAP))),
+            );
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
+    const fillers = [
+        {
+            key: 'post',
+            kicker: tr('Новий допис'),
+            title: tr('Поділитися моментом'),
+            href: '/feed#compose',
+            icon: <Plus className="size-4" />,
+        },
+        modules.includes('party') && {
+            key: 'party',
+            kicker: tr('Пошук паті'),
+            title: tr('Знайти тиммейтів'),
+            href: '/party',
+            icon: <Headphones className="size-4" />,
+        },
+        modules.includes('events') && {
+            key: 'events',
+            kicker: tr('Події'),
+            title: tr('Що відбувається поруч'),
+            href: '/events',
+            icon: <CalendarClock className="size-4" />,
+        },
+        modules.includes('communities') && {
+            key: 'communities',
+            kicker: tr('Спільноти'),
+            title: tr('Знайти своїх'),
+            href: '/communities',
+            icon: <LayoutGrid className="size-4" />,
+        },
+    ].filter(Boolean) as {
+        key: string;
+        kicker: string;
+        title: string;
+        href: string;
+        icon: ReactNode;
+    }[];
+    // Скільки місць лишилось в останньому ряду (лише на кількох колонках; на телефоні — стрічка).
+    const free =
+        cols > 1 && tiles.length % cols !== 0
+            ? cols - (tiles.length % cols)
+            : 0;
+    const extra = fillers.slice(0, free);
+
     return (
         <section aria-labelledby="gc-now" className="space-y-3">
             <h2 id="gc-now" className="gc-lobby-label">
                 <span className="gc-live-dot" aria-hidden />
                 {tr('Зараз')}
             </h2>
-            <div className="gc-now-grid">
+            <div ref={ref} className="gc-now-grid">
                 {tiles.map((tile, i) => (
                     <m.div
                         key={i}
@@ -508,6 +580,24 @@ export function NowTiles({
                     >
                         {tile}
                     </m.div>
+                ))}
+                {extra.map((f) => (
+                    <div key={f.key} className="flex">
+                        <Link
+                            href={f.href}
+                            className="gc-now-tile gc-now-tile--action"
+                        >
+                            <span className="gc-now-tile__kicker">
+                                {f.kicker}
+                            </span>
+                            <span className="gc-now-tile__title">
+                                {f.title}
+                            </span>
+                            <span className="mt-auto inline-flex size-10 items-center justify-center rounded-full bg-[var(--gc-l2)] text-[var(--gc-accent)]">
+                                {f.icon}
+                            </span>
+                        </Link>
+                    </div>
                 ))}
             </div>
         </section>
