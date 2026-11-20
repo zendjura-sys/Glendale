@@ -38,7 +38,7 @@ class FamilyRelationController extends FamilyBaseController
                 : [],
         ];
 
-        return $request->wantsJson() ? response()->json($data) : $this->page($family, $member, 'families/relations', 'relations', $data);
+        return $this->page($family, $member, 'families/relations', 'relations', $data);
     }
 
     public function propose(Request $request, Family $family, FamilyAudit $audit, FamilyNotifier $notifier): RedirectResponse|JsonResponse
@@ -153,7 +153,7 @@ class FamilyRelationController extends FamilyBaseController
             'totals' => ['reports' => $reports, 'wins' => $wins, 'contracts' => $contracts, 'days' => $days],
         ];
 
-        return $request->wantsJson() ? response()->json($data) : $this->page($family, $member, 'families/history', 'history', $data);
+        return $this->page($family, $member, 'families/history', 'history', $data);
     }
 
     /** @return Collection<int, FamilyRelation> */

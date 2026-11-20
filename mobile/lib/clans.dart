@@ -944,6 +944,35 @@ class _ClanSettingsState extends State<_ClanSettings> {
         Text(tr('Ранг 5 (лідер) і засновник мають усі права.'), style: body(12, color: faint)),
       ]),
       PrimaryButton(label: tr('Зберегти налаштування'), busy: busy, onPressed: _save),
+      if (iAmOwner) ...[
+        const SizedBox(height: 12),
+        Glass(
+          border: danger,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CardTitle(clan['type'] == 'guild' ? tr('Видалення гільдії') : tr('Видалення клану'), icon: LucideIcons.trash2),
+            const SizedBox(height: 8),
+            Text(tr('Зникне для всіх учасників разом із новинами, подіями й скарбницею.'), style: body(13, color: muted)),
+            const SizedBox(height: 12),
+            DangerButton(
+              label: clan['type'] == 'guild' ? tr('Видалити гільдію') : tr('Видалити клан'),
+              icon: LucideIcons.trash2,
+              expand: true,
+              onPressed: () async {
+                final slug = text(clan['slug']) ?? '';
+                final typed = await askText(context, tr('Підтвердження видалення'), hint: tr('Введіть «{slug}»', {'slug': slug}), action: tr('Видалити'));
+                if (typed == null || !context.mounted) return;
+                if (typed.trim() != slug) {
+                  toast(context, tr('Введіть адресу, щоб підтвердити видалення.'));
+                  return;
+                }
+                if (await attempt(context, () => AppScope.read(context).session.api.delete(Api.site('/clans/$slug'), {'confirm': slug})) && context.mounted) {
+                  context.go('/clans');
+                }
+              },
+            ),
+          ]),
+        ),
+      ],
       if (logs.isNotEmpty) ...[
         SectionLabel(tr('Журнал дій')),
         Glass(

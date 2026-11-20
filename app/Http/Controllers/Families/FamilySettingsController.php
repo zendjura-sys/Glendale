@@ -120,9 +120,13 @@ class FamilySettingsController extends FamilyBaseController
             throw ValidationException::withMessages(['confirm' => 'Введіть адресу сім’ї, щоб підтвердити видалення.']);
         }
 
+        $name = $family->name;
+        $id = $family->id;
+        $slug = $family->slug;
+        $staff = $family->owner_id !== $user->id;
         $family->delete();
-        Log::info('family: deleted', ['family' => $family->id, 'slug' => $family->slug, 'by' => $user->id, 'staff' => $family->owner_id !== $user->id]);
-        Inertia::flash('toast', ['type' => 'success', 'message' => "Сім’ю «{$family->name}» видалено."]);
+        Log::info('family: deleted', ['family' => $id, 'slug' => $slug, 'by' => $user->id, 'staff' => $staff]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Сім’ю «{$name}» видалено."]);
 
         return to_route('families.index');
     }
@@ -156,7 +160,7 @@ class FamilySettingsController extends FamilyBaseController
         $request->merge(['tag' => Str::upper(trim($request->string('tag')->toString()))]);
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:60'],
-            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $family->server_id)->ignore($family->id)],
+            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $family->server_id)->whereNull('deleted_at')->ignore($family->id)],
             'description' => ['nullable', 'string', 'max:2000'],
             'is_recruiting' => ['required', 'boolean'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],

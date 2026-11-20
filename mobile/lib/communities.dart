@@ -1264,9 +1264,14 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
   }
 
   Future<void> _delete() async {
-    if (!await confirm(context, tr('Видалити спільноту?'), text: tr('Записи, учасники й фото зникнуть назавжди.'), action: tr('Видалити'), danger: true)) return;
-    if (!mounted) return;
-    if (await attempt(context, () => api.delete(Api.site('/c/${widget.slug}')))) {
+    final slug = widget.slug;
+    final typed = await askText(context, tr('Підтвердження видалення'), hint: tr('Введіть «{slug}»', {'slug': slug}), action: tr('Видалити'));
+    if (typed == null || !mounted) return;
+    if (typed.trim() != slug) {
+      toast(context, tr('Введіть адресу спільноти, щоб підтвердити видалення.'));
+      return;
+    }
+    if (await attempt(context, () => api.delete(Api.site('/c/$slug'), {'confirm': slug}))) {
       if (mounted) context.go('/communities');
     }
   }

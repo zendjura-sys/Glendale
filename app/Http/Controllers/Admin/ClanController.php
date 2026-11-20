@@ -52,9 +52,13 @@ class ClanController extends Controller
     public function destroy(Request $request, Clan $clan): RedirectResponse
     {
         $data = $request->validate(['reason' => ['nullable', 'string', 'max:300']]);
+        $kind = $clan->type === 'guild' ? 'Гільдію' : 'Клан';
+        $name = $clan->name;
+        $id = $clan->id;
+        $slug = $clan->slug;
         $clan->delete();
-        Log::info('admin: clan deleted', ['clan' => $clan->id, 'slug' => $clan->slug, 'reason' => $data['reason'] ?? null, 'by' => $request->user()->id]);
-        Inertia::flash('toast', ['type' => 'success', 'message' => ($clan->type === 'guild' ? 'Гільдію' : 'Клан').' «'.$clan->name.'» видалено.']);
+        Log::info('admin: clan deleted', ['clan' => $id, 'slug' => $slug, 'reason' => $data['reason'] ?? null, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "{$kind} «{$name}» видалено."]);
 
         return $request->boolean('from_page') ? redirect('/clans') : back();
     }
