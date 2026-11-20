@@ -1,0 +1,54 @@
+---
+description: Design skills — taste, open-design, awesome DESIGN.md brands
+alwaysApply: true
+---
+
+# Design skills (GameCon)
+
+Three toolkits are installed for UI / marketing / brand work:
+
+1. **design-taste-frontend** (taste skill) — `.claude/skills/design-taste-frontend/`
+   Anti-slop frontend: one system, one section per screen, real product visuals,
+   motion + browser finish gate. Read `SKILL.md` before building or polishing
+   landings, marketing pages, or public guest surfaces.
+
+2. **open-design** — `.claude/skills/open-design/`
+   Catalogue binder. Content clone: `~/.open-design-skill/repo` (or `$OPEN_DESIGN_ROOT`).
+   Project binding: `.open-design.json`. List helpers:
+   `node .claude/skills/open-design/scripts/list-design-systems.mjs` (and
+   `list-design-templates.mjs`, `list-skills.mjs`, `list-craft.mjs`).
+
+3. **awesome-design-md** — `design-refs/awesome-design-md/<brand>/DESIGN.md`
+   84 brand specs (apple, nike, spotify, spacex, playstation, …). When the user
+   says «сделай в этом стиле» / «make it in this style», open that brand’s
+   `DESIGN.md` and apply its vocabulary to GameCon UI **without** copying logos
+   or trademarked wordmarks.
+
+## Source of truth
+
+- Project system: root `DESIGN.md` (Quiet Arena tokens + composition rules).
+- CSS tokens: `resources/css/app.css` `@theme` / `--color-gc-*`.
+- Do not invent a parallel palette.
+- **Layout lock:** keep the existing window format (`gc-vk-shell` columns,
+  floating glass topbar/tabbar/player, guest island header). Polish materials
+  and type; do not rearrange panels.
+
+## When to invoke
+
+| User asks… | Do… |
+|---|---|
+| Restyle / landing / «looks AI» | Read taste skill → apply house rules → browser-check if shipping |
+| Deck / prototype / brand audit / «open design» | Follow open-design skill phases; honor `.open-design.json` |
+| «В стиле Apple / Nike / …» | Load `design-refs/awesome-design-md/<slug>/DESIGN.md` |
+
+## Install / refresh (if missing)
+
+```bash
+npx skills add https://github.com/Leonxlnx/taste-skill --skill design-taste-frontend -a cursor -a claude-code -y
+npx skills add sugarforever/open-design-skill -a cursor -a claude-code -y
+test -d "${OPEN_DESIGN_ROOT:-$HOME/.open-design-skill/repo}" \
+  || git clone --depth 1 https://github.com/nexu-io/open-design.git "${OPEN_DESIGN_ROOT:-$HOME/.open-design-skill/repo}"
+```
+
+Brand pack is already vendored under `design-refs/awesome-design-md/` (from
+[VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md)).

@@ -9,6 +9,12 @@ Android‑приложение (Flutter, папка `mobile/`) на **одном
 - [docs/SECRETS.md](docs/SECRETS.md) — где секреты и как ими пользоваться;
 - [docs/web-vs-app-checklist.md](docs/web-vs-app-checklist.md) — сверка функций сайта и приложения.
 
+Дизайн (лендинги / бренд / «в этом стиле»):
+
+- [DESIGN.md](DESIGN.md) — система GameCon;
+- [design-refs/README.md](design-refs/README.md) — 84 бренд-спека (awesome-design-md);
+- skills: `.claude/skills/design-taste-frontend`, `.claude/skills/open-design` (см. `.cursor/rules/design-skills.mdc`).
+
 ---
 
 ## Нельзя (никогда)
