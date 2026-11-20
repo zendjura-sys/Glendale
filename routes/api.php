@@ -779,6 +779,7 @@ Route::prefix('v1')->group(function () {
             Route::post('me/cover', [ProfileController::class, 'updateCover']);
             Route::delete('settings/profile', [SettingsProfileController::class, 'destroy']);
             Route::put('settings/navigation', [NavigationController::class, 'update']);
+            Route::put('settings/navigation/header', [NavigationController::class, 'header']);
             Route::put('settings/theme', [AppearanceController::class, 'theme']);
             Route::put('settings/mode', [AppearanceController::class, 'mode']);
             // Свій канал Twitch/YouTube і позначка LIVE у профілі.

@@ -25,6 +25,8 @@ export type User = {
     two_factor_enabled?: boolean;
     /** Ключі розділів нижньої панелі на телефоні (без «Меню»). */
     nav_tabs: string[];
+    /** Розділи шапки на ПК і планшеті; порожньо — автоматично. */
+    header_tabs?: string[];
     palette?: string;
     /** Режим соцмережі (id), див. NetworkModes на сервері. */
     network_mode?: string;

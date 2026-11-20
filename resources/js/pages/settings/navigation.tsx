@@ -8,7 +8,10 @@ import {
     RotateCcw,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { update as updateNavigation } from '@/routes/navigation';
+import {
+    header as updateHeader,
+    update as updateNavigation,
+} from '@/routes/navigation';
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { MOBILE_LABEL } from '@/lib/nav';
@@ -54,12 +57,12 @@ export default function Navigation({ defaults, max }: Props) {
 
     return (
         <>
-            <Head title={tr('Нижня панель')} />
+            <Head title={tr('Навігація')} />
 
             <SettingsCard
-                title={tr('Нижня панель')}
+                title={tr('Нижня панель (навбар)')}
                 description={tr(
-                    'До {max} розділів поруч із «Меню» на телефоні — і на сайті, і в застосунку. Те, що приберете з панелі, буде в меню.',
+                    'До {max} розділів у плаваючій капсулі знизу — на телефоні (поруч із «Меню»), на ПК і планшеті, і в застосунку. Те, що приберете з панелі, буде в меню.',
                     { max },
                 )}
             >
@@ -178,7 +181,141 @@ export default function Navigation({ defaults, max }: Props) {
                     </button>
                 )}
             </SettingsCard>
+
+            <HeaderSettings />
         </>
+    );
+}
+
+/**
+ * Шапка на ПК і планшеті: які розділи значками. Розділи нижньої капсули тут не повторюються;
+ * порожній список — автоматично (усе, чого немає в капсулі, скільки вміститься).
+ */
+function HeaderSettings() {
+    const { nav, auth } = usePage().props;
+    const capsule = auth.user.nav_tabs;
+    const [header, setHeader] = useState<string[]>(auth.user.header_tabs ?? []);
+    useEffect(
+        () => setHeader(auth.user.header_tabs ?? []),
+        [auth.user.header_tabs],
+    );
+
+    const byKey = new Map(nav.map((item) => [item.key, item]));
+    const chosen = header
+        .filter((key) => !capsule.includes(key))
+        .map((key) => byKey.get(key))
+        .filter((item) => item !== undefined);
+    const free = nav.filter(
+        (item) => !capsule.includes(item.key) && !header.includes(item.key),
+    );
+
+    const save = (next: string[]) => {
+        const previous = header;
+        setHeader(next);
+        router.put(
+            updateHeader.url(),
+            { header: next },
+            { preserveScroll: true, onError: () => setHeader(previous) },
+        );
+    };
+    const move = (index: number, by: number) => {
+        const next = chosen.map((item) => item.key);
+        const [item] = next.splice(index, 1);
+        next.splice(index + by, 0, item);
+        save(next);
+    };
+
+    return (
+        <SettingsCard
+            title={tr('Шапка (ПК і планшет)')}
+            description={tr(
+                'Які розділи стоять значками в шапці. Розділи з нижньої панелі тут не повторюються. Нічого не вибрано — шапка заповнюється сама, скільки вміститься; решта — у меню.',
+            )}
+        >
+            <h3 className="mb-1 text-[13px] font-semibold text-white/50">
+                {chosen.length > 0 ? tr('У шапці') : tr('Автоматично')}
+            </h3>
+            {chosen.length > 0 && (
+                <ul
+                    className="-mx-4 px-4 sm:-mx-5 sm:px-5"
+                    data-test="header-pinned"
+                >
+                    {chosen.map((item, index) => (
+                        <li
+                            key={item.key}
+                            className="gc-row flex min-h-12 items-center gap-3 py-1.5"
+                        >
+                            <ModuleIcon
+                                name={item.icon}
+                                className="size-5 shrink-0 text-primary"
+                            />
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-white">
+                                {item.label}
+                            </span>
+                            <IconButton
+                                label={tr('Вище')}
+                                disabled={index === 0}
+                                onClick={() => move(index, -1)}
+                            >
+                                <ArrowUp className="size-4" />
+                            </IconButton>
+                            <IconButton
+                                label={tr('Нижче')}
+                                disabled={index === chosen.length - 1}
+                                onClick={() => move(index, 1)}
+                            >
+                                <ArrowDown className="size-4" />
+                            </IconButton>
+                            <IconButton
+                                label={tr('Прибрати з шапки')}
+                                onClick={() =>
+                                    save(
+                                        chosen
+                                            .map((i) => i.key)
+                                            .filter((key) => key !== item.key),
+                                    )
+                                }
+                                className="text-red-400"
+                            >
+                                <CircleMinus className="size-4" />
+                            </IconButton>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <h3 className="mt-6 mb-2 text-[13px] font-semibold text-white/50">
+                {tr('Додати в шапку')}
+            </h3>
+            <div className="flex flex-wrap gap-2" data-test="header-free">
+                {free.map((item) => (
+                    <button
+                        key={item.key}
+                        type="button"
+                        onClick={() =>
+                            save([...chosen.map((i) => i.key), item.key])
+                        }
+                        className="gc-solid-2 flex items-center gap-2 rounded-control px-3.5 py-2 text-[13px] font-medium text-white/75 transition hover:bg-[var(--gc-l3)]"
+                    >
+                        <Plus className="size-3.5 text-white/45" />
+                        <ModuleIcon
+                            name={item.icon}
+                            className="size-4 text-primary"
+                        />
+                        {item.label}
+                    </button>
+                ))}
+            </div>
+            {chosen.length > 0 && (
+                <button
+                    type="button"
+                    onClick={() => save([])}
+                    className="mt-6 inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium text-white/75 transition hover:bg-[var(--gc-l3)]"
+                >
+                    <RotateCcw className="size-4" />
+                    {tr('Автоматично')}
+                </button>
+            )}
+        </SettingsCard>
     );
 }
 

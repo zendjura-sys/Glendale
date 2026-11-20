@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Fun\MemoriesController;
+use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\StatusPageController;
 use App\Models\User;
 use App\Services\Alerts\AirAlertService;
@@ -55,6 +56,7 @@ class AccountPresenter
             'role' => $user->role,
             // Як на сайті: панель і меню лише з розділів поточного режиму («Геймер», «Класика»…).
             'nav_tabs' => array_values(array_intersect(app(ModuleManager::class)->navTabsFor($user), $modes->modulesFor($user))),
+            'header_tabs' => array_values(array_intersect(NavigationController::headerTabs($user), $modes->modulesFor($user))),
             'modules' => $modes->modulesFor($user),
             'network_mode' => $modes->for($user)['id'],
             // Перемикачі, що діють одразу (сайт і застосунок однаково).

@@ -74,6 +74,17 @@ class AppSiteParityTest extends TestCase
         $this->withToken($this->app_token($user))->getJson('/api/v1/site/me/now')->assertOk()->assertJsonPath('shifts', [])->assertJsonPath('chats', []);
     }
 
+    public function test_header_tabs_saved_without_navbar_duplicates(): void
+    {
+        $user = User::factory()->create();
+        // Капсула за замовчуванням: profile, feed, messages, friends — у шапці їх не повторюємо.
+        $this->actingAs($user)->put('/settings/navigation/header', ['header' => ['photos', 'feed', 'communities']])->assertRedirect();
+        $this->assertSame(['photos', 'communities'], $user->fresh()->pref('header_tabs'));
+        $this->actingAs($user)->put('/settings/navigation/header', ['header' => ['hack']])->assertSessionHasErrors('header.0');
+        $this->withToken($this->app_token($user))->putJson('/api/v1/site/settings/navigation/header', ['header' => []])->assertSuccessful();
+        $this->withToken($this->app_token($user))->getJson('/api/v1/me')->assertJsonPath('user.header_tabs', []);
+    }
+
     public function test_app_reaches_sdk_docs(): void
     {
         $token = $this->app_token(User::factory()->create());

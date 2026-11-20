@@ -290,10 +290,8 @@ function HeaderSections() {
 function DockHost() {
     const isActive = useIsActive();
     const items = useNavItems();
-    const layout = usePage().props.engagement?.layout ?? [];
-    const covered = layout.flatMap((w) => WIDGET_SECTIONS[w.key] ?? []);
 
-    return <LiveDock items={items} isActive={isActive} covered={covered} />;
+    return <LiveDock items={items} isActive={isActive} />;
 }
 
 function Announcement() {
@@ -307,7 +305,7 @@ function Announcement() {
         <div className="glass mb-4 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm text-white/80">
             <Megaphone
                 aria-hidden
-                className="mt-0.5 size-4 shrink-0 text-[#a4a6ff]"
+                className="mt-0.5 size-4 shrink-0 text-[#8fa5ff]"
             />
             <p className="leading-relaxed whitespace-pre-line">
                 {site.announcement}

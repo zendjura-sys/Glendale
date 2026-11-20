@@ -23,11 +23,11 @@
                 d.style.colorScheme = t;
                 document.addEventListener('DOMContentLoaded', function () {
                     var m = document.querySelector('meta[name=theme-color]');
-                    if (m) m.content = light ? '#f5f5f7' : '#0e0f13';
+                    if (m) m.content = light ? '#f9fafc' : '#131313';
                 });
             })();
         </script>
-        <meta name="theme-color" content="#0e0f13">
+        <meta name="theme-color" content="#131313">
         <meta name="color-scheme" content="dark light">
 
         @php

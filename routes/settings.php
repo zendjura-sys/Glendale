@@ -28,6 +28,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('settings/navigation', [NavigationController::class, 'edit'])->name('navigation.edit');
     Route::put('settings/navigation', [NavigationController::class, 'update'])->name('navigation.update');
+    Route::put('settings/navigation/header', [NavigationController::class, 'header'])->name('navigation.header');
 
     Route::get('settings/account', [AccountController::class, 'edit'])->name('account.edit');
     Route::delete('settings/account/sessions/{session}', [AccountController::class, 'revokeSession'])->whereNumber('session')->name('account.sessions.destroy');

@@ -4,6 +4,7 @@
 
 /* Arena Black: Unbounded (display) + Manrope (UI) — self-hosted, Cyrillic OK. */
 @import '@fontsource-variable/manrope';
+@import '@fontsource-variable/onest';
 @import '@fontsource-variable/unbounded';
 
 @source '../views';
@@ -13,10 +14,12 @@
 
 @theme {
     --font-sans:
-        'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+        var(--gc-font, 'Onest Variable'), 'Manrope Variable', ui-sans-serif,
+        system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Noto Color Emoji';
     --font-display:
-        'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+        var(--gc-font, 'Onest Variable'), 'Manrope Variable', ui-sans-serif,
+        system-ui, sans-serif;
     --font-brand:
         'Unbounded Variable', 'Unbounded', 'Manrope Variable', sans-serif;
 
@@ -29,23 +32,23 @@
     --radius-menu: 1rem;
 
     /* Arena Black brand — singular blue on charcoal (Spotify theater model). */
-    --color-gc-blue: #6d6afe;
-    --color-gc-indigo: #6d6afe;
+    --color-gc-blue: #6b8afd;
+    --color-gc-indigo: #6b8afd;
     --color-gc-purple: #5b8cff;
-    --color-gc-pink: #6d6afe;
-    --color-gc-cyan: #8b88ff;
+    --color-gc-pink: #6b8afd;
+    --color-gc-cyan: #8fa5ff;
     --color-gc-mint: #3ee0a8;
-    --color-gc-sky: #b9baff;
-    --color-gc-lilac-200: #d9daff;
-    --color-gc-lilac-300: #b9baff;
-    --color-gc-lilac-400: #a4a6ff;
-    --color-gc-lilac-500: #6d6afe;
-    --color-gc-violet-300: #b9baff;
-    --color-gc-violet-400: #a4a6ff;
+    --color-gc-sky: #b3c2ff;
+    --color-gc-lilac-200: #dde5ff;
+    --color-gc-lilac-300: #b3c2ff;
+    --color-gc-lilac-400: #8fa5ff;
+    --color-gc-lilac-500: #6b8afd;
+    --color-gc-violet-300: #b3c2ff;
+    --color-gc-violet-400: #8fa5ff;
     --color-gc-amber: #ffa42b;
     --color-gc-gold: #ffd36b;
     --color-gc-coral: #f3727f;
-    --color-gc-ink: #0e0f13;
+    --color-gc-ink: #131313;
     --color-spotify: #3ee0a8;
 
     --color-background: var(--background);
@@ -95,10 +98,10 @@
     --color-void: #05070f;
     --color-abyss: #0a0e1c;
     --color-deep: #0f1426;
-    --color-neon-blue: #6d6afe;
-    --color-neon-indigo: #6d6afe;
-    --color-neon-violet: #a4a6ff;
-    --color-neon-pink: #6d6afe;
+    --color-neon-blue: #6b8afd;
+    --color-neon-indigo: #6b8afd;
+    --color-neon-violet: #8fa5ff;
+    --color-neon-pink: #6b8afd;
     --color-neon-cyan: #5eead4;
     --color-gold: #f5c451;
 
@@ -171,52 +174,48 @@
 
 :root,
 .dark {
-    /* «Лобі»: графіт із холодним відтінком, теплий текст, один акцент — електричний індиго. */
-    --glass: oklch(0.205 0.008 275 / 0.72);
-    --glass-rim: rgb(255 255 255 / 0.07);
-    --matte: oklch(0.205 0.008 275 / 0.96);
-    --matte-solid: oklch(0.245 0.01 275);
-    --background: oklch(0.165 0.006 275);
-    --foreground: oklch(0.94 0.006 80);
-    --card: oklch(0.205 0.008 275);
-    --card-foreground: oklch(0.94 0.006 80);
-    --popover: oklch(0.245 0.01 275);
-    --popover-foreground: oklch(0.94 0.006 80);
-    --primary: oklch(0.62 0.2 277);
+    /* Палітра з референсів: темна — #131313 / #2e333d / #6b8afd, бейджі — #ff7a55. */
+    --glass: rgb(34 37 44 / 0.72);
+    --glass-rim: rgb(255 255 255 / 0.06);
+    --matte: rgb(34 37 44 / 0.96);
+    --matte-solid: #2e333d;
+    --background: #131313;
+    --foreground: #ffffff;
+    --card: #22252c;
+    --card-foreground: #ffffff;
+    --popover: #2e333d;
+    --popover-foreground: #ffffff;
+    --primary: #6b8afd;
     --primary-foreground: #ffffff;
-    --secondary: oklch(0.245 0.01 275);
-    --secondary-foreground: oklch(0.94 0.006 80);
-    --muted: oklch(0.245 0.01 275);
-    --muted-foreground: oklch(0.72 0.01 275);
-    --accent: oklch(0.29 0.012 275);
-    --accent-foreground: oklch(0.94 0.006 80);
-    --destructive: oklch(0.68 0.19 18);
-    --destructive-foreground: oklch(0.85 0.08 18);
-    --border: rgb(255 255 255 / 0.07);
-    --input: oklch(0.245 0.01 275);
-    --ring: oklch(0.76 0.13 277);
-    --chart-1: oklch(0.62 0.2 277);
-    --chart-2: oklch(0.8 0.15 165);
-    --chart-3: oklch(0.8 0.12 220);
-    --chart-4: oklch(0.82 0.14 75);
-    --chart-5: oklch(0.76 0.13 277);
+    --secondary: #2e333d;
+    --secondary-foreground: #ffffff;
+    --muted: #2e333d;
+    --muted-foreground: #9aa1ad;
+    --accent: #393f4b;
+    --accent-foreground: #ffffff;
+    --destructive: #ff5f5f;
+    --destructive-foreground: #ffd0d0;
+    --border: rgb(255 255 255 / 0.06);
+    --input: #2e333d;
+    --ring: #8fa5ff;
+    --chart-1: #6b8afd;
+    --chart-2: #3ee0a8;
+    --chart-3: #ff7a55;
+    --chart-4: #ffc861;
+    --chart-5: #8fa5ff;
     --radius: 1.125rem;
-    --sidebar: oklch(0.205 0.008 275);
-    --sidebar-foreground: oklch(0.94 0.006 80);
-    --sidebar-primary: oklch(0.62 0.2 277);
+    --sidebar: #22252c;
+    --sidebar-foreground: #ffffff;
+    --sidebar-primary: #6b8afd;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: oklch(0.245 0.01 275);
-    --sidebar-accent-foreground: oklch(0.94 0.006 80);
-    --sidebar-border: rgb(255 255 255 / 0.07);
-    --sidebar-ring: oklch(0.62 0.2 277);
-    --gc-live: oklch(0.8 0.15 165);
-    --gc-alert: oklch(0.68 0.19 18);
+    --sidebar-accent: #2e333d;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: rgb(255 255 255 / 0.06);
+    --sidebar-ring: #6b8afd;
+    --gc-live: #3ee0a8;
+    --gc-alert: #ff7a55;
 
-    --gc-gradient: linear-gradient(
-        120deg,
-        oklch(0.62 0.2 277) 0%,
-        oklch(0.55 0.2 285) 100%
-    );
+    --gc-gradient: linear-gradient(120deg, #6b8afd 0%, #7678ed 100%);
 }
 
 /* Палітри учасника. Фон темний, міняється лише акцент. */
@@ -645,11 +644,11 @@ html[data-palette='copper'] {
     .ring-gradient {
         background: conic-gradient(
             from 180deg,
-            #6d6afe,
-            #a4a6ff,
+            #6b8afd,
+            #8fa5ff,
             #3ee0a8,
             #5eead4,
-            #6d6afe
+            #6b8afd
         );
     }
 
@@ -695,7 +694,7 @@ html[data-palette='copper'] {
 .gc-eq > span {
     width: 3px;
     border-radius: 2px;
-    background: linear-gradient(to top, #5a52e8, #6d6afe);
+    background: linear-gradient(to top, #5b78ea, #6b8afd);
     animation: gc-eq 0.9s ease-in-out infinite;
 }
 
@@ -2833,15 +2832,15 @@ html[data-text='xl'] {
     --radius-control: 9999px;
     --radius-dialog: 1.25rem;
     --radius-menu: 1rem;
-    --background: #0e0f13;
+    --background: #131313;
     --foreground: #ffffff;
-    --card: #15161b;
+    --card: #22252c;
     --card-foreground: #ffffff;
     --popover: #181818;
     --popover-foreground: #ffffff;
     --muted-foreground: #a7a7a7;
     --border: rgb(255 255 255 / 0.08);
-    --sidebar: #15161b;
+    --sidebar: #22252c;
     --glass: rgb(24 24 24 / 0.78);
     --glass-rim: rgb(255 255 255 / 0.1);
     --matte: rgb(18 18 18 / 0.94);
@@ -2869,20 +2868,20 @@ html[data-text='xl'] {
 }
 /* Основна палітра стилю — неоновий синій (інші палітри учасника мають свій акцент). */
 :root[data-skin='gamecon'][data-palette='aurora'] {
-    --primary: #6d6afe;
-    --ring: #a4a6ff;
-    --sidebar-primary: #6d6afe;
-    --color-gc-blue: #6d6afe;
-    --color-gc-indigo: #6d6afe;
-    --color-gc-cyan: #8b88ff;
-    --color-gc-sky: #b9baff;
-    --color-gc-lilac-200: #d9daff;
-    --color-gc-lilac-300: #b9baff;
-    --color-gc-lilac-400: #a4a6ff;
-    --color-gc-lilac-500: #6d6afe;
-    --color-gc-violet-300: #b9baff;
-    --color-gc-violet-400: #a4a6ff;
-    --gc-gradient: linear-gradient(120deg, #6d6afe 0%, #5a52e8 100%);
+    --primary: #6b8afd;
+    --ring: #8fa5ff;
+    --sidebar-primary: #6b8afd;
+    --color-gc-blue: #6b8afd;
+    --color-gc-indigo: #6b8afd;
+    --color-gc-cyan: #8fa5ff;
+    --color-gc-sky: #b3c2ff;
+    --color-gc-lilac-200: #dde5ff;
+    --color-gc-lilac-300: #b3c2ff;
+    --color-gc-lilac-400: #8fa5ff;
+    --color-gc-lilac-500: #6b8afd;
+    --color-gc-violet-300: #b3c2ff;
+    --color-gc-violet-400: #8fa5ff;
+    --gc-gradient: linear-gradient(120deg, #6b8afd 0%, #5b78ea 100%);
 }
 
 /*
@@ -2892,33 +2891,33 @@ html[data-text='xl'] {
  */
 :root[data-skin='gamecon'] {
     /* «Лобі»: декоративні фіолетові/пурпурні/рожеві відтінки зводяться до одного індиго. */
-    --color-gc-purple: #6d6afe;
-    --color-gc-pink: #8b88ff;
-    --color-gc-indigo: #6d6afe;
-    --color-gc-sky: #b9baff;
-    --color-gc-cyan: #8b88ff;
-    --color-gc-lilac-200: #d9daff;
-    --color-gc-lilac-300: #b9baff;
-    --color-gc-violet-300: #b9baff;
-    --color-gc-violet-400: #a4a6ff;
-    --color-indigo-100: #e3e3ff;
-    --color-indigo-200: #cbcbff;
-    --color-indigo-300: #b9baff;
-    --color-indigo-400: #a4a6ff;
-    --color-indigo-500: #6d6afe;
-    --color-indigo-600: #5a52e8;
-    --color-violet-200: #cbcbff;
-    --color-violet-300: #b9baff;
-    --color-violet-400: #a4a6ff;
-    --color-violet-500: #6d6afe;
-    --color-violet-600: #5a52e8;
-    --color-purple-300: #b9baff;
-    --color-purple-400: #a4a6ff;
-    --color-purple-500: #6d6afe;
-    --color-fuchsia-300: #b9baff;
-    --color-fuchsia-400: #a4a6ff;
-    --color-fuchsia-500: #6d6afe;
-    --color-pink-500: #8b88ff;
+    --color-gc-purple: #6b8afd;
+    --color-gc-pink: #8fa5ff;
+    --color-gc-indigo: #6b8afd;
+    --color-gc-sky: #b3c2ff;
+    --color-gc-cyan: #8fa5ff;
+    --color-gc-lilac-200: #dde5ff;
+    --color-gc-lilac-300: #b3c2ff;
+    --color-gc-violet-300: #b3c2ff;
+    --color-gc-violet-400: #8fa5ff;
+    --color-indigo-100: #e6ecff;
+    --color-indigo-200: #cfd9ff;
+    --color-indigo-300: #b3c2ff;
+    --color-indigo-400: #8fa5ff;
+    --color-indigo-500: #6b8afd;
+    --color-indigo-600: #5b78ea;
+    --color-violet-200: #cfd9ff;
+    --color-violet-300: #b3c2ff;
+    --color-violet-400: #8fa5ff;
+    --color-violet-500: #6b8afd;
+    --color-violet-600: #5b78ea;
+    --color-purple-300: #b3c2ff;
+    --color-purple-400: #8fa5ff;
+    --color-purple-500: #6b8afd;
+    --color-fuchsia-300: #b3c2ff;
+    --color-fuchsia-400: #8fa5ff;
+    --color-fuchsia-500: #6b8afd;
+    --color-pink-500: #8fa5ff;
 }
 :root[data-skin='gamecon'][data-theme='dark']
     :is(
@@ -3874,8 +3873,8 @@ html[data-text='xl'] {
 
 /* Arena Black aurora — blue + live mint only (no purple/pink). */
 :root[data-skin='gamecon'] {
-    --aurora-1: #6d6afe;
-    --aurora-2: #5a52e8;
+    --aurora-1: #6b8afd;
+    --aurora-2: #5b78ea;
     --aurora-3: #3ee0a8;
     --aurora-4: #5eead4;
 }
@@ -6087,21 +6086,20 @@ html.gc-vk[data-theme='dark']
    ========================================================================== */
 /* Arena Black cascade — Spotify charcoal surfaces across the whole app. */
 html:root.gc-vk[data-theme] {
-    --gc-page: oklch(0.165 0.006 275);
-    --gc-l1: oklch(0.205 0.008 275);
-    --gc-l2: oklch(0.245 0.01 275);
-    --gc-l3: oklch(0.29 0.012 275);
-    --gc-active: color-mix(
-        in oklab,
-        oklch(0.62 0.2 277) 24%,
-        oklch(0.245 0.01 275)
-    );
-    --gc-text: oklch(0.94 0.006 80);
-    --gc-text-2: oklch(0.72 0.01 275);
-    --gc-hairline: rgb(255 255 255 / 0.07);
-    --gc-accent: oklch(0.76 0.13 277);
-    --gc-accent-strong: oklch(0.62 0.2 277);
-    --gc-glass-bg: oklch(0.205 0.008 275 / 0.78);
+    /* Референс «CH»: #131313 / #2e333d / #6b8afd. Шрифт обох тем — Onest (як Archivo, з кирилицею). */
+    --gc-font: 'Onest Variable';
+    --gc-page: #131313;
+    --gc-l1: #22252c;
+    --gc-l2: #2e333d;
+    --gc-l3: #393f4b;
+    --gc-active: color-mix(in oklab, #6b8afd 26%, #2e333d);
+    --gc-text: #ffffff;
+    --gc-text-2: #9aa1ad;
+    --gc-hairline: rgb(255 255 255 / 0.06);
+    --gc-accent: #8fa5ff;
+    --gc-accent-strong: #6b8afd;
+    --gc-alert: #ff7a55;
+    --gc-glass-bg: rgb(34 37 44 / 0.86);
     --vkui--color_background: var(--gc-page);
     --vkui--color_background_content: var(--gc-l1);
     --vkui--color_background_secondary: var(--gc-l2);
@@ -6129,16 +6127,19 @@ html:root.gc-vk[data-theme] {
     --gc-shell-max: 1600px;
 }
 html:root.gc-vk[data-theme='light'] {
-    --gc-page: oklch(0.97 0.003 275);
+    /* Референс світлої теми: #f9fafc / #202022 / #7678ed / #ff7a55; шрифт той самий — Onest. */
+    --gc-page: #f9fafc;
     --gc-l1: #ffffff;
-    --gc-l2: oklch(0.955 0.004 275);
-    --gc-l3: oklch(0.92 0.006 275);
-    --gc-active: oklch(0.93 0.04 277);
-    --gc-text: oklch(0.22 0.01 275);
-    --gc-text-2: oklch(0.46 0.012 275);
-    --gc-accent: oklch(0.52 0.22 277);
-    --gc-accent-strong: oklch(0.52 0.22 277);
-    --gc-glass-bg: rgb(255 255 255 / 0.82);
+    --gc-l2: #f0f1f8;
+    --gc-l3: #e4e5fb;
+    --gc-active: #e4e5fb;
+    --gc-text: #202022;
+    --gc-text-2: #6b6d7a;
+    --gc-hairline: rgb(32 32 34 / 0.08);
+    --gc-accent: #6264e0;
+    --gc-accent-strong: #7678ed;
+    --gc-alert: #ff7a55;
+    --gc-glass-bg: rgb(255 255 255 / 0.88);
 }
 html:root.gc-vk[data-theme],
 html:root.gc-vk[data-theme] body {
@@ -6767,7 +6768,7 @@ body {
     isolation: isolate;
 }
 .sheen-pill--primary {
-    background: linear-gradient(180deg, #4d96ff 0%, #5a52e8 100%);
+    background: linear-gradient(180deg, #4d96ff 0%, #5b78ea 100%);
     box-shadow:
         0 10px 28px rgb(61 139 255 / 0.35),
         inset 0 1px 0 rgb(255 255 255 / 0.35),
@@ -6824,7 +6825,7 @@ body {
     isolation: isolate;
     border-radius: 9999px;
     padding: 1px;
-    background: #0e0f13;
+    background: #131313;
     transition: transform 0.2s ease;
 }
 .glow-pill:hover {
@@ -6841,9 +6842,9 @@ body {
     background: conic-gradient(
         from 0deg,
         transparent 0%,
-        #6d6afe 18%,
+        #6b8afd 18%,
         #ffffff 28%,
-        #a4a6ff 38%,
+        #8fa5ff 38%,
         transparent 55%
     );
     animation: glow-pill-spin 3.2s linear infinite;
@@ -6852,7 +6853,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .glow-pill__beam {
         animation: none;
-        background: linear-gradient(90deg, #6d6afe, #a4a6ff, #6d6afe);
+        background: linear-gradient(90deg, #6b8afd, #8fa5ff, #6b8afd);
         inset: 0;
         border-radius: inherit;
         opacity: 1;
@@ -6872,7 +6873,7 @@ body {
     justify-content: center;
     gap: 0.5rem;
     border-radius: 9999px;
-    background: #0e0f13;
+    background: #131313;
     padding: 0 1.75rem;
     font-size: 15px;
     font-weight: 600;
@@ -7041,7 +7042,7 @@ html:root.gc-vk[data-theme] .ios-glass-bar.ios-header-pill.gc-glass-island {
     padding: 0.625rem 0.75rem;
     border-radius: 1rem;
     border: 1px solid rgb(255 255 255 / 0.06);
-    background: #0d1017;
+    background: var(--gc-l1);
     transition:
         border-color 0.2s ease,
         background 0.2s ease,
@@ -7525,11 +7526,7 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
     transform: translateY(-2px);
 }
 .gc-now-tile--voice {
-    background: linear-gradient(
-        135deg,
-        oklch(0.5 0.2 277) 0%,
-        oklch(0.62 0.21 290) 100%
-    );
+    background: linear-gradient(135deg, #5b78ea 0%, #7678ed 100%);
     box-shadow: none;
     color: #fff;
 }
@@ -7973,17 +7970,17 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
 
 /* ==========================================================================
    iOS 27+ Achromatic Frosted Glass — семантична палітра + безшовне dark/light.
-   Світла: Alabaster. Темна: Onyx. Кольорові заливки блоків заборонені —
+   Палітра з референсів власника: світла #f9fafc, темна #131313 / #22252c / #2e333d. Кольорові заливки блоків заборонені —
    лише кореневий background і непрозорі поверхні карток.
    ========================================================================== */
 
 :root {
-    --gc-bg-root: #f2f4f8;
+    --gc-bg-root: #f9fafc;
     --gc-surface-card: #ffffff;
-    --gc-surface-slot: #eaecef;
-    --gc-text-primary: #0f172a;
-    --gc-text-secondary: #64748b;
-    --gc-border-subtle: rgba(15, 23, 42, 0.08);
+    --gc-surface-slot: #f0f1f8;
+    --gc-text-primary: #202022;
+    --gc-text-secondary: #6b6d7a;
+    --gc-border-subtle: rgba(32, 32, 34, 0.08);
 
     --gc-glass-bg: rgba(255, 255, 255, 0.82);
     --gc-glass-border: rgba(15, 23, 42, 0.09);
@@ -7992,14 +7989,14 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
 
     --gc-scrim-top: linear-gradient(
         to bottom,
-        #f2f4f8 35%,
-        rgba(242, 244, 248, 0.82) 70%,
+        #f9fafc 35%,
+        rgba(249, 250, 252, 0.82) 70%,
         transparent 100%
     );
     --gc-scrim-bottom: linear-gradient(
         to top,
-        #f2f4f8 45%,
-        rgba(242, 244, 248, 0.88) 75%,
+        #f9fafc 45%,
+        rgba(249, 250, 252, 0.88) 75%,
         transparent 100%
     );
 
@@ -8009,54 +8006,54 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
 .dark,
 html.dark,
 html[data-theme='dark'] {
-    --gc-bg-root: #07090e;
-    --gc-surface-card: #0d1017;
-    --gc-surface-slot: #151922;
-    --gc-text-primary: #f8fafc;
-    --gc-text-secondary: #94a3b8;
+    --gc-bg-root: #131313;
+    --gc-surface-card: #22252c;
+    --gc-surface-slot: #2e333d;
+    --gc-text-primary: #ffffff;
+    --gc-text-secondary: #9aa1ad;
     --gc-border-subtle: rgba(255, 255, 255, 0.07);
 
-    --gc-glass-bg: rgba(18, 20, 26, 0.86);
+    --gc-glass-bg: rgba(34, 37, 44, 0.86);
     --gc-glass-border: rgba(255, 255, 255, 0.12);
     --gc-glass-highlight: rgba(255, 255, 255, 0.22);
     --gc-glass-shadow: 0 14px 36px -6px rgba(0, 0, 0, 0.75);
 
     --gc-scrim-top: linear-gradient(
         to bottom,
-        #07090e 35%,
-        rgba(7, 9, 14, 0.82) 70%,
+        #131313 35%,
+        rgba(19, 19, 19, 0.82) 70%,
         transparent 100%
     );
     --gc-scrim-bottom: linear-gradient(
         to top,
-        #07090e 45%,
-        rgba(7, 9, 14, 0.88) 75%,
+        #131313 45%,
+        rgba(19, 19, 19, 0.88) 75%,
         transparent 100%
     );
 }
 
 html.light,
 html[data-theme='light'] {
-    --gc-bg-root: #f2f4f8;
+    --gc-bg-root: #f9fafc;
     --gc-surface-card: #ffffff;
-    --gc-surface-slot: #eaecef;
-    --gc-text-primary: #0f172a;
-    --gc-text-secondary: #64748b;
-    --gc-border-subtle: rgba(15, 23, 42, 0.08);
+    --gc-surface-slot: #f0f1f8;
+    --gc-text-primary: #202022;
+    --gc-text-secondary: #6b6d7a;
+    --gc-border-subtle: rgba(32, 32, 34, 0.08);
     --gc-glass-bg: rgba(255, 255, 255, 0.82);
     --gc-glass-border: rgba(15, 23, 42, 0.09);
     --gc-glass-highlight: rgba(255, 255, 255, 0.95);
     --gc-glass-shadow: 0 14px 36px -6px rgba(15, 23, 42, 0.1);
     --gc-scrim-top: linear-gradient(
         to bottom,
-        #f2f4f8 35%,
-        rgba(242, 244, 248, 0.82) 70%,
+        #f9fafc 35%,
+        rgba(249, 250, 252, 0.82) 70%,
         transparent 100%
     );
     --gc-scrim-bottom: linear-gradient(
         to top,
-        #f2f4f8 45%,
-        rgba(242, 244, 248, 0.88) 75%,
+        #f9fafc 45%,
+        rgba(249, 250, 252, 0.88) 75%,
         transparent 100%
     );
 }
@@ -8075,16 +8072,16 @@ html:root.gc-vk[data-theme='dark'] {
     --gc-page: var(--gc-bg-root);
     --gc-l1: var(--gc-surface-card);
     --gc-l2: var(--gc-surface-slot);
-    --gc-l3: #1a1f2b;
+    --gc-l3: #393f4b;
     --gc-text: var(--gc-text-primary);
     --gc-text-2: var(--gc-text-secondary);
-    --gc-glass-bg: rgba(18, 20, 26, 0.86);
+    --gc-glass-bg: rgba(34, 37, 44, 0.86);
 }
 html:root.gc-vk[data-theme='light'] {
     --gc-page: var(--gc-bg-root);
     --gc-l1: var(--gc-surface-card);
     --gc-l2: var(--gc-surface-slot);
-    --gc-l3: #e2e5ea;
+    --gc-l3: #e4e5fb;
     --gc-text: var(--gc-text-primary);
     --gc-text-2: var(--gc-text-secondary);
     --gc-glass-bg: rgba(255, 255, 255, 0.82);
@@ -8182,4 +8179,52 @@ html[data-theme='light'] #gc-boot-root {
         opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
         transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
         filter 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- Палітра референсів: один акцент замість небесного/синього, чат як у «CH» ---------- */
+:root[data-skin='gamecon'] {
+    --color-sky-300: #b3c2ff;
+    --color-sky-400: #8fa5ff;
+    --color-sky-500: #6b8afd;
+    --color-sky-600: #5b78ea;
+    --color-blue-300: #b3c2ff;
+    --color-blue-400: #8fa5ff;
+    --color-blue-500: #6b8afd;
+    --color-blue-600: #5b78ea;
+    --color-gc-blue: #6b8afd;
+    --color-gc-sky: #b3c2ff;
+    --color-gc-cyan: #8fa5ff;
+    --chat-bubble-incoming: var(--gc-l2);
+    --chat-bubble-outgoing: var(--gc-accent-strong);
+}
+:root[data-skin='gamecon'][data-theme='light'] {
+    --color-sky-300: #b9baf6;
+    --color-sky-400: #8f90f1;
+    --color-sky-500: #7678ed;
+    --color-sky-600: #6264e0;
+    --color-blue-300: #b9baf6;
+    --color-blue-400: #8f90f1;
+    --color-blue-500: #7678ed;
+    --color-blue-600: #6264e0;
+    --color-gc-blue: #7678ed;
+}
+:root[data-skin] .gc-bubble-out {
+    background: var(--gc-accent-strong) !important;
+    color: #fff !important;
+}
+:root[data-skin] .gc-bubble-in {
+    background: var(--gc-l2) !important;
+    color: var(--gc-text) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+/* Кнопки дії й поза оболонкою (вхід, реєстрація, згода на cookie) — акцент палітри без градієнта й світіння. */
+:root[data-skin] :is(.btn-glow, .bg-gradient-brand):not(.am *):not(:disabled) {
+    background: #6b8afd !important;
+    color: #fff !important;
+    box-shadow: none !important;
+}
+:root[data-skin][data-theme='light']
+    :is(.btn-glow, .bg-gradient-brand):not(.am *):not(:disabled) {
+    background: #7678ed !important;
 }

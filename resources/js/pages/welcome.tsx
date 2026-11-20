@@ -69,7 +69,7 @@ function MockPost() {
             <div className="flex items-center gap-3">
                 <span
                     aria-hidden
-                    className="flex size-10 items-center justify-center rounded-full bg-[#6d6afe] text-sm font-semibold text-white"
+                    className="flex size-10 items-center justify-center rounded-full bg-[#6b8afd] text-sm font-semibold text-white"
                 >
                     СМ
                 </span>
@@ -90,7 +90,7 @@ function MockPost() {
             </p>
             <div
                 aria-hidden
-                className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_70%_20%,#6d6afe_0%,#121212_55%,#0a0a0a_100%)]"
+                className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_70%_20%,#6b8afd_0%,#121212_55%,#0a0a0a_100%)]"
             >
                 <Sparkles className="absolute top-5 left-6 size-9 text-[#ffd36b]" />
             </div>
@@ -119,7 +119,7 @@ function MockVoice() {
                         key={i}
                         className="size-8 rounded-full bg-[#222] ring-2 ring-[#181818]"
                         style={{
-                            background: `linear-gradient(135deg,#6d6afe ${i * 20}%,#1f1f1f)`,
+                            background: `linear-gradient(135deg,#6b8afd ${i * 20}%,#1f1f1f)`,
                         }}
                     />
                 ))}
@@ -179,14 +179,14 @@ export default function Welcome({
                                 <span className="flex items-center gap-1">
                                     {name}
                                     {pct === 84 && (
-                                        <BadgeCheck className="size-3 text-[#6d6afe]" />
+                                        <BadgeCheck className="size-3 text-[#6b8afd]" />
                                     )}
                                 </span>
                                 <span>{pct}%</span>
                             </div>
                             <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10">
                                 <div
-                                    className="h-full rounded-full bg-[#6d6afe]"
+                                    className="h-full rounded-full bg-[#6b8afd]"
                                     style={{ width: `${pct}%` }}
                                 />
                             </div>
@@ -285,7 +285,7 @@ export default function Welcome({
                             <h1 className="mt-5 font-display text-[clamp(3rem,7.5vw,5.6rem)] leading-[0.95] font-semibold tracking-[-0.045em] text-white">
                                 {tr('Твої люди.')}
                                 <br />
-                                <span className="text-[#6d6afe]">
+                                <span className="text-[#6b8afd]">
                                     {tr('Твоє місце.')}
                                 </span>
                             </h1>
@@ -418,7 +418,7 @@ export default function Welcome({
                                     t.className,
                                 )}
                             >
-                                <span className="flex size-11 items-center justify-center rounded-2xl bg-[#6d6afe]/15 text-[#a4a6ff]">
+                                <span className="flex size-11 items-center justify-center rounded-2xl bg-[#6b8afd]/15 text-[#8fa5ff]">
                                     <t.icon className="size-5" aria-hidden />
                                 </span>
                                 <h3 className="mt-4 font-display text-lg font-semibold tracking-[-0.03em] text-white">
@@ -452,7 +452,7 @@ export default function Welcome({
                                     ),
                                 ].map((line) => (
                                     <li key={line} className="flex gap-3">
-                                        <BadgeCheck className="mt-0.5 size-4 shrink-0 text-[#6d6afe]" />
+                                        <BadgeCheck className="mt-0.5 size-4 shrink-0 text-[#6b8afd]" />
                                         {line}
                                     </li>
                                 ))}

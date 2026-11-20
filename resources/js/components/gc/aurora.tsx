@@ -27,7 +27,7 @@ export function Aurora({
                 )}
                 style={{
                     background:
-                        'radial-gradient(circle at 30% 30%, var(--aurora-1, #6d6afe) 0%, transparent 60%)',
+                        'radial-gradient(circle at 30% 30%, var(--aurora-1, #6b8afd) 0%, transparent 60%)',
                 }}
             />
             <div

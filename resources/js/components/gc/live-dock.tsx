@@ -195,20 +195,32 @@ export function LiveDock({
         observer.observe(el);
         return () => observer.disconnect();
     }, [header]);
-    const primary = [
-        ...wanted
-            .map((key) => shown.find((i) => i.key === key))
-            .filter((i): i is DockItem => i !== undefined),
-        ...shown.filter((i) => !wanted.includes(i.key)),
-    ].slice(0, header ? fit : 4);
-    // Активний розділ у шапці видно завжди: якщо не вмістився — стає на останнє місце.
+    // Капсула знизу — явний вибір людини (налаштування «Нижня панель»), завжди як вибрано.
+    const capsule = wanted
+        .map((key) => items.find((i) => i.key === key))
+        .filter((i): i is DockItem => i !== undefined)
+        .slice(0, 4);
+    // Шапка: решта без повторів із капсулою; розділ, чий віджет уже в лобі, зникає лише звідси.
+    const ordered = [...capsule, ...shown.filter((i) => !capsule.includes(i))];
+    // Шапка: свій вибір із налаштувань (без розділів капсули) або автоматично — усе після капсули.
+    const chosen = (auth.user.header_tabs ?? [])
+        .map((key) => shown.find((i) => i.key === key))
+        .filter((i): i is DockItem => i !== undefined && !capsule.includes(i));
+    const headerPool =
+        chosen.length > 0 ? chosen : ordered.slice(capsule.length);
+    const primary = header ? headerPool.slice(0, fit) : capsule;
+    // Активний розділ, якого немає в капсулі, у шапці видно завжди.
     if (header && fit > 0) {
-        const current = shown.find((i) => isActive(i.href, i.key));
+        const current = headerPool.find((i) => isActive(i.href, i.key));
         if (current && !primary.includes(current)) {
-            primary.splice(primary.length - 1, 1, current);
+            if (primary.length < fit) primary.push(current);
+            else primary.splice(primary.length - 1, 1, current);
         }
     }
-    const rest = items.filter((i) => !primary.includes(i));
+    // Меню: те, чого немає ні в шапці, ні в капсулі (для крапки «є непрочитане»).
+    const rest = header
+        ? ordered.filter((i) => !capsule.includes(i) && !primary.includes(i))
+        : items.filter((i) => !primary.includes(i));
     const restBadge = rest.reduce((sum, i) => sum + i.badge, 0);
     const restActive = !header && rest.some((i) => isActive(i.href, i.key));
 

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Http\Controllers\Fun\MemoriesController;
 use App\Http\Controllers\Settings\GameThemeController;
+use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\StatusPageController;
 use App\Models\Track;
 use App\Models\User;
@@ -133,6 +134,8 @@ class HandleInertiaRequests extends Middleware
                     'is_admin' => $user->isAdmin(),
                     'cover_url' => $user->cover_url,
                     'nav_tabs' => array_values(array_intersect($this->modules->navTabsFor($user), app(NetworkModes::class)->modulesFor($user))),
+                    // Розділи шапки на ПК і планшеті (порожньо — автоматично).
+                    'header_tabs' => array_values(array_intersect(NavigationController::headerTabs($user), app(NetworkModes::class)->modulesFor($user))),
                     'network_mode' => app(NetworkModes::class)->for($user)['id'],
                     'palette' => $user->palette(),
                     'background' => Backgrounds::for($user),
