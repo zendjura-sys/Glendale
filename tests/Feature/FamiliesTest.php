@@ -35,6 +35,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 use Inertia\Testing\AssertableInertia as Assert;
 use LogicException;
 use Tests\TestCase;
@@ -637,5 +638,29 @@ class FamiliesTest extends TestCase
             ->assertJsonCount(2, 'shifts')
             ->assertJsonPath('shifts.0.title', 'Склад')->assertJsonPath('shifts.0.live', true)->assertJsonPath('shifts.0.mine', true)
             ->assertJsonPath('shifts.1.title', 'Вечірня')->assertJsonPath('shifts.1.live', false);
+    }
+
+    public function test_catalog_recruiting_tab_and_season_top(): void
+    {
+        $viewer = User::factory()->create();
+        $closed = app(FamilyService::class)->create(User::factory()->create(), [
+            'server_id' => $this->server->id, 'name' => 'Closed Family', 'tag' => 'CLS', 'rp_nickname' => 'Vito_Closed', 'static_id' => '30001',
+        ]);
+        app(FamilyService::class)->setStatus($closed, User::factory()->admin()->create(), Family::STATUS_VERIFIED, null);
+        $closed->forceFill(['is_recruiting' => false])->save();
+
+        // «Шукаємо» — лише відкритий набір.
+        $this->actingAs($viewer)->get('/families?tab=recruiting')->assertInertia(fn (Assert $p) => $p
+            ->where('filters.tab', 'recruiting')
+            ->where('families.data', fn ($rows) => collect($rows)->pluck('tag')->all() === ['SCL'])
+            ->where('recruitingCount', 1));
+
+        // Рейтинг сезону: сім’я з підтвердженим звітом — на першому місці.
+        $reports = app(ReportService::class);
+        $report = $reports->submit($this->family, $this->leader, ['for' => 'self', 'type' => 'contract', 'tier' => 'light', 'count' => 2, 'event_date' => now()->toDateString()], [UploadedFile::fake()->image('proof.png', 400, 300)]);
+        $reports->review($this->family, $report, $this->leader, true, null);
+        $this->actingAs($viewer)->withHeaders(['X-Inertia' => 'true', 'X-Inertia-Partial-Component' => 'families/index', 'X-Inertia-Partial-Data' => 'top', 'X-Inertia-Version' => (string) Inertia::getVersion()])
+            ->get('/families?tab=top')->assertOk()
+            ->assertJsonPath('props.top.0.tag', 'SCL')->assertJsonPath('props.top.0.place', 1);
     }
 }

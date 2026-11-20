@@ -24,6 +24,7 @@ use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -38,7 +39,9 @@ class FamilyController extends FamilyBaseController
         $filters = $request->validate([
             'server' => ['nullable', 'string', 'max:80'],
             'q' => ['nullable', 'string', 'max:60'],
+            'tab' => ['nullable', 'in:all,recruiting,top'],
         ]);
+        $tab = $filters['tab'] ?? 'all';
 
         $mine = FamilyMember::query()
             ->with('family.server')
@@ -64,6 +67,8 @@ class FamilyController extends FamilyBaseController
             ->where('status', Family::STATUS_VERIFIED)
             ->when($server, fn (Builder $q, GtaServer $s) => $q->where('server_id', $s->id))
             ->when($filters['q'] ?? null, fn (Builder $q, string $t) => $q->where(fn (Builder $q) => $q->where('name', 'like', "%{$t}%")->orWhere('tag', 'like', "%{$t}%")))
+            // «Шукаємо»: лише сім’ї з відкритим набором — свіжіші вище.
+            ->when($tab === 'recruiting', fn (Builder $q) => $q->where('is_recruiting', true)->orderByDesc('updated_at'))
             ->orderByDesc('members_count')
             ->orderByDesc('id')
             ->paginate(24)
@@ -73,7 +78,10 @@ class FamilyController extends FamilyBaseController
         return Inertia::render('families/index', [
             'mine' => $mine,
             'families' => $discover,
-            'filters' => ['server' => $server?->slug, 'q' => $filters['q'] ?? ''],
+            'filters' => ['server' => $server?->slug, 'q' => $filters['q'] ?? '', 'tab' => $tab],
+            // Рейтинг сезону (місяця) серед усіх сімей — бали з підтверджених звітів.
+            'top' => $tab === 'top' ? Inertia::defer(fn () => $this->seasonTop($server)) : null,
+            'recruitingCount' => Family::query()->where('status', Family::STATUS_VERIFIED)->where('is_recruiting', true)->count(),
             'servers' => $this->servers(),
         ]);
     }
@@ -300,6 +308,33 @@ class FamilyController extends FamilyBaseController
 
     /**
      * @return list<array<string, mixed>>
+     */
+    /**
+     * Глобальний рейтинг сімей за місяць (або сервера, якщо вибрано): топ-50 за балами.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function seasonTop(?GtaServer $server): array
+    {
+        $rating = app(FamilyRating::class);
+
+        $key = 'families.top.'.($server !== null ? $server->id : 'all').'.'.now()->format('Y-m');
+
+        return array_values(Cache::remember($key, now()->addMinutes(15), function () use ($rating, $server) {
+            $rows = Family::query()->with('server')
+                ->where('status', Family::STATUS_VERIFIED)
+                ->when($server, fn (Builder $q, GtaServer $s) => $q->where('server_id', $s->id))
+                ->orderByDesc('members_count')->limit(200)->get()
+                ->map(fn (Family $f) => [...$f->toCard(), 'score' => $rating->familyScore($f)])
+                ->filter(fn (array $row) => $row['score'] > 0)
+                ->sortByDesc('score')->take(50)->values();
+
+            return $rows->map(fn (array $row, int $i) => [...$row, 'place' => $i + 1])->all();
+        }));
+    }
+
+    /**
+     * @return list<array{id: int, slug: string, name: string, icon: string|null, platform: string}>
      */
     private function servers(): array
     {

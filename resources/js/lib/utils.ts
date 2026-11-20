@@ -24,8 +24,8 @@ export function dockedAboveNav(playing: boolean, desktopClass = 'md:pb-3') {
 /** Плаваюча кнопка чи панель над тим самим меню. */
 export function floatingAboveNav(playing: boolean) {
     return playing
-        ? 'bottom-[calc(10.5rem+env(safe-area-inset-bottom))] md:bottom-28'
-        : 'bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4';
+        ? 'bottom-[calc(11.5rem+env(safe-area-inset-bottom))]'
+        : 'bottom-[calc(6.25rem+env(safe-area-inset-bottom))]';
 }
 
 /** Текст поля форми: FormData.get() може повернути й файл. */

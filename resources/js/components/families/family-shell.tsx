@@ -208,17 +208,49 @@ export function FamilyShell({
         },
     ];
 
+    // Групи вкладок: робота, люди, сама сім’я, керування — щоб 16 розділів читались одразу.
+    const GROUPS: { key: string; label: string; items: FamilySection[] }[] = [
+        {
+            key: 'work',
+            label: tr('Робота'),
+            items: [
+                'overview',
+                'reports',
+                'queue',
+                'bank',
+                'warehouse',
+                'shifts',
+            ],
+        },
+        {
+            key: 'people',
+            label: tr('Люди'),
+            items: ['members', 'discipline', 'events', 'rating'],
+        },
+        {
+            key: 'family',
+            label: tr('Сім’я'),
+            items: ['charter', 'wiki', 'relations', 'history'],
+        },
+        { key: 'admin', label: tr('Керування'), items: ['audit', 'settings'] },
+    ];
+    const visible = tabs.filter((t) => t.visible);
+    const groups = GROUPS.map((g) => ({
+        ...g,
+        tabs: g.items
+            .map((key) => visible.find((t) => t.section === key))
+            .filter((t): t is Tab => t !== undefined),
+    })).filter((g) => g.tabs.length > 0);
+
     // На огляді є велика кнопка «Новий звіт» — плаваюча там лише закривала б вміст.
     const showReportButton = section !== 'reports' && section !== 'overview';
 
     return (
         <>
             <Head title={`${title} · [${family.tag}] ${family.name}`} />
-            <div
-                className={cn('space-y-4', showReportButton && 'pb-20 lg:pb-0')}
-            >
-                <header className="gc-solid relative overflow-hidden rounded-2xl">
-                    <div className="relative h-28 sm:h-36">
+            <div className={cn('space-y-4', showReportButton && 'pb-20')}>
+                <header className="gc-family-hero">
+                    <div className="gc-family-hero__cover">
                         {family.cover_url ? (
                             <img
                                 decoding="async"
@@ -226,43 +258,34 @@ export function FamilyShell({
                                 alt=""
                                 className="size-full object-cover"
                             />
-                        ) : family.plus?.accent ? (
-                            <div
-                                className="size-full opacity-70"
-                                style={{
-                                    backgroundImage: `radial-gradient(120% 120% at 0% 0%, ${family.plus.accent[0]}, transparent 55%), radial-gradient(120% 120% at 100% 0%, ${family.plus.accent[1]}, transparent 60%), linear-gradient(135deg, #0b0f1d, #141a33)`,
-                                }}
-                            />
                         ) : (
-                            <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#38bdf855,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#2f7bff66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
-                        )}
-                        <div className="scrim absolute inset-0" />
-                        {family.plus?.accent && (
                             <div
-                                className="absolute inset-x-0 bottom-0 h-[3px]"
+                                className="size-full"
                                 style={{
-                                    backgroundImage: `linear-gradient(90deg, ${family.plus.accent.join(', ')})`,
+                                    backgroundImage: family.plus?.accent
+                                        ? `linear-gradient(120deg, ${family.plus.accent.join(', ')})`
+                                        : 'linear-gradient(120deg, color-mix(in oklab, var(--gc-accent-strong) 40%, var(--gc-l2)), var(--gc-l2) 70%)',
                                 }}
                             />
                         )}
                     </div>
-                    <div className="relative -mt-12 flex flex-wrap items-end gap-4 px-4 pb-4 sm:px-6">
+                    <div className="relative -mt-10 flex flex-wrap items-start gap-x-5 gap-y-4 px-4 pb-5 sm:px-6">
                         <FamilyLogo
                             family={family}
                             size="xl"
-                            className="ring-4 ring-[#0a0d18]"
+                            className="ring-4 ring-[var(--gc-l1)]"
                         />
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 pt-12">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">
-                                    <span className="text-amber-400">
+                                <h1 className="text-2xl font-extrabold tracking-[-0.02em] sm:text-[32px]">
+                                    <span className="text-[var(--gc-accent)]">
                                         [{family.tag}]
                                     </span>{' '}
                                     {family.name}
                                 </h1>
                                 {family.status === 'verified' && (
                                     <ShieldCheck
-                                        className="size-5 text-emerald-400"
+                                        className="size-5 text-[var(--gc-live)]"
                                         aria-label={tr('Верифіковано')}
                                     />
                                 )}
@@ -270,11 +293,11 @@ export function FamilyShell({
                                     <PlusBadge className="size-5 rounded-md" />
                                 )}
                             </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/50">
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[var(--gc-text-2)]">
                                 {family.server && (
                                     <Link
                                         href={`/servers/${family.server.slug}`}
-                                        className="flex items-center gap-1.5 hover:text-white"
+                                        className="flex items-center gap-1.5 hover:text-[var(--gc-text)]"
                                     >
                                         <ServerIcon
                                             name={family.server.name}
@@ -286,7 +309,9 @@ export function FamilyShell({
                                 )}
                                 <span className="flex items-center gap-1">
                                     <Users className="size-3.5" />
-                                    {family.members_count}
+                                    {tr('{n} учасників', {
+                                        n: family.members_count,
+                                    })}
                                 </span>
                                 {can['treasury.manage'] && (
                                     <span>
@@ -296,10 +321,10 @@ export function FamilyShell({
                                 )}
                             </div>
                         </div>
-                        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-                            <div className="gc-solid-2 flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-3.5 py-2 sm:flex-none">
+                        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:pt-12">
+                            <div className="gc-family-me">
                                 <div className="min-w-0">
-                                    <div className="font-mono text-sm font-semibold break-words text-white">
+                                    <div className="truncate text-sm font-semibold">
                                         {me.display}
                                     </div>
                                     <RankBadge
@@ -308,16 +333,16 @@ export function FamilyShell({
                                         className="mt-0.5"
                                     />
                                 </div>
-                                <div className="ml-auto pl-3 text-right">
-                                    <div className="text-xs text-white/40">
+                                <div className="ml-auto pl-4 text-right">
+                                    <div className="text-xs text-[var(--gc-text-2)]">
                                         {tr('Баланс')}
                                     </div>
                                     <div
                                         className={cn(
-                                            'font-display text-base font-bold whitespace-nowrap',
+                                            'text-base font-bold whitespace-nowrap tabular-nums',
                                             me.balance < 0
                                                 ? 'text-red-400'
-                                                : 'text-emerald-400',
+                                                : 'text-[var(--gc-live)]',
                                         )}
                                     >
                                         {uah(me.balance)}
@@ -327,23 +352,39 @@ export function FamilyShell({
                             {family.conversation_id && (
                                 <a
                                     href={`${base}/chat`}
-                                    className="gc-solid inline-flex h-12 items-center gap-2 rounded-2xl px-4 text-sm font-medium text-white/80 hover:text-white"
+                                    className="gc-ghost-btn h-12 px-4"
                                 >
-                                    <MessagesSquare className="size-4" />{' '}
+                                    <MessagesSquare className="size-4" />
                                     {tr('Чат')}
                                 </a>
                             )}
                         </div>
                     </div>
-                    <nav
-                        ref={(el) => {
-                            tabStrip.current = el;
-                        }}
-                        className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden"
-                    >
-                        {tabs
-                            .filter((t) => t.visible)
-                            .map((t) => {
+                </header>
+
+                {/* Вкладки: групи з тонким роздільником, підкладка активної «переїжджає», липнуть під шапкою. */}
+                <nav
+                    ref={(el) => {
+                        tabStrip.current = el;
+                        tabsNav.current = el;
+                    }}
+                    aria-label={tr('Розділи сім’ї')}
+                    className="gc-family-tabs"
+                >
+                    {groups.map((g, gi) => (
+                        <div
+                            key={g.key}
+                            role="group"
+                            aria-label={g.label}
+                            className="flex shrink-0 items-center gap-0.5"
+                        >
+                            {gi > 0 && (
+                                <span
+                                    aria-hidden
+                                    className="mx-1.5 h-5 w-px bg-[var(--gc-hairline)]"
+                                />
+                            )}
+                            {g.tabs.map((t) => {
                                 const on = section === t.section;
                                 return (
                                     <Link
@@ -354,17 +395,18 @@ export function FamilyShell({
                                         prefetch={['hover']}
                                         cacheFor="1m"
                                         aria-current={on ? 'page' : undefined}
+                                        data-family-tab={
+                                            on ? 'active' : undefined
+                                        }
                                         className={cn(
-                                            'relative inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium transition-colors',
-                                            on
-                                                ? 'text-white'
-                                                : 'text-white/50 hover:text-white',
+                                            'gc-family-tab',
+                                            on && 'is-active',
                                         )}
                                     >
                                         {on && (
                                             <m.span
                                                 layoutId="gc-family-tab"
-                                                className="absolute inset-0 rounded-xl bg-white/[0.1]"
+                                                className="gc-tube"
                                                 transition={
                                                     reduce
                                                         ? { duration: 0 }
@@ -372,7 +414,6 @@ export function FamilyShell({
                                                               type: 'spring',
                                                               stiffness: 420,
                                                               damping: 34,
-                                                              mass: 0.8,
                                                           }
                                                 }
                                                 aria-hidden
@@ -383,36 +424,21 @@ export function FamilyShell({
                                             {t.label}
                                         </span>
                                         {!!t.badge && (
-                                            <span className="relative rounded-full bg-red-500 px-1.5 text-[11px] leading-4 font-semibold text-white">
+                                            <span className="relative min-w-4 rounded-full bg-[var(--gc-alert)] px-1.5 text-center text-[11px] leading-4 font-semibold text-white tabular-nums">
                                                 {t.badge > 99 ? '99+' : t.badge}
                                             </span>
-                                        )}
-                                        {on && (
-                                            <m.span
-                                                layoutId="gc-family-tab-line"
-                                                className="absolute inset-x-3 -bottom-1.5 h-0.5 rounded-full bg-sky-400"
-                                                transition={
-                                                    reduce
-                                                        ? { duration: 0 }
-                                                        : {
-                                                              type: 'spring',
-                                                              stiffness: 420,
-                                                              damping: 34,
-                                                          }
-                                                }
-                                                aria-hidden
-                                            />
                                         )}
                                     </Link>
                                 );
                             })}
-                    </nav>
-                </header>
+                        </div>
+                    ))}
+                </nav>
 
                 {family.status !== 'verified' && (
                     <div
                         className={cn(
-                            'flex items-start gap-3 rounded-2xl px-4 py-3 text-sm',
+                            'flex items-start gap-3 rounded-[8px] px-4 py-3 text-sm',
                             family.status === 'suspended'
                                 ? 'bg-red-500/10 text-red-400'
                                 : 'bg-amber-300/10 text-amber-400',
@@ -446,7 +472,7 @@ export function FamilyShell({
                 <Link
                     href={`${base}/reports?new=1`}
                     className={cn(
-                        'btn-glow fixed right-4 z-30 inline-flex h-14 items-center gap-2 rounded-2xl px-5 text-sm font-semibold lg:hidden',
+                        'gc-primary-btn fixed right-4 z-30 h-12 px-5 shadow-[0_12px_28px_-12px_rgb(0_0_0/0.7)]',
                         floatingAboveNav(playing),
                     )}
                 >
