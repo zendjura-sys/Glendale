@@ -4,8 +4,8 @@
     "description": "Соціальна мережа для геймерів і кіноманів",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#05070f",
-    "theme_color": "#05070f",
+    "background_color": "#0e0f13",
+    "theme_color": "#0e0f13",
     "icons": [
         {
             "src": "/favicon-192.png",

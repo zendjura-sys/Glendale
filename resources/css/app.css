@@ -16,6 +16,8 @@
         'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
     --font-display:
+        'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    --font-brand:
         'Unbounded Variable', 'Unbounded', 'Manrope Variable', sans-serif;
 
     --radius-lg: var(--radius);
@@ -27,24 +29,24 @@
     --radius-menu: 1rem;
 
     /* Arena Black brand — singular blue on charcoal (Spotify theater model). */
-    --color-gc-blue: #3d8bff;
-    --color-gc-indigo: #3d8bff;
+    --color-gc-blue: #6d6afe;
+    --color-gc-indigo: #6d6afe;
     --color-gc-purple: #5b8cff;
-    --color-gc-pink: #3d8bff;
-    --color-gc-cyan: #5eead4;
-    --color-gc-mint: #1ed760;
-    --color-gc-sky: #9ec5ff;
-    --color-gc-lilac-200: #c5dbff;
-    --color-gc-lilac-300: #9ec5ff;
-    --color-gc-lilac-400: #7eb6ff;
-    --color-gc-lilac-500: #3d8bff;
-    --color-gc-violet-300: #9ec5ff;
-    --color-gc-violet-400: #7eb6ff;
+    --color-gc-pink: #6d6afe;
+    --color-gc-cyan: #8b88ff;
+    --color-gc-mint: #3ee0a8;
+    --color-gc-sky: #b9baff;
+    --color-gc-lilac-200: #d9daff;
+    --color-gc-lilac-300: #b9baff;
+    --color-gc-lilac-400: #a4a6ff;
+    --color-gc-lilac-500: #6d6afe;
+    --color-gc-violet-300: #b9baff;
+    --color-gc-violet-400: #a4a6ff;
     --color-gc-amber: #ffa42b;
     --color-gc-gold: #ffd36b;
     --color-gc-coral: #f3727f;
-    --color-gc-ink: #0a0a0a;
-    --color-spotify: #1ed760;
+    --color-gc-ink: #0e0f13;
+    --color-spotify: #3ee0a8;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -93,10 +95,10 @@
     --color-void: #05070f;
     --color-abyss: #0a0e1c;
     --color-deep: #0f1426;
-    --color-neon-blue: #3d8bff;
-    --color-neon-indigo: #3d8bff;
-    --color-neon-violet: #7eb6ff;
-    --color-neon-pink: #3d8bff;
+    --color-neon-blue: #6d6afe;
+    --color-neon-indigo: #6d6afe;
+    --color-neon-violet: #a4a6ff;
+    --color-neon-pink: #6d6afe;
     --color-neon-cyan: #5eead4;
     --color-gold: #f5c451;
 
@@ -169,46 +171,52 @@
 
 :root,
 .dark {
-    /* Arena Black — Spotify theater charcoal + singular GameCon blue. */
-    --glass: rgb(24 24 24 / 0.72);
-    --glass-rim: rgb(255 255 255 / 0.08);
-    --matte: rgb(18 18 18 / 0.94);
-    --matte-solid: #181818;
-    --background: #0a0a0a;
-    --foreground: #ffffff;
-    --card: #121212;
-    --card-foreground: #ffffff;
-    --popover: #181818;
-    --popover-foreground: #ffffff;
-    --primary: #3d8bff;
+    /* «Лобі»: графіт із холодним відтінком, теплий текст, один акцент — електричний індиго. */
+    --glass: oklch(0.205 0.008 275 / 0.72);
+    --glass-rim: rgb(255 255 255 / 0.07);
+    --matte: oklch(0.205 0.008 275 / 0.96);
+    --matte-solid: oklch(0.245 0.01 275);
+    --background: oklch(0.165 0.006 275);
+    --foreground: oklch(0.94 0.006 80);
+    --card: oklch(0.205 0.008 275);
+    --card-foreground: oklch(0.94 0.006 80);
+    --popover: oklch(0.245 0.01 275);
+    --popover-foreground: oklch(0.94 0.006 80);
+    --primary: oklch(0.62 0.2 277);
     --primary-foreground: #ffffff;
-    --secondary: #1f1f1f;
-    --secondary-foreground: #ffffff;
-    --muted: #1f1f1f;
-    --muted-foreground: #a7a7a7;
-    --accent: #222222;
-    --accent-foreground: #ffffff;
-    --destructive: #f3727f;
-    --destructive-foreground: #ffb4bc;
-    --border: rgb(255 255 255 / 0.08);
-    --input: #1f1f1f;
-    --ring: #3d8bff;
-    --chart-1: #3d8bff;
-    --chart-2: #1ed760;
-    --chart-3: #5eead4;
-    --chart-4: #ffa42b;
-    --chart-5: #7eb6ff;
-    --radius: 1rem;
-    --sidebar: #121212;
-    --sidebar-foreground: #ffffff;
-    --sidebar-primary: #3d8bff;
+    --secondary: oklch(0.245 0.01 275);
+    --secondary-foreground: oklch(0.94 0.006 80);
+    --muted: oklch(0.245 0.01 275);
+    --muted-foreground: oklch(0.72 0.01 275);
+    --accent: oklch(0.29 0.012 275);
+    --accent-foreground: oklch(0.94 0.006 80);
+    --destructive: oklch(0.68 0.19 18);
+    --destructive-foreground: oklch(0.85 0.08 18);
+    --border: rgb(255 255 255 / 0.07);
+    --input: oklch(0.245 0.01 275);
+    --ring: oklch(0.76 0.13 277);
+    --chart-1: oklch(0.62 0.2 277);
+    --chart-2: oklch(0.8 0.15 165);
+    --chart-3: oklch(0.8 0.12 220);
+    --chart-4: oklch(0.82 0.14 75);
+    --chart-5: oklch(0.76 0.13 277);
+    --radius: 1.125rem;
+    --sidebar: oklch(0.205 0.008 275);
+    --sidebar-foreground: oklch(0.94 0.006 80);
+    --sidebar-primary: oklch(0.62 0.2 277);
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #1f1f1f;
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: rgb(255 255 255 / 0.08);
-    --sidebar-ring: #3d8bff;
+    --sidebar-accent: oklch(0.245 0.01 275);
+    --sidebar-accent-foreground: oklch(0.94 0.006 80);
+    --sidebar-border: rgb(255 255 255 / 0.07);
+    --sidebar-ring: oklch(0.62 0.2 277);
+    --gc-live: oklch(0.8 0.15 165);
+    --gc-alert: oklch(0.68 0.19 18);
 
-    --gc-gradient: linear-gradient(120deg, #3d8bff 0%, #2f6fe0 100%);
+    --gc-gradient: linear-gradient(
+        120deg,
+        oklch(0.62 0.2 277) 0%,
+        oklch(0.55 0.2 285) 100%
+    );
 }
 
 /* Палітри учасника. Фон темний, міняється лише акцент. */
@@ -637,11 +645,11 @@ html[data-palette='copper'] {
     .ring-gradient {
         background: conic-gradient(
             from 180deg,
-            #3d8bff,
-            #7eb6ff,
-            #1ed760,
+            #6d6afe,
+            #a4a6ff,
+            #3ee0a8,
             #5eead4,
-            #3d8bff
+            #6d6afe
         );
     }
 
@@ -687,7 +695,7 @@ html[data-palette='copper'] {
 .gc-eq > span {
     width: 3px;
     border-radius: 2px;
-    background: linear-gradient(to top, #2f6fe0, #3d8bff);
+    background: linear-gradient(to top, #5a52e8, #6d6afe);
     animation: gc-eq 0.9s ease-in-out infinite;
 }
 
@@ -2825,15 +2833,15 @@ html[data-text='xl'] {
     --radius-control: 9999px;
     --radius-dialog: 1.25rem;
     --radius-menu: 1rem;
-    --background: #0a0a0a;
+    --background: #0e0f13;
     --foreground: #ffffff;
-    --card: #121212;
+    --card: #15161b;
     --card-foreground: #ffffff;
     --popover: #181818;
     --popover-foreground: #ffffff;
     --muted-foreground: #a7a7a7;
     --border: rgb(255 255 255 / 0.08);
-    --sidebar: #121212;
+    --sidebar: #15161b;
     --glass: rgb(24 24 24 / 0.78);
     --glass-rim: rgb(255 255 255 / 0.1);
     --matte: rgb(18 18 18 / 0.94);
@@ -2861,20 +2869,20 @@ html[data-text='xl'] {
 }
 /* Основна палітра стилю — неоновий синій (інші палітри учасника мають свій акцент). */
 :root[data-skin='gamecon'][data-palette='aurora'] {
-    --primary: #3d8bff;
-    --ring: #7eb6ff;
-    --sidebar-primary: #3d8bff;
-    --color-gc-blue: #3d8bff;
-    --color-gc-indigo: #3d8bff;
-    --color-gc-cyan: #5eead4;
-    --color-gc-sky: #9ec5ff;
-    --color-gc-lilac-200: #c5dbff;
-    --color-gc-lilac-300: #9ec5ff;
-    --color-gc-lilac-400: #7eb6ff;
-    --color-gc-lilac-500: #3d8bff;
-    --color-gc-violet-300: #9ec5ff;
-    --color-gc-violet-400: #7eb6ff;
-    --gc-gradient: linear-gradient(120deg, #3d8bff 0%, #2f6fe0 100%);
+    --primary: #6d6afe;
+    --ring: #a4a6ff;
+    --sidebar-primary: #6d6afe;
+    --color-gc-blue: #6d6afe;
+    --color-gc-indigo: #6d6afe;
+    --color-gc-cyan: #8b88ff;
+    --color-gc-sky: #b9baff;
+    --color-gc-lilac-200: #d9daff;
+    --color-gc-lilac-300: #b9baff;
+    --color-gc-lilac-400: #a4a6ff;
+    --color-gc-lilac-500: #6d6afe;
+    --color-gc-violet-300: #b9baff;
+    --color-gc-violet-400: #a4a6ff;
+    --gc-gradient: linear-gradient(120deg, #6d6afe 0%, #5a52e8 100%);
 }
 
 /*
@@ -2883,29 +2891,34 @@ html[data-text='xl'] {
  * (червоний — небезпека, зелений — успіх, бурштиновий — попередження) не змінюються.
  */
 :root[data-skin='gamecon'] {
-    --color-gc-purple: #3d63ff;
-    --color-gc-pink: #22b8e8;
-    --color-gc-indigo: #3d63ff;
-    --color-gc-violet-300: #8fb4ff;
-    --color-gc-violet-400: #6c98ff;
-    --color-indigo-100: #dbeafe;
-    --color-indigo-200: #bfdbfe;
-    --color-indigo-300: #93c5fd;
-    --color-indigo-400: #60a5fa;
-    --color-indigo-500: #2f7bff;
-    --color-indigo-600: #1d6fe0;
-    --color-violet-200: #bfdbfe;
-    --color-violet-300: #93c5fd;
-    --color-violet-400: #60a5fa;
-    --color-violet-500: #2f7bff;
-    --color-violet-600: #1d6fe0;
-    --color-purple-300: #93c5fd;
-    --color-purple-400: #60a5fa;
-    --color-purple-500: #2f7bff;
-    --color-fuchsia-300: #67e8f9;
-    --color-fuchsia-400: #22d3ee;
-    --color-fuchsia-500: #06b6d4;
-    --color-pink-500: #0ea5e9;
+    /* «Лобі»: декоративні фіолетові/пурпурні/рожеві відтінки зводяться до одного індиго. */
+    --color-gc-purple: #6d6afe;
+    --color-gc-pink: #8b88ff;
+    --color-gc-indigo: #6d6afe;
+    --color-gc-sky: #b9baff;
+    --color-gc-cyan: #8b88ff;
+    --color-gc-lilac-200: #d9daff;
+    --color-gc-lilac-300: #b9baff;
+    --color-gc-violet-300: #b9baff;
+    --color-gc-violet-400: #a4a6ff;
+    --color-indigo-100: #e3e3ff;
+    --color-indigo-200: #cbcbff;
+    --color-indigo-300: #b9baff;
+    --color-indigo-400: #a4a6ff;
+    --color-indigo-500: #6d6afe;
+    --color-indigo-600: #5a52e8;
+    --color-violet-200: #cbcbff;
+    --color-violet-300: #b9baff;
+    --color-violet-400: #a4a6ff;
+    --color-violet-500: #6d6afe;
+    --color-violet-600: #5a52e8;
+    --color-purple-300: #b9baff;
+    --color-purple-400: #a4a6ff;
+    --color-purple-500: #6d6afe;
+    --color-fuchsia-300: #b9baff;
+    --color-fuchsia-400: #a4a6ff;
+    --color-fuchsia-500: #6d6afe;
+    --color-pink-500: #8b88ff;
 }
 :root[data-skin='gamecon'][data-theme='dark']
     :is(
@@ -3861,9 +3874,9 @@ html[data-text='xl'] {
 
 /* Arena Black aurora — blue + live mint only (no purple/pink). */
 :root[data-skin='gamecon'] {
-    --aurora-1: #3d8bff;
-    --aurora-2: #2f6fe0;
-    --aurora-3: #1ed760;
+    --aurora-1: #6d6afe;
+    --aurora-2: #5a52e8;
+    --aurora-3: #3ee0a8;
     --aurora-4: #5eead4;
 }
 :root[data-skin='gamecon'][data-theme='light'] {
@@ -6064,17 +6077,21 @@ html.gc-vk[data-theme='dark']
    ========================================================================== */
 /* Arena Black cascade — Spotify charcoal surfaces across the whole app. */
 html:root.gc-vk[data-theme] {
-    --gc-page: #0a0a0a;
-    --gc-l1: #121212;
-    --gc-l2: #181818;
-    --gc-l3: #222222;
-    --gc-active: color-mix(in oklab, #3d8bff 22%, #181818);
-    --gc-text: #ffffff;
-    --gc-text-2: #a7a7a7;
-    --gc-hairline: rgb(255 255 255 / 0.08);
-    --gc-accent: #7eb6ff;
-    --gc-accent-strong: #3d8bff;
-    --gc-glass-bg: rgb(18 18 18 / 0.86);
+    --gc-page: oklch(0.165 0.006 275);
+    --gc-l1: oklch(0.205 0.008 275);
+    --gc-l2: oklch(0.245 0.01 275);
+    --gc-l3: oklch(0.29 0.012 275);
+    --gc-active: color-mix(
+        in oklab,
+        oklch(0.62 0.2 277) 24%,
+        oklch(0.245 0.01 275)
+    );
+    --gc-text: oklch(0.94 0.006 80);
+    --gc-text-2: oklch(0.72 0.01 275);
+    --gc-hairline: rgb(255 255 255 / 0.07);
+    --gc-accent: oklch(0.76 0.13 277);
+    --gc-accent-strong: oklch(0.62 0.2 277);
+    --gc-glass-bg: oklch(0.205 0.008 275 / 0.78);
     --vkui--color_background: var(--gc-page);
     --vkui--color_background_content: var(--gc-l1);
     --vkui--color_background_secondary: var(--gc-l2);
@@ -6102,16 +6119,16 @@ html:root.gc-vk[data-theme] {
     --gc-shell-max: 1600px;
 }
 html:root.gc-vk[data-theme='light'] {
-    --gc-page: #f1f5f9;
+    --gc-page: oklch(0.97 0.003 275);
     --gc-l1: #ffffff;
-    --gc-l2: #f1f5f9;
-    --gc-l3: #e2e8f0;
-    --gc-active: #e0f2fe;
-    --gc-text: #0f172a;
-    --gc-text-2: #475569;
-    --gc-accent: #0284c7;
-    --gc-accent-strong: #0284c7;
-    --gc-glass-bg: rgb(255 255 255 / 0.85);
+    --gc-l2: oklch(0.955 0.004 275);
+    --gc-l3: oklch(0.92 0.006 275);
+    --gc-active: oklch(0.93 0.04 277);
+    --gc-text: oklch(0.22 0.01 275);
+    --gc-text-2: oklch(0.46 0.012 275);
+    --gc-accent: oklch(0.52 0.22 277);
+    --gc-accent-strong: oklch(0.52 0.22 277);
+    --gc-glass-bg: rgb(255 255 255 / 0.82);
 }
 html:root.gc-vk[data-theme],
 html:root.gc-vk[data-theme] body {
@@ -6304,8 +6321,8 @@ html:root.gc-vk[data-theme]
     :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
         .am *
     ):not(:disabled) {
-    background: linear-gradient(120deg, #0ea5e9 0%, #22d3ee 100%) !important;
-    color: #04131f !important;
+    background: var(--gc-accent-strong) !important;
+    color: #fff !important;
     box-shadow: none !important;
     border: 0 !important;
 }
@@ -6313,7 +6330,7 @@ html:root.gc-vk[data-theme='light']
     :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
         .am *
     ):not(:disabled) {
-    background: linear-gradient(120deg, #0284c7 0%, #0ea5e9 100%) !important;
+    background: var(--gc-accent-strong) !important;
     color: #fff !important;
 }
 html:root.gc-vk[data-theme]
@@ -6740,7 +6757,7 @@ body {
     isolation: isolate;
 }
 .sheen-pill--primary {
-    background: linear-gradient(180deg, #4d96ff 0%, #2f6fe0 100%);
+    background: linear-gradient(180deg, #4d96ff 0%, #5a52e8 100%);
     box-shadow:
         0 10px 28px rgb(61 139 255 / 0.35),
         inset 0 1px 0 rgb(255 255 255 / 0.35),
@@ -6797,7 +6814,7 @@ body {
     isolation: isolate;
     border-radius: 9999px;
     padding: 1px;
-    background: #0a0a0a;
+    background: #0e0f13;
     transition: transform 0.2s ease;
 }
 .glow-pill:hover {
@@ -6814,9 +6831,9 @@ body {
     background: conic-gradient(
         from 0deg,
         transparent 0%,
-        #3d8bff 18%,
+        #6d6afe 18%,
         #ffffff 28%,
-        #7eb6ff 38%,
+        #a4a6ff 38%,
         transparent 55%
     );
     animation: glow-pill-spin 3.2s linear infinite;
@@ -6825,7 +6842,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .glow-pill__beam {
         animation: none;
-        background: linear-gradient(90deg, #3d8bff, #7eb6ff, #3d8bff);
+        background: linear-gradient(90deg, #6d6afe, #a4a6ff, #6d6afe);
         inset: 0;
         border-radius: inherit;
         opacity: 1;
@@ -6845,7 +6862,7 @@ body {
     justify-content: center;
     gap: 0.5rem;
     border-radius: 9999px;
-    background: #0a0a0a;
+    background: #0e0f13;
     padding: 0 1.75rem;
     font-size: 15px;
     font-weight: 600;
@@ -6891,6 +6908,10 @@ html:root.gc-vk[data-theme] .ios-glass-bar.ios-header-pill.gc-glass-island {
 }
 .font-display {
     font-family: var(--font-display);
+    letter-spacing: -0.02em;
+}
+.font-brand {
+    font-family: var(--font-brand);
 }
 
 /* =============================================================================
@@ -7100,4 +7121,219 @@ html:root.gc-vk[data-theme] .gc-vk-tabbar.ios-glass-panel {
 }
 html:root.gc-vk[data-theme='light'] .gc-vk-tabbar.ios-glass-panel {
     background: rgba(255, 255, 255, 0.82) !important;
+}
+
+/* ==========================================================================
+   «Лобі» (DESIGN.md v4): тонка шапка, одна колонка по центру, живий док знизу.
+   Скло — лише шапка й док. Останній шар — перекриває старі VK/Arena правила вище.
+   ========================================================================== */
+:root.gc-vk[data-skin][data-theme] {
+    --gc-shell-max: 1180px;
+}
+html:root.gc-vk[data-theme] body {
+    font-feature-settings: 'cv11', 'ss01';
+}
+.gc-lobby-top {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 50;
+    padding: env(safe-area-inset-top) 12px 0;
+    pointer-events: none;
+}
+.gc-lobby-top__bar {
+    pointer-events: auto;
+    margin: 10px auto 0;
+    max-width: var(--gc-shell-max);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 54px;
+    padding: 0 8px 0 16px;
+    border-radius: 9999px;
+    background: var(--gc-glass-bg);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(18px) saturate(1.4);
+    box-shadow:
+        inset 0 0 0 1px var(--gc-hairline),
+        0 8px 24px -12px rgb(0 0 0 / 0.5);
+}
+.gc-lobby-top .gc-icon-button {
+    border-radius: 9999px;
+}
+
+/* ---------- Живий док ---------- */
+.gc-live-dock {
+    position: fixed;
+    left: 50%;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 56;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: max-content;
+    max-width: calc(100vw - 24px);
+}
+.gc-dock-bar {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    padding: 6px;
+    border-radius: 26px;
+    background: var(--gc-glass-bg);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    backdrop-filter: blur(20px) saturate(1.5);
+    box-shadow:
+        inset 0 0 0 1px var(--gc-hairline),
+        0 18px 40px -16px rgb(0 0 0 / 0.65);
+}
+.gc-dock-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 64px;
+    height: 54px;
+    padding: 0 10px;
+    border-radius: 20px;
+    color: var(--gc-text-2);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition:
+        background-color 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+        color 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.gc-dock-item:hover {
+    color: var(--gc-text);
+    background: color-mix(in oklab, var(--gc-text) 6%, transparent);
+}
+.gc-dock-item.is-active {
+    color: var(--gc-text);
+    background: var(--gc-active);
+}
+.gc-dock-item.is-active svg {
+    color: var(--gc-accent);
+}
+.gc-dock-item:focus-visible,
+.gc-dock-chip:focus-visible {
+    outline: 2px solid var(--gc-accent);
+    outline-offset: 2px;
+}
+@media (min-width: 768px) {
+    .gc-dock-item {
+        flex-direction: row;
+        gap: 8px;
+        height: 46px;
+        padding: 0 16px;
+        font-size: 13px;
+    }
+}
+.gc-dock-badge {
+    position: absolute;
+    top: -6px;
+    right: -10px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9999px;
+    background: var(--gc-alert, #f2556b);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 0 0 2px var(--gc-l1);
+}
+.gc-dock-dot {
+    position: absolute;
+    top: -2px;
+    right: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--gc-alert, #f2556b);
+    box-shadow: 0 0 0 2px var(--gc-l1);
+}
+.gc-dock-live {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+}
+.gc-dock-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 14px 0 11px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gc-text);
+    background: var(--gc-glass-bg);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    box-shadow:
+        inset 0 0 0 1px var(--gc-hairline),
+        0 10px 24px -14px rgb(0 0 0 / 0.6);
+    white-space: nowrap;
+}
+.gc-dock-chip svg {
+    color: var(--gc-accent);
+}
+.gc-dock-chip--live svg {
+    color: var(--gc-live, #3ee0a8);
+}
+.gc-dock-chip--alert svg {
+    color: var(--gc-alert, #f2556b);
+}
+.gc-dock-chip:hover {
+    background: var(--gc-l3);
+}
+@media (max-width: 767px) {
+    .gc-dock-chip span {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+.gc-dock-sheet {
+    position: fixed;
+    left: 50%;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    z-index: 55;
+    width: min(560px, calc(100vw - 24px));
+    max-height: calc(100dvh - env(safe-area-inset-top) - 8.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    translate: -50% 0;
+    padding: 12px;
+    border-radius: 24px;
+    background: var(--gc-l2);
+    box-shadow:
+        inset 0 0 0 1px var(--gc-hairline),
+        0 24px 60px -20px rgb(0 0 0 / 0.7);
+}
+@media (min-width: 768px) {
+    .gc-dock-sheet {
+        bottom: calc(76px + env(safe-area-inset-bottom));
+    }
+}
+html:root.gc-vk[data-theme='light'] .gc-dock-bar,
+html:root.gc-vk[data-theme='light'] .gc-lobby-top__bar,
+html:root.gc-vk[data-theme='light'] .gc-dock-chip {
+    box-shadow:
+        inset 0 0 0 1px rgb(15 17 25 / 0.08),
+        0 12px 30px -16px rgb(15 17 25 / 0.35);
+}
+@media (prefers-reduced-motion: reduce) {
+    .gc-dock-item,
+    .gc-dock-chip {
+        transition: none;
+    }
 }

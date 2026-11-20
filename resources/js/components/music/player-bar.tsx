@@ -176,8 +176,11 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
             {/* ПК: та сама капсула, що й у «Музиці», — внизу вікна, з усім керуванням. */}
             <div
                 className={cn(
-                    'pointer-events-none fixed inset-x-0 bottom-4 z-[45] hidden px-6 md:block',
-                    standalone && 'lg:left-[276px]',
+                    'pointer-events-none fixed inset-x-0 z-[45] hidden px-6 md:block',
+                    // Над живим доком сайту; у «Музиці» (standalone) дока немає.
+                    standalone
+                        ? 'bottom-4 lg:left-[276px]'
+                        : 'bottom-[calc(5.5rem+env(safe-area-inset-bottom))]',
                 )}
             >
                 {/* Меню «⋯» капсули відкриває діалоги (поділитися, відомості) — потрібен провайдер дій. */}
@@ -222,7 +225,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                     'pointer-events-none fixed inset-x-0 z-[45] bg-transparent px-3 md:hidden',
                     standalone
                         ? 'bottom-[calc(env(safe-area-inset-bottom)+12px)]'
-                        : 'bottom-[calc(5.25rem+env(safe-area-inset-bottom))]',
+                        : 'bottom-[calc(5.75rem+env(safe-area-inset-bottom))]',
                 )}
             >
                 {/* Матове нейтральне скло без підсвітки кольором обкладинки; ім'я переходу — на самій панелі, інакше розмиття не бачить сторінку. */}

@@ -1,63 +1,75 @@
 ---
-version: 3
+version: 4
 name: GameCon
-direction: Arena Black
+direction: Лобі (Графіт і індиго)
 description: |
-    Radical premium social look. Spotify content-first darkness (#121212 theater)
-    + Linear quiet luxury + singular GameCon electric blue. Display = Unbounded
-    (expressive), UI = Manrope. Pills, heavy elevation, one accent — no neon rainbow.
-sources:
-    - design-refs/awesome-design-md/spotify/DESIGN.md
-    - design-refs/awesome-design-md/linear.app/DESIGN.md
-    - design-refs/awesome-design-md/apple/DESIGN.md
-    - 21st: classy-hero / floating glass navbar
+    Власний формат соцмережі для гравців — без структури ВК (ні лівого меню, ні трьох колонок,
+    ні вкладок-табів VKUI). Графітові поверхні з холодним відтінком, теплий текст, один акцент —
+    електричний індиго. Навігація — плаваючий «живий док», що змінюється за обставинами.
+    Головна — «лобі» з віджетів, які людина розставляє сама.
 skills:
+    - impeccable
     - design-taste-frontend
-    - open-design
     - frontend-design
 ---
 
-# GameCon — Arena Black
+# GameCon — «Лобі»
 
-## Why this direction
+## Ідея
 
-A gaming social network should feel like a **night venue**: UI recedes into
-charcoal so people, clips, and rooms glow. Spotify’s theater + Linear’s craft
-beat generic “neon SaaS purple.”
+Соцмережа для гравців — це **лобі перед матчем**: видно, хто поруч, що відбувається зараз і куди
+зайти. Інтерфейс — тихий графіт, на якому світяться люди, кімнати й події. Сучасно (oklch, один
+насичений акцент, великі радіуси, багато повітря), дорого (точні відступи, без ліпнини), зручно
+(головне — під великим пальцем, на ПК — ⌘K).
 
-## Palette (singular accent)
+## Палітра (oklch, один акцент)
 
-| Role    | Hex       | Use                          |
-| ------- | --------- | ---------------------------- |
-| Void    | `#0a0a0a` | Page canvas                  |
-| Surface | `#121212` | Cards / posts (L1)           |
-| Raised  | `#181818` | Dock / menus (L2)            |
-| Hover   | `#222222` | L3                           |
-| Ink     | `#ffffff` | Primary text                 |
-| Mute    | `#a7a7a7` | Secondary                    |
-| Accent  | `#3d8bff` | CTA, active, links only      |
-| Live    | `#1ed760` | Online / voice (Spotify cue) |
+| Роль      | Значення                 | ≈ hex     | Для чого                               |
+| --------- | ------------------------ | --------- | -------------------------------------- |
+| Page      | `oklch(0.165 0.006 275)` | `#0e0f13` | Полотно сторінки                       |
+| L1        | `oklch(0.205 0.008 275)` | `#15161b` | Картки, віджети                        |
+| L2        | `oklch(0.245 0.010 275)` | `#1c1d23` | Меню, поля, док                        |
+| L3        | `oklch(0.29 0.012 275)`  | `#25262e` | Наведення, активний рядок              |
+| Ink       | `oklch(0.94 0.006 80)`   | `#eceae6` | Основний текст (теплий)                |
+| Mute      | `oklch(0.72 0.01 275)`   | `#a4a4ae` | Другорядний текст (контраст ≥ 4.5:1)   |
+| Accent    | `oklch(0.62 0.20 277)`   | `#6d6afe` | Кнопки дії, активний пункт, фокус      |
+| Accent-hi | `oklch(0.76 0.13 277)`   | `#a4a6ff` | Посилання й акцентний текст на графіті |
+| Live      | `oklch(0.80 0.15 165)`   | `#3ee0a8` | «Онлайн», «у голосі», «готовий грати»  |
+| Alert     | `oklch(0.68 0.19 18)`    | `#f2556b` | Лічильники непрочитаного, помилки      |
 
-No decorative purple/pink gradients on chrome.
+Світла тема — та сама структура: папір `#f5f5f7`, картки білі, акцент `oklch(0.52 0.22 277)`.
+Палітри учасника (ocean/forest/ember…) міняють лише акцент.
 
-## Typography
+## Типографіка
 
-- **Display:** Unbounded Variable — marketing heroes, page titles
-- **UI:** Manrope Variable — app chrome, body, forms
-- Display tracking tight (`-0.04em`), weight 600–700
-- Buttons: semibold, optional slight tracking (not ALL CAPS spam)
+- UI і текст — **Manrope** (variable), 15/22 базовий, 600 для заголовків карток.
+- Великі заголовки сторінок — Manrope 700, `letter-spacing: -0.02em`. Unbounded — лише логотип.
+- Цифри — `tabular-nums`.
 
-## Shape
+## Оболонка
 
-- Floating chrome: **full pills** (9999px) — header island, CTAs
-- Content cards: 16–20px radius, elevated shadow `0 8px 24px rgb(0 0 0 / 0.45)`
-- Inputs: soft pills / 14px radius
+- **Шапка** — тонка смуга: логотип, пошук-пігулка (⌘K), сповіщення, капсула профілю.
+- **Живий док** — плаваючий острів знизу по центру (ПК і телефон). Закріплені розділи + «Меню».
+  Поруч — **живі кнопки**, що з’являються лише за обставин: «Голос · 3» (друзі в кімнаті),
+  «2 у грі», «Сім’я · догана», «Нагорода за серію», «Зміна йде». Нема обставини — нема кнопки.
+- Контент — одна колонка до 1180px, по центру. Без лівого меню й правої колонки.
+- Скло (розмиття) — **лише** док і шапка, під якими йде скрол. Решта — матові непрозорі поверхні.
 
-## Layout lock
+## Віджети
 
-Keep `gc-vk-shell` columns, dock · main · rail, floating topbar/tabbar/player,
-guest island header placement. Change materials and type only.
+Кожен блок головної — віджет: показати/сховати, перетягнути, розмір (½ або на всю ширину).
+Розклад зберігається в профілі (`home_layout`) і однаковий на сайті та в застосунку.
 
-## Brand refs
+## Рух
 
-Put `design-refs/awesome-design-md/<brand>/DESIGN.md` in context for «в этом стиле».
+- `motion/react` + `useReducedMotion`; з reduce — без руху, лише зміна стану.
+- Тривалість 160–240 мс, `ease-out` (cubic-bezier(.2,.8,.2,1)); пружина лише для дока.
+- Один авторський момент: живі кнопки «виростають» з дока, коли з’являється обставина.
+- Без паралаксу, без «плаваючих» фонів, без анімацій на скрол.
+
+## Заборонено
+
+- Структура ВК: ліве меню з іконками, три колонки, таббар VKUI, сірі «блоки-стіни».
+- Градієнтний текст, неоновий «веселковий» глоу, декоративне скло на картках.
+- Кикери-надписи капслоком над заголовками, емодзі як іконки (лише Lucide).
+- Більше одного акцентного кольору на екрані (Live і Alert — статуси, не декор).

@@ -28,7 +28,7 @@ export function Logo({
         <span className={cn('inline-flex items-center gap-2.5', className)}>
             <LogoMark />
             {!compact && (
-                <span className="font-display text-[19px] font-bold tracking-tight text-white">
+                <span className="font-brand text-[19px] font-bold tracking-tight text-white">
                     Game<span className="text-primary">Con</span>
                 </span>
             )}

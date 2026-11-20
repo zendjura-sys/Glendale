@@ -71,7 +71,7 @@ function MockPost() {
             <div className="flex items-center gap-3">
                 <span
                     aria-hidden
-                    className="flex size-10 items-center justify-center rounded-full bg-[#3d8bff] text-sm font-semibold text-white"
+                    className="flex size-10 items-center justify-center rounded-full bg-[#6d6afe] text-sm font-semibold text-white"
                 >
                     СМ
                 </span>
@@ -92,7 +92,7 @@ function MockPost() {
             </p>
             <div
                 aria-hidden
-                className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_70%_20%,#3d8bff_0%,#121212_55%,#0a0a0a_100%)]"
+                className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_70%_20%,#6d6afe_0%,#121212_55%,#0a0a0a_100%)]"
             >
                 <Trophy className="absolute top-5 left-6 size-9 text-[#ffd36b]" />
             </div>
@@ -121,7 +121,7 @@ function MockVoice() {
                         key={i}
                         className="size-8 rounded-full bg-[#222] ring-2 ring-[#181818]"
                         style={{
-                            background: `linear-gradient(135deg,#3d8bff ${i * 20}%,#1f1f1f)`,
+                            background: `linear-gradient(135deg,#6d6afe ${i * 20}%,#1f1f1f)`,
                         }}
                     />
                 ))}
@@ -142,7 +142,7 @@ function MockCards() {
                     className="flex h-28 w-20 flex-col justify-between rounded-2xl bg-[#1f1f1f] p-2 shadow-[0_12px_28px_rgb(0_0_0_/_0.5)] ring-1 ring-white/10"
                     style={{ transform: `rotate(${(i - 1) * 6}deg)` }}
                 >
-                    <span className="text-[10px] font-bold text-[#3d8bff]">
+                    <span className="text-[10px] font-bold text-[#6d6afe]">
                         {r}
                     </span>
                     <span className="text-[11px] font-semibold text-white/80">
@@ -202,14 +202,14 @@ export default function Welcome({
                                 <span className="flex items-center gap-1">
                                     {name}
                                     {pct === 84 && (
-                                        <BadgeCheck className="size-3 text-[#3d8bff]" />
+                                        <BadgeCheck className="size-3 text-[#6d6afe]" />
                                     )}
                                 </span>
                                 <span>{pct}%</span>
                             </div>
                             <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10">
                                 <div
-                                    className="h-full rounded-full bg-[#3d8bff]"
+                                    className="h-full rounded-full bg-[#6d6afe]"
                                     style={{ width: `${pct}%` }}
                                 />
                             </div>
@@ -313,7 +313,7 @@ export default function Welcome({
                             <h1 className="mt-5 font-display text-[clamp(3rem,7.5vw,5.6rem)] leading-[0.95] font-semibold tracking-[-0.045em] text-white">
                                 {tr('Твоя гра.')}
                                 <br />
-                                <span className="text-[#3d8bff]">
+                                <span className="text-[#6d6afe]">
                                     {tr('Твоя команда.')}
                                 </span>
                             </h1>
@@ -457,7 +457,7 @@ export default function Welcome({
                                     t.className,
                                 )}
                             >
-                                <span className="flex size-11 items-center justify-center rounded-2xl bg-[#3d8bff]/15 text-[#7eb6ff]">
+                                <span className="flex size-11 items-center justify-center rounded-2xl bg-[#6d6afe]/15 text-[#a4a6ff]">
                                     <t.icon className="size-5" aria-hidden />
                                 </span>
                                 <h3 className="mt-4 font-display text-lg font-semibold tracking-[-0.03em] text-white">
@@ -491,7 +491,7 @@ export default function Welcome({
                                     ),
                                 ].map((line) => (
                                     <li key={line} className="flex gap-3">
-                                        <BadgeCheck className="mt-0.5 size-4 shrink-0 text-[#3d8bff]" />
+                                        <BadgeCheck className="mt-0.5 size-4 shrink-0 text-[#6d6afe]" />
                                         {line}
                                     </li>
                                 ))}

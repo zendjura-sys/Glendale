@@ -1,10 +1,5 @@
-import { SideRail } from '@/components/gc/side-rail';
-import { playNavTick } from '@/lib/sound-fx';
-import { GamerDock } from '@/components/gc/gamer-dock';
-import { MenuHub } from '@/components/gc/menu-hub';
+import { LiveDock } from '@/components/gc/live-dock';
 import { GameCastHeaderButton } from '@/components/gc/gamecast-button';
-import { HeaderNav, ReadyIndicator } from '@/components/gc/header-nav';
-import { AlertMapButton } from '@/components/alerts/alert-map-button';
 import { AlertBanner } from '@/components/alerts/alert-banner';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
@@ -22,11 +17,8 @@ import {
     UserRound,
     Headset,
 } from 'lucide-react';
-import { Badge, Counter, Tabbar, TabbarItem } from '@vkontakte/vkui';
 import { useCallback, useEffect, useState } from 'react';
 import type { PropsWithChildren } from 'react';
-import { AnimatePresence, m, useReducedMotion } from 'motion/react';
-import { motionOr, SNAP } from '@/lib/motion';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Seasonal } from '@/components/gc/seasonal';
 import { Konami } from '@/components/gc/konami';
@@ -34,10 +26,8 @@ import { AccountSwitcher } from '@/components/gc/account-switcher';
 import { useStreamerMode } from '@/components/settings/streamer-mode-switch';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { forgetOfflinePages } from '@/lib/offline';
-import { NAV_CACHE, navPrefetch } from '@/lib/prefetch';
 import { InboxListener } from '@/components/gc/inbox-listener';
 import { Logo, LogoMark } from '@/components/gc/logo';
-import { ModuleIcon } from '@/components/gc/module-icon';
 import { NotificationsMenu } from '@/components/gc/notifications-menu';
 import { QuickSearch } from '@/components/gc/quick-search';
 import { StatusDialog } from '@/components/gc/status-dialog';
@@ -58,13 +48,10 @@ import {
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useUnreadMessages } from '@/lib/inbox';
 import { usePlayer } from '@/lib/player';
-import { MOBILE_LABEL } from '@/lib/nav';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import { NavigationSkeleton } from '@/components/gc/navigation-skeleton';
 import { PageTransition } from '@/components/gc/page-transition';
-import { AppPromoCard } from '@/components/app-promo/app-promo-card';
-import { DockWidgets } from '@/components/feed/side-widgets';
 import { LanguageMenu } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
 import { CommandPalette } from '@/components/gc/command-palette';
@@ -73,7 +60,6 @@ import { PaletteSync } from '@/components/gc/palette-sync';
 import { ThemeButton, ThemeMenuItem } from '@/components/gc/theme-toggle';
 import {
     FeedbackDialog,
-    KeyboardHint,
     KeyboardShortcuts,
     WhatsNewButton,
     openFeedback,
@@ -253,78 +239,20 @@ export function UserMenu() {
 
 /** Шапка на всю ширину: матове скло, логотип, пошук і кнопки — як у класичній соцмережі. */
 function Topbar() {
-    const { counters, modules } = usePage().props;
-    const unreadMessages = useUnreadMessages();
-    const iconButton =
-        // Друзі й повідомлення є в лівому меню — у шапці лише на планшеті, де меню немає.
-        'gc-icon-button relative hidden size-10 items-center justify-center rounded-xl transition sm:flex md:hidden';
-
     return (
-        <header className="app-header-wrapper">
-            {/* Шапка — плаваюча капсула з безбарвного матового скла (як острів-меню знизу); обгортка прозора. */}
-            {/* Шапка — парящий скляний острів (одне з трьох місць зі склом: шапка, навбар, плеєр). */}
-            <div className="ios-glass-panel ios-glass-bar ios-header-pill gc-glass-island relative !rounded-full [view-transition-name:gc-topbar]">
-                <span
-                    aria-hidden
-                    className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                />
-                <Link
-                    href="/feed"
-                    className="flex shrink-0 items-center self-center md:mr-4"
-                >
+        <header className="gc-lobby-top">
+            {/* Тонка шапка: лого, пошук (⌘K) і особисте. Розділи — у живому доку знизу. */}
+            <div className="gc-lobby-top__bar">
+                <Link href="/feed" className="flex shrink-0 items-center">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
                 </Link>
-                <QuickSearch className="max-w-[340px] min-w-0 flex-1" />
-                <HeaderNav className="mx-auto hidden xl:flex" />
-                <GameCastHeaderButton className="hidden md:flex" />
-                <div className="ml-auto flex items-center gap-0.5 xl:ml-0">
-                    <ReadyIndicator />
-                    <Link
-                        href="/friends?tab=requests"
-                        className={iconButton}
-                        aria-label={tr('Заявки в друзі')}
-                    >
-                        <ModuleIcon name="users-round" animated size={20} />
-                        {!!counters?.friend_requests && (
-                            <span className="absolute top-1 right-1 flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-4 font-bold text-white">
-                                {counters.friend_requests}
-                            </span>
-                        )}
-                    </Link>
-                    {modules.includes('messages') && (
-                        <Link
-                            href="/messages"
-                            className={iconButton}
-                            aria-label={
-                                unreadMessages > 0
-                                    ? tr('Повідомлення: {count} непрочитаних', {
-                                          count: unreadMessages,
-                                      })
-                                    : tr('Повідомлення')
-                            }
-                        >
-                            <ModuleIcon
-                                name="message-circle"
-                                animated
-                                size={20}
-                            />
-                            {unreadMessages > 0 && (
-                                <span
-                                    aria-hidden
-                                    className="absolute top-0.5 right-0.5 flex h-[18px] min-w-[18px] animate-in items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-none font-bold text-white zoom-in-50"
-                                >
-                                    {unreadMessages > 99
-                                        ? '99+'
-                                        : unreadMessages}
-                                </span>
-                            )}
-                        </Link>
-                    )}
+                <QuickSearch className="gc-lobby-search mx-auto max-w-[460px] min-w-0 flex-1" />
+                <div className="flex items-center gap-1">
+                    <GameCastHeaderButton className="hidden md:flex" />
                     <ThemeButton className="hidden sm:flex" />
                     <WhatsNewButton />
                     <NotificationsMenu />
-                    {/* На телефоні профіль і все з цього меню — у «Меню» нижньої панелі (без дублів). */}
                     <span className="hidden md:block">
                         <UserMenu />
                     </span>
@@ -350,134 +278,12 @@ function useNavItems() {
     }));
 }
 
-/** Закріплені розділи — у панелі (макс. 4 + «Меню» = 5 іконок). */
-function useMobileSplit<T extends { key: string }>(items: T[]) {
-    const { auth } = usePage().props;
-    const fallback = ['profile', 'feed', 'messages', 'friends'];
-    const tabs = (
-        auth.user.nav_tabs?.length ? auth.user.nav_tabs : fallback
-    ).slice(0, 4);
-    const primary = tabs
-        .map((key) => items.find((i) => i.key === key))
-        .filter((i): i is T => i !== undefined);
-
-    return { primary, rest: items.filter((i) => !primary.includes(i)) };
-}
-
-/**
- * Нижня панель на телефоні — Tabbar з VKUI, як у мобільному VK: закріплені розділи й «Меню».
- * «Меню» відкриває шторку з рештою розділів над панеллю. Закрити: тап по затемненню, Esc, перехід.
- */
-function MobileNav() {
+/** Живий док: розділи з меню + бейджі непрочитаного. */
+function DockHost() {
     const isActive = useIsActive();
     const items = useNavItems();
-    const [open, setOpen] = useState(false);
-    const reduce = useReducedMotion();
-    const close = useCallback(() => setOpen(false), []);
 
-    const { primary, rest } = useMobileSplit(items);
-    const restActive = rest.some((i) => isActive(i.href, i.key));
-    const restBadge = rest.reduce((sum, i) => sum + i.badge, 0);
-
-    useEffect(() => {
-        if (!open) return;
-        const offNavigate = router.on('start', close);
-        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
-        const overflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        window.addEventListener('keydown', onKey);
-
-        return () => {
-            offNavigate();
-            window.removeEventListener('keydown', onKey);
-            document.body.style.overflow = overflow;
-        };
-    }, [open, close]);
-
-    const counter = (n: number) =>
-        n > 0 ? (
-            <Counter size="s" mode="primary" appearance="accent-red">
-                {n > 99 ? '99+' : n}
-            </Counter>
-        ) : undefined;
-
-    return (
-        <div className="md:hidden">
-            <AnimatePresence>
-                {open && (
-                    <>
-                        <m.button
-                            type="button"
-                            aria-label={tr('Закрити меню')}
-                            onClick={close}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: reduce ? 0 : 0.2 }}
-                            className="fixed inset-0 z-[54] bg-black/45"
-                        />
-                        <m.div
-                            key="menu"
-                            role="dialog"
-                            aria-label={tr('Меню')}
-                            initial={reduce ? false : { y: '100%' }}
-                            animate={{ y: 0 }}
-                            exit={reduce ? { opacity: 0 } : { y: '100%' }}
-                            transition={motionOr(reduce, SNAP)}
-                            className="gc-vk-sheet fixed inset-x-0 bottom-[calc(var(--vkui_internal--tabbar_height,48px)+env(safe-area-inset-bottom))] z-[55] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto overscroll-contain rounded-t-2xl px-3 pt-3 pb-2"
-                        >
-                            <MenuHub onClose={close} />
-                        </m.div>
-                    </>
-                )}
-            </AnimatePresence>
-            <Tabbar
-                aria-label={tr('Розділи')}
-                className="ios-glass-panel gc-vk-tabbar z-[56] [view-transition-name:gc-tabbar]"
-            >
-                {primary.map((item) => (
-                    <TabbarItem
-                        key={item.key}
-                        Component={Link}
-                        href={item.href}
-                        // Телефон: mount гріє розділи одразу; ПК: ще й hover. Кеш 2 хв.
-                        {...({
-                            // На телефоні navPrefetch() → false (без mount-прогріву всіх табів).
-                            prefetch: navPrefetch(),
-                            cacheFor: NAV_CACHE,
-                        } as object)}
-                        onClick={() => playNavTick()}
-                        selected={!open && isActive(item.href, item.key)}
-                        aria-current={
-                            !open && isActive(item.href, item.key)
-                                ? 'page'
-                                : undefined
-                        }
-                        label={MOBILE_LABEL[item.key] ?? item.label}
-                        indicator={counter(item.badge)}
-                    >
-                        <ModuleIcon name={item.icon} animated size={26} />
-                    </TabbarItem>
-                ))}
-                <TabbarItem
-                    Component="button"
-                    type="button"
-                    data-test="mobile-menu"
-                    aria-expanded={open}
-                    selected={open || restActive}
-                    onClick={() => setOpen((value) => !value)}
-                    label={tr('Меню')}
-                    indicator={
-                        restBadge > 0 && !open ? (
-                            <Badge mode="prominent" />
-                        ) : undefined
-                    }
-                >
-                    <ModuleIcon name="menu" animated size={26} />
-                </TabbarItem>
-            </Tabbar>
-        </div>
-    );
+    return <LiveDock items={items} isActive={isActive} />;
 }
 
 function Announcement() {
@@ -491,7 +297,7 @@ function Announcement() {
         <div className="glass mb-4 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm text-white/80">
             <Megaphone
                 aria-hidden
-                className="mt-0.5 size-4 shrink-0 text-[#7eb6ff]"
+                className="mt-0.5 size-4 shrink-0 text-[#a4a6ff]"
             />
             <p className="leading-relaxed whitespace-pre-line">
                 {site.announcement}
@@ -562,7 +368,7 @@ function IncidentBanner() {
 export const LAST_PAGE_KEY = 'gc:last-page';
 
 export default function SocialLayout({ children }: PropsWithChildren) {
-    const { auth, modules, airAlerts } = usePage().props;
+    const { auth, modules } = usePage().props;
     const { url } = usePage();
     const { current } = usePlayer();
     useStreamerMode();
@@ -607,28 +413,11 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <Topbar />
                 <div
                     className={cn(
-                        'gc-vk-shell gc-split-shift mx-auto flex max-w-[var(--gc-shell-max)] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
-                        current ? 'pb-44 md:pb-28' : 'pb-24 md:pb-10',
+                        'gc-lobby-shell mx-auto w-full max-w-[var(--gc-shell-max)] px-3 pt-[calc(76px+env(safe-area-inset-top))] sm:px-6',
+                        current ? 'pb-48' : 'pb-32',
                     )}
                 >
-                    <GamerDock
-                        footer={
-                            <>
-                                {airAlerts && (
-                                    <AlertMapButton
-                                        current={url.startsWith('/alerts')}
-                                    />
-                                )}
-                                <AppPromoCard className="mt-1" />
-                                <DockWidgets />
-                                <KeyboardHint />
-                            </>
-                        }
-                    />
-                    <main
-                        id="main-content"
-                        className="gc-vt-main min-w-0 flex-1"
-                    >
+                    <main id="main-content" className="gc-vt-main min-w-0">
                         <ViewAsBanner />
                         <IncidentBanner />
                         <AlertBanner />
@@ -638,7 +427,6 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                         </NavigationSkeleton>
                         <SiteFooter className="glass-matte gc-footer-card mb-4" />
                     </main>
-                    <SideRail />
                 </div>
                 <VoiceBar />
                 <CallStage />
@@ -650,7 +438,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 )}
                 <BillingHost />
                 <PhonePrompt />
-                <MobileNav />
+                <DockHost />
                 <FeedbackDialog />
                 <KeyboardShortcuts username={auth.user.username} />
                 {paletteOn && (
