@@ -41,9 +41,10 @@ trait FreesUniqueOnDelete
             }
             if ($model->isFillable('tag') || array_key_exists('tag', $model->getAttributes())) {
                 $tag = (string) $model->getAttribute('tag');
-                // Тег сім’ї/клану короткий (≤8) — замінюємо на D{id}, щоб унікальний (server_id, tag) звільнився.
-                if ($tag !== '' && ! preg_match('/\AD\d+\z/', $tag)) {
-                    $model->setAttribute('tag', Str::upper(Str::substr('D'.$id, 0, 8)));
+                // Тег сім’ї/клану короткий (≤8) — замінюємо на ~{id}, щоб унікальний (server_id, tag) звільнився.
+                // «~» не проходить валідацію тегу, тож справжня сім’я з таким тегом бути не може (на відміну від D{id}).
+                if ($tag !== '' && ! preg_match('/\A[~D]\d+\z/', $tag)) {
+                    $model->setAttribute('tag', Str::substr('~'.$id, 0, 8));
                     $dirty = true;
                 }
             }

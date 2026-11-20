@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Families\FamilyGate;
 use App\Support\FreesUniqueOnDelete;
 use App\Support\PlusStyle;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -55,6 +56,22 @@ class Family extends Model
 {
     use FreesUniqueOnDelete;
     use SoftDeletes;
+
+    /**
+     * Видалена сім’я закриває членства (учасники «вийшли», заявки відхилено). Інакше система
+     * всюди вважала б людей членами сім’ї, якої вже немає: штаб, меню, картка гравця, застосунок.
+     * Історія лишається — рядки не видаляються, лише змінюють статус.
+     */
+    protected static function booted(): void
+    {
+        static::deleted(function (Family $family) {
+            FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)
+                ->update(['status' => FamilyMember::STATUS_LEFT, 'left_at' => now()]);
+            FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_PENDING)
+                ->update(['status' => FamilyMember::STATUS_DECLINED, 'left_at' => now()]);
+            app(FamilyGate::class)->forget();
+        });
+    }
 
     public const STATUS_PENDING = 'pending_verification';
 

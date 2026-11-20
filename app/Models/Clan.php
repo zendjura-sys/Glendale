@@ -43,6 +43,15 @@ class Clan extends Model
     use FreesUniqueOnDelete;
     use SoftDeletes;
 
+    /** Видалений клан закриває членства (як і сім’я): ніхто не лишається «в клані», якого немає. */
+    protected static function booted(): void
+    {
+        static::deleted(function (Clan $clan) {
+            ClanMember::query()->where('clan_id', $clan->id)->whereIn('status', [ClanMember::STATUS_ACTIVE, ClanMember::STATUS_PENDING])
+                ->update(['status' => ClanMember::STATUS_LEFT]);
+        });
+    }
+
     public const TYPES = ['clan' => 'Клан', 'guild' => 'Гільдія'];
 
     /** Розділи, які засновник обирає при створенні (і змінює в налаштуваннях). */
