@@ -15,6 +15,14 @@ import { NAV_CACHE, navPrefetch } from '@/lib/prefetch';
 import { playNavTick } from '@/lib/sound-fx';
 import { cn } from '@/lib/utils';
 
+/** Віджет лобі → розділи, які він заміняє в навігації шапки. */
+export const WIDGET_SECTIONS: Record<string, string[]> = {
+    requests: ['friends'],
+    servers: ['servers'],
+    season: ['quests'],
+    media: ['music', 'cinema'],
+};
+
 export type DockItem = {
     key: string;
     href: string;
@@ -138,23 +146,36 @@ function Badge({ n }: { n: number }) {
 export function LiveDock({
     items,
     isActive,
+    variant = 'dock',
+    covered = [],
 }: {
+    /** Розділи, представлені віджетами в лобі (лише для шапки). */
+    covered?: string[];
     items: DockItem[];
     isActive: (href: string, key?: string) => boolean;
+    /** «dock» — нижній острів (телефон; на ПК лишаються тільки живі кнопки), «header» — розділи в шапці (ПК і планшет). */
+    variant?: 'dock' | 'header';
 }) {
+    const header = variant === 'header';
     const { auth } = usePage().props;
     const [open, setOpen] = useState(false);
     const reduce = useReducedMotion();
     const close = useCallback(() => setOpen(false), []);
-    const slots = useLiveSlots();
+    const live = useLiveSlots();
+    const slots = header ? [] : live;
 
     const fallback = ['feed', 'messages', 'friends', 'profile'];
-    const pinned = (
-        auth.user.nav_tabs?.length ? auth.user.nav_tabs : fallback
-    ).slice(0, 4);
-    const primary = pinned
-        .map((key) => items.find((i) => i.key === key))
-        .filter((i): i is DockItem => i !== undefined);
+    // Шапка: розділ, чий віджет уже стоїть у лобі, з навігації зникає — місце бере наступний.
+    const shown = header
+        ? items.filter((i) => !covered.includes(i.key))
+        : items;
+    const wanted = auth.user.nav_tabs?.length ? auth.user.nav_tabs : fallback;
+    const primary = [
+        ...wanted
+            .map((key) => shown.find((i) => i.key === key))
+            .filter((i): i is DockItem => i !== undefined),
+        ...(header ? shown.filter((i) => !wanted.includes(i.key)) : []),
+    ].slice(0, 4);
     const rest = items.filter((i) => !primary.includes(i));
     const restBadge = rest.reduce((sum, i) => sum + i.badge, 0);
     const restActive = rest.some((i) => isActive(i.href, i.key));
@@ -189,13 +210,22 @@ export function LiveDock({
                         <m.div
                             role="dialog"
                             aria-label={tr('Меню')}
-                            initial={reduce ? false : { y: 24, opacity: 0 }}
+                            initial={
+                                reduce
+                                    ? false
+                                    : { y: header ? -12 : 24, opacity: 0 }
+                            }
                             animate={{ y: 0, opacity: 1 }}
                             exit={
-                                reduce ? { opacity: 0 } : { y: 24, opacity: 0 }
+                                reduce
+                                    ? { opacity: 0 }
+                                    : { y: header ? -12 : 24, opacity: 0 }
                             }
                             transition={motionOr(reduce, SNAP)}
-                            className="gc-dock-sheet"
+                            className={cn(
+                                'gc-dock-sheet',
+                                header && 'gc-dock-sheet--top',
+                            )}
                         >
                             <MenuHub onClose={close} />
                         </m.div>
@@ -204,7 +234,11 @@ export function LiveDock({
             </AnimatePresence>
             <nav
                 aria-label={tr('Розділи')}
-                className="gc-live-dock [view-transition-name:gc-tabbar]"
+                className={
+                    header
+                        ? 'gc-header-nav'
+                        : 'gc-live-dock [view-transition-name:gc-tabbar]'
+                }
             >
                 <AnimatePresence initial={false}>
                     {slots.length > 0 && (
@@ -253,7 +287,7 @@ export function LiveDock({
                         </m.div>
                     )}
                 </AnimatePresence>
-                <div className="gc-dock-bar">
+                <div className={header ? 'gc-header-bar' : 'gc-dock-bar'}>
                     {primary.map((item, index) => {
                         const active = !open && isActive(item.href, item.key);
                         const link = (
@@ -266,6 +300,7 @@ export function LiveDock({
                                 } as object)}
                                 onClick={() => playNavTick()}
                                 aria-current={active ? 'page' : undefined}
+                                title={item.label}
                                 aria-label={
                                     item.badge > 0
                                         ? `${item.label}: ${item.badge}`
@@ -300,8 +335,10 @@ export function LiveDock({
                     })}
                     <button
                         type="button"
-                        data-test="mobile-menu"
+                        data-test={header ? 'header-menu' : 'mobile-menu'}
                         aria-expanded={open}
+                        aria-label={header ? tr('Меню') : undefined}
+                        title={header ? tr('Меню') : undefined}
                         onClick={() => setOpen((v) => !v)}
                         className={cn(
                             'gc-dock-item',
@@ -314,7 +351,9 @@ export function LiveDock({
                                 <span className="gc-dock-dot" aria-hidden />
                             )}
                         </span>
-                        <span className="gc-dock-label">{tr('Меню')}</span>
+                        {!header && (
+                            <span className="gc-dock-label">{tr('Меню')}</span>
+                        )}
                     </button>
                 </div>
             </nav>

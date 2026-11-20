@@ -50,6 +50,7 @@ import {
 } from '@/components/gc/feed-pulse';
 import { LobbyHero, NowTiles, WidgetBoard } from '@/components/lobby/lobby';
 import type { LayoutItem } from '@/components/lobby/lobby';
+import { BentoCell } from '@/components/lobby/bento-feed';
 import type { ReactNode } from 'react';
 import { FriendActivity } from '@/components/feed/friend-activity';
 import { PromoBanner } from '@/components/feed/promo-banner';
@@ -396,7 +397,13 @@ export default function Feed({
             case 'season':
                 return <SeasonCard rail={rail} />;
             case 'media':
-                return <FeedColumnWidgets data={widgets} />;
+                return (
+                    <FeedColumnWidgets
+                        data={widgets}
+                        all
+                        className="gc-widget-subgrid"
+                    />
+                );
             case 'picks':
                 return (picks?.length ?? 0) > 0 ? (
                     <div className="flex gap-2 overflow-x-auto">
@@ -482,14 +489,16 @@ export default function Feed({
                 </div>
                 <section
                     aria-labelledby="gc-for-you"
-                    className="mx-auto w-full max-w-[760px] space-y-4"
+                    className="gc-lobby-wide space-y-4"
                 >
                     <h2 id="gc-for-you" className="gc-lobby-label">
                         {tr('Для вас')}
                     </h2>
-                    {newcomer && <NewcomerWeek data={newcomer} />}
-                    <PostComposer />
-                    <PromoBanner />
+                    <div className="max-w-[760px] space-y-4">
+                        {newcomer && <NewcomerWeek data={newcomer} />}
+                        <PostComposer />
+                        <PromoBanner />
+                    </div>
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
                     {tab !== 'activity' && (
                         <div className="flex flex-wrap items-center gap-2">
@@ -576,10 +585,12 @@ export default function Feed({
                             preserveUrl
                             buffer={600}
                             loading={<PostSkeleton />}
-                            className="space-y-4"
+                            className="gc-bento"
                         >
                             {posts.data.map((post) => (
-                                <PostCard key={post.id} post={post} />
+                                <BentoCell key={post.id} post={post}>
+                                    <PostCard post={post} />
+                                </BentoCell>
                             ))}
                         </InfiniteScroll>
                     )}

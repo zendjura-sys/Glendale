@@ -1,4 +1,4 @@
-import { LiveDock } from '@/components/gc/live-dock';
+import { LiveDock, WIDGET_SECTIONS } from '@/components/gc/live-dock';
 import { GameCastHeaderButton } from '@/components/gc/gamecast-button';
 import { AlertBanner } from '@/components/alerts/alert-banner';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -236,9 +236,10 @@ function Topbar() {
                     <span className="gc-wordmark__dot" aria-hidden />
                     gamecon
                 </Link>
-                <QuickSearch className="gc-lobby-search mx-auto max-w-[460px] min-w-0 flex-1" />
-                <div className="flex items-center gap-1">
-                    <GameCastHeaderButton className="hidden md:flex" />
+                <QuickSearch className="gc-lobby-search max-w-[460px] min-w-0 flex-1" />
+                <GameCastHeaderButton className="hidden md:flex" />
+                <HeaderSections />
+                <div className="ml-auto flex items-center gap-1">
                     <ThemeButton className="hidden sm:flex" />
                     <WhatsNewButton />
                     <NotificationsMenu />
@@ -265,6 +266,24 @@ function useNavItems() {
                   ? unreadMessages
                   : 0,
     }));
+}
+
+/** ПК і планшет: розділи, «+» і меню (три смужки) — у шапці. */
+function HeaderSections() {
+    const isActive = useIsActive();
+    const items = useNavItems();
+
+    const layout = usePage().props.engagement?.layout ?? [];
+    const covered = layout.flatMap((w) => WIDGET_SECTIONS[w.key] ?? []);
+
+    return (
+        <LiveDock
+            items={items}
+            isActive={isActive}
+            variant="header"
+            covered={covered}
+        />
+    );
 }
 
 /** Живий док: розділи з меню + бейджі непрочитаного. */

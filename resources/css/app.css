@@ -7145,12 +7145,12 @@ html:root.gc-vk[data-theme] body {
     /* Не скло-смуга, а м’який перехід від полотна: шапка «лежить» на сторінці, як у макеті. */
     content: '';
     position: absolute;
-    inset: 0 0 -28px;
+    inset: 0 0 -24px;
     z-index: -1;
     background: linear-gradient(
         to bottom,
         var(--gc-page) 0%,
-        color-mix(in oklab, var(--gc-page) 88%, transparent) 55%,
+        var(--gc-page) 72%,
         transparent 100%
     );
     pointer-events: none;
@@ -7566,12 +7566,28 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
     font-size: 14px;
     font-weight: 700;
 }
-/* Чим ширше вікно — тим більше колонок віджетів (телефон 1, планшет 2, ПК 3, широкий 4–5). */
+/* Чим ширше вікно — тим більше колонок віджетів (телефон 1, планшет 2, ПК 3, широкий 4–5).
+   Перегляд — щільне бенто: рядки по 1px, клітинка займає висоту свого вмісту (bento-feed.tsx). */
 .gc-widget-grid {
     display: grid;
-    gap: 14px;
+    column-gap: 6px;
+    row-gap: 0;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    grid-auto-rows: 1px;
+    grid-auto-flow: row dense;
     align-items: start;
+}
+.gc-widget-grid.is-editing {
+    grid-auto-rows: auto;
+    grid-auto-flow: row;
+    row-gap: 10px;
+}
+.gc-widget-cell:has(> div:empty) {
+    display: none;
+}
+/* Блоки лобі — мінімальні радіуси, як у бенто стрічки. */
+.gc-widget-cell :is(.rounded-2xl, .rounded-3xl, .rounded-xl) {
+    border-radius: 8px !important;
 }
 .gc-widget-cell.is-full {
     grid-column: 1 / -1;
@@ -7676,4 +7692,172 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
     .gc-now-tile:hover {
         transform: none;
     }
+}
+
+/* ---------- ПК і планшет: розділи в шапці, нижній док лише на телефоні ---------- */
+.gc-header-nav {
+    display: none;
+}
+@media (min-width: 768px) {
+    .gc-header-nav {
+        display: flex;
+        flex-shrink: 0;
+    }
+    .gc-live-dock .gc-dock-bar {
+        display: none;
+    }
+}
+.gc-header-bar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 9999px;
+    box-shadow: inset 0 0 0 1px var(--gc-hairline);
+}
+.gc-header-nav .gc-dock-item {
+    flex-direction: row;
+    gap: 8px;
+    min-width: 0;
+    width: 42px;
+    height: 38px;
+    padding: 0;
+    border-radius: 9999px;
+    font-size: 13.5px;
+}
+/* Шапка — лише значки (назва — у підказці й aria-label). */
+.gc-header-nav .gc-dock-label {
+    display: none;
+}
+.gc-header-nav .gc-dock-create {
+    width: 38px;
+    height: 38px;
+    margin: 0 2px;
+    border-radius: 9999px;
+}
+.gc-header-nav .gc-dock-badge {
+    top: -5px;
+    right: -9px;
+}
+.gc-dock-sheet.gc-dock-sheet--top {
+    top: calc(70px + env(safe-area-inset-top));
+    bottom: auto;
+    left: auto;
+    right: max(12px, calc((100vw - 1760px) / 2 + 12px));
+    translate: none;
+    width: min(440px, calc(100vw - 24px));
+    max-height: calc(100dvh - 90px - env(safe-area-inset-top));
+}
+
+/* ---------- «Готовий грати» у привітанні ---------- */
+.gc-ready-toggle {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    max-width: 100%;
+    padding: 10px 10px 10px 18px;
+    border-radius: 9999px;
+    color: var(--gc-text);
+    box-shadow: inset 0 0 0 1px var(--gc-hairline);
+    transition: background-color 0.18s;
+}
+.gc-ready-toggle:hover {
+    background: var(--gc-l1);
+}
+.gc-ready-toggle:focus-visible {
+    outline: 2px solid var(--gc-accent);
+    outline-offset: 2px;
+}
+.gc-switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 56px;
+    height: 32px;
+    border-radius: 9999px;
+    background: var(--gc-l3);
+    transition: background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.gc-switch > span {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 26px;
+    height: 26px;
+    border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.gc-switch.is-on {
+    background: var(--gc-accent-strong);
+}
+.gc-switch.is-on > span {
+    transform: translateX(24px);
+}
+@media (prefers-reduced-motion: reduce) {
+    .gc-switch,
+    .gc-switch > span {
+        transition: none;
+    }
+}
+
+/* ---------- «Для вас»: бенто — форма картки за вмістом, мінімальні проміжки й радіуси ---------- */
+.gc-bento {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    grid-auto-rows: 1px;
+    grid-auto-flow: row dense;
+    column-gap: 6px;
+    row-gap: 0;
+    align-items: start;
+}
+.gc-bento > :not(.gc-bento-cell) {
+    grid-column: 1 / -1;
+}
+@media (min-width: 700px) {
+    .gc-bento-cell.is-wide {
+        grid-column: span 2;
+    }
+}
+:root[data-skin] .gc-bento .gc-post {
+    margin: 0 !important;
+    padding: 14px !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    background: var(--gc-l1) !important;
+    box-shadow: inset 0 0 0 1px var(--gc-hairline) !important;
+}
+:root[data-skin] .gc-bento .gc-post::before {
+    display: none !important;
+}
+/* Фото й відео — зменшені пропорційно, без обрізання. */
+.gc-bento [data-media-grid] {
+    aspect-ratio: auto !important;
+    border-radius: 6px !important;
+}
+.gc-bento [data-media-grid] > * {
+    border-radius: 6px !important;
+    background: var(--gc-l2);
+}
+.gc-bento [data-media-grid] :is(img, video) {
+    object-fit: contain !important;
+    max-height: 440px;
+    transform: none !important;
+}
+.gc-bento [data-media-grid]:not(.grid-cols-1) :is(img, video) {
+    aspect-ratio: 1 / 1;
+    height: auto;
+}
+/* Віджет «Музика, кіно й розіграші» — кілька карток поруч, а не стовпчиком на всю ширину. */
+.gc-widget-subgrid {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    align-items: start;
+}
+:root[data-skin] .gc-header-nav {
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
 }

@@ -13,10 +13,11 @@ import {
     Square,
 } from 'lucide-react';
 import { LayoutGroup, m, useReducedMotion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import type { TomorrowEvent } from '@/components/gc/feed-extras';
+import { useRowSpan } from '@/components/lobby/bento-feed';
 import type { RailData } from '@/components/gc/rail-widgets';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import type { StreamInfo } from '@/components/streams/stream';
@@ -24,6 +25,9 @@ import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import { motionOr, SNAP } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { usePlugin } from '@/lib/plugins';
+import { left, stopReady } from '@/components/party/ready-to-play';
+import type { ReadyState } from '@/components/party/ready-to-play';
 
 export type LayoutItem = { key: string; size: 'half' | 'full' };
 
@@ -55,6 +59,80 @@ function greeting(hour: number): string {
     if (hour < 12) return tr('Доброго ранку');
     if (hour < 18) return tr('Добрий день');
     return tr('Добрий вечір');
+}
+
+/**
+ * «Готовий грати» — компактний перемикач у привітанні (як у макеті): увімкнути на 2 год одним дотиком,
+ * вимкнути так само. Друзі бачать статус у своєму доку й лобі.
+ */
+function ReadyToggle() {
+    const on = usePlugin('ready_to_play');
+    const [state, setState] = useState<ReadyState | null>(null);
+    const [busy, setBusy] = useState(false);
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        if (!on) return;
+        void api<ReadyState>('GET', '/ready')
+            .then(setState)
+            .catch(() => undefined);
+        const tick = window.setInterval(() => setNow(Date.now()), 30_000);
+        return () => window.clearInterval(tick);
+    }, [on]);
+
+    if (!on || !state) return null;
+    const mine =
+        state.mine && new Date(state.mine.until).getTime() > now
+            ? state.mine
+            : null;
+    const friends = state.friends.filter(
+        (f) => new Date(f.until).getTime() > now,
+    ).length;
+
+    const toggle = () => {
+        setBusy(true);
+        const req = mine
+            ? stopReady()
+            : api<ReadyState>('PUT', '/ready', { minutes: 120 }).then((r) => {
+                  toast.success(tr('Друзі бачать, що ви готові грати.'));
+                  return r;
+              });
+        req.then(setState)
+            .catch(() => undefined)
+            .finally(() => setBusy(false));
+    };
+
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={!!mine}
+            disabled={busy}
+            onClick={toggle}
+            className="gc-ready-toggle"
+        >
+            <span className="min-w-0 text-left">
+                <span className="block text-[15px] font-semibold">
+                    {tr('Готовий грати')}
+                </span>
+                <span className="block truncate text-[13px] text-[var(--gc-text-2)]">
+                    {mine
+                        ? [
+                              mine.game?.name,
+                              tr('ще {left}', { left: left(mine.until, now) }),
+                          ]
+                              .filter(Boolean)
+                              .join(' · ')
+                        : friends > 0
+                          ? tr('Готові друзі: {count}', { count: friends })
+                          : tr('Друзі побачать, що ти вільний')}
+                </span>
+            </span>
+            <span className={cn('gc-switch', mine && 'is-on')} aria-hidden>
+                <span />
+            </span>
+        </button>
+    );
 }
 
 /** Привітання лобі: хто ти, що відбувається, одним рядком — головне на зараз. */
@@ -100,13 +178,21 @@ export function LobbyHero({
             animate={{ opacity: 1, y: 0 }}
             transition={motionOr(reduce, SNAP)}
         >
-            <h1 className="gc-lobby-hero__title">
-                {greeting(new Date().getHours())}, {auth.user.first_name}.{' '}
-                <span className="gc-lobby-hero__muted">{second}</span>
-            </h1>
-            {facts.length > 0 && (
-                <p className="gc-lobby-hero__facts">{facts.join(' · ')}</p>
-            )}
+            <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+                <div className="min-w-0">
+                    <h1 className="gc-lobby-hero__title">
+                        {greeting(new Date().getHours())},{' '}
+                        {auth.user.first_name}.{' '}
+                        <span className="gc-lobby-hero__muted">{second}</span>
+                    </h1>
+                    {facts.length > 0 && (
+                        <p className="gc-lobby-hero__facts">
+                            {facts.join(' · ')}
+                        </p>
+                    )}
+                </div>
+                <ReadyToggle />
+            </div>
         </m.header>
     );
 }
@@ -352,20 +438,15 @@ export function WidgetBoard({
                 )}
             </div>
             <LayoutGroup>
-                <div className="gc-widget-grid">
+                <div className={cn('gc-widget-grid', editing && 'is-editing')}>
                     {layout.map((item, index) => {
                         const body = render(item.key);
                         if (!editing && !body) return null;
                         return (
-                            <m.div
+                            <WidgetCell
                                 key={item.key}
-                                layout={!reduce}
-                                transition={motionOr(reduce, SNAP)}
-                                className={cn(
-                                    'gc-widget-cell min-w-0',
-                                    item.size === 'full' && 'is-full',
-                                    editing && 'is-editing',
-                                )}
+                                full={item.size === 'full'}
+                                editing={editing}
                             >
                                 {editing && (
                                     <div className="gc-widget-tools">
@@ -418,7 +499,7 @@ export function WidgetBoard({
                                             )}
                                         </p>
                                     ))}
-                            </m.div>
+                            </WidgetCell>
                         );
                     })}
                 </div>
@@ -452,6 +533,35 @@ export function WidgetBoard({
                 </button>
             )}
         </section>
+    );
+}
+
+/** Клітинка дошки: у перегляді — щільне бенто (висота за вмістом), у налаштуванні — звичайна сітка. */
+function WidgetCell({
+    full,
+    editing,
+    children,
+}: {
+    full: boolean;
+    editing: boolean;
+    children: ReactNode;
+}) {
+    const reduce = useReducedMotion();
+    const { ref, style } = useRowSpan(!editing);
+
+    return (
+        <m.div
+            layout={!reduce}
+            transition={motionOr(reduce, SNAP)}
+            className={cn(
+                'gc-widget-cell min-w-0',
+                full && 'is-full',
+                editing && 'is-editing',
+            )}
+            style={style}
+        >
+            <div ref={ref}>{children}</div>
+        </m.div>
     );
 }
 

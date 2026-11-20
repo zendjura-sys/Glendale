@@ -1,0 +1,78 @@
+import { useLayoutEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import type { PostItem } from '@/types';
+import { cn } from '@/lib/utils';
+
+/**
+ * Форма клітинки бенто за вмістом запису: горизонтальне фото чи мозаїка — широка (2 колонки),
+ * вертикальне фото, опитування, короткий текст — звичайна. Висоту дає сам вміст (без розтягування).
+ */
+export function bentoShape(post: PostItem): 'wide' | 'normal' {
+    const media = post.attachments ?? [];
+    if (media.length >= 3) return 'wide';
+    const first = media[0];
+    if (first?.width && first.height) {
+        return first.width / first.height >= 1.2 ? 'wide' : 'normal';
+    }
+    if (!media.length && !post.poll && (post.body?.length ?? 0) > 420) {
+        return 'wide';
+    }
+    return 'normal';
+}
+
+/**
+ * Клітинка бенто: рядки сітки по 1px, тож клітинка займає рівно стільки рядків, скільки
+ * пікселів у її вмісті (+ проміжок). Так картки різної висоти щільно складаються без дір.
+ */
+/** Висота вмісту → кількість рядків сітки по 1px (+ проміжок): щільне бенто без дір. */
+export function useRowSpan(enabled = true) {
+    const ref = useRef<HTMLDivElement>(null);
+    const [rows, setRows] = useState<number | null>(null);
+
+    useLayoutEffect(() => {
+        const el = ref.current;
+        if (!el || !enabled) {
+            setRows(null);
+            return;
+        }
+        const measure = () =>
+            setRows(Math.ceil(el.getBoundingClientRect().height));
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [enabled]);
+
+    const style =
+        rows === null || !enabled
+            ? undefined
+            : { gridRowEnd: `span ${rows + BENTO_GAP}` };
+
+    return { ref, style };
+}
+
+/** Клітинка бенто стрічки «Для вас». */
+export function BentoCell({
+    post,
+    children,
+}: {
+    post: PostItem;
+    children: ReactNode;
+}) {
+    const { ref, style } = useRowSpan();
+
+    return (
+        <div
+            className={cn(
+                'gc-bento-cell',
+                bentoShape(post) === 'wide' && 'is-wide',
+            )}
+            style={style}
+        >
+            <div ref={ref}>{children}</div>
+        </div>
+    );
+}
+
+/** Проміжок між картками бенто, px (мінімальний — як у макеті). */
+export const BENTO_GAP = 6;

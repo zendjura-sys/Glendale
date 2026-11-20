@@ -130,7 +130,6 @@ class MemoriesController extends Controller
 
     /** Розклад за замовчуванням: спершу «що зараз», далі люди, далі решта. */
     public const LAYOUT_DEFAULT = [
-        ['key' => 'pulse', 'size' => 'full'],
         ['key' => 'stories', 'size' => 'full'],
         ['key' => 'continue', 'size' => 'full'],
         ['key' => 'alerts', 'size' => 'full'],

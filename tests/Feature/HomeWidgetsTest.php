@@ -28,7 +28,7 @@ class HomeWidgetsTest extends TestCase
     public function test_lobby_layout_saved_validated_and_shared(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user)->get('/feed')->assertInertia(fn (Assert $p) => $p->where('engagement.layout.0', ['key' => 'pulse', 'size' => 'full']));
+        $this->actingAs($user)->get('/feed')->assertInertia(fn (Assert $p) => $p->where('engagement.layout.0', ['key' => 'stories', 'size' => 'full']));
         $layout = [['key' => 'requests', 'size' => 'full'], ['key' => 'season', 'size' => 'half']];
         $this->actingAs($user)->putJson('/settings/home-layout', ['layout' => $layout])->assertOk()->assertJsonPath('layout', $layout);
         $this->actingAs($user)->putJson('/settings/home-layout', ['layout' => [['key' => 'hack', 'size' => 'half']]])->assertStatus(422);

@@ -718,8 +718,17 @@ export function RailWidgets() {
 }
 
 /** Третя колонка стрічки: на 3 колонках — усі віджети, на 4 — LiveCast + GameCast. */
-export function FeedColumnWidgets({ data }: { data: SideWidgetsData | null }) {
-    const four = useMedia('(min-width: 2400px)');
+export function FeedColumnWidgets({
+    data,
+    className = 'space-y-4',
+    all = false,
+}: {
+    data: SideWidgetsData | null;
+    className?: string;
+    /** Лобі: усі картки (крім «Продовжити»), без поділу на колонки широкого екрана. */
+    all?: boolean;
+}) {
+    const four = useMedia('(min-width: 2400px)') && !all;
 
     return (
         <SideWidgets
@@ -729,7 +738,7 @@ export function FeedColumnWidgets({ data }: { data: SideWidgetsData | null }) {
                     ? (['gamecast', 'livecast'] as const)
                     : exceptContinue(true)
             }
-            className="space-y-4"
+            className={className}
         />
     );
 }
