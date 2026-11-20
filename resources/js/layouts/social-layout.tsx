@@ -1,4 +1,8 @@
-import { LiveDock, WIDGET_SECTIONS } from '@/components/gc/live-dock';
+import {
+    ComposeSheet,
+    LiveDock,
+    WIDGET_SECTIONS,
+} from '@/components/gc/live-dock';
 import { GameCastHeaderButton } from '@/components/gc/gamecast-button';
 import { AlertBanner } from '@/components/alerts/alert-banner';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -460,6 +464,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <BillingHost />
                 <PhonePrompt />
                 {!chatImmersive && <DockHost />}
+                <ComposeSheet />
                 <FeedbackDialog />
                 <KeyboardShortcuts username={auth.user.username} />
                 {paletteOn && (

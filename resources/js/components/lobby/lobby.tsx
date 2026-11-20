@@ -23,6 +23,11 @@ import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import type { TomorrowEvent } from '@/components/gc/feed-extras';
 import { useRowSpan } from '@/components/lobby/bento-feed';
+import {
+    ratioOf,
+    VoicePlayer,
+    VoiceReplyButton,
+} from '@/components/lobby/media-blocks';
 import { next, prev, toggle, usePlayer } from '@/lib/player';
 import type { RailData } from '@/components/gc/rail-widgets';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -230,6 +235,13 @@ type NowData = {
         preview: string | null;
         author: string | null;
         href: string;
+        media: {
+            kind: 'voice' | 'image';
+            url: string;
+            duration: number | null;
+            width: number | null;
+            height: number | null;
+        } | null;
     }[];
 };
 
@@ -259,6 +271,8 @@ function ChatTile({ chat }: { chat: NowData['chats'][number] }) {
     const [text, setText] = useState('');
     const [sent, setSent] = useState(false);
     const [busy, setBusy] = useState(false);
+    const image = chat.media?.kind === 'image' ? chat.media : null;
+    const voice = chat.media?.kind === 'voice' ? chat.media : null;
     const send = (e: React.FormEvent) => {
         e.preventDefault();
         if (!text.trim()) return;
@@ -272,42 +286,89 @@ function ChatTile({ chat }: { chat: NowData['chats'][number] }) {
             .finally(() => setBusy(false));
     };
 
+    const reply = sent ? (
+        <span className="relative text-sm text-[var(--gc-live)]">
+            {tr('Відповідь надіслано.')}
+        </span>
+    ) : (
+        <form onSubmit={send} className="relative flex items-center gap-1.5">
+            <input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder={tr('Відповісти…')}
+                aria-label={tr('Відповідь у «{title}»', { title: chat.title })}
+                maxLength={2000}
+                className="gc-glass-m gc-glass-input"
+            />
+            {text.trim() ? (
+                <button
+                    type="submit"
+                    disabled={busy}
+                    className="gc-glass-s gc-glass-btn gc-glass-btn--icon"
+                    aria-label={tr('Надіслати')}
+                >
+                    <Send className="size-4" />
+                </button>
+            ) : (
+                <VoiceReplyButton
+                    chatId={chat.id}
+                    onSent={() => setSent(true)}
+                />
+            )}
+        </form>
+    );
+
+    // Картинка — заливка всього блоку з її пропорціями; текст і поле — на склі.
+    if (image) {
+        return (
+            <div
+                className="gc-media-block"
+                style={{ aspectRatio: ratioOf(image.width, image.height) }}
+            >
+                <img src={image.url} alt="" className="gc-media-block__img" />
+                <Link
+                    href={chat.href}
+                    className="absolute inset-0"
+                    aria-label={chat.title}
+                />
+                <span className="gc-glass-s gc-media-block__author">
+                    <span className="truncate">{chat.title}</span>
+                </span>
+                <div className="gc-media-block__bottom">
+                    <div className="gc-glass-caption" aria-hidden />
+                    <p className="gc-media-block__caption">
+                        {chat.author ? `${chat.author}: ` : ''}
+                        {chat.preview ?? tr('Фото')}
+                    </p>
+                    {reply}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="gc-now-tile">
             <Link href={chat.href} className="gc-now-tile__kicker">
-                {tr('Обговорення')} · {chat.title}
+                {chat.title}
                 {chat.unread > 0 && ` · ${chat.unread}`}
             </Link>
-            <Link href={chat.href} className="gc-now-tile__title line-clamp-2">
-                {chat.author ? `${chat.author}: ` : ''}
-                {chat.preview ?? tr('Нове повідомлення')}
-            </Link>
-            {sent ? (
-                <span className="mt-auto text-sm text-[var(--gc-live)]">
-                    {tr('Відповідь надіслано.')}
-                </span>
+            {voice ? (
+                <>
+                    <span className="text-sm font-semibold">
+                        {chat.author ?? tr('Голосове повідомлення')}
+                    </span>
+                    <VoicePlayer url={voice.url} duration={voice.duration} />
+                </>
             ) : (
-                <form onSubmit={send} className="mt-auto flex gap-2">
-                    <input
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        placeholder={tr('Відповісти…')}
-                        aria-label={tr('Відповідь у «{title}»', {
-                            title: chat.title,
-                        })}
-                        maxLength={2000}
-                        className="gc-now-input"
-                    />
-                    <button
-                        type="submit"
-                        disabled={busy || !text.trim()}
-                        className="gc-primary-btn"
-                        aria-label={tr('Надіслати')}
-                    >
-                        <Send className="size-4" />
-                    </button>
-                </form>
+                <Link
+                    href={chat.href}
+                    className="gc-now-tile__title line-clamp-2"
+                >
+                    {chat.author ? `${chat.author}: ` : ''}
+                    {chat.preview ?? tr('Нове повідомлення')}
+                </Link>
             )}
+            <div className="mt-auto">{reply}</div>
         </div>
     );
 }
@@ -511,7 +572,39 @@ export function useNowBlocks({
             category: 'cinema',
             sub: 'continue',
             badge: tr('Продовжити'),
-            node: (
+            node: resume.image ? (
+                // Постер — заливка блоку: блок бере пропорції самого постера.
+                <div className="gc-media-block gc-media-block--natural">
+                    <img
+                        src={resume.image}
+                        alt=""
+                        className="gc-media-block__img"
+                    />
+                    <Link
+                        href={resume.href}
+                        className="absolute inset-0"
+                        aria-label={resume.title}
+                    />
+                    <div className="gc-media-block__bottom">
+                        <div className="gc-glass-caption" aria-hidden />
+                        <p className="gc-media-block__caption">
+                            <span className="block text-[15px] font-bold">
+                                {resume.title}
+                            </span>
+                            <span className="block text-xs opacity-80">
+                                {resume.hint}
+                            </span>
+                        </p>
+                        <Link
+                            href={resume.href}
+                            className="gc-glass-s gc-glass-btn relative self-start"
+                        >
+                            <Play className="size-4" />
+                            {tr('Далі')}
+                        </Link>
+                    </div>
+                </div>
+            ) : (
                 <Link href={resume.href} className="gc-now-tile">
                     <span className="gc-now-tile__kicker">
                         {tr('Де ви зупинились')}
@@ -567,7 +660,7 @@ function NowRow({ tiles, reduce }: { tiles: ReactNode[]; reduce: boolean }) {
             key: 'post',
             kicker: tr('Новий допис'),
             title: tr('Поділитися моментом'),
-            href: '/feed#compose',
+            href: '#compose',
             icon: <Plus className="size-4" />,
         },
         modules.includes('party') && {

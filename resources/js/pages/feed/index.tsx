@@ -34,7 +34,6 @@ import type { TomorrowEvent } from '@/components/gc/feed-extras';
 import { FriendButton } from '@/components/gc/friend-button';
 import { PersonRow } from '@/components/gc/person-card';
 import { PostCard } from '@/components/gc/post-card';
-import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -58,6 +57,7 @@ import {
 } from '@/components/lobby/lobby';
 import type { LiveBlockData } from '@/components/lobby/lobby';
 import { BentoCell, LiveBlock } from '@/components/lobby/bento-feed';
+import { isMediaPost, MediaPostBlock } from '@/components/lobby/media-blocks';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { FriendActivity } from '@/components/feed/friend-activity';
@@ -664,7 +664,6 @@ export default function Feed({
             shownIn(selected, b.category, b.sub),
     );
     const catalog = engagement?.catalog ?? [];
-    const composeOn = shownIn(selected, 'feed', 'compose');
     const postsOn = shownIn(selected, 'feed', 'posts');
 
     const grid = (
@@ -689,28 +688,6 @@ export default function Feed({
                     <SiteEventBanner />
                 </LiveBlock>
             )}
-            {postsOn && (
-                <LiveBlock wide badge={tr('Стрічка')}>
-                    <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
-                        <FeedTabs tab={tab} hasFriends={hasFriends} />
-                        {tab !== 'activity' && (
-                            <>
-                                <LanguageFilter
-                                    tab={tab}
-                                    lang={lang}
-                                    languages={languages}
-                                />
-                                {tab === 'friends' && (
-                                    <ChronoSwitch
-                                        onlyFriends={onlyFriends ?? false}
-                                    />
-                                )}
-                            </>
-                        )}
-                    </div>
-                    <PromoBanner />
-                </LiveBlock>
-            )}
             {blocks.map((b) => (
                 <LiveBlock
                     key={b.key}
@@ -722,12 +699,6 @@ export default function Feed({
                     {b.node}
                 </LiveBlock>
             ))}
-            {composeOn && (
-                <LiveBlock wide badge={tr('Новий допис')} tone="accent">
-                    {newcomer && <NewcomerWeek data={newcomer} />}
-                    <PostComposer />
-                </LiveBlock>
-            )}
         </>
     );
 
@@ -750,7 +721,11 @@ export default function Feed({
                                 post={post}
                                 badge={tr('Допис')}
                             >
-                                <PostCard post={post} />
+                                {isMediaPost(post) ? (
+                                    <MediaPostBlock post={post} />
+                                ) : (
+                                    <PostCard post={post} />
+                                )}
                             </BentoCell>
                         ))}
                     </InfiniteScroll>

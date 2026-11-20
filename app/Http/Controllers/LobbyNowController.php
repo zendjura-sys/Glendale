@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FamilyMember;
 use App\Models\FamilyShift;
+use App\Models\MessageAttachment;
 use App\Models\User;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
@@ -63,6 +64,30 @@ class LobbyNowController extends Controller
     }
 
     /**
+     * @return array{kind: string, url: string, duration: int|null, width: int|null, height: int|null}|null
+     */
+    private function media(?int $messageId): ?array
+    {
+        if ($messageId === null) {
+            return null;
+        }
+        $attachment = MessageAttachment::query()->where('message_id', $messageId)
+            ->whereIn('type', [MessageAttachment::TYPE_VOICE, MessageAttachment::TYPE_IMAGE])
+            ->orderBy('position')->first();
+        if ($attachment === null) {
+            return null;
+        }
+
+        return [
+            'kind' => $attachment->type,
+            'url' => (string) $attachment->url,
+            'duration' => $attachment->duration,
+            'width' => $attachment->width,
+            'height' => $attachment->height,
+        ];
+    }
+
+    /**
      * Обговорення з непрочитаним — до трьох, з останнім повідомленням.
      *
      * @return list<array<string, mixed>>
@@ -82,6 +107,8 @@ class LobbyNowController extends Controller
                 'preview' => $chat['last_message']['preview'] ?? null,
                 'author' => $chat['last_message']['author'] ?? null,
                 'href' => '/messages/'.$chat['id'],
+                // Голосове — слухати з лобі; картинка — заливка блоку (з розмірами для пропорцій).
+                'media' => $this->media(isset($chat['last_message']['id']) ? (int) $chat['last_message']['id'] : null),
             ];
             if (count($out) === 3) {
                 break;

@@ -8658,3 +8658,216 @@ html[data-theme='light'] #gc-boot-root {
     background: transparent !important;
     box-shadow: none !important;
 }
+
+/* ==========================================================================
+   Матове скло (як в iPhone): 10% непрозорого білого, 90% прозорості + розмиття.
+   Small — кнопки й чипи; Medium — поле вводу (текст під ним не читається);
+   зона підпису — Small-розмиття з м’яким переходом у чисту картинку.
+   ========================================================================== */
+/* Тема темна — 10% темного; світла — 10% білого (нижче). Решта 90% — прозорість + розмиття. */
+.gc-glass-s,
+.gc-glass-m {
+    background: rgb(19 19 19 / 0.1);
+    border: 1px solid rgb(255 255 255 / 0.16);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.25),
+        0 6px 18px -10px rgb(0 0 0 / 0.45);
+    color: #fff;
+}
+.gc-glass-s {
+    -webkit-backdrop-filter: blur(12px) saturate(170%);
+    backdrop-filter: blur(12px) saturate(170%);
+}
+.gc-glass-m {
+    -webkit-backdrop-filter: blur(28px) saturate(170%);
+    backdrop-filter: blur(28px) saturate(170%);
+}
+.gc-glass-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 13px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    transition:
+        transform 0.15s,
+        background-color 0.15s;
+}
+.gc-glass-btn:hover {
+    background: rgb(19 19 19 / 0.2);
+}
+html[data-theme='light'] :is(.gc-glass-s, .gc-glass-m) {
+    background: rgb(255 255 255 / 0.1);
+    border-color: rgb(255 255 255 / 0.4);
+}
+html[data-theme='light'] .gc-glass-btn:hover {
+    background: rgb(255 255 255 / 0.2);
+}
+.gc-glass-btn:active {
+    transform: scale(0.95);
+}
+.gc-glass-btn:focus-visible,
+.gc-glass-input:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+.gc-glass-btn.is-on {
+    color: #ff7a8a;
+}
+.gc-glass-btn--icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    flex-shrink: 0;
+}
+.gc-glass-btn.is-recording {
+    background: rgb(239 59 77 / 0.55);
+}
+.gc-glass-input {
+    min-width: 0;
+    flex: 1;
+    height: 40px;
+    padding: 0 15px;
+    border-radius: 9999px;
+    font-size: 14px;
+    outline: none;
+}
+.gc-glass-input::placeholder {
+    color: rgb(255 255 255 / 0.78);
+}
+/* Світла тема поза фото: те саме скло, але текст темний (над фото — завжди білий). */
+html[data-theme='light'] .gc-now-tile .gc-glass-s,
+html[data-theme='light'] .gc-now-tile .gc-glass-m {
+    background: rgb(32 32 34 / 0.06);
+    border-color: rgb(32 32 34 / 0.12);
+    color: var(--gc-text);
+}
+html[data-theme='light'] .gc-now-tile .gc-glass-input::placeholder {
+    color: var(--gc-text-2);
+}
+
+/* ---------- Медіа-блок: фото/постер — заливка блоку з його пропорціями ---------- */
+.gc-media-block {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    border-radius: 8px;
+    background: var(--gc-l2);
+    color: #fff;
+}
+.gc-media-block__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.gc-media-block--natural .gc-media-block__img {
+    position: static;
+    height: auto;
+    display: block;
+}
+.gc-media-block__author {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+    display: inline-flex;
+    max-width: calc(100% - 20px);
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    padding: 0 12px 0 4px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.gc-media-block__author:not(:has(img, [data-slot='avatar'])) {
+    padding-left: 12px;
+}
+.gc-media-block__count {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+.gc-media-block__bottom {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 48px 12px 12px;
+}
+/* Зона підпису: Small-розмиття, що плавно зникає догори — без різкої межі. */
+.gc-glass-caption {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.35), rgb(0 0 0 / 0));
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-mask-image: linear-gradient(to top, #000 45%, transparent);
+    mask-image: linear-gradient(to top, #000 45%, transparent);
+    pointer-events: none;
+}
+.gc-media-block__caption {
+    position: relative;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 1.4;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+.gc-media-block a,
+.gc-media-block button,
+.gc-media-block form {
+    position: relative;
+    z-index: 2;
+}
+.gc-media-block > a.absolute {
+    position: absolute;
+    z-index: 1;
+}
+.gc-voice-bar {
+    position: relative;
+    flex: 1;
+    height: 4px;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: var(--gc-l3);
+}
+.gc-voice-bar > span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--gc-accent);
+    transition: width 0.2s linear;
+}
+.gc-compose-sheet {
+    position: fixed;
+    top: max(12vh, 72px);
+    left: 50%;
+    z-index: 71;
+    width: min(640px, calc(100vw - 24px));
+    translate: -50% 0;
+    padding: 12px;
+    border-radius: 16px;
+    background: var(--gc-l1);
+    box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.8);
+}
+@media (prefers-reduced-motion: reduce) {
+    .gc-glass-btn,
+    .gc-voice-bar > span {
+        transition: none;
+    }
+}

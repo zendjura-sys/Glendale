@@ -4,6 +4,7 @@ import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { MenuHub } from '@/components/gc/menu-hub';
+import { PostComposer } from '@/components/gc/post-composer';
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { useRail } from '@/components/gc/rail-widgets';
 import { api } from '@/lib/api';
@@ -113,21 +114,68 @@ function useLiveSlots(): LiveSlot[] {
     return slots;
 }
 
-/** «+» у центрі дока: новий допис (на стрічці — одразу фокус на полі). */
+/** Відкрити вікно нового допису з будь-якого місця (док «+», картка «Поділитися моментом»). */
+export function openComposer() {
+    window.dispatchEvent(new Event('gc:compose-open'));
+}
+
+/** Вікно нового допису поверх будь-якої сторінки (стрічка — блоки лобі, окремого поля там немає). */
+export function ComposeSheet() {
+    const [open, setOpen] = useState(false);
+    const reduce = useReducedMotion();
+    useEffect(() => {
+        const show = () => setOpen(true);
+        const onKey = (e: KeyboardEvent) =>
+            e.key === 'Escape' && setOpen(false);
+        window.addEventListener('gc:compose-open', show);
+        window.addEventListener('keydown', onKey);
+        const off = router.on('navigate', () => setOpen(false));
+        if (window.location.hash === '#compose') setOpen(true);
+        return () => {
+            window.removeEventListener('gc:compose-open', show);
+            window.removeEventListener('keydown', onKey);
+            off();
+        };
+    }, []);
+
+    return (
+        <AnimatePresence>
+            {open && (
+                <>
+                    <m.button
+                        type="button"
+                        aria-label={tr('Закрити')}
+                        onClick={() => setOpen(false)}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[70] bg-black/55"
+                    />
+                    <m.div
+                        role="dialog"
+                        aria-label={tr('Новий допис')}
+                        initial={reduce ? false : { y: 16, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={reduce ? { opacity: 0 } : { y: 16, opacity: 0 }}
+                        transition={motionOr(reduce, SNAP)}
+                        className="gc-compose-sheet"
+                    >
+                        <PostComposer />
+                    </m.div>
+                </>
+            )}
+        </AnimatePresence>
+    );
+}
+
+/** «+» у центрі капсули: новий допис. */
 function CreateButton() {
-    const { url } = usePage();
     return (
         <button
             type="button"
             aria-label={tr('Новий допис')}
             title={tr('Новий допис')}
-            onClick={() => {
-                if (url.split(/[?#]/)[0] === '/feed') {
-                    window.dispatchEvent(new Event('gc:compose'));
-                } else {
-                    router.visit('/feed#compose');
-                }
-            }}
+            onClick={openComposer}
             className="gc-dock-create"
         >
             <Plus className="size-6" strokeWidth={2.25} />

@@ -18,7 +18,7 @@ return [
             'birthdays' => 'Дні народження', 'activity' => 'Активність друзів',
         ]],
         'feed' => ['label' => 'Новини', 'module' => 'feed', 'subs' => [
-            'compose' => 'Новий допис', 'posts' => 'Стрічка', 'topics' => 'Мої теми', 'while_away' => 'Поки тебе не було',
+            'posts' => 'Стрічка', 'topics' => 'Мої теми', 'while_away' => 'Поки тебе не було',
         ]],
         'profile' => ['label' => 'Моя сторінка', 'module' => 'profile', 'subs' => [
             'visitors' => 'Гості профілю', 'streak' => 'Серія днів', 'badges' => 'Значки й досягнення', 'memories' => 'Спогади',
