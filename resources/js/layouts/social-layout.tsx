@@ -27,7 +27,6 @@ import { useStreamerMode } from '@/components/settings/streamer-mode-switch';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { forgetOfflinePages } from '@/lib/offline';
 import { InboxListener } from '@/components/gc/inbox-listener';
-import { Logo, LogoMark } from '@/components/gc/logo';
 import { NotificationsMenu } from '@/components/gc/notifications-menu';
 import { QuickSearch } from '@/components/gc/quick-search';
 import { StatusDialog } from '@/components/gc/status-dialog';
@@ -103,22 +102,12 @@ export function UserMenu() {
             <DropdownMenu>
                 <DropdownMenuTrigger
                     aria-label={tr('Меню облікового запису')}
-                    className="flex min-h-11 items-center gap-2 rounded-xl py-1 pr-2 pl-1 transition outline-none hover:bg-white/[0.06] data-[state=open]:bg-white/[0.07]"
+                    className="gc-profile-capsule"
                 >
-                    <UserAvatar user={user} size="sm" showOnline={false} />
-                    <span className="hidden text-left leading-tight xl:block">
-                        <span className="block text-[13px] font-semibold text-white">
-                            {user.first_name}
-                        </span>
-                        <span className="block text-xs text-white/45">
-                            {user.is_admin
-                                ? tr('Адміністратор')
-                                : user.role === 'moderator'
-                                  ? tr('Модератор')
-                                  : tr('Учасник')}
-                        </span>
+                    <span className="hidden pl-2 text-[14px] font-semibold lg:block">
+                        {user.first_name}
                     </span>
-                    <ChevronDown className="hidden size-4 text-white/40 xl:block" />
+                    <UserAvatar user={user} size="sm" showOnline={false} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="end"
@@ -243,9 +232,9 @@ function Topbar() {
         <header className="gc-lobby-top">
             {/* Тонка шапка: лого, пошук (⌘K) і особисте. Розділи — у живому доку знизу. */}
             <div className="gc-lobby-top__bar">
-                <Link href="/feed" className="flex shrink-0 items-center">
-                    <Logo className="hidden sm:inline-flex" />
-                    <LogoMark className="sm:hidden" />
+                <Link href="/feed" className="gc-wordmark" aria-label="GameCon">
+                    <span className="gc-wordmark__dot" aria-hidden />
+                    gamecon
                 </Link>
                 <QuickSearch className="gc-lobby-search mx-auto max-w-[460px] min-w-0 flex-1" />
                 <div className="flex items-center gap-1">

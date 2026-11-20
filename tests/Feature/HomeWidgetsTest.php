@@ -25,6 +25,18 @@ class HomeWidgetsTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/me')->assertJsonPath('user.home_widgets', ['suggestions']);
     }
 
+    public function test_lobby_layout_saved_validated_and_shared(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->get('/feed')->assertInertia(fn (Assert $p) => $p->where('engagement.layout.0', ['key' => 'pulse', 'size' => 'full']));
+        $layout = [['key' => 'requests', 'size' => 'full'], ['key' => 'season', 'size' => 'half']];
+        $this->actingAs($user)->putJson('/settings/home-layout', ['layout' => $layout])->assertOk()->assertJsonPath('layout', $layout);
+        $this->actingAs($user)->putJson('/settings/home-layout', ['layout' => [['key' => 'hack', 'size' => 'half']]])->assertStatus(422);
+        $this->actingAs($user)->putJson('/settings/home-layout', ['layout' => [['key' => 'pulse', 'size' => 'huge']]])->assertStatus(422);
+        // Порожній розклад — усі віджети сховані (людина так вирішила), а не «за замовчуванням».
+        $this->actingAs($user)->putJson('/settings/home-layout', ['layout' => []])->assertOk()->assertJsonPath('layout', []);
+    }
+
     public function test_panel_view_renders_without_chrome(): void
     {
         // Сторінка в панелі «поруч» — звичайна відповідь Inertia (оболонку прибирає клієнт за ?panel=1).

@@ -1,7 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { Gift, Headphones, Menu, ShieldAlert, Zap } from 'lucide-react';
+import { Gift, Headphones, Menu, Plus, ShieldAlert, Zap } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { MenuHub } from '@/components/gc/menu-hub';
 import { ModuleIcon } from '@/components/gc/module-icon';
@@ -98,6 +98,28 @@ function useLiveSlots(): LiveSlot[] {
     }
 
     return slots;
+}
+
+/** «+» у центрі дока: новий допис (на стрічці — одразу фокус на полі). */
+function CreateButton() {
+    const { url } = usePage();
+    return (
+        <button
+            type="button"
+            aria-label={tr('Новий допис')}
+            title={tr('Новий допис')}
+            onClick={() => {
+                if (url.split(/[?#]/)[0] === '/feed') {
+                    window.dispatchEvent(new Event('gc:compose'));
+                } else {
+                    router.visit('/feed#compose');
+                }
+            }}
+            className="gc-dock-create"
+        >
+            <Plus className="size-6" strokeWidth={2.25} />
+        </button>
+    );
 }
 
 function Badge({ n }: { n: number }) {
@@ -232,9 +254,9 @@ export function LiveDock({
                     )}
                 </AnimatePresence>
                 <div className="gc-dock-bar">
-                    {primary.map((item) => {
+                    {primary.map((item, index) => {
                         const active = !open && isActive(item.href, item.key);
-                        return (
+                        const link = (
                             <Link
                                 key={item.key}
                                 href={item.href}
@@ -266,6 +288,14 @@ export function LiveDock({
                                     {MOBILE_LABEL[item.key] ?? item.label}
                                 </span>
                             </Link>
+                        );
+                        return index === Math.min(2, primary.length) - 1 ? (
+                            <Fragment key={item.key}>
+                                {link}
+                                <CreateButton />
+                            </Fragment>
+                        ) : (
+                            link
                         );
                     })}
                     <button

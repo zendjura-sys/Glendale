@@ -111,6 +111,7 @@ declare module '@inertiajs/core' {
                 memories: number;
                 frame: { season: string; on: boolean } | null;
                 widgets: string[];
+                layout?: { key: string; size: 'half' | 'full' }[];
             } | null;
             /** Режим «очима людини» (адміністратор переглядає сайт як ця людина). */
             viewAs?: { name: string; username: string } | null;

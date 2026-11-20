@@ -40,8 +40,17 @@ import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { WrappedBanner } from '@/components/gc/wrapped-banner';
 import { SiteEventBanner } from '@/components/season/site-event-banner';
-import { HomeWidgetsEditor } from '@/components/gc/engagement';
-import { FeedPulse, FeedSideCards, useHub } from '@/components/gc/feed-pulse';
+import {
+    AlertCard,
+    FeedPulse,
+    SeasonCard,
+    ServersCard,
+    useHub,
+    VoiceCard,
+} from '@/components/gc/feed-pulse';
+import { LobbyHero, NowTiles, WidgetBoard } from '@/components/lobby/lobby';
+import type { LayoutItem } from '@/components/lobby/lobby';
+import type { ReactNode } from 'react';
 import { FriendActivity } from '@/components/feed/friend-activity';
 import { PromoBanner } from '@/components/feed/promo-banner';
 import {
@@ -201,13 +210,6 @@ export default function Feed({
     const storiesOn = useFeature('stories');
     const widgetsOn = usePlugin('home_widgets');
     const engagement = usePage().props.engagement;
-    const homeWidgets = engagement?.widgets ?? [
-        'streak',
-        'ready',
-        'online',
-        'suggestions',
-        'birthdays',
-    ];
     const liveOn = useFeature('live');
     // Spacepark: праворуч заявки в друзі й контакти (дані /me/rail).
     const { data: rail, reload: reloadRail } = useRail();
@@ -216,90 +218,276 @@ export default function Feed({
     // Тривоги для картки в стрічці (лише Україна — сервер сам вирішує, чи показувати).
     const hub = useHub();
 
+    const sideWidget = (key: string): ReactNode => {
+        switch (key) {
+            // Серія днів і «Готові грати» — у Bento-сітці стрічки.
+            case 'streak':
+            case 'ready':
+                return null;
+            case 'online':
+                // Контакти вже показують друзів — без дубля.
+                if (rail && rail.contacts.length > 0) return null;
+                return (
+                    <div key={key}>
+                        <Widget
+                            title={tr('Зараз онлайн')}
+                            icon={Radio}
+                            href="/friends?tab=online"
+                        >
+                            <Deferred
+                                data="onlineFriends"
+                                fallback={<WidgetSkeleton rows={1} />}
+                            >
+                                {onlineFriends && onlineFriends.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2 px-1">
+                                        {onlineFriends.map((friend) => (
+                                            <Link
+                                                key={friend.id}
+                                                href={`/${friend.username}`}
+                                                title={friend.name}
+                                                className="transition hover:-translate-y-0.5"
+                                            >
+                                                <UserAvatar
+                                                    user={friend}
+                                                    size="md"
+                                                />
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="px-1 text-sm text-white/45">
+                                        {tr(
+                                            'Ніхто з друзів зараз не в мережі.',
+                                        )}
+                                    </p>
+                                )}
+                            </Deferred>
+                        </Widget>
+                    </div>
+                );
+            case 'suggestions':
+                return (
+                    <div key={key}>
+                        <Widget
+                            title={tr('Можливо, ви знайомі')}
+                            icon={UserPlus}
+                            href="/friends"
+                        >
+                            <Deferred
+                                data="suggestions"
+                                fallback={<WidgetSkeleton />}
+                            >
+                                <div className="space-y-0.5">
+                                    {suggestions?.length === 0 && (
+                                        <p className="px-1 text-sm text-white/45">
+                                            {tr('Ви вже знайомі з усіма.')}{' '}
+                                            <Link
+                                                href="/people"
+                                                className="text-sky-400 hover:underline"
+                                            >
+                                                {tr('Шукати людей')}
+                                            </Link>
+                                        </p>
+                                    )}
+                                    {(suggestions ?? []).map((person) => (
+                                        <PersonRow
+                                            key={person.id}
+                                            person={person as PersonCard}
+                                            action={
+                                                <FriendButton
+                                                    username={person.username}
+                                                    relation="none"
+                                                    size="sm"
+                                                    className="!px-2.5"
+                                                />
+                                            }
+                                        />
+                                    ))}
+                                </div>
+                            </Deferred>
+                        </Widget>
+                    </div>
+                );
+            case 'birthdays':
+                return (
+                    <div key={key}>
+                        <Deferred data="birthdays" fallback={<span hidden />}>
+                            {birthdays && birthdays.length > 0 ? (
+                                <Widget
+                                    title={tr('Дні народження')}
+                                    icon={Cake}
+                                >
+                                    <div className="space-y-0.5">
+                                        {birthdays.map((person) => (
+                                            <PersonRow
+                                                key={person.id}
+                                                person={{
+                                                    ...person,
+                                                    status: formatDate(
+                                                        person.birthday,
+                                                        false,
+                                                    ),
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </Widget>
+                            ) : null}
+                        </Deferred>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    // Кожен блок лобі — віджет: розклад (порядок, розмір, видимість) людина задає сама.
+    const continueItems = widgets?.continue ?? [];
+    const available = [
+        'pulse',
+        ...(storiesOn ? ['stories'] : []),
+        'continue',
+        'alerts',
+        'requests',
+        'contacts',
+        'voice',
+        'servers',
+        'season',
+        'online',
+        'playing',
+        'same_game',
+        'picks',
+        'suggestions',
+        'birthdays',
+        'media',
+    ];
+    const renderWidget = (key: string): ReactNode => {
+        switch (key) {
+            case 'pulse':
+                return <FeedPulse quests={quests ?? []} />;
+            case 'stories':
+                return storiesOn ? <StoriesBar /> : null;
+            case 'continue':
+                return continueItems.length > 0 ? (
+                    <section
+                        aria-label={tr('Продовжити')}
+                        className="space-y-2"
+                    >
+                        <h3 className="px-1 text-sm font-semibold text-[var(--gc-text-2)]">
+                            {tr('Продовжити')}
+                        </h3>
+                        <ContinueList items={continueItems} horizontal />
+                    </section>
+                ) : null;
+            case 'alerts':
+                return hub ? <AlertCard hub={hub} /> : null;
+            case 'requests':
+                return rail && rail.requests.length > 0 ? (
+                    <FriendRequests data={rail} reload={reloadRail} />
+                ) : null;
+            case 'contacts':
+                return rail && rail.contacts.length > 0 ? (
+                    <Contacts data={rail} />
+                ) : null;
+            case 'voice':
+                return <VoiceCard rail={rail} />;
+            case 'servers':
+                return <ServersCard rail={rail} />;
+            case 'season':
+                return <SeasonCard rail={rail} />;
+            case 'media':
+                return <FeedColumnWidgets data={widgets} />;
+            case 'picks':
+                return (picks?.length ?? 0) > 0 ? (
+                    <div className="flex gap-2 overflow-x-auto">
+                        {picks?.map((pick) => (
+                            <Link
+                                key={pick.href}
+                                href={pick.href}
+                                className="gc-solid shrink-0 rounded-2xl px-3 py-2 text-sm font-medium text-white"
+                            >
+                                {pick.title}
+                            </Link>
+                        ))}
+                    </div>
+                ) : null;
+            case 'same_game':
+                return (sameGame?.length ?? 0) > 0 ? (
+                    <div className="gc-solid flex gap-2 overflow-x-auto rounded-2xl p-3">
+                        {sameGame?.map((person) => (
+                            <Link
+                                key={person.id}
+                                href={`/${person.username}`}
+                                className="gc-solid-2 min-w-[140px] rounded-xl px-3 py-2"
+                            >
+                                <span className="block truncate text-sm font-medium text-white">
+                                    {person.first_name}
+                                </span>
+                                <span className="block truncate text-[11px] text-white/45">
+                                    {person.shared_game}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                ) : null;
+            case 'playing':
+                return (playingNow?.length ?? 0) > 0 ? (
+                    <div className="gc-solid flex gap-2 overflow-x-auto rounded-2xl p-3">
+                        {playingNow?.map((person) => (
+                            <Link
+                                key={person.id}
+                                href={
+                                    person.playing?.url || `/${person.username}`
+                                }
+                                className="gc-solid-2 flex min-w-[140px] items-center gap-2 rounded-xl px-2.5 py-2"
+                            >
+                                <UserAvatar user={person} size="sm" />
+                                <span className="min-w-0">
+                                    <span className="block truncate text-xs font-medium text-white">
+                                        {person.first_name}
+                                    </span>
+                                    <span className="block truncate text-[11px] text-sky-400">
+                                        {person.playing?.label}
+                                    </span>
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                ) : null;
+            default:
+                return sideWidget(key);
+        }
+    };
+
     return (
         <>
             <Head title={tr('Новини')} />
-            <div className="flex gap-3.5">
-                <div className="min-w-0 flex-1 space-y-4">
-                    {/* Верх стрічки за макетом: моменти, одна смуга «серія · готовий грати · завдання»,
-                        далі — Wrapped, «Завтра» й трансляції друзів (порожні не показуються). */}
-                    {storiesOn && <StoriesBar />}
-                    <WhileAway data={whileAway} />
-                    <FeedPulse quests={quests ?? []} />
-                    <WrappedBanner />
-                    <SiteEventBanner />
-                    <TomorrowCard events={tomorrow ?? []} />
-                    {liveOn && <FriendsLive streams={streaming ?? []} />}
-                    {(picks?.length ?? 0) > 0 && (
-                        <div className="flex gap-2 overflow-x-auto">
-                            {picks?.map((pick) => (
-                                <Link
-                                    key={pick.href}
-                                    href={pick.href}
-                                    className="gc-solid shrink-0 rounded-2xl px-3 py-2 text-sm font-medium text-white"
-                                >
-                                    {pick.title}
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                    {(sameGame?.length ?? 0) > 0 && (
-                        <div className="gc-solid flex gap-2 overflow-x-auto rounded-2xl p-3">
-                            {sameGame?.map((person) => (
-                                <Link
-                                    key={person.id}
-                                    href={`/${person.username}`}
-                                    className="gc-solid-2 min-w-[140px] rounded-xl px-3 py-2"
-                                >
-                                    <span className="block truncate text-sm font-medium text-white">
-                                        {person.first_name}
-                                    </span>
-                                    <span className="block truncate text-[11px] text-white/45">
-                                        {person.shared_game}
-                                    </span>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                    {(playingNow?.length ?? 0) > 0 && (
-                        <div className="gc-solid flex gap-2 overflow-x-auto rounded-2xl p-3">
-                            {playingNow?.map((person) => (
-                                <Link
-                                    key={person.id}
-                                    href={
-                                        person.playing?.url ||
-                                        `/${person.username}`
-                                    }
-                                    className="gc-solid-2 flex min-w-[140px] items-center gap-2 rounded-xl px-2.5 py-2"
-                                >
-                                    <UserAvatar user={person} size="sm" />
-                                    <span className="min-w-0">
-                                        <span className="block truncate text-xs font-medium text-white">
-                                            {person.first_name}
-                                        </span>
-                                        <span className="block truncate text-[11px] text-sky-400">
-                                            {person.playing?.label}
-                                        </span>
-                                    </span>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
+            <div className="space-y-8">
+                <LobbyHero rail={rail} events={tomorrow ?? []} />
+                <WhileAway data={whileAway} />
+                <WrappedBanner />
+                <SiteEventBanner />
+                <NowTiles
+                    rail={rail}
+                    streams={liveOn ? (streaming ?? []) : []}
+                    events={tomorrow ?? []}
+                />
+                <WidgetBoard
+                    layout={(engagement?.layout ?? []) as LayoutItem[]}
+                    available={available}
+                    render={renderWidget}
+                    editable={widgetsOn}
+                />
+                <section
+                    aria-labelledby="gc-for-you"
+                    className="mx-auto w-full max-w-[760px] space-y-4"
+                >
+                    <h2 id="gc-for-you" className="gc-lobby-label">
+                        {tr('Для вас')}
+                    </h2>
                     {newcomer && <NewcomerWeek data={newcomer} />}
                     <PostComposer />
                     <PromoBanner />
-                    {/* «Продовжити»: на чому зупинились — серія, пісня, гра, чернетка. */}
-                    {widgets?.continue && widgets.continue.length > 0 && (
-                        <section
-                            aria-label={tr('Продовжити')}
-                            className="space-y-2"
-                        >
-                            <h2 className="px-1 text-sm font-semibold text-white/70">
-                                {tr('Продовжити')}
-                            </h2>
-                            <ContinueList items={widgets.continue} horizontal />
-                        </section>
-                    )}
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
                     {tab !== 'activity' && (
                         <div className="flex flex-wrap items-center gap-2">
@@ -393,173 +581,7 @@ export default function Feed({
                             ))}
                         </InfiniteScroll>
                     )}
-                </div>
-
-                <aside className="gc-split-hide sticky top-[calc(88px+env(safe-area-inset-top))] hidden h-fit w-[320px] shrink-0 space-y-4 min-[1920px]:w-[360px] xl:block">
-                    {rail && (
-                        <>
-                            <FriendRequests data={rail} reload={reloadRail} />
-                            <Contacts data={rail} />
-                        </>
-                    )}
-                    {/* Голосовий штаб, тривога, топ серверів і сезон — у правій колонці, не між записами. */}
-                    <FeedSideCards rail={rail} hub={hub} />
-                    <FeedColumnWidgets data={widgets} />
-                    {homeWidgets.map((key) => {
-                        switch (key) {
-                            // Серія днів і «Готові грати» — у Bento-сітці стрічки.
-                            case 'streak':
-                            case 'ready':
-                                return null;
-                            case 'online':
-                                // Контакти вже показують друзів — без дубля.
-                                if (rail && rail.contacts.length > 0)
-                                    return null;
-                                return (
-                                    <div key={key}>
-                                        <Widget
-                                            title={tr('Зараз онлайн')}
-                                            icon={Radio}
-                                            href="/friends?tab=online"
-                                        >
-                                            <Deferred
-                                                data="onlineFriends"
-                                                fallback={
-                                                    <WidgetSkeleton rows={1} />
-                                                }
-                                            >
-                                                {onlineFriends &&
-                                                onlineFriends.length > 0 ? (
-                                                    <div className="flex flex-wrap gap-2 px-1">
-                                                        {onlineFriends.map(
-                                                            (friend) => (
-                                                                <Link
-                                                                    key={
-                                                                        friend.id
-                                                                    }
-                                                                    href={`/${friend.username}`}
-                                                                    title={
-                                                                        friend.name
-                                                                    }
-                                                                    className="transition hover:-translate-y-0.5"
-                                                                >
-                                                                    <UserAvatar
-                                                                        user={
-                                                                            friend
-                                                                        }
-                                                                        size="md"
-                                                                    />
-                                                                </Link>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <p className="px-1 text-sm text-white/45">
-                                                        {tr(
-                                                            'Ніхто з друзів зараз не в мережі.',
-                                                        )}
-                                                    </p>
-                                                )}
-                                            </Deferred>
-                                        </Widget>
-                                    </div>
-                                );
-                            case 'suggestions':
-                                return (
-                                    <div key={key}>
-                                        <Widget
-                                            title={tr('Можливо, ви знайомі')}
-                                            icon={UserPlus}
-                                            href="/friends"
-                                        >
-                                            <Deferred
-                                                data="suggestions"
-                                                fallback={<WidgetSkeleton />}
-                                            >
-                                                <div className="space-y-0.5">
-                                                    {suggestions?.length ===
-                                                        0 && (
-                                                        <p className="px-1 text-sm text-white/45">
-                                                            {tr(
-                                                                'Ви вже знайомі з усіма.',
-                                                            )}{' '}
-                                                            <Link
-                                                                href="/people"
-                                                                className="text-sky-400 hover:underline"
-                                                            >
-                                                                {tr(
-                                                                    'Шукати людей',
-                                                                )}
-                                                            </Link>
-                                                        </p>
-                                                    )}
-                                                    {(suggestions ?? []).map(
-                                                        (person) => (
-                                                            <PersonRow
-                                                                key={person.id}
-                                                                person={
-                                                                    person as PersonCard
-                                                                }
-                                                                action={
-                                                                    <FriendButton
-                                                                        username={
-                                                                            person.username
-                                                                        }
-                                                                        relation="none"
-                                                                        size="sm"
-                                                                        className="!px-2.5"
-                                                                    />
-                                                                }
-                                                            />
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </Deferred>
-                                        </Widget>
-                                    </div>
-                                );
-                            case 'birthdays':
-                                return (
-                                    <div key={key}>
-                                        <Deferred
-                                            data="birthdays"
-                                            fallback={<span hidden />}
-                                        >
-                                            {birthdays &&
-                                            birthdays.length > 0 ? (
-                                                <Widget
-                                                    title={tr('Дні народження')}
-                                                    icon={Cake}
-                                                >
-                                                    <div className="space-y-0.5">
-                                                        {birthdays.map(
-                                                            (person) => (
-                                                                <PersonRow
-                                                                    key={
-                                                                        person.id
-                                                                    }
-                                                                    person={{
-                                                                        ...person,
-                                                                        status: formatDate(
-                                                                            person.birthday,
-                                                                            false,
-                                                                        ),
-                                                                    }}
-                                                                />
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                </Widget>
-                                            ) : null}
-                                        </Deferred>
-                                    </div>
-                                );
-                            default:
-                                return null;
-                        }
-                    })}
-                    {widgetsOn && <HomeWidgetsEditor widgets={homeWidgets} />}
-                </aside>
+                </section>
             </div>
         </>
     );

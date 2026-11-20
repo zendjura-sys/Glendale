@@ -91,6 +91,7 @@ class AccountPresenter
             'memories' => MemoriesController::count($user),
             'event_frame' => MemoriesController::frameState($user),
             'home_widgets' => MemoriesController::widgets($user),
+            'home_layout' => MemoriesController::layout($user),
             // Мапа тривог: лише для людей з України (IP, профіль чи обрана область).
             'air_alerts' => app(AirAlertService::class)->isAvailableFor(request(), $user),
             // «Показувати, що я слухаю»: одне налаштування для сайту й застосунку.

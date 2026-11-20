@@ -164,6 +164,20 @@ export function PostComposer({
         () => () => previews.forEach((url) => URL.revokeObjectURL(url)),
         [previews],
     );
+    // Кнопка «+» живого дока: /feed#compose або подія gc:compose — фокус на полі допису.
+    useEffect(() => {
+        if (wall || community) return;
+        const go = () => {
+            setFocused(true);
+            requestAnimationFrame(() => {
+                textRef.current?.scrollIntoView({ block: 'center' });
+                textRef.current?.focus();
+            });
+        };
+        if (window.location.hash === '#compose') go();
+        window.addEventListener('gc:compose', go);
+        return () => window.removeEventListener('gc:compose', go);
+    }, [wall, community]);
     useEffect(() => {
         if (restored.current) return;
         restored.current = true;

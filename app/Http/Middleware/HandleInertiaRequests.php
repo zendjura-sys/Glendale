@@ -196,6 +196,7 @@ class HandleInertiaRequests extends Middleware
                 'memories' => MemoriesController::count($user),
                 'frame' => MemoriesController::frameState($user),
                 'widgets' => MemoriesController::widgets($user),
+                'layout' => MemoriesController::layout($user),
             ] : null,
             'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [

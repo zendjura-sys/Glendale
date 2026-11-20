@@ -58,6 +58,15 @@ class AppSiteParityTest extends TestCase
         return app(ApiTokens::class)->issue($user, 'android');
     }
 
+    public function test_app_saves_lobby_layout(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $layout = [['key' => 'contacts', 'size' => 'full'], ['key' => 'pulse', 'size' => 'half']];
+        $this->withToken($token)->putJson('/api/v1/site/settings/home-layout', ['layout' => $layout])->assertOk()->assertJsonPath('layout', $layout);
+        $this->withToken($token)->getJson('/api/v1/me')->assertJsonPath('user.home_layout', $layout);
+    }
+
     public function test_app_reaches_sdk_docs(): void
     {
         $token = $this->app_token(User::factory()->create());

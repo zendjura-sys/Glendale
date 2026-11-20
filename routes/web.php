@@ -317,6 +317,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('settings/badges', [BadgeOrderController::class, 'show'])->name('settings.badges');
     Route::put('settings/badges', [BadgeOrderController::class, 'update'])->middleware('throttle:30,1')->name('settings.badges.update');
     Route::put('settings/home-widgets', [MemoriesController::class, 'homeWidgets'])->middleware('throttle:30,1')->name('home-widgets');
+    Route::put('settings/home-layout', [MemoriesController::class, 'homeLayout'])->middleware('throttle:30,1')->name('home-layout');
     // Ігровий щоденник.
     Route::middleware('module:games')->group(function () {
         Route::get('journal', [GameJournalController::class, 'index'])->name('journal.index');

@@ -323,7 +323,7 @@ function CardHead({
     );
 }
 
-function VoiceCard({ rail }: { rail: RailData | null }) {
+export function VoiceCard({ rail }: { rail: RailData | null }) {
     const rooms = rail?.voice ?? [];
     if (rooms.length === 0) return null;
     const total = rooms.reduce((sum, r) => sum + r.count, 0);
@@ -409,7 +409,7 @@ function useElapsed(since: string | null | undefined): string | null {
     return `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
 }
 
-function AlertCard({ hub }: { hub: HubData | null }) {
+export function AlertCard({ hub }: { hub: HubData | null }) {
     const alerts = hub?.alerts;
     const region = alerts?.region?.active ? alerts.region : null;
     const elapsed = useElapsed(region?.started_at);
@@ -464,7 +464,7 @@ function AlertCard({ hub }: { hub: HubData | null }) {
     );
 }
 
-function ServersCard({ rail }: { rail: RailData | null }) {
+export function ServersCard({ rail }: { rail: RailData | null }) {
     const servers = rail?.servers ?? [];
     if (servers.length === 0) return null;
 
@@ -539,7 +539,7 @@ function ServersCard({ rail }: { rail: RailData | null }) {
     );
 }
 
-function SeasonCard({ rail }: { rail: RailData | null }) {
+export function SeasonCard({ rail }: { rail: RailData | null }) {
     const season = rail?.season;
     if (!season) return null;
     const streak = rail?.me?.streak ?? 0;

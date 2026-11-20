@@ -119,6 +119,68 @@ class MemoriesController extends Controller
         return response()->json(['ok' => true, 'widgets' => self::widgets($user), 'message' => 'Віджети збережено.']);
     }
 
+    /**
+     * Лобі (головна): кожен блок — віджет. Людина сама вирішує, які показувати, у якому порядку
+     * й якого розміру («half» — пів ширини на ПК, «full» — на всю). Однаково на сайті й у застосунку.
+     */
+    public const LAYOUT_WIDGETS = [
+        'pulse', 'stories', 'continue', 'requests', 'contacts', 'voice', 'servers', 'season',
+        'online', 'playing', 'same_game', 'picks', 'suggestions', 'birthdays', 'media', 'alerts',
+    ];
+
+    /** Розклад за замовчуванням: спершу «що зараз», далі люди, далі решта. */
+    public const LAYOUT_DEFAULT = [
+        ['key' => 'pulse', 'size' => 'full'],
+        ['key' => 'stories', 'size' => 'full'],
+        ['key' => 'continue', 'size' => 'full'],
+        ['key' => 'alerts', 'size' => 'full'],
+        ['key' => 'requests', 'size' => 'half'],
+        ['key' => 'contacts', 'size' => 'half'],
+        ['key' => 'playing', 'size' => 'half'],
+        ['key' => 'voice', 'size' => 'half'],
+        ['key' => 'season', 'size' => 'half'],
+        ['key' => 'servers', 'size' => 'half'],
+        ['key' => 'suggestions', 'size' => 'half'],
+        ['key' => 'birthdays', 'size' => 'half'],
+        ['key' => 'media', 'size' => 'full'],
+    ];
+
+    /**
+     * @return list<array{key: string, size: string}>
+     */
+    public static function layout(User $user): array
+    {
+        $saved = $user->pref('home_layout');
+        if (! is_array($saved)) {
+            return self::LAYOUT_DEFAULT;
+        }
+        $out = [];
+        foreach ($saved as $item) {
+            $key = is_array($item) ? ($item['key'] ?? null) : null;
+            if (! is_string($key) || ! in_array($key, self::LAYOUT_WIDGETS, true) || isset($out[$key])) {
+                continue;
+            }
+            $out[$key] = ['key' => $key, 'size' => ($item['size'] ?? 'half') === 'full' ? 'full' : 'half'];
+        }
+
+        return array_values($out);
+    }
+
+    public function homeLayout(Request $request): JsonResponse
+    {
+        app(Plugins::class)->ensure('home_widgets');
+        $data = $request->validate([
+            'layout' => ['present', 'array', 'max:'.count(self::LAYOUT_WIDGETS)],
+            'layout.*.key' => ['required', 'string', 'distinct', Rule::in(self::LAYOUT_WIDGETS)],
+            'layout.*.size' => ['required', 'string', Rule::in(['half', 'full'])],
+        ]);
+        $user = $request->user();
+        $layout = array_map(fn (array $i) => ['key' => (string) $i['key'], 'size' => (string) $i['size']], array_values($data['layout']));
+        $user->forceFill(['preferences' => [...($user->preferences ?? []), 'home_layout' => $layout]])->save();
+
+        return response()->json(['ok' => true, 'layout' => self::layout($user), 'message' => 'Лобі збережено.']);
+    }
+
     /** Карта гравців: скільки людей з кожної країни (лише суми, без імен). */
     public function map(): Response
     {
