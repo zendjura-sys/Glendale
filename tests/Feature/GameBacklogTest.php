@@ -61,9 +61,9 @@ class GameBacklogTest extends TestCase
         $this->actingAs($friend)->get('/games/backlog')
             ->assertInertia(fn (Assert $page) => $page->where('friends.0.user.id', $owner->id)->where('friends.0.game.slug', 'apex'));
 
-        $this->actingAs($friend)->get('/owner')
+        $this->actingAs($friend)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/owner')
             ->assertInertia(fn (Assert $page) => $page->where('backlog.counts.playing', 1)->where('backlog.playing.0.slug', 'apex'));
-        $this->actingAs($stranger)->get('/owner')->assertInertia(fn (Assert $page) => $page->where('backlog', null));
+        $this->actingAs($stranger)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/owner')->assertInertia(fn (Assert $page) => $page->where('backlog', null));
     }
 
     public function test_app_bridge_and_plugin_switch(): void

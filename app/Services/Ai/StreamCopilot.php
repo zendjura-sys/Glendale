@@ -88,7 +88,7 @@ class StreamCopilot
         $facts = collect([
             'Площадка: GameCast (аудіоподкаст наживо)',
             'Назва: '.$show->title,
-            'Теми: '.implode(', ', $show->topicList()) ?: 'без тем',
+            'Теми: '.(implode(', ', $show->topicList()) ?: 'без тем'),
             'Формат: '.$show->format,
             'Статус: '.$show->status,
             'На сцені: '.($stage !== '' ? $stage : 'нікого'),

@@ -14,6 +14,7 @@ use App\Models\FamilyItemLog;
 use App\Models\FamilyMember;
 use App\Models\FamilyPunishment;
 use App\Models\FamilyReport;
+use App\Models\FamilyShift;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
 use App\Models\Message;
@@ -23,6 +24,7 @@ use App\Services\Families\FamilyBank;
 use App\Services\Families\FamilyNotifier;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
+use App\Services\Families\ReportService;
 use App\Services\Families\WeeklyDigest;
 use App\Services\ImageStorage;
 use App\Services\MessengerPresenter;
@@ -603,5 +605,25 @@ class FamiliesTest extends TestCase
         $this->assertTrue($family->fresh()->isVerified());
         $this->assertNotNull($family->fresh()->conversation_id);
         $this->assertTrue(FamilyAuditLog::query()->where('family_id', $family->id)->where('action', 'FAMILY_STATUS')->where('actor_user_id', $admin->id)->exists());
+    }
+
+    public function test_approved_report_credits_shift_goal_to_each_crew_member_separately(): void
+    {
+        $mate = $this->member(1, 'Rocco_Lampone', '30003');
+        $shift = FamilyShift::query()->create([
+            'family_id' => $this->family->id, 'title' => 'Склад', 'member_id' => $this->leader->id,
+            'starts_at' => now()->subHour(), 'ends_at' => now()->addHour(),
+            'goal' => ['type' => 'contract', 'tier' => null, 'count' => 2],
+        ]);
+        $partner = $shift->partners()->create(['member_id' => $mate->id, 'status' => 'approved', 'approved_at' => now()]);
+        $reports = app(ReportService::class);
+
+        // Подати звіт (раніше падало на невизначеній змінній) і схвалити — напарник виконав своє, бригадир — ні.
+        $report = $reports->submit($this->family, $mate, ['for' => 'self', 'type' => 'contract', 'tier' => 'light', 'count' => 2, 'event_date' => now()->toDateString()], [UploadedFile::fake()->image('proof.png', 400, 300)]);
+        $reports->review($this->family, $report, $this->leader, true, null);
+
+        $this->assertNotNull($partner->fresh()->completed_at);
+        $this->assertSame(2, $partner->fresh()->progress);
+        $this->assertNull($shift->fresh()->completed_at);
     }
 }

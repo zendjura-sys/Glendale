@@ -74,7 +74,7 @@ class MovieListsReviewsTrackTest extends TestCase
         $this->actingAs($user)->getJson('/settings/profile-track')->assertJsonCount(1, 'tracks');
         $this->actingAs($user)->putJson('/settings/profile-track', ['track_id' => $foreign->id])->assertStatus(422);
         $this->actingAs($user)->putJson('/settings/profile-track', ['track_id' => $mine->id])->assertJsonPath('track.title', 'Paparazzi');
-        $this->actingAs($other)->get('/'.$user->username)->assertInertia(fn (Assert $p) => $p->where('profileTrack.title', 'Paparazzi'));
+        $this->actingAs($other)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/'.$user->username)->assertInertia(fn (Assert $p) => $p->where('profileTrack.title', 'Paparazzi'));
         $this->actingAs($user)->putJson('/settings/profile-track', ['track_id' => null])->assertJsonPath('track', null);
     }
 }

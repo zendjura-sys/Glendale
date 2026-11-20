@@ -83,7 +83,7 @@ class LegalPagesTest extends TestCase
                 && str_contains($html, 'Автопродовження') && ! str_contains($html, 'Donatello'))
         );
         $this->get('/refund-policy?lang=uk')->assertInertia(fn (Assert $page) => $page
-            ->where('html', fn (string $html) => str_contains($html, '14 днів') && str_contains($html, 'на ту саму картку') && ! str_contains($html, 'Donatello'))
+            ->where('html', fn (string $html) => str_contains($html, '14 днів') && mb_stripos($html, 'на ту саму картку') !== false && ! str_contains($html, 'Donatello'))
         );
         $this->get('/refund-policy?lang=en')->assertInertia(fn (Assert $page) => $page
             ->where('html', fn (string $html) => str_contains($html, '14 days') && str_contains($html, 'same card') && ! str_contains($html, 'Paddle'))

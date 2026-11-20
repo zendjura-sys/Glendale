@@ -35,7 +35,7 @@ class AccountTypesVerificationTest extends TestCase
         $this->actingAs($user)->put('/settings/account-type', ['type' => 'business', 'details' => ['address' => 'Київ, Хрещатик 1', 'website' => 'pixel.cafe', 'twitch' => 'ignored']])->assertSessionHasNoErrors();
 
         $this->assertSame(['address' => 'Київ, Хрещатик 1', 'website' => 'https://pixel.cafe'], $user->fresh()->account_details);
-        $this->actingAs(User::factory()->create())->get('/pixel_cafe')->assertInertia(fn (Assert $page) => $page
+        $this->actingAs(User::factory()->create())->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/pixel_cafe')->assertInertia(fn (Assert $page) => $page
             ->where('account.type', 'business')
             ->where('account.details.address.value', 'Київ, Хрещатик 1')
             ->where('profile.account_type', 'business'));
@@ -54,12 +54,12 @@ class AccountTypesVerificationTest extends TestCase
         $this->assertSame(1, $streamer->notifications()->count());
 
         // До згоди — на сторінці агенції людини немає.
-        $this->actingAs($streamer)->get("/{$agency->username}")->assertInertia(fn (Assert $page) => $page->where('account.roster', []));
+        $this->actingAs($streamer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get("/{$agency->username}")->assertInertia(fn (Assert $page) => $page->where('account.roster', []));
         $this->actingAs($agency)->post("/settings/account-type/links/{$link->id}", ['accept' => true])->assertForbidden();
         $this->actingAs($streamer)->post("/settings/account-type/links/{$link->id}", ['accept' => true])->assertRedirect();
 
-        $this->actingAs($streamer)->get("/{$agency->username}")->assertInertia(fn (Assert $page) => $page->where('account.roster.0.username', 'neo_stream'));
-        $this->actingAs($agency)->get('/neo_stream')->assertInertia(fn (Assert $page) => $page->where('account.member_of.0.id', $agency->id));
+        $this->actingAs($streamer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get("/{$agency->username}")->assertInertia(fn (Assert $page) => $page->where('account.roster.0.username', 'neo_stream'));
+        $this->actingAs($agency)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/neo_stream')->assertInertia(fn (Assert $page) => $page->where('account.member_of.0.id', $agency->id));
 
         // Агенція стала особистим акаунтом — склад розпускається.
         $this->actingAs($agency)->put('/settings/account-type', ['type' => 'personal']);

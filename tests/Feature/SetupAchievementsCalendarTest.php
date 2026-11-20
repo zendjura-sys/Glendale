@@ -43,25 +43,25 @@ class SetupAchievementsCalendarTest extends TestCase
             ->assertJsonPath('games.0.rarest.0.name', 'Ейс')->assertJsonPath('games.0.rarest.0.percent', 3.4);
         $this->actingAs($user)->getJson("/games/{$game->slug}/achievements")->assertOk()->assertJsonPath('data.unlocked', 2);
         $this->actingAs($viewer)->getJson("/games/{$game->slug}/achievements")->assertOk()->assertJsonPath('data', null)->assertJsonPath('linked', false);
-        $this->actingAs($viewer)->get('/neo')->assertInertia(fn (Assert $page) => $page->where('steamAchievements', true));
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/neo')->assertInertia(fn (Assert $page) => $page->where('steamAchievements', true));
     }
 
     public function test_my_setup_is_saved_and_shown(): void
     {
         $user = User::factory()->create(['username' => 'neo']);
         $viewer = User::factory()->create();
-        $this->actingAs($viewer)->get('/neo')->assertInertia(fn (Assert $page) => $page->where('setup', null));
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/neo')->assertInertia(fn (Assert $page) => $page->where('setup', null));
 
         $this->actingAs($user)->put('/settings/setup', ['public' => true, 'cpu' => 'Ryzen 7 7800X3D', 'gpu' => 'RTX 4070', 'ram' => 32, 'mouse' => 'Logitech G Pro X', 'headset' => 'HyperX Cloud II'])
             ->assertSessionHasNoErrors();
-        $this->actingAs($viewer)->get('/neo')->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/neo')->assertInertia(fn (Assert $page) => $page
             ->where('setup.pc.gpu', 'RTX 4070')->where('setup.gear.mouse', 'Logitech G Pro X')->where('setup.gear.keyboard', null));
         // «Чи потягне мій ПК» бачить той самий ПК.
         $this->assertSame('Ryzen 7 7800X3D', $user->fresh()->pref('pc')['cpu']);
 
         $this->actingAs($user)->put('/settings/setup', ['public' => false, 'mouse' => 'Zowie'])->assertSessionHasNoErrors();
-        $this->actingAs($viewer)->get('/neo')->assertInertia(fn (Assert $page) => $page->where('setup', null));
-        $this->actingAs($user)->get('/neo')->assertInertia(fn (Assert $page) => $page->where('setup.gear.mouse', 'Zowie'));
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/neo')->assertInertia(fn (Assert $page) => $page->where('setup', null));
+        $this->actingAs($user)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/neo')->assertInertia(fn (Assert $page) => $page->where('setup.gear.mouse', 'Zowie'));
     }
 
     public function test_calendar_feed_and_meme_maker(): void
@@ -70,7 +70,7 @@ class SetupAchievementsCalendarTest extends TestCase
         GameEvent::query()->create(['title' => 'Nova Night', 'type' => 'showcase', 'starts_at' => now()->addDay(), 'source' => 'manual']);
 
         $url = null;
-        $this->actingAs($user)->get('/events')->assertInertia(function (Assert $page) use (&$url) {
+        $this->actingAs($user)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/events')->assertInertia(function (Assert $page) use (&$url) {
             $url = $page->toArray()['props']['feed_url'];
         });
         $this->assertMatchesRegularExpression('#/calendar/[A-Za-z0-9]{40}\.ics$#', (string) $url);

@@ -8,6 +8,7 @@ use App\Models\Family;
 use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\User;
+use App\Services\Auth\ApiTokens;
 use App\Services\Clans\ClanService;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyService;
@@ -136,7 +137,7 @@ class SoftDeletedUniqueReuseTest extends TestCase
             'rp_nickname' => 'Marco_Scaletta',
             'static_id' => '1',
         ]);
-        $token = app(\App\Services\Auth\ApiTokens::class)->issue($owner, 'android');
+        $token = app(ApiTokens::class)->issue($owner, 'android');
 
         foreach (['charter', 'wiki', 'relations', 'history'] as $section) {
             $this->withToken($token)

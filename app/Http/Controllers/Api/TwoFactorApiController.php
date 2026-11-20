@@ -41,10 +41,11 @@ class TwoFactorApiController extends Controller
         $user = $this->user($request);
         abort_if($user->two_factor_secret === null, 422, 'Спершу увімкніть двофакторний захист.');
         abort_if($user->hasEnabledTwoFactorAuthentication(), 422, 'Двофакторний захист уже ввімкнено.');
-        $data = $request->validate(['code' => ['required', 'string', 'max:20']]);
+        $request->validate(['code' => ['required', 'string', 'max:20']]);
+        $code = $request->string('code')->replaceMatches('/\s+/', '')->toString();
 
         try {
-            $confirm($user, preg_replace('/\s+/', '', $data['code']) ?? '');
+            $confirm($user, $code);
         } catch (ValidationException) {
             throw ValidationException::withMessages(['code' => 'Невірний код.']);
         }

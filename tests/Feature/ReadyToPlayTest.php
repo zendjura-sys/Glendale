@@ -36,7 +36,7 @@ class ReadyToPlayTest extends TestCase
         $this->actingAs($friend)->getJson('/ready')->assertOk()
             ->assertJsonPath('friends.0.user.id', $me->id)->assertJsonPath('friends.0.game.name', 'Apex');
         $this->actingAs($stranger)->getJson('/ready')->assertOk()->assertJsonCount(0, 'friends');
-        $this->actingAs($friend)->get('/'.$me->username)->assertInertia(fn (Assert $page) => $page->where('ready.game.slug', 'apex'));
+        $this->actingAs($friend)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/'.$me->username)->assertInertia(fn (Assert $page) => $page->where('ready.game.slug', 'apex'));
 
         $this->travel(61)->minutes();
         $this->actingAs($friend)->getJson('/ready')->assertJsonCount(0, 'friends');

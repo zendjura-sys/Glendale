@@ -896,19 +896,19 @@ class AppSiteParityTest extends TestCase
         $user = User::factory()->create();
         $community = Community::query()->create(['slug' => 'rules-club', 'name' => 'Rules Club', 'type' => 'group', 'privacy' => 'open', 'owner_id' => $owner->id, 'rules' => 'Без образ.', 'rules_accept' => true]);
         $community->memberships()->create(['user_id' => $owner->id, 'role' => 'owner', 'status' => 'active']);
-        $token = $user->createToken('app')->plainTextToken;
+        $token = $this->app_token($user);
 
         $this->withToken($token)->postJson('/api/v1/site/c/rules-club/join')->assertStatus(422);
         $this->withToken($token)->postJson('/api/v1/site/c/rules-club/rules/accept')->assertOk();
         $this->withToken($token)->postJson('/api/v1/site/c/rules-club/join');
         $this->assertDatabaseHas('community_members', ['community_id' => $community->id, 'user_id' => $user->id]);
-        $this->withToken($owner->createToken('app')->plainTextToken)->getJson('/api/v1/site/c/rules-club/log')->assertOk()->assertJsonStructure(['entries']);
+        $this->withToken($this->app_token($owner))->getJson('/api/v1/site/c/rules-club/log')->assertOk()->assertJsonStructure(['entries']);
     }
 
     public function test_app_reaches_post_archive_through_bridge(): void
     {
         $user = User::factory()->create();
-        $token = $user->createToken('app')->plainTextToken;
+        $token = $this->app_token($user);
         $post = Post::query()->create(['author_id' => $user->id, 'wall_type' => $user->getMorphClass(), 'wall_id' => $user->id, 'body' => 'Старий запис', 'visibility' => 'public']);
 
         $this->withToken($token)->postJson("/api/v1/site/posts/{$post->id}/archive")->assertOk()->assertJsonPath('archived', true);
@@ -1099,6 +1099,14 @@ class AppSiteParityTest extends TestCase
         $this->assertSame('approved', $partner->fresh()->status);
         $this->withToken($this->app_token($mate))->postJson("/api/v1/site/f/{$family->slug}/shifts/{$shift->id}/leave")->assertSuccessful();
         $this->assertSame(0, $shift->partners()->count());
+    }
+
+    public function test_app_profile_gets_deferred_blocks_through_bridge(): void
+    {
+        $owner = User::factory()->create();
+        // Відкладені на сайті блоки (Inertia::defer) застосунок отримує одразу — окремо їх не догружає.
+        $this->withToken($this->app_token(User::factory()->create()))->getJson('/api/v1/site/u/'.$owner->username)
+            ->assertOk()->assertJsonStructure(['achievements', 'tieredBadges', 'together', 'steamLibrary', 'characters']);
     }
 
     public function test_app_reaches_today_brief_help_assistant_and_ai_teammates_through_bridge(): void

@@ -28,7 +28,7 @@ Map<String, dynamic> _respond(http.Request request) {
   if (p.endsWith('/google-play')) return {'enabled': true, 'products': ['gamecon_plus']};
   if (p.endsWith('/user/subscription-status')) {
     if (!_pro) return {'is_pro': false};
-    return {'is_pro': true, 'expires_at': '2026-11-09T12:00:00Z', 'plan_name': 'GameCon+', 'style': {'name': ['#38bdf8', '#818cf8']}};
+    return {'is_pro': true, 'expires_at': DateTime.now().toUtc().add(const Duration(days: 30)).toIso8601String(), 'plan_name': 'GameCon+', 'style': {'name': ['#38bdf8', '#818cf8']}};
   }
   if (p.endsWith('/api/v1/me')) {
     return {'user': {'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny', 'role': 'user'}};
@@ -104,10 +104,17 @@ void main() {
 
         await shot(label);
         // Оформлення: вибрати «Неон» і зберегти — на сервер іде новий стиль.
+        // Секцію шукаємо прокручуванням, а не фіксованою часткою: висота шторки змінюється з контентом.
         final sheet = tester.state<ScrollableState>(find.ancestor(of: find.text('Що дає GameCon+'), matching: find.byType(Scrollable)).first);
-        sheet.position.jumpTo(sheet.position.maxScrollExtent * 0.62);
+        // Список ледачий: межа прокрутки росте, поки будуються нижні блоки, тож крокуємо, доки не з’явиться.
+        for (var i = 0; i < 40 && find.text('Оформлення').evaluate().isEmpty; i++) {
+          sheet.position.jumpTo((sheet.position.pixels + 200).clamp(0, sheet.position.maxScrollExtent));
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         await tester.pump(const Duration(milliseconds: 300));
         expect(find.text('Оформлення'), findsOneWidget);
+        await tester.ensureVisible(find.text('Неон'));
+        await tester.pump(const Duration(milliseconds: 300));
         await tester.tap(find.text('Неон'));
         await tester.pump(const Duration(milliseconds: 300));
         await shot('$label-style');

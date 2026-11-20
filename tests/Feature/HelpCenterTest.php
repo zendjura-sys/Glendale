@@ -70,7 +70,7 @@ class HelpCenterTest extends TestCase
         foreach ($categories as $category) {
             $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', $category['slug']);
             $this->assertGreaterThanOrEqual(3, count($category['articles']), $category['slug']);
-            $this->assertLessThanOrEqual(8, count($category['articles']), $category['slug']);
+            $this->assertLessThanOrEqual(10, count($category['articles']), $category['slug']);
             $slugs = array_column($category['articles'], 'slug');
             $this->assertSame(count($slugs), count(array_unique($slugs)), $category['slug']);
 

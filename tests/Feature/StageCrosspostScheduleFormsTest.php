@@ -135,7 +135,7 @@ class StageCrosspostScheduleFormsTest extends TestCase
         ]])->assertSessionHasNoErrors();
         $this->actingAs($user)->put('/settings/stream-schedule', ['slots' => [['day' => 9, 'time' => '25:00']]])->assertSessionHasErrors();
 
-        $this->actingAs(User::factory()->create())->get('/kyiv_live')->assertInertia(fn (Assert $page) => $page
+        $this->actingAs(User::factory()->create())->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/kyiv_live')->assertInertia(fn (Assert $page) => $page
             ->where('streamSchedule.0.day', 3)
             ->where('streamSchedule.0.next_at', Carbon::parse('2026-10-28 18:30', StreamSchedule::TZ)->utc()->toIso8601String())
             ->where('streamSchedule.1.title', 'CS2 з глядачами'));

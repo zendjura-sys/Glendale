@@ -39,7 +39,7 @@ class AchievementsTest extends TestCase
         $this->assertFalse($badges['friends_10']['earned']);
 
         Cache::flush();
-        $this->actingAs($friend)->get(route('profile.show', $user))
+        $this->actingAs($friend)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $user))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('achievements.level', 2)

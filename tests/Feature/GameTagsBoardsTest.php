@@ -85,11 +85,11 @@ class GameTagsBoardsTest extends TestCase
         $this->played($mate, $dota, 1);
         $this->played($stranger, $this->game('fifa', 'FIFA'), 1);
 
-        $this->actingAs($me)->get("/{$mate->username}")->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($me)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get("/{$mate->username}")->assertInertia(fn (Assert $page) => $page
             ->where('compatibility.score', 55)
             ->where('compatibility.reasons.0.type', 'games')
             ->where('compatibility.reasons.0.names', ['Dota 2']));
-        $this->actingAs($me)->get("/{$stranger->username}")->assertInertia(fn (Assert $page) => $page->where('compatibility.score', 0));
-        $this->actingAs($me)->get("/{$me->username}")->assertInertia(fn (Assert $page) => $page->where('compatibility', null));
+        $this->actingAs($me)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get("/{$stranger->username}")->assertInertia(fn (Assert $page) => $page->where('compatibility.score', 0));
+        $this->actingAs($me)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get("/{$me->username}")->assertInertia(fn (Assert $page) => $page->where('compatibility', null));
     }
 }

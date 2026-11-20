@@ -107,10 +107,6 @@ class ReportService
         $who = $beneficiary->id === $submitter->id ? $submitter->displayName() : "{$submitter->displayName()} за {$beneficiary->displayName()}";
         $this->notifier->holders($family, $report->permission(), 'report', 'Новий звіт «'.FamilyReport::TYPES[$type]."» від {$who}", route('families.queue', $family, absolute: false), $submitter);
         $this->notifier->refresh($family, 'reports');
-        // Завдання змін: схвалений звіт сам зараховується у відкриті зміни учасника.
-        if ($approve && $report->beneficiary instanceof FamilyMember) {
-            app(ShiftGoals::class)->recheck($family, $report->beneficiary);
-        }
 
         return $report;
     }
@@ -169,6 +165,13 @@ class ReportService
         });
 
         $this->notifier->refresh($family, 'reports');
+        // Завдання змін: схвалений звіт сам зараховується у відкриті зміни учасника.
+        if ($approve) {
+            $report->unsetRelation('beneficiary');
+            if ($report->beneficiary instanceof FamilyMember) {
+                app(ShiftGoals::class)->recheck($family, $report->beneficiary);
+            }
+        }
 
         return $report;
     }

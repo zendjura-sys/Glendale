@@ -42,7 +42,7 @@ class TogetherGuidesCountryTest extends TestCase
             ]);
         }
 
-        $this->withoutVite()->actingAs($guest)->get(route('profile.show', $host))
+        $this->withoutVite()->actingAs($guest)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $host))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('together', fn ($rows) => collect($rows)->pluck('username')->sort()->values()->all()

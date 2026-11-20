@@ -43,7 +43,6 @@ final class DonationPresets
     /**
      * Перевірити й нормалізувати лінки від ведучого (макс. по одному на майданчик).
      *
-     * @param  mixed  $raw
      * @return list<array{provider: string, name: string, url: string}>
      */
     public static function sanitize(mixed $raw): array

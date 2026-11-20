@@ -32,21 +32,21 @@ class ModesGatingTest extends TestCase
     {
         $user = $this->classic();
 
-        $this->actingAs($user)->get('/games')->assertNotFound();
+        $this->actingAs($user)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/games')->assertNotFound();
         $this->actingAs($user)->getJson('/ready')->assertNotFound();
         $this->actingAs($user)->get('/events/releases')->assertNotFound();
-        $this->actingAs($user)->get('/feed')->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($user)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/feed')->assertInertia(fn (Assert $page) => $page
             ->where('modules', fn ($modules) => ! collect($modules)->contains('games') && collect($modules)->contains('music'))
             ->where('plugins.ready_to_play', false)
             ->where('plugins.clip_of_week', false)
             ->where('plugins.game_backlog', false));
-        $this->actingAs($user)->get('/events')->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($user)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/events')->assertInertia(fn (Assert $page) => $page
             ->where('kinds', fn ($kinds) => ! collect($kinds)->has('game') && ! collect($kinds)->has('server'))
             ->where('releasesOn', false));
 
         // Той самий сайт у режимі «Усе включено» — усе на місці.
         $all = User::factory()->create();
-        $this->actingAs($all)->get('/feed')->assertInertia(fn (Assert $page) => $page->where('plugins.ready_to_play', true));
+        $this->actingAs($all)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/feed')->assertInertia(fn (Assert $page) => $page->where('plugins.ready_to_play', true));
     }
 
     public function test_profile_blocks_badges_and_cards_follow_the_viewer_mode(): void
@@ -55,7 +55,7 @@ class ModesGatingTest extends TestCase
         $owner = User::factory()->create();
         $game = Game::query()->create(['slug' => 'apex', 'name' => 'Apex', 'letter' => 'A', 'category' => 'pc', 'is_published' => true]);
 
-        $this->actingAs($user)->get('/'.$owner->username)->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($user)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/'.$owner->username)->assertInertia(fn (Assert $page) => $page
             ->where('blockOrder', fn ($order) => ! collect($order)->intersect(['steam', 'games', 'platforms', 'characters'])->count() && collect($order)->contains('audio'))
             ->where('backlog', null)
             ->where('characters', []));

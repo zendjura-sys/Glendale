@@ -97,7 +97,8 @@ class NotifySwitchesTest extends TestCase
         $this->assertSame('5 людей поставили реакцію', $batch->data['text']);
         $this->assertFalse($batch->data['hidden'] ?? false);
         $this->assertSame(1, NotifyPrefs::unreadCount($author));
-        $this->assertSame(1, $pushes->sent);
+        // Пуш на першу оцінку і один пуш-підсумок на 5 (ReactionDigest::MILESTONES), а не на кожну.
+        $this->assertSame(2, $pushes->sent);
         $this->assertCount($mails + 1, $this->messages());
 
         $this->actingAs($author)->put('/settings/appearance', [

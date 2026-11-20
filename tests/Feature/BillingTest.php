@@ -72,7 +72,7 @@ class BillingTest extends TestCase
 
     private function buy(User $user, array $body): PaymentOrder
     {
-        $response = $this->actingAs($user)->postJson('/plus/billing/purchase', $body)->assertOk();
+        $response = $this->actingAs($user)->postJson('/plus/billing/purchase', ['consent' => true, ...$body])->assertOk();
 
         return PaymentOrder::query()->findOrFail($response->json('order.id'));
     }
@@ -82,7 +82,7 @@ class BillingTest extends TestCase
         Notification::fake();
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->postJson('/plus/billing/purchase', ['product' => 'plus_month', 'renew' => true, 'save_card' => true])
+        $response = $this->actingAs($user)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'plus_month', 'renew' => true, 'save_card' => true])
             ->assertOk()->assertJsonPath('redirect', 'https://pay.mbnk.biz/p1');
         $order = PaymentOrder::query()->findOrFail($response->json('order.id'));
         $this->assertSame(14900, $order->amount);

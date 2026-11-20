@@ -64,7 +64,7 @@ void main() {
           // «+» праворуч у полі — стрічка вкладень; параметри запису — значками біля «Пост».
           await tester.tap(find.byTooltip('Додати до запису'));
           await tester.pumpAndSettle();
-          for (final t in ['Фото', 'GIF', 'Стікер']) {
+          for (final t in ['Фото й відео', 'GIF', 'Стікер']) {
             expect(find.text(t), findsOneWidget);
           }
           for (final t in ['Спойлер', 'Чернетка', 'Мої чернетки']) {

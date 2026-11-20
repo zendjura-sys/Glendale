@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\BridgeSiteAction;
 use App\Jobs\CheckImage;
 use App\Jobs\NotifyNewEpisodes;
 use App\Jobs\RelayToBots;
@@ -111,6 +112,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // Міст застосунку (/api/v1/site/*) віддає й відкладені props сторінок (Inertia::defer).
+        BridgeSiteAction::listen();
 
         // Edge-вузол (Інтеграції → Edge-вузол): збірка й медіа з кешу вузла, якщо так обрано й він живий.
         try {
