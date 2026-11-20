@@ -178,7 +178,7 @@ export function GameCastTile({ className }: { className?: string }) {
                     'relative grid size-12 shrink-0 place-items-center rounded-2xl',
                     live
                         ? 'bg-rose-500/15 text-rose-300'
-                        : 'bg-white/[0.06] text-sky-300',
+                        : 'bg-white/[0.06] text-[var(--gc-accent)]',
                 )}
             >
                 <VoiceBars live={live} count={5} className="h-6" />
@@ -218,7 +218,7 @@ export function GameCastHeaderButton({ className }: { className?: string }) {
             title={`GameCast · ${summary(pulse)}`}
             aria-label={`GameCast · ${summary(pulse)}`}
             className={cn(
-                'relative h-9 shrink-0 items-center gap-2 rounded-full px-2.5 text-[13px] font-semibold transition lg:px-3.5',
+                'relative h-9 shrink-0 items-center gap-2 rounded-full px-2.5 text-[13px] font-semibold transition xl:px-3.5',
                 live
                     ? 'bg-rose-500/15 text-rose-100 hover:bg-rose-500/25'
                     : 'bg-white/[0.06] text-white/85 hover:bg-white/[0.1] hover:text-white',
@@ -243,11 +243,11 @@ export function GameCastHeaderButton({ className }: { className?: string }) {
                 <Podcast
                     className={cn(
                         'relative size-[18px]',
-                        live ? 'text-rose-300' : 'text-sky-300',
+                        live ? 'text-rose-300' : 'text-[var(--gc-accent)]',
                     )}
                 />
             </span>
-            <span className="hidden lg:inline">GameCast</span>
+            <span className="hidden xl:inline">GameCast</span>
             {live && (
                 <span className="rounded-full bg-rose-500 px-1.5 text-[11px] leading-[18px] font-bold text-white tabular-nums">
                     {pulse?.live}

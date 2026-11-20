@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 
 /** Ширина значка в шапці з проміжком, px (для підрахунку, скільки вміщується). */
 const HEADER_SLOT = 44;
+/** Запас під назву активного розділу в шапці, px. */
+const HEADER_LABEL = 110;
 
 /** Віджет лобі → розділи, які він заміняє в навігації шапки. */
 export const WIDGET_SECTIONS: Record<string, string[]> = {
@@ -175,13 +177,17 @@ export function LiveDock({
     const [fit, setFit] = useState(0);
     const barRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
-        const el = barRef.current;
+        // Міряємо вільне місце в шапці (батьківський nav), а не саму капсулу — вона за вмістом.
+        const el = barRef.current?.parentElement;
         if (!header || !el) return;
         const measure = () =>
             setFit(
                 Math.max(
                     0,
-                    Math.floor((el.clientWidth - HEADER_SLOT) / HEADER_SLOT),
+                    Math.floor(
+                        (el.clientWidth - HEADER_SLOT - HEADER_LABEL) /
+                            HEADER_SLOT,
+                    ),
                 ),
             );
         measure();
@@ -195,9 +201,16 @@ export function LiveDock({
             .filter((i): i is DockItem => i !== undefined),
         ...shown.filter((i) => !wanted.includes(i.key)),
     ].slice(0, header ? fit : 4);
+    // Активний розділ у шапці видно завжди: якщо не вмістився — стає на останнє місце.
+    if (header && fit > 0) {
+        const current = shown.find((i) => isActive(i.href, i.key));
+        if (current && !primary.includes(current)) {
+            primary.splice(primary.length - 1, 1, current);
+        }
+    }
     const rest = items.filter((i) => !primary.includes(i));
     const restBadge = rest.reduce((sum, i) => sum + i.badge, 0);
-    const restActive = rest.some((i) => isActive(i.href, i.key));
+    const restActive = !header && rest.some((i) => isActive(i.href, i.key));
 
     useEffect(() => {
         if (!open) return;
@@ -333,16 +346,36 @@ export function LiveDock({
                                     active && 'is-active',
                                 )}
                             >
+                                {/* Шапка: підкладка-пігулка «переїжджає» між пунктами (як Tubelight, без лампи й світіння). */}
+                                {header && active && (
+                                    <m.span
+                                        layoutId="gc-tube"
+                                        aria-hidden
+                                        className="gc-tube"
+                                        transition={
+                                            reduce
+                                                ? { duration: 0 }
+                                                : {
+                                                      type: 'spring',
+                                                      stiffness: 420,
+                                                      damping: 34,
+                                                  }
+                                        }
+                                    />
+                                )}
                                 <span className="relative">
                                     <ModuleIcon
                                         name={item.icon}
                                         animated
-                                        size={22}
+                                        size={header ? 20 : 22}
                                     />
                                     <Badge n={item.badge} />
                                 </span>
                                 <span className="gc-dock-label">
-                                    {MOBILE_LABEL[item.key] ?? item.label}
+                                    {header
+                                        ? item.label
+                                        : (MOBILE_LABEL[item.key] ??
+                                          item.label)}
                                 </span>
                             </Link>
                         );

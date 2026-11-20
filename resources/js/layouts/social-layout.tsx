@@ -236,7 +236,7 @@ function Topbar() {
                     <span className="gc-wordmark__dot" aria-hidden />
                     gamecon
                 </Link>
-                <QuickSearch className="gc-lobby-search max-w-[460px] min-w-0 flex-1" />
+                <QuickSearch className="gc-lobby-search w-[200px] min-w-0 shrink xl:w-[380px]" />
                 <GameCastHeaderButton className="hidden md:flex" />
                 <HeaderSections />
                 <div className="ml-auto flex items-center gap-1">

@@ -7715,7 +7715,6 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
     gap: 2px;
     width: 100%;
     min-width: 0;
-    overflow: hidden;
 }
 .gc-header-nav .gc-dock-item {
     flex-direction: row;
@@ -7919,4 +7918,45 @@ html:root.gc-vk[data-theme='light'] .gc-dock-chip {
     border-radius: 9999px;
     background: var(--gc-accent-strong);
     color: #fff;
+}
+
+/* ---------- Шапка в стилі Tubelight (без світіння): капсула значків, активний — з назвою ---------- */
+.gc-header-nav .gc-header-bar {
+    width: auto;
+    max-width: 100%;
+}
+.gc-header-nav .gc-dock-item {
+    position: relative;
+    width: auto;
+    min-width: 40px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--gc-text-2);
+}
+.gc-header-nav .gc-dock-item > :not(.gc-tube) {
+    position: relative;
+    z-index: 1;
+}
+.gc-header-nav .gc-dock-item:hover {
+    color: var(--gc-text);
+    background: transparent;
+}
+.gc-header-nav .gc-dock-item.is-active {
+    color: var(--gc-text);
+    background: transparent;
+    padding: 0 14px 0 12px;
+}
+.gc-header-nav .gc-dock-item.is-active .gc-dock-label {
+    display: inline;
+    white-space: nowrap;
+    font-weight: 600;
+}
+.gc-tube {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: 9999px;
+    background: var(--gc-l3);
 }
