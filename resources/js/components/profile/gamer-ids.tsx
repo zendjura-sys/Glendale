@@ -28,12 +28,13 @@ export function GamerIds({
     isSelf,
 }: {
     steam: string | null;
-    ids: GamerId[];
+    ids?: GamerId[] | null;
     isSelf: boolean;
 }) {
+    const list = Array.isArray(ids) ? ids : [];
     const [fields, setFields] = useState<Field[] | null>(null);
 
-    if (!steam && ids.length === 0 && !isSelf) return null;
+    if (!steam && list.length === 0 && !isSelf) return null;
 
     const copy = (id: GamerId) =>
         navigator.clipboard
@@ -71,7 +72,7 @@ export function GamerIds({
                         <ExternalLink className="size-3.5 text-white/40" />
                     </a>
                 )}
-                {ids.map((id) => (
+                {list.map((id) => (
                     <div
                         key={id.key}
                         className="flex items-center gap-2 py-1 text-sm"
@@ -105,7 +106,7 @@ export function GamerIds({
                         </button>
                     </div>
                 ))}
-                {!steam && ids.length === 0 && (
+                {!steam && list.length === 0 && (
                     <p className="text-sm text-white/45">
                         {tr(
                             'Додайте PSN, Xbox, Riot ID чи Battle.net — друзям буде легше вас знайти.',
@@ -119,7 +120,7 @@ export function GamerIds({
                         className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-sky-400 hover:text-white"
                     >
                         <Pencil className="size-3.5" />
-                        {ids.length === 0 ? tr('Додати ID') : tr('Змінити')}
+                        {list.length === 0 ? tr('Додати ID') : tr('Змінити')}
                     </button>
                 )}
             </div>

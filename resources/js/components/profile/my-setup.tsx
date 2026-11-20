@@ -48,23 +48,27 @@ export function MySetup({
     data,
     isSelf,
 }: {
-    data: SetupData;
+    data: SetupData | null | undefined;
     isSelf: boolean;
 }) {
+    const pcData: Partial<SetupData['pc']> = data?.pc ?? {};
+    const gearData: Record<string, string | null | undefined> =
+        data?.gear ?? {};
     const [open, setOpen] = useState(false);
     const [form, setForm] = useState({
-        public: data.public,
-        cpu: data.pc.cpu ?? '',
-        gpu: data.pc.gpu ?? '',
-        ram: data.pc.ram ? String(data.pc.ram) : '',
-        ...Object.fromEntries(GEAR.map(([key]) => [key, data.gear[key] ?? ''])),
+        public: data?.public ?? false,
+        cpu: pcData.cpu ?? '',
+        gpu: pcData.gpu ?? '',
+        ram: pcData.ram ? String(pcData.ram) : '',
+        ...Object.fromEntries(GEAR.map(([key]) => [key, gearData[key] ?? ''])),
     } as Record<string, string | boolean>);
+    if (!data) return null;
     const pc = [
-        data.pc.cpu,
-        data.pc.gpu,
-        data.pc.ram ? tr('{ram} ГБ ОЗП', { ram: data.pc.ram }) : null,
+        pcData.cpu,
+        pcData.gpu,
+        pcData.ram ? tr('{ram} ГБ ОЗП', { ram: pcData.ram }) : null,
     ].filter(Boolean);
-    const gear = GEAR.filter(([key]) => data.gear[key]);
+    const gear = GEAR.filter(([key]) => gearData[key]);
     const empty = pc.length === 0 && gear.length === 0;
     if (empty && !isSelf) return null;
 
@@ -92,7 +96,7 @@ export function MySetup({
                     >
                         <Icon className="mt-0.5 size-4 shrink-0 text-white/40" />
                         <span className="min-w-0 break-words">
-                            {data.gear[key]}
+                            {gearData[key]}
                         </span>
                     </div>
                 ))}

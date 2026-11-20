@@ -113,6 +113,9 @@ const SHORT = [
 
 /** Коротке число: 999 → 999, 1 000 → 1K, 15 300 → 15,3K, 1 000 000 → 1M. */
 export function shortNumber(value: number): string {
+    if (!Number.isFinite(value)) {
+        return '0';
+    }
     const abs = Math.abs(value);
     const sign = value < 0 ? '−' : '';
     for (const { at, suffix } of SHORT) {

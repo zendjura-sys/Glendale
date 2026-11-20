@@ -92,12 +92,13 @@ export function BadgeStrip({
     badges,
     isSelf,
 }: {
-    badges: TieredBadge[];
+    badges?: TieredBadge[] | null;
     isSelf: boolean;
 }) {
     const [open, setOpen] = useState(false);
-    const earned = badges.filter((b) => b.level > 0);
-    if (badges.length === 0 || (earned.length === 0 && !isSelf)) return null;
+    const list = badges ?? [];
+    const earned = list.filter((b) => b.level > 0);
+    if (list.length === 0 || (earned.length === 0 && !isSelf)) return null;
     const shown = earned.slice(0, 6);
     const more = earned.length - shown.length;
 
@@ -130,7 +131,7 @@ export function BadgeStrip({
                 <ChevronRight className="size-3.5 text-white/40" />
             </button>
             <BadgesDialog
-                badges={badges}
+                badges={list}
                 open={open}
                 onOpenChange={setOpen}
                 isSelf={isSelf}
@@ -189,12 +190,13 @@ function BadgesDialog({
                             </DialogTitle>
                             <DialogDescription className="mt-1">
                                 {tr('Отримано {n} з {total}', {
-                                    n: badges.filter((b) => b.level > 0).length,
-                                    total: badges.length,
+                                    n: (badges ?? []).filter((b) => b.level > 0)
+                                        .length,
+                                    total: (badges ?? []).length,
                                 })}
                             </DialogDescription>
                             <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                                {badges.map((b) => (
+                                {(badges ?? []).map((b) => (
                                     <button
                                         key={b.key}
                                         type="button"

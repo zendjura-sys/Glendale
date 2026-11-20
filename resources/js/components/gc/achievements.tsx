@@ -102,13 +102,18 @@ export function AchievementsCard({
     data,
     isSelf,
 }: {
-    data: AchievementsData;
+    data: AchievementsData | null | undefined;
     isSelf: boolean;
 }) {
     const [all, setAll] = useState(false);
-    const span = Math.max(1, data.next_xp - data.level_xp);
-    const percent = Math.min(100, ((data.xp - data.level_xp) / span) * 100);
-    const shown = all ? data.badges : data.badges.filter((b) => b.earned);
+    const badges = Array.isArray(data?.badges) ? data.badges : [];
+    if (!data) return null;
+    const span = Math.max(1, (data.next_xp ?? 1) - (data.level_xp ?? 0));
+    const percent = Math.min(
+        100,
+        (((data.xp ?? 0) - (data.level_xp ?? 0)) / span) * 100,
+    );
+    const shown = all ? badges : badges.filter((b) => b.earned);
 
     return (
         <section className="gc-solid rounded-2xl p-3 sm:p-3.5">

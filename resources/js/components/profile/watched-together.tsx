@@ -21,11 +21,11 @@ export function WatchedTogether({
     isSelf,
     hiddenForOthers,
 }: {
-    people: TogetherPerson[];
+    people?: TogetherPerson[] | null;
     isSelf: boolean;
     hiddenForOthers: boolean;
 }) {
-    const [list, setList] = useState(people);
+    const [list, setList] = useState(() => people ?? []);
     const [off, setOff] = useState(hiddenForOthers);
 
     const send = (body: Record<string, unknown>) =>

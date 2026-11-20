@@ -377,12 +377,23 @@ function IncidentBanner() {
 /** Остання сторінка сайту поза «Музикою» — куди веде «‹ Назад» у розділі (layouts/music-layout.tsx). */
 export const LAST_PAGE_KEY = 'gc:last-page';
 
+/** Відкритий діалог / канал: без футера й нижньої капсули — композер біля низу екрана. */
+function isChatImmersive(url: string): boolean {
+    return (
+        /^\/messages\/\d+/.test(url) ||
+        url.startsWith('/messages/with/') ||
+        url.startsWith('/messages/saved') ||
+        /^\/c\/[^/]+\/channels(\/|$)/.test(url)
+    );
+}
+
 export default function SocialLayout({ children }: PropsWithChildren) {
     const { auth, modules } = usePage().props;
     const { url } = usePage();
     const { current } = usePlayer();
     useStreamerMode();
     const paletteOn = usePlugin('command_palette');
+    const chatImmersive = isChatImmersive(url);
 
     useEffect(() => {
         if (url.startsWith('/music')) {
@@ -424,7 +435,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <div
                     className={cn(
                         'gc-lobby-shell mx-auto w-full max-w-[var(--gc-shell-max)] px-3 pt-[calc(76px+env(safe-area-inset-top))] sm:px-6',
-                        current ? 'pb-48' : 'pb-32',
+                        chatImmersive ? 'pb-2' : current ? 'pb-48' : 'pb-32',
                     )}
                 >
                     <main id="main-content" className="gc-vt-main min-w-0">
@@ -435,7 +446,9 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                         <NavigationSkeleton>
                             <PageTransition>{children}</PageTransition>
                         </NavigationSkeleton>
-                        <SiteFooter className="glass-matte gc-footer-card mb-4" />
+                        {!chatImmersive && (
+                            <SiteFooter className="glass-matte gc-footer-card mb-4" />
+                        )}
                     </main>
                 </div>
                 <VoiceBar />
@@ -448,7 +461,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 )}
                 <BillingHost />
                 <PhonePrompt />
-                <DockHost />
+                {!chatImmersive && <DockHost />}
                 <FeedbackDialog />
                 <KeyboardShortcuts username={auth.user.username} />
                 {paletteOn && (
