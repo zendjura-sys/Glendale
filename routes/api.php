@@ -35,6 +35,7 @@ use App\Http\Controllers\CommunityChannelController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityHubController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\CommunityQuizController;
 use App\Http\Controllers\CommunityStickerController;
 use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
@@ -547,6 +548,10 @@ Route::prefix('v1')->group(function () {
             Route::post('configs/{config}/copied', [GameConfigController::class, 'copied'])->whereNumber('config')->middleware('throttle:60,1');
             Route::delete('configs/{config}', [GameConfigController::class, 'destroy'])->whereNumber('config');
             Route::middleware('module:communities')->group(function () {
+                Route::get('c/{community}/quiz', [CommunityQuizController::class, 'show']);
+                Route::post('c/{community}/quiz', [CommunityQuizController::class, 'store'])->middleware('throttle:20,1');
+                Route::post('c/{community}/quiz/{quiz}/advance', [CommunityQuizController::class, 'advance'])->whereNumber('quiz')->withoutScopedBindings()->middleware('throttle:120,1');
+                Route::post('c/{community}/quiz/{quiz}/answer', [CommunityQuizController::class, 'answer'])->whereNumber('quiz')->withoutScopedBindings()->middleware('throttle:120,1');
                 Route::get('c/{community}/stickers', [CommunityStickerController::class, 'show']);
                 Route::post('c/{community}/stickers', [CommunityStickerController::class, 'upload'])->middleware('throttle:10,1');
                 Route::delete('c/{community}/stickers/{sticker}', [CommunityStickerController::class, 'destroy'])->whereNumber('sticker')->withoutScopedBindings();

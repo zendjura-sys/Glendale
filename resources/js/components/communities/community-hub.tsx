@@ -1,3 +1,4 @@
+import { LiveQuiz } from '@/components/communities/live-quiz';
 import { Link } from '@inertiajs/react';
 import { BookOpenText, CalendarDays, Medal, Sticker } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -41,6 +42,7 @@ export function eventWhen(iso: string): string {
 export function CommunityHub({ slug }: { slug: string }) {
     const [hub, setHub] = useState<Hub | null>(null);
     const stickersOn = usePlugin('community_stickers');
+    const quizOn = usePlugin('community_quiz');
 
     useEffect(() => {
         void api<Hub>('GET', `/c/${slug}/hub`)
@@ -55,6 +57,7 @@ export function CommunityHub({ slug }: { slug: string }) {
 
     return (
         <>
+            {quizOn && <LiveQuiz slug={slug} />}
             {showEvents && (
                 <Widget
                     title={tr('Події')}

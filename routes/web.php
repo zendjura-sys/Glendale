@@ -30,6 +30,7 @@ use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityGuestController;
 use App\Http\Controllers\CommunityHubController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\CommunityQuizController;
 use App\Http\Controllers\CommunityStickerController;
 use App\Http\Controllers\CommunityWidgetController;
 use App\Http\Controllers\CreatorController;
@@ -648,6 +649,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('events/{event}/rsvp', [CommunityHubController::class, 'rsvp'])->whereNumber('event')->withoutScopedBindings()->name('events.rsvp');
             Route::get('events/{event}/stories', [CommunityHubController::class, 'eventStories'])->whereNumber('event')->withoutScopedBindings()->name('events.stories');
             Route::post('events/{event}/stories', [CommunityHubController::class, 'storeEventStory'])->whereNumber('event')->withoutScopedBindings()->middleware('throttle:20,1')->name('events.stories.store');
+            // Живі вікторини (№225).
+            Route::get('quiz', [CommunityQuizController::class, 'show'])->name('quiz.show');
+            Route::post('quiz', [CommunityQuizController::class, 'store'])->middleware('throttle:20,1')->name('quiz.store');
+            Route::post('quiz/{quiz}/advance', [CommunityQuizController::class, 'advance'])->whereNumber('quiz')->withoutScopedBindings()->middleware('throttle:120,1')->name('quiz.advance');
+            Route::post('quiz/{quiz}/answer', [CommunityQuizController::class, 'answer'])->whereNumber('quiz')->withoutScopedBindings()->middleware('throttle:120,1')->name('quiz.answer');
             Route::get('stickers', [CommunityStickerController::class, 'show'])->name('stickers');
             Route::post('stickers', [CommunityStickerController::class, 'upload'])->middleware('throttle:10,1')->name('stickers.upload');
             Route::delete('stickers/{sticker}', [CommunityStickerController::class, 'destroy'])->whereNumber('sticker')->withoutScopedBindings()->name('stickers.destroy');

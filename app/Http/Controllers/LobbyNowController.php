@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CommunityMember;
+use App\Models\CommunityQuiz;
 use App\Models\FamilyMember;
 use App\Models\FamilyShift;
 use App\Models\MessageAttachment;
@@ -11,6 +13,7 @@ use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
 use App\Support\Modules\ModuleManager;
+use App\Support\Plugins\Plugins;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -29,6 +32,8 @@ class LobbyNowController extends Controller
             'chats' => $modules->enabled('messages') ? $this->chats($user, $presenter, $messenger) : [],
             // Досягнення друзів за тиждень (нове з’являється після перерахунку бейджів).
             'achievements' => $modules->enabled('friends') ? $achievements->friendsFeed($friends->friendIds($user)) : [],
+            // Живі вікторини в моїх спільнотах (№225).
+            'quizzes' => $modules->enabled('communities') && app(Plugins::class)->on('community_quiz') ? $this->quizzes($user) : [],
         ]);
     }
 
@@ -64,6 +69,28 @@ class LobbyNowController extends Controller
                 'progress' => $shift->progress,
                 'goal' => $shift->goal['count'] ?? null,
                 'href' => '/f/'.$family->slug.'/shifts',
+            ])->all());
+    }
+
+    /**
+     * Вікторини, що йдуть зараз у спільнотах людини.
+     *
+     * @return list<array{id: int, title: string, community: string, index: int, total: int, href: string}>
+     */
+    private function quizzes(User $user): array
+    {
+        return array_values(CommunityQuiz::query()->with('community')
+            ->whereIn('phase', CommunityQuiz::LIVE)
+            ->whereIn('community_id', CommunityMember::query()->where('user_id', $user->id)->where('status', CommunityMember::STATUS_ACTIVE)->select('community_id'))
+            ->whereHas('community')
+            ->latest('phase_at')->limit(2)->get()
+            ->map(fn (CommunityQuiz $quiz) => [
+                'id' => $quiz->id,
+                'title' => $quiz->title,
+                'community' => $quiz->community->name,
+                'index' => $quiz->current + 1,
+                'total' => count($quiz->questions),
+                'href' => '/c/'.$quiz->community->slug.'?quiz=1',
             ])->all());
     }
 

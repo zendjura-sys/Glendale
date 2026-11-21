@@ -9371,3 +9371,75 @@ html.gc-simple *::after {
 .gc-pc-score__bar > span.is-weak {
     background: var(--gc-alert);
 }
+
+/* ---------- Живі вікторини спільнот (№225) ---------- */
+.gc-pill-primary {
+    height: 38px;
+    padding: 0 18px;
+    border-radius: 9999px;
+    background: var(--gc-accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+}
+.gc-pill-primary:disabled {
+    opacity: 0.5;
+}
+.gc-quiz-timer {
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--gc-l3);
+    overflow: hidden;
+}
+.gc-quiz-timer > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--gc-accent);
+    transition: width 0.25s linear;
+}
+.gc-quiz-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 8px 12px 8px 8px;
+    border-radius: 14px;
+    background: var(--gc-l2);
+    color: var(--gc-text);
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.15s ease;
+}
+.gc-quiz-option:not(:disabled):hover {
+    background: var(--gc-l3);
+}
+.gc-quiz-option__letter {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 9px;
+    background: var(--gc-l3);
+    font-size: 12px;
+    font-weight: 700;
+}
+.gc-quiz-option.is-mine {
+    box-shadow: inset 0 0 0 2px var(--gc-accent);
+}
+.gc-quiz-option.is-right {
+    background: color-mix(in srgb, var(--gc-live) 22%, var(--gc-l2));
+}
+.gc-quiz-option.is-right .gc-quiz-option__letter {
+    background: var(--gc-live);
+    color: #0b1f17;
+}
+.gc-quiz-option.is-wrong {
+    background: color-mix(in srgb, var(--gc-alert) 20%, var(--gc-l2));
+    box-shadow: none;
+}
+.gc-quiz-option.is-wrong .gc-quiz-option__letter {
+    background: var(--gc-alert);
+    color: #fff;
+}

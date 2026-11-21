@@ -18,6 +18,7 @@ import {
     RectangleHorizontal,
     Square,
     Award,
+    Sparkles,
 } from 'lucide-react';
 import { LayoutGroup, m, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
@@ -246,6 +247,15 @@ type NowData = {
             width: number | null;
             height: number | null;
         } | null;
+    }[];
+    /** Живі вікторини в моїх спільнотах (№225). */
+    quizzes?: {
+        id: number;
+        title: string;
+        community: string;
+        index: number;
+        total: number;
+        href: string;
     }[];
     /** Свіжі досягнення друзів (тиждень). */
     achievements?: {
@@ -609,6 +619,37 @@ export function useNowBlocks({
                               ? tr('Бригадир: {name}', { name: shift.foreman })
                               : tr('Вільна — можна взяти')}
                         {shift.goal ? ` · ${shift.progress}/${shift.goal}` : ''}
+                    </span>
+                </Link>
+            ),
+        });
+    }
+    for (const quiz of now?.quizzes ?? []) {
+        tiles.push({
+            key: `quiz-${quiz.id}`,
+            category: 'communities',
+            sub: 'quiz',
+            badge: tr('Вікторина'),
+            tone: 'live',
+            node: (
+                <Link
+                    key={`quiz-${quiz.id}`}
+                    href={quiz.href}
+                    className="gc-now-tile"
+                >
+                    <span className="gc-now-tile__kicker">
+                        {quiz.community} ·{' '}
+                        {tr('питання {n}/{total}', {
+                            n: quiz.index,
+                            total: quiz.total,
+                        })}
+                    </span>
+                    <span className="gc-now-tile__title line-clamp-2">
+                        {quiz.title}
+                    </span>
+                    <span className="gc-now-tile__cta mt-auto">
+                        <Sparkles className="size-4" />
+                        {tr('Грати')}
                     </span>
                 </Link>
             ),

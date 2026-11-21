@@ -85,6 +85,14 @@ class AppSiteParityTest extends TestCase
         $this->withToken($this->app_token($user))->getJson('/api/v1/me')->assertJsonPath('user.header_tabs', []);
     }
 
+    public function test_app_and_site_get_community_quiz(): void
+    {
+        $owner = User::factory()->create();
+        $community = app(CommunityService::class)->create($owner, ['name' => 'Квіз', 'type' => 'group', 'privacy' => 'open', 'wall' => 'open', 'category' => 'games']);
+        $this->actingAs($owner)->getJson("/c/{$community->slug}/quiz")->assertOk()->assertJsonPath('quiz', null)->assertJsonPath('can_host', true);
+        $this->withToken($this->app_token($owner))->getJson("/api/v1/site/c/{$community->slug}/quiz")->assertOk()->assertJsonPath('can_host', true);
+    }
+
     public function test_site_tour_offered_to_new_accounts_once(): void
     {
         $fresh = User::factory()->create();
