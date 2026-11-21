@@ -25,6 +25,7 @@ import 'language_picker.dart';
 import 'music.dart' show ListeningSwitch;
 import 'extras.dart';
 import 'shake_report.dart';
+import 'push.dart';
 
 // ───────────────────────── Сповіщення ─────────────────────────
 
@@ -448,6 +449,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const DigestSwitch(),
           const _UiSoundsSwitch(),
           const _ShakeReportSwitch(),
+          const _SpeakAlertsSwitch(),
           const _DockMenuStyle(),
           const SizedBox(height: 6),
           Text(tr('Хто може писати мені'), style: body(13, color: muted)),
@@ -1035,6 +1037,39 @@ class _ShakeReportSwitchState extends State<_ShakeReportSwitch> {
           setState(() => on = v);
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool(ShakeToReport.prefKey, v);
+        },
+      );
+}
+
+/// «Озвучувати тривоги» (№263): голосом поверх музики — у машині (Android Auto) й навушниках.
+class _SpeakAlertsSwitch extends StatefulWidget {
+  const _SpeakAlertsSwitch();
+
+  @override
+  State<_SpeakAlertsSwitch> createState() => _SpeakAlertsSwitchState();
+}
+
+class _SpeakAlertsSwitchState extends State<_SpeakAlertsSwitch> {
+  bool on = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((prefs) {
+      if (mounted) setState(() => on = prefs.getBool(AlertNotifications.speakPref) ?? false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => SwitchListTile(
+        value: on,
+        contentPadding: EdgeInsets.zero,
+        title: Text(tr('Озвучувати тривоги'), style: body(14.5, weight: FontWeight.w600)),
+        subtitle: Text(tr('Тривогу й відбій зачитує голос, музика на цей час притихає — зручно в машині (Android Auto) й у навушниках.'), style: body(12.5, color: muted)),
+        onChanged: (v) async {
+          setState(() => on = v);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(AlertNotifications.speakPref, v);
         },
       );
 }

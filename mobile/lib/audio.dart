@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'api.dart';
 import 'state.dart';
 import 'track_edit.dart';
 import 'i18n.dart';
@@ -213,6 +214,73 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
     await player.stop();
     playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.idle, playing: false));
     await super.stop();
+  }
+
+  // ——— Android Auto (№263): дерево медіа для екрана машини ———
+  // Корінь → «Зараз грає» (черга) і «Улюблене» (зірочки з сервера); натиск — грати з цього місця.
+
+  static const _queueFolder = 'gc:queue';
+  static const _favoritesFolder = 'gc:favorites';
+  List<Map<String, dynamic>> _favorites = [];
+
+  @override
+  Future<List<MediaItem>> getChildren(String parentMediaId, [Map<String, dynamic>? options]) async {
+    switch (parentMediaId) {
+      case AudioService.browsableRootId:
+        return [
+          MediaItem(id: _queueFolder, title: tr('Зараз грає'), playable: false, artUri: _defaultArt),
+          MediaItem(id: _favoritesFolder, title: tr('Улюблене'), playable: false, artUri: _defaultArt),
+        ];
+      case AudioService.recentRootId:
+        return queue.value.take(10).toList();
+      case _queueFolder:
+        return queue.value;
+      case _favoritesFolder:
+        await _loadFavorites();
+        return [
+          for (var i = 0; i < _favorites.length; i++)
+            if (QueueTrack.fromJson(_favorites[i]) case final t?)
+              MediaItem(id: 'gc:fav:$i', title: t.title, artist: artistOf(t.artist), album: t.album, artUri: (t.cover == null ? null : Uri.tryParse(t.cover!)) ?? _defaultArt),
+        ];
+    }
+
+    return const [];
+  }
+
+  Future<void> _loadFavorites() async {
+    final session = player.session;
+    if (session == null || session.token == null) return;
+    try {
+      final data = await session.api.get(Api.site('/music/library/favorites?page=1'));
+      _favorites = Listing.parse(data['songs']).items;
+    } catch (_) {
+      // Немає зв’язку в дорозі — лишаємо те, що вже завантажили.
+    }
+  }
+
+  @override
+  Future<void> playFromMediaId(String mediaId, [Map<String, dynamic>? extras]) async {
+    if (mediaId.startsWith('gc:fav:')) {
+      final index = int.tryParse(mediaId.substring('gc:fav:'.length)) ?? 0;
+      if (_favorites.isEmpty) await _loadFavorites();
+      if (_favorites.isNotEmpty) await player.playList(_favorites, index.clamp(0, _favorites.length - 1));
+      return;
+    }
+    final index = queue.value.indexWhere((item) => item.id == mediaId);
+    if (index >= 0) await player.playAt(index);
+  }
+
+  /// «Окей, Google, увімкни … у GameCon»: шукаємо в «Улюбленому», інакше просто граємо.
+  @override
+  Future<void> playFromSearch(String query, [Map<String, dynamic>? extras]) async {
+    if (_favorites.isEmpty) await _loadFavorites();
+    final q = query.trim().toLowerCase();
+    final index = q.isEmpty ? 0 : _favorites.indexWhere((t) => '${t['title']} ${t['artist']}'.toLowerCase().contains(q));
+    if (_favorites.isNotEmpty) {
+      await player.playList(_favorites, index < 0 ? 0 : index);
+    } else {
+      await play();
+    }
   }
 
   @override

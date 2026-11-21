@@ -8,6 +8,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -130,6 +131,30 @@ class AlertNotifications {
         ),
       ),
     );
+    await speak(data);
+  }
+
+  /// Ключ налаштування «Озвучувати тривоги» (типово вимкнено).
+  static const speakPref = 'speak_alerts';
+
+  /// Озвучення тривоги й відбою (№263): голосом поверх музики — як підказки навігатора, тож в
+  /// Android Auto й навушниках музика на цей час притихає. Лише якщо людина ввімкнула.
+  static Future<void> speak(Map<String, dynamic> data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      if (prefs.getBool(speakPref) != true) return;
+      final phrase = [text(data['title']), text(data['body'])].whereType<String>().join('. ');
+      if (phrase.isEmpty) return;
+      final tts = FlutterTts();
+      await tts.setLanguage('uk-UA');
+      await tts.setSpeechRate(0.48);
+      await tts.setAudioAttributesForNavigation();
+      await tts.awaitSpeakCompletion(true);
+      await tts.speak(phrase);
+    } catch (_) {
+      // Немає голосового рушія чи мови — лишається звичайне сповіщення зі звуком тривоги.
+    }
   }
 
   /// «Я в укритті» з шторки. Повертає true, якщо це була ця дія.

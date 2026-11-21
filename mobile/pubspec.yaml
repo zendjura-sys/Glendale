@@ -42,6 +42,8 @@ dependencies:
   shared_preferences: ^2.5.3
   # Струс телефона → баг-репорт (№286).
   sensors_plus: ^6.1.1
+  # Озвучення тривог у машині й навушниках (№263).
+  flutter_tts: ^4.2.3
   cached_network_image: ^3.4.1
   google_sign_in: 6.2.2
   url_launcher: ^6.3.2
