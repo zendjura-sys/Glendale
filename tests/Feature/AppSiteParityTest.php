@@ -85,6 +85,15 @@ class AppSiteParityTest extends TestCase
         $this->withToken($this->app_token($user))->getJson('/api/v1/me')->assertJsonPath('user.header_tabs', []);
     }
 
+    public function test_compact_feed_saved_for_site_and_app(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->putJson('/settings/density', ['compact' => true])->assertOk()->assertJsonPath('compact', true);
+        $this->assertTrue($user->fresh()->pref('feed_compact'));
+        $this->withToken($this->app_token($user))->putJson('/api/v1/site/settings/density', ['compact' => false])->assertOk();
+        $this->withToken($this->app_token($user))->getJson('/api/v1/me')->assertJsonPath('user.feed_compact', false);
+    }
+
     public function test_app_reaches_sdk_docs(): void
     {
         $token = $this->app_token(User::factory()->create());

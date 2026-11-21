@@ -138,6 +138,8 @@ class HandleInertiaRequests extends Middleware
                     'header_tabs' => array_values(array_intersect(NavigationController::headerTabs($user), app(NetworkModes::class)->modulesFor($user))),
                     'network_mode' => app(NetworkModes::class)->for($user)['id'],
                     'palette' => $user->palette(),
+                    // Компактна стрічка (№297).
+                    'feed_compact' => (bool) $user->pref('feed_compact'),
                     'background' => Backgrounds::for($user),
                     'skin' => Skins::for($user),
                     'theme' => Skins::theme($user),

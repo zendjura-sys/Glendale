@@ -239,6 +239,16 @@ class AppearanceController extends Controller
     }
 
     /** Швидкий перемикач теми (меню облікового запису): лише тема, без решти налаштувань. */
+    /** Компактна стрічка: щільніші картки, менші медіа — більше дописів на екрані (сайт і застосунок). */
+    public function density(Request $request): JsonResponse
+    {
+        $data = $request->validate(['compact' => ['required', 'boolean']]);
+        $user = $request->user();
+        $user->forceFill(['preferences' => [...($user->preferences ?? []), 'feed_compact' => (bool) $data['compact']]])->save();
+
+        return response()->json(['ok' => true, 'compact' => (bool) $data['compact']]);
+    }
+
     public function theme(Request $request): RedirectResponse
     {
         $data = $request->validate(['theme' => ['required', 'string', 'in:'.implode(',', Skins::THEMES)]]);

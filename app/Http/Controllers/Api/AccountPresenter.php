@@ -95,6 +95,7 @@ class AccountPresenter
             'home_widgets' => MemoriesController::widgets($user),
             'home_layout' => MemoriesController::layout($user),
             'lobby_categories' => MemoriesController::categories($user),
+            'feed_compact' => (bool) $user->pref('feed_compact'),
             'lobby_catalog' => MemoriesController::lobbyCatalog($user),
             // Мапа тривог: лише для людей з України (IP, профіль чи обрана область).
             'air_alerts' => app(AirAlertService::class)->isAvailableFor(request(), $user),

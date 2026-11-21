@@ -28,6 +28,8 @@ export type User = {
     /** Розділи шапки на ПК і планшеті; порожньо — автоматично. */
     header_tabs?: string[];
     palette?: string;
+    /** Компактна стрічка (№297). */
+    feed_compact?: boolean;
     /** Режим соцмережі (id), див. NetworkModes на сервері. */
     network_mode?: string;
     /** Стиль інтерфейсу: flat (основний), hero, material, flex. */

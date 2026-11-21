@@ -9004,3 +9004,38 @@ html:root.gc-vk[data-theme='light'] .gc-lobby-search .ios-header-search {
     background: #ef3b4d;
     box-shadow: 0 0 0 2px var(--gc-l2);
 }
+
+/* ---------- Компактна стрічка (№297): щільніші картки, менші медіа, вужчі колонки ---------- */
+html.gc-compact .gc-bento {
+    grid-template-columns: repeat(auto-fill, minmax(0, 290px));
+}
+html.gc-compact .gc-post {
+    padding: 10px 12px !important;
+    font-size: 14px;
+}
+html.gc-compact .gc-post [data-media-grid] :is(img, video) {
+    max-height: 240px;
+}
+html.gc-compact .gc-media-block__caption {
+    -webkit-line-clamp: 2;
+    font-size: 13px;
+}
+html.gc-compact .gc-now-tile {
+    padding: 14px;
+}
+html.gc-compact .gc-now-tile__title {
+    font-size: 17px;
+}
+html.gc-compact .gc-lobby-hero__title {
+    font-size: clamp(26px, 3.6vw, 40px);
+}
+html.gc-compact .gc-glass-btn {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+@media (max-width: 699px) {
+    html.gc-compact .gc-bento {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

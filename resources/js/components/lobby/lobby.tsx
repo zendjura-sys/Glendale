@@ -11,6 +11,7 @@ import {
     Music,
     Pause,
     Plus,
+    Rows3,
     SkipBack,
     SkipForward,
     Send,
@@ -1091,6 +1092,36 @@ function NewTag() {
     return <span className="gc-new-tag">New!</span>;
 }
 
+/** Компактна стрічка (№297): щільніші картки й менші медіа — більше на екрані. */
+function CompactToggle() {
+    const { auth } = usePage().props;
+    const [on, setOn] = useState(!!auth.user.feed_compact);
+    useEffect(() => {
+        document.documentElement.classList.toggle('gc-compact', on);
+    }, [on]);
+    const toggle = () => {
+        const next = !on;
+        setOn(next);
+        api('PUT', '/settings/density', { compact: next }).catch(() => {
+            setOn(!next);
+            toast.error(tr('Не вдалося зберегти.'));
+        });
+    };
+
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={on}
+            onClick={toggle}
+            className={cn('gc-ghost-btn', on && 'text-[var(--gc-text)]')}
+        >
+            <Rows3 className="size-4" />
+            {on ? tr('Компактно') : tr('Просторо')}
+        </button>
+    );
+}
+
 /** Чи показувати блок: увімкнена категорія і (якщо є) її підкатегорія. */
 export function shownIn(
     selected: string[],
@@ -1147,15 +1178,18 @@ export function CategoryPicker({
 
     return (
         <div className="mt-5">
-            <button
-                type="button"
-                aria-expanded={open}
-                onClick={() => setOpen((v) => !v)}
-                className="gc-ghost-btn"
-            >
-                <LayoutGrid className="size-4" />
-                {open ? tr('Готово') : tr('Що показувати')}
-            </button>
+            <div className="flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    aria-expanded={open}
+                    onClick={() => setOpen((v) => !v)}
+                    className="gc-ghost-btn"
+                >
+                    <LayoutGrid className="size-4" />
+                    {open ? tr('Готово') : tr('Що показувати')}
+                </button>
+                <CompactToggle />
+            </div>
             {open && (
                 <ul
                     className="mt-3 grid gap-2 sm:grid-cols-2"

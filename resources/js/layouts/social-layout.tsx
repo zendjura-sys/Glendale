@@ -396,6 +396,13 @@ export default function SocialLayout({ children }: PropsWithChildren) {
     useStreamerMode();
     const paletteOn = usePlugin('command_palette');
     const chatImmersive = isChatImmersive(url);
+    // Компактна стрічка (№297) — клас на <html>, діє на всі стрічки й картки.
+    useEffect(() => {
+        document.documentElement.classList.toggle(
+            'gc-compact',
+            !!auth.user.feed_compact,
+        );
+    }, [auth.user.feed_compact]);
 
     useEffect(() => {
         if (url.startsWith('/music')) {
