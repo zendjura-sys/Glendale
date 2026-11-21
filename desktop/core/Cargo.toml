@@ -1,0 +1,9 @@
+[package]
+name = "gamecon-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Логіка оверлею тривог GameCon без GUI: переходи тривога/відбій і тексти сповіщень."
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }

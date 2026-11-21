@@ -258,6 +258,22 @@ class AirAlertController extends Controller
         ];
     }
 
+    /**
+     * Оверлей тривог для застосунку GameCon для Windows (№261): маленька прозора сторінка, яку
+     * застосунок тримає у вікні «завжди згори». Без розділу тривог (плагін вимкнено чи людина
+     * не з України) — порожня сторінка, що каже застосунку «тривоги немає»: оверлей не з’являється.
+     */
+    public function desktopOverlay(Request $request): \Illuminate\Http\Response
+    {
+        $user = $request->user();
+
+        return response()->view('desktop.overlay', [
+            'available' => $user !== null && $this->alerts->isAvailableFor($request),
+            'guest' => $user === null,
+        ])
+            ->header('Cache-Control', 'no-store');
+    }
+
     private function ensure(Request $request): void
     {
         app(Plugins::class)->ensure('air_alerts');

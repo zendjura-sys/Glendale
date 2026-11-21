@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "overlay",
+  "description": "Сторінка оверлею на сайті GameCon повідомляє застосунку стан тривоги (лише цей виклик).",
+  "windows": ["overlay"],
+  "remote": { "urls": ["https://gamecon.online/*"] },
+  "permissions": ["core:default", "allow-alert-changed", "allow-open-main"]
+}
