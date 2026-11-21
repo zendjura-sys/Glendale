@@ -10,6 +10,7 @@ use App\Models\FamilyShift;
 use App\Models\Friendship;
 use App\Models\Game;
 use App\Models\GameConfig;
+use App\Models\GameGuide;
 use App\Models\GameNightOption;
 use App\Models\GtaServer;
 use App\Models\Movie;
@@ -83,6 +84,15 @@ class AppSiteParityTest extends TestCase
         $this->actingAs($user)->put('/settings/navigation/header', ['header' => ['hack']])->assertSessionHasErrors('header.0');
         $this->withToken($this->app_token($user))->putJson('/api/v1/site/settings/navigation/header', ['header' => []])->assertSuccessful();
         $this->withToken($this->app_token($user))->getJson('/api/v1/me')->assertJsonPath('user.header_tabs', []);
+    }
+
+    public function test_app_and_site_rate_game_guides(): void
+    {
+        [$author, $reader] = User::factory()->count(2)->create();
+        $game = Game::query()->create(['name' => 'Celeste', 'slug' => 'celeste', 'letter' => 'C', 'category' => 'pc', 'is_published' => true]);
+        $guide = GameGuide::query()->create(['game_id' => $game->id, 'user_id' => $author->id, 'title' => 'Гід', 'body' => 'Текст гіда для гри.']);
+        $this->withToken($this->app_token($reader))->postJson("/api/v1/site/games/celeste/guides/{$guide->id}/vote", ['helpful' => true])->assertOk()->assertJsonPath('helpful', 1);
+        $this->actingAs($reader)->postJson("/games/celeste/guides/{$guide->id}/vote", ['helpful' => null])->assertOk()->assertJsonPath('helpful', 0);
     }
 
     public function test_app_and_site_get_community_quiz(): void

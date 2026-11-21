@@ -922,6 +922,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{game}/collections', [GameController::class, 'collections'])->name('collections');
         Route::post('{game}/guides', [GameController::class, 'guide'])->middleware('throttle:20,1')->name('guides.store');
         Route::delete('{game}/guides/{guide}', [GameController::class, 'deleteGuide'])->whereNumber('guide')->name('guides.destroy');
+        Route::post('{game}/guides/{guide}/vote', [GameController::class, 'voteGuide'])->whereNumber('guide')->middleware('throttle:60,1')->name('guides.vote');
     });
 
     // Клани й гільдії мультиплеєрних ігор.

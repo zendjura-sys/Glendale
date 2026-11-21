@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -206,7 +207,7 @@ class GameController extends Controller
             'tagged_posts' => $plugins->on('game_tags') ? $this->taggedPosts($game) : [],
             'can_curate' => $plugins->on('game_collections') && $request->user()?->isStaff() === true,
             'guides' => $plugins->on('game_guides')
-                ? GameGuide::query()->with('user')->where('game_id', $game->id)->latest('id')->limit(20)->get()
+                ? $this->guides($game, $request->user())
                     ->map(fn (GameGuide $guide) => [
                         'id' => $guide->id,
                         'title' => $guide->title,
@@ -217,6 +218,11 @@ class GameController extends Controller
                         'thanks' => app(Thanks::class)->count('guide', $guide->id),
                         'thanked' => $request->user() !== null && app(Thanks::class)->has($request->user(), 'guide', $guide->id),
                         'can_thank' => $request->user() !== null && $request->user()->id !== $guide->user_id && $plugins->on('thanks'),
+                        // Корисність (№259): голоси й мій голос; автор за свій гід не голосує.
+                        'helpful' => $guide->helpful_count,
+                        'unhelpful' => $guide->unhelpful_count,
+                        'my_vote' => $guide->getAttribute('my_vote') === null ? null : (bool) $guide->getAttribute('my_vote'),
+                        'can_vote' => $request->user() !== null && $request->user()->id !== $guide->user_id,
                     ])->values()
                 : [],
         ];
@@ -276,6 +282,53 @@ class GameController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Гід опубліковано.']);
 
         return back();
+    }
+
+    /**
+     * Гіди гри: найкорисніші вгорі (Вілсон), далі — новіші; з моїм голосом.
+     *
+     * @return Collection<int, GameGuide>
+     */
+    private function guides(Game $game, ?User $viewer): Collection
+    {
+        return GameGuide::query()->with('user')->where('game_id', $game->id)
+            ->when($viewer, fn ($q) => $q->addSelect(['my_vote' => DB::table('game_guide_votes')->select('helpful')
+                ->whereColumn('game_guide_id', 'game_guides.id')->where('user_id', $viewer->id)->limit(1)]))
+            ->latest('id')->limit(50)->get()
+            ->sortByDesc(fn (GameGuide $guide) => [$guide->usefulness(), $guide->id])
+            ->take(20)->values();
+    }
+
+    /** «Корисно / Не дуже» для гіда (№259); helpful = null — зняти голос. */
+    public function voteGuide(Request $request, Game $game, GameGuide $guide): JsonResponse
+    {
+        app(Plugins::class)->ensure('game_guides');
+        abort_unless($guide->game_id === $game->id, 404);
+        abort_if($guide->user_id === $request->user()->id, 422, 'За свій гід голосувати не можна.');
+        $data = $request->validate(['helpful' => ['present', 'nullable', 'boolean']]);
+
+        DB::transaction(function () use ($guide, $request, $data) {
+            $query = DB::table('game_guide_votes')->where('game_guide_id', $guide->id)->where('user_id', $request->user()->id);
+            if ($data['helpful'] === null) {
+                $query->delete();
+            } else {
+                DB::table('game_guide_votes')->updateOrInsert(
+                    ['game_guide_id' => $guide->id, 'user_id' => $request->user()->id],
+                    ['helpful' => (bool) $data['helpful'], 'updated_at' => now(), 'created_at' => now()],
+                );
+            }
+            // Лічильники — з голосів, без дрейфу від повторних натискань.
+            $guide->forceFill([
+                'helpful_count' => DB::table('game_guide_votes')->where('game_guide_id', $guide->id)->where('helpful', true)->count(),
+                'unhelpful_count' => DB::table('game_guide_votes')->where('game_guide_id', $guide->id)->where('helpful', false)->count(),
+            ])->save();
+        });
+
+        return response()->json([
+            'helpful' => $guide->helpful_count,
+            'unhelpful' => $guide->unhelpful_count,
+            'my_vote' => $data['helpful'] === null ? null : (bool) $data['helpful'],
+        ]);
     }
 
     public function deleteGuide(Request $request, Game $game, GameGuide $guide): RedirectResponse

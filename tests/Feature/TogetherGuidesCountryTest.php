@@ -77,4 +77,29 @@ class TogetherGuidesCountryTest extends TestCase
 
         $this->assertSame(2, Post::query()->count());
     }
+
+    public function test_guides_are_rated_and_sorted_by_usefulness(): void
+    {
+        [$author, $other, $a, $b, $c] = User::factory()->count(5)->create();
+        $game = Game::query()->create(['name' => 'Factorio', 'slug' => 'factorio', 'letter' => 'F', 'category' => 'pc', 'is_published' => true]);
+        $first = GameGuide::query()->create(['game_id' => $game->id, 'user_id' => $author->id, 'title' => 'Старий гід', 'body' => 'Довгий текст гіда для гри.']);
+        $second = GameGuide::query()->create(['game_id' => $game->id, 'user_id' => $other->id, 'title' => 'Новий гід', 'body' => 'Ще один текст гіда для гри.']);
+
+        $this->actingAs($author)->postJson(route('games.guides.vote', [$game, $first]), ['helpful' => true])->assertStatus(422);
+        foreach ([$a, $b, $c] as $voter) {
+            $this->actingAs($voter)->postJson(route('games.guides.vote', [$game, $first]), ['helpful' => true])->assertOk();
+        }
+        $this->actingAs($a)->postJson(route('games.guides.vote', [$game, $second]), ['helpful' => true])->assertOk();
+        // Повторне натискання з іншою думкою — замінює голос, не додає.
+        $this->actingAs($a)->postJson(route('games.guides.vote', [$game, $second]), ['helpful' => false])
+            ->assertOk()->assertJsonPath('helpful', 0)->assertJsonPath('unhelpful', 1);
+        $this->actingAs($b)->postJson(route('games.guides.vote', [$game, $first]), ['helpful' => null])->assertJsonPath('helpful', 2);
+
+        // Старіший, але корисніший гід — угорі; мій голос видно.
+        $this->actingAs($a)->getJson(route('games.show', $game))->assertOk()
+            ->assertJsonPath('guides.0.title', 'Старий гід')
+            ->assertJsonPath('guides.0.helpful', 2)
+            ->assertJsonPath('guides.0.my_vote', true)
+            ->assertJsonPath('guides.1.my_vote', false);
+    }
 }

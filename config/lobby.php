@@ -52,6 +52,7 @@ return [
         ]],
         'games' => ['label' => 'Ігри', 'module' => 'games', 'subs' => [
             'playing' => 'Друзі в грі', 'same' => 'Грають у те саме', 'giveaways' => 'Роздачі й знижки', 'backlog' => 'Мій список', 'cards' => 'Колекційні картки',
+            'guides' => ['label' => 'Корисні гіди', 'added' => '2026-11-21'],
         ]],
         'party' => ['label' => 'Пошук паті', 'module' => 'party', 'subs' => [
             'ready' => 'Готові грати', 'board' => 'Дошка паті', 'teammates' => 'Підбір тиммейтів',

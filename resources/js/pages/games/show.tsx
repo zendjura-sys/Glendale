@@ -33,6 +33,8 @@ import {
     Target,
     LayoutList,
     MessageCircleQuestion,
+    ThumbsDown,
+    ThumbsUp,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
@@ -44,6 +46,8 @@ import { PinButton } from '@/components/gc/pin-button';
 import { ThanksButton } from '@/components/gc/thanks-button';
 import { SaveButton } from '@/components/gc/save-button';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { timeAgo } from '@/lib/format';
 import type { ClanCard, GameCard, UserCard } from '@/types';
@@ -171,6 +175,11 @@ type Props = {
         thanks?: number;
         thanked?: boolean;
         can_thank?: boolean;
+        /** Корисність (№259). */
+        helpful?: number;
+        unhelpful?: number;
+        my_vote?: boolean | null;
+        can_vote?: boolean;
     }[];
     moments?: MomentCardData[];
     /** Скільки публічних скриншотів гри в «Скриншотах». */
@@ -1207,6 +1216,10 @@ export default function GameShow({
                                             <p className="mt-2 text-sm whitespace-pre-line text-white/75">
                                                 {guide.body}
                                             </p>
+                                            <GuideVotes
+                                                slug={game.slug}
+                                                guide={guide}
+                                            />
                                             {(guide.can_thank ||
                                                 (guide.thanks ?? 0) > 0) && (
                                                 <div className="mt-2 text-xs text-white/50">
@@ -1400,6 +1413,87 @@ export default function GameShow({
                         />
                     )}
                 </div>
+            )}
+        </div>
+    );
+}
+
+/** «Корисно / Не дуже» під гідом (№259): частка корисних і кількість голосів. */
+function GuideVotes({
+    slug,
+    guide,
+}: {
+    slug: string;
+    guide: {
+        id: number;
+        helpful?: number;
+        unhelpful?: number;
+        my_vote?: boolean | null;
+        can_vote?: boolean;
+    };
+}) {
+    const [state, setState] = useState({
+        helpful: guide.helpful ?? 0,
+        unhelpful: guide.unhelpful ?? 0,
+        mine: guide.my_vote ?? null,
+    });
+    const total = state.helpful + state.unhelpful;
+    if (!guide.can_vote && total === 0) return null;
+
+    const vote = (helpful: boolean) => {
+        const next = state.mine === helpful ? null : helpful;
+        api<{ helpful: number; unhelpful: number; my_vote: boolean | null }>(
+            'POST',
+            `/games/${slug}/guides/${guide.id}/vote`,
+            { helpful: next },
+        )
+            .then((r) =>
+                setState({
+                    helpful: r.helpful,
+                    unhelpful: r.unhelpful,
+                    mine: r.my_vote,
+                }),
+            )
+            .catch(() => toast.error(tr('Не вдалося зберегти оцінку.')));
+    };
+
+    return (
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--gc-text-2)]">
+            {total > 0 && (
+                <span className="mr-1">
+                    {tr('Корисно для {pct} % · {n} оцінок', {
+                        pct: Math.round((state.helpful / total) * 100),
+                        n: total,
+                    })}
+                </span>
+            )}
+            {guide.can_vote && (
+                <>
+                    <button
+                        type="button"
+                        aria-pressed={state.mine === true}
+                        onClick={() => vote(true)}
+                        className={cn(
+                            'gc-vote-btn',
+                            state.mine === true && 'is-on',
+                        )}
+                    >
+                        <ThumbsUp className="size-3.5" />
+                        {tr('Корисно')}
+                    </button>
+                    <button
+                        type="button"
+                        aria-pressed={state.mine === false}
+                        onClick={() => vote(false)}
+                        className={cn(
+                            'gc-vote-btn',
+                            state.mine === false && 'is-on',
+                        )}
+                    >
+                        <ThumbsDown className="size-3.5" />
+                        {tr('Не дуже')}
+                    </button>
+                </>
             )}
         </div>
     );

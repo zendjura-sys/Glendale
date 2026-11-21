@@ -9443,3 +9443,24 @@ html.gc-simple *::after {
     background: var(--gc-alert);
     color: #fff;
 }
+
+/* ---------- Гіди: «Корисно / Не дуже» (№259) ---------- */
+.gc-vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 9999px;
+    background: var(--gc-l3);
+    color: var(--gc-text-2);
+    font-weight: 600;
+    transition: background-color 0.15s ease;
+}
+.gc-vote-btn:hover {
+    color: var(--gc-text);
+}
+.gc-vote-btn.is-on {
+    background: color-mix(in srgb, var(--gc-accent) 22%, var(--gc-l3));
+    color: var(--gc-accent);
+}

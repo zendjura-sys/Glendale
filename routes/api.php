@@ -712,6 +712,7 @@ Route::prefix('v1')->group(function () {
             // Гіди на сторінці гри й «Дякую» під гідом або коментарем — ті самі дії, що на сайті.
             Route::post('games/{game}/guides', [GameController::class, 'guide'])->middleware(['module:games', 'throttle:20,1']);
             Route::delete('games/{game}/guides/{guide}', [GameController::class, 'deleteGuide'])->whereNumber('guide')->middleware('module:games');
+            Route::post('games/{game}/guides/{guide}/vote', [GameController::class, 'voteGuide'])->whereNumber('guide')->middleware('throttle:60,1')->middleware('module:games');
             Route::post('thanks', [ThanksController::class, 'store'])->middleware('throttle:60,1');
             Route::post('ideas', [IdeaController::class, 'store'])->middleware('throttle:5,1');
             Route::post('ideas/{idea}/vote', [IdeaController::class, 'toggleVote'])->middleware('throttle:60,1');
