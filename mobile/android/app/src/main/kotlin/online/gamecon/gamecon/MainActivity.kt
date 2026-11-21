@@ -27,6 +27,8 @@ class MainActivity : AudioServiceActivity() {
                 "signingSha1" -> result.success(signingSha1())
                 // «Граю в…» з телефона: доступ до використання й фонова перевірка гри на екрані.
                 "usageAccess" -> result.success(PlayingDetector.hasUsageAccess(this))
+                // Ігровий оверлей (#17): яка гра зараз на екрані — назва або null.
+                "foregroundGame" -> result.success(PlayingDetector.currentGame(this)?.second)
                 "openUsageAccess" -> {
                     startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS))
                     result.success(true)

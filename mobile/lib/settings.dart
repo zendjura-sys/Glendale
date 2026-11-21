@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'sound_fx.dart';
 import 'backgrounds.dart';
@@ -26,6 +28,7 @@ import 'music.dart' show ListeningSwitch;
 import 'extras.dart';
 import 'shake_report.dart';
 import 'push.dart';
+import 'game_overlay.dart';
 
 // ───────────────────────── Сповіщення ─────────────────────────
 
@@ -451,6 +454,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Вимкнені плагіни — без їхніх перемикачів (підтримка, тривоги).
           if (session.pluginOn('support_tickets')) const _ShakeReportSwitch(),
           if (session.pluginOn('air_alerts')) const _SpeakAlertsSwitch(),
+          const _GameOverlaySettings(),
           const _DockMenuStyle(),
           const SizedBox(height: 6),
           Text(tr('Хто може писати мені'), style: body(13, color: muted)),
@@ -1073,6 +1077,131 @@ class _SpeakAlertsSwitchState extends State<_SpeakAlertsSwitch> {
           await prefs.setBool(AlertNotifications.speakPref, v);
         },
       );
+}
+
+/// «Оверлей у грі» (#17): крапля GameCon поверх ігор з обраними розділами. Лише якщо ввімкнено.
+class _GameOverlaySettings extends StatefulWidget {
+  const _GameOverlaySettings();
+
+  @override
+  State<_GameOverlaySettings> createState() => _GameOverlaySettingsState();
+}
+
+class _GameOverlaySettingsState extends State<_GameOverlaySettings> with WidgetsBindingObserver {
+  static const _channel = MethodChannel('gamecon/app');
+  bool on = false;
+  String mode = 'games';
+  List<String> chosen = const [];
+  bool usage = true;
+
+  static Map<String, String> get _labels => {
+        'friends': tr('Друзі онлайн'),
+        'chats': tr('Непрочитані чати'),
+        'ready': tr('«Готовий грати»'),
+        'playing': tr('Хто з друзів у грі'),
+        'quests': tr('Завдання дня'),
+      };
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_load());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Повернулися з системних налаштувань (дозвіл «Поверх застосунків» чи «Доступ до використання»).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    final enabled = await GameOverlay.enabled() && await GameOverlay.hasPermission();
+    final m = await GameOverlay.mode();
+    final c = await GameOverlay.chosen();
+    var access = true;
+    try {
+      access = await _channel.invokeMethod<bool>('usageAccess') ?? false;
+    } catch (_) {}
+    if (mounted) setState(() => (on, mode, chosen, usage) = (enabled, m, c, access));
+  }
+
+  Future<void> _save(String key, Object value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value is bool) await prefs.setBool(key, value);
+    if (value is String) await prefs.setString(key, value);
+    if (value is List<String>) await prefs.setStringList(key, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final modules = AppScope.read(context).session.modules;
+    final available = [
+      for (final e in GameOverlay.sections.entries)
+        if (e.value == null || modules == null || modules.contains(e.value)) e.key,
+    ];
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      SwitchListTile(
+        value: on,
+        contentPadding: EdgeInsets.zero,
+        title: Text(tr('Оверлей у грі'), style: body(14.5, weight: FontWeight.w600)),
+        subtitle: Text(tr('Крапля GameCon поверх гри: друзі, чати й «Готовий грати» без виходу з гри.'), style: body(12.5, color: muted)),
+        onChanged: (v) async {
+          if (v && !await GameOverlay.hasPermission()) {
+            await GameOverlay.requestPermission();
+            if (!await GameOverlay.hasPermission()) return;
+          }
+          await _save(GameOverlay.enabledKey, v);
+          setState(() => on = v);
+        },
+      ),
+      if (on) ...[
+        Segmented(
+          options: [
+            SegmentOption('games', tr('Лише в іграх'), icon: LucideIcons.gamepad2),
+            SegmentOption('background', tr('Завжди у фоні'), icon: LucideIcons.layers),
+          ],
+          selected: mode,
+          onSelect: (v) async {
+            await _save(GameOverlay.modeKey, v);
+            setState(() => mode = v);
+          },
+        ),
+        if (mode == 'games' && !usage)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: GhostButton(
+              label: tr('Дозволити «Доступ до використання» — щоб знати, коли ви в грі'),
+              icon: LucideIcons.shieldCheck,
+              compact: true,
+              onPressed: () => _channel.invokeMethod('openUsageAccess'),
+            ),
+          ),
+        const SizedBox(height: 8),
+        Text(tr('Що показувати в оверлеї'), style: body(13, color: muted)),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final key in available)
+            SelectPill(
+              label: _labels[key] ?? key,
+              selected: chosen.contains(key),
+              onTap: () async {
+                final next = chosen.contains(key) ? [...chosen]..remove(key) : [...chosen, key];
+                await _save(GameOverlay.sectionsKey, next);
+                setState(() => chosen = next);
+              },
+            ),
+        ]),
+        const SizedBox(height: 8),
+        GhostButton(label: tr('Показати зараз'), icon: LucideIcons.eye, compact: true, expand: false, onPressed: GameOverlay.show),
+      ],
+    ]);
+  }
 }
 
 /// Як відкривати меню розділів: язичок над вкладками (свайп угору) чи окрема кнопка «Меню» в доку.

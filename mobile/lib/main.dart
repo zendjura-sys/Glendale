@@ -85,6 +85,18 @@ import 'theme_controller.dart';
 import 'widgets.dart';
 import 'wrapped.dart';
 import 'shake_report.dart';
+import 'game_overlay.dart';
+
+/// Слухач життєвого циклу для ігрового оверлею (тримаємо посилання, щоб не зібрав GC).
+// ignore: unused_element
+AppLifecycleListener? _overlayLifecycle;
+
+/// Точка входу ігрового оверлею (#17): flutter_overlay_window запускає її в окремому рушії.
+@pragma('vm:entry-point')
+void overlayMain() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const GameOverlayApp());
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -126,6 +138,11 @@ Future<void> main() async {
   // Віджет «Пульс GameCon»: непрочитане, друзі онлайн, завдання дня.
   unawaited(PulseWidget.refresh(session.token == null ? null : session.api).then((_) => null, onError: (_) => null));
   unawaited(AlertWidget.refresh(session.token == null ? null : session.api).then((_) => null, onError: (_) => null));
+  // Ігровий оверлей (#17): GameCon у фоні (у грі) — крапля; повернулися — ховаємо. Оверлею —
+  // модулі людини, щоб він не показував вимкнені розділи.
+  _overlayLifecycle = AppLifecycleListener(onStateChange: (state) => unawaited(GameOverlay.onLifecycle(state)));
+  unawaited(GameOverlay.saveModules(session.modules));
+  session.addListener(() => unawaited(GameOverlay.saveModules(session.modules)));
   final links = AppLinks();
   links.uriLinkStream.listen(session.takeLink);
   final initial = await links.getInitialLink();
