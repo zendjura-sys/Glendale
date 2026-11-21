@@ -262,8 +262,16 @@ class AppearanceController extends Controller
 
     public function theme(Request $request): RedirectResponse
     {
-        $data = $request->validate(['theme' => ['required', 'string', 'in:'.implode(',', Skins::THEMES)]]);
-        $request->user()->mergePref(['theme' => $data['theme']]);
+        $data = $request->validate([
+            'theme' => ['required', 'string', 'in:'.implode(',', Skins::THEMES)],
+            'dark_from' => ['sometimes', 'date_format:H:i'],
+            'dark_to' => ['sometimes', 'date_format:H:i'],
+        ]);
+        $request->user()->mergePref(array_filter([
+            'theme' => $data['theme'],
+            'dark_from' => $data['dark_from'] ?? null,
+            'dark_to' => $data['dark_to'] ?? null,
+        ], fn ($v) => $v !== null));
 
         return back();
     }

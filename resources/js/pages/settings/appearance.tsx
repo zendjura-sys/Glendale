@@ -425,7 +425,7 @@ export default function Appearance({
                     <div
                         role="radiogroup"
                         aria-label={tr('Тема')}
-                        className="grid grid-cols-3 gap-2.5"
+                        className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
                     >
                         {THEMES().map((item) => {
                             const active = form.data.theme === item.id;
@@ -467,6 +467,7 @@ export default function Appearance({
                             );
                         })}
                     </div>
+                    {form.data.theme === 'schedule' && <DarkSchedule />}
                 </SettingsCard>
 
                 <SettingsCard
@@ -1428,5 +1429,51 @@ function AccentPicker() {
                 </label>
             </div>
         </SettingsCard>
+    );
+}
+
+/** Розклад темної теми (№231): з якої до якої години темна (місцевий час пристрою). */
+function DarkSchedule() {
+    const { auth } = usePage().props;
+    const [from, setFrom] = useState(auth.user.theme_schedule?.from ?? '19:00');
+    const [to, setTo] = useState(auth.user.theme_schedule?.to ?? '07:00');
+    const save = (f: string, t: string) => {
+        document.documentElement.dataset.darkFrom = f;
+        document.documentElement.dataset.darkTo = t;
+        applyTheme('schedule');
+        api('PUT', '/settings/theme', {
+            theme: 'schedule',
+            dark_from: f,
+            dark_to: t,
+        }).catch(() => toast.error(tr('Не вдалося зберегти розклад.')));
+    };
+
+    return (
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <label className="flex items-center gap-2">
+                {tr('Темна з')}
+                <input
+                    type="time"
+                    value={from}
+                    onChange={(e) => {
+                        setFrom(e.target.value);
+                        save(e.target.value, to);
+                    }}
+                    className="gc-field h-10"
+                />
+            </label>
+            <label className="flex items-center gap-2">
+                {tr('до')}
+                <input
+                    type="time"
+                    value={to}
+                    onChange={(e) => {
+                        setTo(e.target.value);
+                        save(from, e.target.value);
+                    }}
+                    className="gc-field h-10"
+                />
+            </label>
+        </div>
     );
 }

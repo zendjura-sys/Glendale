@@ -26,7 +26,8 @@ class Skins
     /** Стилі зі світлою темою. */
     public const WITH_LIGHT = ['gamecon'];
 
-    public const THEMES = ['system', 'dark', 'light'];
+    /** schedule — темна з вечора до ранку за місцевим часом пристрою (№231). */
+    public const THEMES = ['system', 'dark', 'light', 'schedule'];
 
     public static function for(?User $user): string
     {
@@ -47,6 +48,20 @@ class Skins
      * Тема, яку сервер ставить на <html> одразу. «Як на пристрої» уточнює скрипт у <head>
      * до першого кадру; стилі без світлої теми завжди темні.
      */
+    /**
+     * Розклад темної теми (місцевий час пристрою): з «from» до «to».
+     *
+     * @return array{from: string, to: string}
+     */
+    public static function schedule(?User $user): array
+    {
+        $from = (string) $user?->pref('dark_from', '19:00');
+        $to = (string) $user?->pref('dark_to', '07:00');
+        $ok = fn (string $t) => (bool) preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $t);
+
+        return ['from' => $ok($from) ? $from : '19:00', 'to' => $ok($to) ? $to : '07:00'];
+    }
+
     public static function initialTheme(?User $user): string
     {
         return self::theme($user) === 'light' && in_array(self::for($user), self::WITH_LIGHT, true) ? 'light' : 'dark';

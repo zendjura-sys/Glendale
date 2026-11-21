@@ -353,11 +353,7 @@ export function LiveDock({
             </AnimatePresence>
             <nav
                 aria-label={tr('Розділи')}
-                className={
-                    header
-                        ? 'gc-header-nav'
-                        : 'gc-live-dock [view-transition-name:gc-tabbar]'
-                }
+                className={header ? 'gc-header-nav' : 'gc-live-dock'}
             >
                 <AnimatePresence initial={false}>
                     {slots.length > 0 && (
@@ -408,7 +404,12 @@ export function LiveDock({
                 </AnimatePresence>
                 <div
                     ref={barRef}
-                    className={header ? 'gc-header-bar' : 'gc-dock-bar'}
+                    className={
+                        header
+                            ? 'gc-header-bar'
+                            : // Ім’я переходу — на самій панелі: на обгортці воно відрізало б розмиття від сторінки.
+                              'gc-dock-bar [view-transition-name:gc-tabbar]'
+                    }
                 >
                     {primary.map((item, index) => {
                         const active = !open && isActive(item.href, item.key);

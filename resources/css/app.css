@@ -9061,3 +9061,40 @@ html:root.gc-vk[data-theme='light'][data-accent] {
     :is(.btn-glow, .bg-gradient-brand):not(.am *):not(:disabled) {
     background: var(--user-accent) !important;
 }
+
+/* Міні-плеєр — те саме скло Liquid Glass Medium, що й навбар (як у макеті). */
+html:root.gc-vk[data-theme] .gc-player-glass,
+html:root.gc-vk[data-theme] .gc-player-glass.glass-matte {
+    background: rgb(19 19 19 / 0.1) !important;
+    border: 1px solid rgb(255 255 255 / 0.14) !important;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.22),
+        0 16px 40px -14px rgb(0 0 0 / 0.55) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+    backdrop-filter: blur(30px) saturate(180%) !important;
+}
+html:root.gc-vk[data-theme='light'] .gc-player-glass,
+html:root.gc-vk[data-theme='light'] .gc-player-glass.glass-matte {
+    background: rgb(255 255 255 / 0.1) !important;
+    border-color: rgb(255 255 255 / 0.55) !important;
+}
+html:root.gc-vk[data-theme] .gc-player-glass::before {
+    display: none !important;
+}
+/* Мініатюра «За розкладом» (№231): ніч і день по горизонталі. */
+.theme-thumb--schedule {
+    background: linear-gradient(180deg, #131313 0 55%, #f9fafc 55% 100%);
+}
+.theme-thumb--schedule .theme-thumb__card {
+    background: linear-gradient(
+        180deg,
+        rgb(46 51 61 / 0.9) 0 55%,
+        rgb(255 255 255 / 0.9) 55% 100%
+    );
+}
+.theme-thumb--schedule .theme-thumb__line {
+    background: #8fa5ff;
+}
+.theme-thumb--schedule .theme-thumb__button {
+    background: #6b8afd;
+}

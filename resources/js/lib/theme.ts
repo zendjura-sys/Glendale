@@ -3,7 +3,23 @@
  * Вибір: system (як на пристрої), dark, light. Світла тема є лише в стилі «gamecon» (App\Support\Skins);
  * у решті стилів сторінка лишається темною. Перший кадр ставить скрипт у app.blade.php, тут — зміни після.
  */
-export type ThemePref = 'system' | 'dark' | 'light';
+export type ThemePref = 'system' | 'dark' | 'light' | 'schedule';
+
+/** Чи зараз «темний» час за розкладом (місцевий час пристрою; проміжок може переходити через північ). */
+export function isDarkTime(
+    from: string,
+    to: string,
+    now = new Date(),
+): boolean {
+    const m = now.getHours() * 60 + now.getMinutes();
+    const p = (s: string) => {
+        const [h, mm] = s.split(':').map(Number);
+        return (h || 0) * 60 + (mm || 0);
+    };
+    const f = p(from);
+    const t = p(to);
+    return f <= t ? m >= f && m < t : m >= f || m < t;
+}
 
 const STORAGE_KEY = 'gc-theme';
 const LIGHT_SKINS = ['gamecon'];
@@ -12,6 +28,15 @@ export function resolveTheme(pref: string, skin: string): 'light' | 'dark' {
     if (!LIGHT_SKINS.includes(skin)) return 'dark';
     if (pref === 'light') return 'light';
     if (pref === 'dark') return 'dark';
+    if (pref === 'schedule') {
+        const root = document.documentElement;
+        return isDarkTime(
+            root.dataset.darkFrom ?? '19:00',
+            root.dataset.darkTo ?? '07:00',
+        )
+            ? 'dark'
+            : 'light';
+    }
 
     return window.matchMedia('(prefers-color-scheme: light)').matches
         ? 'light'

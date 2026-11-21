@@ -103,6 +103,15 @@ class AppSiteParityTest extends TestCase
         $this->withToken($this->app_token($user))->putJson('/api/v1/site/settings/accent', ['color' => null])->assertOk()->assertJsonPath('accent', null);
     }
 
+    public function test_dark_theme_schedule_saved_and_shared(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->put('/settings/theme', ['theme' => 'schedule', 'dark_from' => '20:30', 'dark_to' => '06:15'])->assertRedirect();
+        $this->actingAs($user)->put('/settings/theme', ['theme' => 'schedule', 'dark_from' => '25:00'])->assertSessionHasErrors('dark_from');
+        $this->withToken($this->app_token($user))->getJson('/api/v1/me')
+            ->assertJsonPath('user.theme', 'schedule')->assertJsonPath('user.theme_schedule', ['from' => '20:30', 'to' => '06:15']);
+    }
+
     public function test_app_reaches_sdk_docs(): void
     {
         $token = $this->app_token(User::factory()->create());

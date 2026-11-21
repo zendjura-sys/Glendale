@@ -79,6 +79,7 @@ class AccountPresenter
             'modes' => array_map(fn (array $mode) => ['id' => $mode['id'], 'name' => $mode['name'], 'description' => $mode['description'], 'icon' => $mode['icon']], $modes->available()),
             // Тема, як на сайті: system (як на пристрої), dark («Неоновий синій») або light («Крижана Арктика»).
             'theme' => Skins::theme($user),
+            'theme_schedule' => Skins::schedule($user),
             'two_factor' => $user->hasEnabledTwoFactorAuthentication(),
             'two_factor_pending' => $user->two_factor_secret !== null && ! $user->hasEnabledTwoFactorAuthentication(),
             'discord' => filled($user->discord_id),

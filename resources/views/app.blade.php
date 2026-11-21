@@ -3,7 +3,7 @@
     $gcUser = auth()->user();
     $gcTheme = \App\Support\Skins::initialTheme($gcUser);
 @endphp
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ $gcTheme === 'dark' ? 'dark' : 'light' }}" data-palette="{{ $gcUser?->palette() ?? 'aurora' }}" data-skin="{{ \App\Support\Skins::for($gcUser) }}" data-theme="{{ $gcTheme }}" data-theme-pref="{{ $gcUser ? \App\Support\Skins::theme($gcUser) : 'guest' }}" style="color-scheme: {{ $gcTheme }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ $gcTheme === 'dark' ? 'dark' : 'light' }}" data-palette="{{ $gcUser?->palette() ?? 'aurora' }}" data-skin="{{ \App\Support\Skins::for($gcUser) }}" data-theme="{{ $gcTheme }}" data-theme-pref="{{ $gcUser ? \App\Support\Skins::theme($gcUser) : 'guest' }}" data-dark-from="{{ \App\Support\Skins::schedule($gcUser)['from'] }}" data-dark-to="{{ \App\Support\Skins::schedule($gcUser)['to'] }}" style="color-scheme: {{ $gcTheme }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -15,7 +15,14 @@
                 if (pref === 'guest') {
                     try { pref = localStorage.getItem('gc-theme') || 'system'; } catch (e) { pref = 'system'; }
                 }
-                var light = d.dataset.skin === 'gamecon' && (pref === 'light' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches));
+                // «За розкладом»: темна з darkFrom до darkTo за місцевим часом пристрою.
+                var sched = function () {
+                    var n = new Date(), m = n.getHours() * 60 + n.getMinutes();
+                    var p = function (s) { var a = (s || '').split(':'); return (+a[0]) * 60 + (+a[1] || 0); };
+                    var f = p(d.dataset.darkFrom || '19:00'), t = p(d.dataset.darkTo || '07:00');
+                    return f <= t ? (m >= f && m < t) : (m >= f || m < t);
+                };
+                var light = d.dataset.skin === 'gamecon' && (pref === 'light' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches) || (pref === 'schedule' && !sched()));
                 var t = light ? 'light' : 'dark';
                 d.dataset.theme = t;
                 d.classList.toggle('dark', !light);

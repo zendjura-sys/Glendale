@@ -32,6 +32,8 @@ export type User = {
     feed_compact?: boolean;
     /** Свій акцентний колір (№296), null — колір стилю. */
     accent?: string | null;
+    /** Розклад темної теми (№231). */
+    theme_schedule?: { from: string; to: string };
     /** Режим соцмережі (id), див. NetworkModes на сервері. */
     network_mode?: string;
     /** Стиль інтерфейсу: flat (основний), hero, material, flex. */

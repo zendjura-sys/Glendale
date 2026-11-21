@@ -145,6 +145,7 @@ class HandleInertiaRequests extends Middleware
                     'background' => Backgrounds::for($user),
                     'skin' => Skins::for($user),
                     'theme' => Skins::theme($user),
+                    'theme_schedule' => Skins::schedule($user),
                     // Внутрішній номер GameCon (+555 / +777) або null.
                     'phone' => $this->modules->enabled('phone') ? app(PhoneNumbers::class)->current($user)?->toCard() : null,
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),

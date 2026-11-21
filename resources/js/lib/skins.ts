@@ -33,7 +33,7 @@ export function SKINS(): { id: string; name: string; hint: string }[] {
 
 /** Теми сайту (App\\Support\\Skins::THEMES). */
 export function THEMES(): {
-    id: 'dark' | 'light' | 'system';
+    id: 'dark' | 'light' | 'system' | 'schedule';
     name: string;
     hint: string;
 }[] {
@@ -52,6 +52,11 @@ export function THEMES(): {
             id: 'system',
             name: tr('Як на пристрої'),
             hint: tr('Вдень світла, вночі темна — як у системі'),
+        },
+        {
+            id: 'schedule',
+            name: tr('За розкладом'),
+            hint: tr('Темна у вибрані години, решту часу — світла'),
         },
     ];
 }

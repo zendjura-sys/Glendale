@@ -35,6 +35,20 @@ export function PaletteSync() {
         document.documentElement.dataset.skin = skin;
     }, [skin]);
     // Тема (світла/темна): залежить і від стилю — світла є не в кожному.
+    // Розклад темної теми (№231): межі — на <html>, перевірка щохвилини.
+    const from = user?.theme_schedule?.from ?? '19:00';
+    const to = user?.theme_schedule?.to ?? '07:00';
+    useEffect(() => {
+        document.documentElement.dataset.darkFrom = from;
+        document.documentElement.dataset.darkTo = to;
+        if (theme !== 'schedule') return;
+        applyTheme('schedule', skin);
+        const timer = window.setInterval(
+            () => applyTheme('schedule', skin),
+            60_000,
+        );
+        return () => window.clearInterval(timer);
+    }, [theme, skin, from, to]);
     useEffect(() => {
         applyTheme(theme, skin);
         if (theme !== 'system') return;
