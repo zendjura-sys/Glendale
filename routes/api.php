@@ -118,6 +118,7 @@ use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\ScreenshotController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\ServerFamiliesController;
@@ -504,6 +505,7 @@ Route::prefix('v1')->group(function () {
             Route::get('today', [AiToolsController::class, 'today'])->middleware('throttle:30,1');
             Route::post('help-assistant', [AiToolsController::class, 'assistant'])->middleware('throttle:20,1');
             // Один пошук на весь сайт: люди, кіно, музика, ігри, сервери, спільноти, клани, сім'ї.
+            Route::get('search', [SearchController::class, 'index'])->middleware('throttle:120,1');
             Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1');
             // GameCon SDK: документація й пісочниця оверлею (той самий контролер, що на сайті).
             Route::get('developers/sdk', [SdkPageController::class, 'index']);

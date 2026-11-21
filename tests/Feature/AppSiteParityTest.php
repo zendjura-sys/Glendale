@@ -246,6 +246,9 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/cinema/schedule')->assertOk()->assertJsonPath('days.0.movies.0.slug', 'bleach');
         $this->withToken($token)->getJson('/api/v1/site/cinema/random')->assertOk()->assertJsonPath('redirect', '/cinema/bleach');
         $this->withToken($token)->getJson('/api/v1/site/search/quick?q='.urlencode('Бліч'))->assertOk()->assertJsonPath('hits.0.kind', 'movie');
+        // Глобальний пошук 2.0: розділи й розкладка («ksx» → «ліч»).
+        $this->withToken($token)->getJson('/api/v1/site/search?q='.urlencode('ksx'))->assertOk()
+            ->assertJsonPath('fixed', 'ліч')->assertJsonPath('kinds', ['movie']);
         $this->withToken($token)->getJson('/api/v1/site/cinema/side')->assertOk()->assertJsonStructure(['genres', 'years', 'countries', 'types', 'popular' => ['week', 'month'], 'trailers', 'comments', 'discussed', 'random']);
     }
 

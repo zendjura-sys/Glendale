@@ -120,6 +120,7 @@ use App\Http\Controllers\ReadyToPlayController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\ScreenshotController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\ServerAppController;
 use App\Http\Controllers\ServerController;
@@ -1254,6 +1255,7 @@ Route::middleware(['auth', 'verified.site', 'parental'])->group(function () {
 
     Route::get('people', [PeopleController::class, 'index'])->middleware('module:people')->name('people.index');
     Route::post('people/saved', [PeopleController::class, 'saveSearch'])->name('people.saved');
+    Route::get('search', [SearchController::class, 'index'])->middleware('throttle:120,1')->name('search');
     Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1')->name('search.quick');
     Route::post('search/recent', [PeopleController::class, 'remember'])->middleware('throttle:60,1')->name('search.recent');
     Route::delete('search/recent', [PeopleController::class, 'forgetSearch'])->middleware('throttle:60,1')->name('search.recent.forget');

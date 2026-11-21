@@ -49,6 +49,8 @@ export function QuickSearch({ className }: { className?: string }) {
     const [popular, setPopular] = useState<Hit[]>([]);
     const [trending, setTrending] = useState<string[]>([]);
     const [suggest, setSuggest] = useState<string[]>([]);
+    // Набрано не в тій розкладці: показуємо, за яким словом насправді шукали.
+    const [fixed, setFixed] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const [active, setActive] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -132,9 +134,11 @@ export function QuickSearch({ className }: { className?: string }) {
                 communities: CommunityCard[];
                 hits?: Hit[];
                 suggest?: string[];
+                fixed?: string | null;
             }>('GET', `/search/quick?q=${encodeURIComponent(query.trim())}`)
                 .then((response) => {
                     setSuggest(response.suggest ?? []);
+                    setFixed(response.fixed ?? null);
                     const hits = response.hits ?? [];
                     setResults(
                         hits.length > 0
@@ -174,7 +178,7 @@ export function QuickSearch({ className }: { className?: string }) {
         if (target) {
             router.visit(target.href);
         } else if (query.trim()) {
-            router.visit(`/people?q=${encodeURIComponent(query.trim())}`);
+            router.visit(`/search?q=${encodeURIComponent(query.trim())}`);
         }
     };
 
@@ -340,9 +344,16 @@ export function QuickSearch({ className }: { className?: string }) {
                             ))}
                         </div>
                     )}
+                    {fixed && results.length > 0 && (
+                        <p className="px-3 pt-1 pb-2 text-xs text-white/55">
+                            {tr('Показано результати для «{fixed}»', {
+                                fixed,
+                            })}
+                        </p>
+                    )}
                     {results.length === 0 ? (
                         <div className="px-3 py-6 text-center text-sm text-white/50">
-                            {tr('Нікого не знайдено')}
+                            {tr('Нічого не знайдено')}
                         </div>
                     ) : (
                         results.map((result, index) => (
@@ -455,7 +466,7 @@ export function QuickSearch({ className }: { className?: string }) {
                             ))}
                     </div>
                     <Link
-                        href={`/people?q=${encodeURIComponent(query.trim())}`}
+                        href={`/search?q=${encodeURIComponent(query.trim())}`}
                         onClick={() => {
                             remember(query);
                             setOpen(false);
