@@ -249,6 +249,17 @@ class AppearanceController extends Controller
         return response()->json(['ok' => true, 'compact' => (bool) $data['compact']]);
     }
 
+    /** Свій акцентний колір (№296): кнопки, активні пункти й посилання; null — колір стилю. */
+    public function accent(Request $request): JsonResponse
+    {
+        $data = $request->validate(['color' => ['present', 'nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/']]);
+        $user = $request->user();
+        $color = $data['color'] !== null ? strtolower($data['color']) : null;
+        $user->forceFill(['preferences' => [...($user->preferences ?? []), 'accent' => $color]])->save();
+
+        return response()->json(['ok' => true, 'accent' => $color]);
+    }
+
     public function theme(Request $request): RedirectResponse
     {
         $data = $request->validate(['theme' => ['required', 'string', 'in:'.implode(',', Skins::THEMES)]]);

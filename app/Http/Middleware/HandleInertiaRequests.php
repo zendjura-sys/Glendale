@@ -140,6 +140,8 @@ class HandleInertiaRequests extends Middleware
                     'palette' => $user->palette(),
                     // Компактна стрічка (№297).
                     'feed_compact' => (bool) $user->pref('feed_compact'),
+                    // Свій акцентний колір (№296), null — колір стилю.
+                    'accent' => is_string($user->pref('accent')) ? $user->pref('accent') : null,
                     'background' => Backgrounds::for($user),
                     'skin' => Skins::for($user),
                     'theme' => Skins::theme($user),

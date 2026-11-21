@@ -59,6 +59,9 @@ import type { ThemePref } from '@/lib/theme';
 import { motionOr, POP, SNAP } from '@/lib/motion';
 import { useFeature, usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
+import { applyAccent } from '@/components/gc/palette-sync';
 import type {
     SiteBackgroundPreset,
     SiteBackgroundPrefs,
@@ -723,6 +726,8 @@ export default function Appearance({
                     </div>
                 </SettingsCard>
 
+                <AccentPicker />
+
                 {palettesOn && (
                     <SettingsCard
                         title={tr('Палітра')}
@@ -1336,5 +1341,92 @@ function VideoPicker({
                 </a>
             )}
         </div>
+    );
+}
+
+/** Свій акцентний колір (№296): готові кольори або будь-який свій; «Як у стилі» — скинути. */
+const ACCENTS = [
+    '#6b8afd',
+    '#7678ed',
+    '#ff7a55',
+    '#3ee0a8',
+    '#f2556b',
+    '#ffc861',
+    '#38bdf8',
+    '#e879f9',
+];
+
+function AccentPicker() {
+    const { auth } = usePage().props;
+    const [color, setColor] = useState<string | null>(auth.user.accent ?? null);
+    const save = (next: string | null) => {
+        const previous = color;
+        setColor(next);
+        applyAccent(next);
+        api('PUT', '/settings/accent', { color: next }).catch(() => {
+            setColor(previous);
+            applyAccent(previous);
+            toast.error(tr('Не вдалося зберегти колір.'));
+        });
+    };
+
+    return (
+        <SettingsCard
+            title={tr('Акцентний колір')}
+            description={tr(
+                'Колір кнопок, активних пунктів і посилань на всьому сайті й у застосунку.',
+            )}
+        >
+            <div
+                className="flex flex-wrap items-center gap-2"
+                role="radiogroup"
+                aria-label={tr('Акцентний колір')}
+            >
+                <button
+                    type="button"
+                    role="radio"
+                    aria-checked={color === null}
+                    onClick={() => save(null)}
+                    className={cn(
+                        'gc-ghost-btn',
+                        color === null && 'text-[var(--gc-text)]',
+                    )}
+                >
+                    {tr('Як у стилі')}
+                </button>
+                {ACCENTS.map((c) => (
+                    <button
+                        key={c}
+                        type="button"
+                        role="radio"
+                        aria-checked={color === c}
+                        aria-label={c}
+                        onClick={() => save(c)}
+                        className={cn(
+                            'size-9 rounded-full transition',
+                            color === c
+                                ? 'ring-2 ring-[var(--gc-text)] ring-offset-2 ring-offset-[var(--gc-l1)]'
+                                : 'hover:scale-105',
+                        )}
+                        style={{ background: c }}
+                    />
+                ))}
+                <label className="gc-ghost-btn cursor-pointer">
+                    <input
+                        type="color"
+                        value={color ?? '#6b8afd'}
+                        // Під час вибору — лише попередній показ; зберігаємо, коли вікно кольору закрили.
+                        onChange={(e) => {
+                            setColor(e.target.value);
+                            applyAccent(e.target.value);
+                        }}
+                        onBlur={(e) => save(e.target.value)}
+                        className="size-5 cursor-pointer rounded border-0 bg-transparent p-0"
+                        aria-label={tr('Свій колір')}
+                    />
+                    {tr('Свій')}
+                </label>
+            </div>
+        </SettingsCard>
     );
 }

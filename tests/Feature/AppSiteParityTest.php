@@ -94,6 +94,15 @@ class AppSiteParityTest extends TestCase
         $this->withToken($this->app_token($user))->getJson('/api/v1/me')->assertJsonPath('user.feed_compact', false);
     }
 
+    public function test_custom_accent_saved_validated_and_shared(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->putJson('/settings/accent', ['color' => '#FF7A55'])->assertOk()->assertJsonPath('accent', '#ff7a55');
+        $this->actingAs($user)->putJson('/settings/accent', ['color' => 'red'])->assertStatus(422);
+        $this->withToken($this->app_token($user))->getJson('/api/v1/me')->assertJsonPath('user.accent', '#ff7a55');
+        $this->withToken($this->app_token($user))->putJson('/api/v1/site/settings/accent', ['color' => null])->assertOk()->assertJsonPath('accent', null);
+    }
+
     public function test_app_reaches_sdk_docs(): void
     {
         $token = $this->app_token(User::factory()->create());

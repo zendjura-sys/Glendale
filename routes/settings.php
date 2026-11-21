@@ -25,6 +25,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
     Route::put('settings/theme', [AppearanceController::class, 'theme'])->name('appearance.theme');
     Route::put('settings/density', [AppearanceController::class, 'density'])->middleware('throttle:30,1')->name('appearance.density');
+    Route::put('settings/accent', [AppearanceController::class, 'accent'])->middleware('throttle:30,1')->name('appearance.accent');
     Route::put('settings/mode', [AppearanceController::class, 'mode'])->name('appearance.mode');
 
     Route::get('settings/navigation', [NavigationController::class, 'edit'])->name('navigation.edit');

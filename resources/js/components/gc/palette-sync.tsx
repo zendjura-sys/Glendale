@@ -2,6 +2,18 @@ import { usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { applyTheme, followSystemTheme, readGuestTheme } from '@/lib/theme';
 
+/** Застосувати свій акцент (або повернути колір стилю, якщо null). */
+export function applyAccent(color: string | null) {
+    const root = document.documentElement;
+    if (color) {
+        root.dataset.accent = '';
+        root.style.setProperty('--user-accent', color);
+    } else {
+        delete root.dataset.accent;
+        root.style.removeProperty('--user-accent');
+    }
+}
+
 /**
  * Палітра акаунта на <html data-palette>. Рендериться в макетах, а не в withApp:
  * usePage() працює лише всередині сторінки Inertia.
@@ -15,6 +27,9 @@ export function PaletteSync() {
     useEffect(() => {
         document.documentElement.dataset.palette = palette;
     }, [palette]);
+    // Свій акцентний колір (№296) — перекриває акцент стилю на всьому сайті.
+    const accent = user?.accent ?? null;
+    useEffect(() => applyAccent(accent), [accent]);
     // Стиль інтерфейсу (Налаштування → Вигляд) — так само на <html>.
     useEffect(() => {
         document.documentElement.dataset.skin = skin;

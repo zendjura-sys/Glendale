@@ -9039,3 +9039,25 @@ html.gc-compact .gc-glass-btn {
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* ---------- Свій акцентний колір (№296): перекриває акцент стилю ---------- */
+html:root.gc-vk[data-theme][data-accent],
+html:root[data-accent] {
+    --gc-accent-strong: var(--user-accent);
+    --gc-accent: color-mix(in oklab, var(--user-accent) 72%, white);
+    --gc-active: color-mix(in oklab, var(--user-accent) 26%, var(--gc-l2));
+    --primary: var(--user-accent);
+    --ring: color-mix(in oklab, var(--user-accent) 72%, white);
+    --color-sky-400: color-mix(in oklab, var(--user-accent) 72%, white);
+    --color-sky-500: var(--user-accent);
+    --color-blue-500: var(--user-accent);
+    --color-gc-blue: var(--user-accent);
+    --color-gc-indigo: var(--user-accent);
+}
+html:root.gc-vk[data-theme='light'][data-accent] {
+    --gc-accent: color-mix(in oklab, var(--user-accent) 85%, black);
+}
+:root[data-accent]
+    :is(.btn-glow, .bg-gradient-brand):not(.am *):not(:disabled) {
+    background: var(--user-accent) !important;
+}
