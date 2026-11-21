@@ -861,6 +861,7 @@ Route::prefix('v1')->group(function () {
                     Route::post('{livecast}/end', 'end');
                     Route::post('{livecast}/messages', 'message')->middleware('throttle:60,1');
                     Route::post('{livecast}/gifts', 'gift')->middleware('throttle:30,1');
+                    Route::post('{livecast}/like', 'like')->middleware('throttle:60,1');
                     Route::put('{livecast}/donations', 'donations')->middleware('throttle:20,1');
                     Route::post('{livecast}/ai/watch', [StreamAiController::class, 'watchLiveCast'])->middleware('throttle:20,1');
                     Route::post('{livecast}/ai/promo', [StreamAiController::class, 'promoLiveCast'])->middleware('throttle:20,1');

@@ -252,6 +252,21 @@ class _LiveCastShowScreenState extends State<LiveCastShowScreen> {
     }
   }
 
+  Future<void> _like() async {
+    try {
+      final data = await api.post(Api.site('/livecast/${widget.id}/like'), {});
+      if (!mounted) return;
+      setState(() {
+        final next = Map<String, dynamic>.from(state ?? {});
+        next['broadcast'] = {...mapOf(next['broadcast']), 'likes': data['likes']};
+        next['me'] = {...mapOf(next['me']), 'liked': data['liked']};
+        state = next;
+      });
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
   Future<void> _gift(String key) async {
     setState(() => giftBusy = key);
     try {
@@ -335,6 +350,16 @@ class _LiveCastShowScreenState extends State<LiveCastShowScreen> {
             padding: const EdgeInsets.only(top: 8),
             child: GhostButton(label: tr('Вийти'), icon: LucideIcons.logOut, onPressed: () => voice.leave()),
           ),
+        // Лайк стріму — як на сайті (повторно — зняти).
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: GhostButton(
+            label: me['liked'] == true ? tr('Подобається · {n}', {'n': '${intOf(stream['likes'])}'}) : '${intOf(stream['likes'])}',
+            icon: LucideIcons.heart,
+            compact: true,
+            onPressed: _like,
+          ),
+        ),
         if (donations.isNotEmpty) ...[
           const SizedBox(height: 14),
           SectionLabel(tr('Підтримати стрім')),

@@ -19,10 +19,11 @@ use Illuminate\Support\Carbon;
  * @property string $status live | ended
  * @property int $viewers
  * @property int $peak_viewers
+ * @property int $likes_count
  * @property Carbon|null $started_at
  * @property Carbon|null $ended_at
  */
-#[Fillable(['host_id', 'title', 'category', 'donations', 'status', 'viewers', 'peak_viewers', 'started_at', 'ended_at'])]
+#[Fillable(['host_id', 'title', 'category', 'donations', 'status', 'viewers', 'peak_viewers', 'likes_count', 'started_at', 'ended_at'])]
 class Livecast extends Model
 {
     public const LIVE = 'live';

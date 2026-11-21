@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Livecast;
 use App\Services\Broadcasts\LiveCastService;
+use App\Support\LiveCast\DonationPresets;
 use App\Support\Plugins\Plugins;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,8 +49,8 @@ class LiveCastController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'min:3', 'max:80'],
             'category' => ['nullable', 'string', 'max:60'],
-            'donations' => ['nullable', 'array', 'max:2'],
-            'donations.*.provider' => ['required_with:donations', 'string', 'in:donatik,donatello'],
+            'donations' => ['nullable', 'array', 'max:3'],
+            'donations.*.provider' => ['required_with:donations', 'string', Rule::in(array_column(DonationPresets::all(), 'key'))],
             'donations.*.url' => ['required_with:donations', 'string', 'max:500'],
         ]);
         $stream = $this->streams->start(
@@ -114,6 +116,15 @@ class LiveCastController extends Controller
         return response()->json($this->streams->state($livecast, $request->user(), $this->fromApp($request)));
     }
 
+    /** Лайк стріму (повторно — зняти). */
+    public function like(Request $request, Livecast $livecast): JsonResponse
+    {
+        app(Plugins::class)->ensure('livecast');
+        $liked = $this->streams->like($livecast, $request->user());
+
+        return response()->json(['liked' => $liked, 'likes' => (int) $livecast->fresh()?->likes_count]);
+    }
+
     public function gift(Request $request, Livecast $livecast): JsonResponse
     {
         app(Plugins::class)->ensure('livecast');
@@ -130,8 +141,8 @@ class LiveCastController extends Controller
     {
         app(Plugins::class)->ensure('livecast');
         $data = $request->validate([
-            'donations' => ['present', 'array', 'max:2'],
-            'donations.*.provider' => ['required', 'string', 'in:donatik,donatello'],
+            'donations' => ['present', 'array', 'max:3'],
+            'donations.*.provider' => ['required', 'string', Rule::in(array_column(DonationPresets::all(), 'key'))],
             'donations.*.url' => ['required', 'string', 'max:500'],
         ]);
         $stream = $this->streams->updateDonations($livecast, $request->user(), $data['donations']);

@@ -19,6 +19,8 @@ export type LiveCastCard = {
     started_at: string | null;
     viewers: number;
     peak_viewers: number;
+    /** Лайки стріму. */
+    likes?: number;
     host: UserCard | null;
 };
 

@@ -25,6 +25,13 @@ final class DonationPresets
                 'placeholder' => 'https://donatello.to/…',
                 'hosts' => ['donatello.to'],
             ],
+            // «Банка» monobank — лише посилання (відкритого API з донатами немає).
+            [
+                'key' => 'monobank',
+                'name' => 'Банка monobank',
+                'placeholder' => 'https://send.monobank.ua/jar/…',
+                'hosts' => ['send.monobank.ua'],
+            ],
         ];
     }
 

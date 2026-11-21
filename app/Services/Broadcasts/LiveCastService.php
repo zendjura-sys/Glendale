@@ -11,6 +11,7 @@ use App\Services\Voice\LiveKit;
 use App\Support\LiveCast\DonationPresets;
 use App\Support\LiveCast\StreamGifts;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * LiveCast — нативна стрім-площадка на LiveKit (окремо від GameCast).
@@ -173,8 +174,27 @@ class LiveCastService
             'ended_at' => $livecast->ended_at?->toIso8601String(),
             'viewers' => $livecast->isLive() ? $this->countViewers($livecast) : 0,
             'peak_viewers' => $livecast->peak_viewers,
+            'likes' => (int) $livecast->likes_count,
             'host' => $livecast->host?->toCard(),
         ];
+    }
+
+    /** Лайк стріму (ще раз — зняти). Повертає новий стан: чи лайкнуто й скільки всього. */
+    public function like(Livecast $livecast, User $user): bool
+    {
+        return DB::transaction(function () use ($livecast, $user) {
+            $query = DB::table('livecast_likes')->where('livecast_id', $livecast->id)->where('user_id', $user->id);
+            if ($query->exists()) {
+                $query->delete();
+                Livecast::query()->whereKey($livecast->id)->where('likes_count', '>', 0)->decrement('likes_count');
+
+                return false;
+            }
+            DB::table('livecast_likes')->insert(['livecast_id' => $livecast->id, 'user_id' => $user->id, 'created_at' => now()]);
+            Livecast::query()->whereKey($livecast->id)->increment('likes_count');
+
+            return true;
+        });
     }
 
     /**
@@ -211,6 +231,7 @@ class LiveCastService
             'donation_presets' => DonationPresets::all(),
             'me' => $viewer ? [
                 'is_host' => $isHost,
+                'liked' => DB::table('livecast_likes')->where('livecast_id', $livecast->id)->where('user_id', $viewer->id)->exists(),
                 // Публікувати відео можна лише з застосунку.
                 'can_publish' => $isHost && $fromApp && $livecast->isLive(),
             ] : null,

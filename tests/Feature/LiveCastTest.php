@@ -143,7 +143,8 @@ class LiveCastTest extends TestCase
             ->assertJsonPath('go_live_on_app', true)
             ->assertJsonPath('donation_presets.0.key', 'donatik')
             ->assertJsonPath('donation_presets.1.key', 'donatello')
-            ->assertJsonCount(2, 'donation_presets');
+            ->assertJsonPath('donation_presets.2.key', 'monobank')
+            ->assertJsonCount(3, 'donation_presets');
     }
 
     public function test_integrations_save_and_donatello_webhook_posts_to_live_chat(): void
@@ -239,6 +240,58 @@ class LiveCastTest extends TestCase
 
         $this->assertSame(1, LivecastMessage::query()->where('kind', LivecastMessage::DONATION)->count());
         $this->assertStringContainsString('Anna', LivecastMessage::query()->sole()->body);
+    }
+
+    public function test_api_poll_brings_new_donations_into_live_chat_once(): void
+    {
+        $host = User::factory()->create();
+        $stream = Livecast::query()->create(['host_id' => $host->id, 'title' => 'Рейд', 'status' => Livecast::LIVE, 'started_at' => now()->subMinutes(10), 'viewers' => 0, 'peak_viewers' => 0]);
+        LivecastIntegration::query()->create(['user_id' => $host->id, 'provider' => 'donatello', 'api_token' => 'tok', 'hook_id' => 'h1']);
+        LivecastIntegration::query()->create(['user_id' => $host->id, 'provider' => 'donatik', 'api_token' => 'tok2', 'hook_id' => 'h2']);
+        Http::fake([
+            'donatello.to/api/v1/donates*' => Http::response(['success' => true, 'content' => [
+                ['pubId' => 'old', 'clientName' => 'Давній', 'amount' => 50, 'currency' => 'UAH', 'createdAt' => now()->subHour()->toIso8601String()],
+                ['pubId' => 'new', 'clientName' => 'Оля', 'message' => 'На рейд!', 'amount' => 100, 'currency' => 'UAH', 'createdAt' => now()->subMinute()->toIso8601String()],
+            ]]),
+            'api.donatik.ua/donations*' => Http::response(['data' => [
+                ['id' => 'd-1', 'name' => 'Ігор', 'amount' => 25, 'currency' => 'UAH', 'createdAt' => now()->subMinutes(2)->toIso8601String()],
+            ]]),
+        ]);
+
+        $this->artisan('livecast:poll-donations')->assertSuccessful();
+        $this->artisan('livecast:poll-donations')->assertSuccessful();
+
+        $bodies = LivecastMessage::query()->where('livecast_id', $stream->id)->where('kind', LivecastMessage::DONATION)->pluck('body')->all();
+        $this->assertCount(2, $bodies);
+        $this->assertTrue(collect($bodies)->contains(fn ($b) => str_contains($b, 'Оля') && str_contains($b, 'На рейд!')));
+        $this->assertTrue(collect($bodies)->contains(fn ($b) => str_contains($b, 'Ігор')));
+        $this->assertFalse(collect($bodies)->contains(fn ($b) => str_contains($b, 'Давній')));
+    }
+
+    public function test_viewers_like_a_stream_once_and_can_unlike(): void
+    {
+        [$host, $a, $b] = User::factory()->count(3)->create();
+        $stream = Livecast::query()->create(['host_id' => $host->id, 'title' => 'Рейд', 'status' => Livecast::LIVE, 'started_at' => now(), 'viewers' => 0, 'peak_viewers' => 0]);
+
+        $this->actingAs($a)->postJson("/livecast/{$stream->id}/like")->assertOk()->assertJsonPath('liked', true)->assertJsonPath('likes', 1);
+        $this->withToken($this->appToken($b))->postJson("/api/v1/site/livecast/{$stream->id}/like")->assertOk()->assertJsonPath('likes', 2);
+        $this->actingAs($a)->postJson("/livecast/{$stream->id}/like")->assertJsonPath('liked', false)->assertJsonPath('likes', 1);
+
+        $this->actingAs($b)->getJson("/livecast/{$stream->id}/state")->assertJsonPath('broadcast.likes', 1)->assertJsonPath('me.liked', true);
+        $this->actingAs($a)->getJson("/livecast/{$stream->id}/state")->assertJsonPath('me.liked', false);
+    }
+
+    public function test_monobank_jar_link_is_accepted_for_stream(): void
+    {
+        $host = User::factory()->create();
+        $stream = Livecast::query()->create(['host_id' => $host->id, 'title' => 'Збір', 'status' => Livecast::LIVE, 'started_at' => now(), 'viewers' => 0, 'peak_viewers' => 0]);
+        $this->actingAs($host)->putJson("/livecast/{$stream->id}/donations", ['donations' => [
+            ['provider' => 'monobank', 'url' => 'https://send.monobank.ua/jar/abc123'],
+            ['provider' => 'monobank', 'url' => 'https://evil.example.com/jar'],
+        ]])->assertOk();
+        $this->actingAs($host)->getJson("/livecast/{$stream->id}/state")
+            ->assertJsonPath('broadcast.donations.0.name', 'Банка monobank')
+            ->assertJsonCount(1, 'broadcast.donations');
     }
 
     public function test_feed_widgets_include_livecast_streams(): void

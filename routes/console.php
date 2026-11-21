@@ -26,6 +26,8 @@ Schedule::command('servers:sync')->everyTenMinutes()->withoutOverlapping(30)->ru
 Schedule::command('servers:sync --discover --icons')->dailyAt('05:30')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 
 Schedule::command('families:tick')->everyFifteenMinutes()->withoutOverlapping(30);
+// Донати Donatik / Donatello через API для живих LiveCast (на додачу до вебхуків).
+Schedule::command('livecast:poll-donations')->everyMinute()->withoutOverlapping(5);
 Schedule::command('families:tick --digest')->weeklyOn(0, '23:59')->timezone('Europe/Kyiv')->withoutOverlapping(30);
 // Особиста зведення рахунку в банку сім’ї — у неділю ввечері, поки тиждень ще не закінчився.
 Schedule::command('families:bank-digest')->weeklyOn(0, '20:00')->timezone('Europe/Kyiv')->withoutOverlapping(60);

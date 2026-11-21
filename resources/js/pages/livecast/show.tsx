@@ -9,6 +9,7 @@ import {
     Radio,
     Send,
     Users,
+    Heart,
 } from 'lucide-react';
 import {
     useCallback,
@@ -51,7 +52,7 @@ type State = {
     broadcast: LiveCastCard & { ended_at?: string | null };
     messages: ChatMsg[];
     gifts: StreamGift[];
-    me: { is_host: boolean; can_publish: boolean } | null;
+    me: { is_host: boolean; can_publish: boolean; liked?: boolean } | null;
     can_manage: boolean;
     go_live_on_app?: boolean;
     ai?: { available: boolean };
@@ -133,6 +134,24 @@ export default function LiveCastShow(initial: State) {
             );
             setText(body);
         }
+    };
+
+    // Лайк стріму: одразу на екрані, потім — як скаже сервер.
+    const like = () => {
+        const was = !!state.me?.liked;
+        const patch = (liked: boolean, likes: number) =>
+            setState((s) => ({
+                ...s,
+                broadcast: { ...s.broadcast, likes },
+                me: s.me ? { ...s.me, liked } : s.me,
+            }));
+        patch(!was, Math.max(0, (stream.likes ?? 0) + (was ? -1 : 1)));
+        api<{ liked: boolean; likes: number }>(
+            'POST',
+            `/livecast/${stream.id}/like`,
+        )
+            .then((r) => patch(r.liked, r.likes))
+            .catch(() => patch(was, stream.likes ?? 0));
     };
 
     const sendGift = async (key: string) => {
@@ -242,6 +261,35 @@ export default function LiveCastShow(initial: State) {
                                     >
                                         <LogOut className="size-4" />
                                         {tr('Вийти')}
+                                    </button>
+                                )}
+                                {state.me && (
+                                    <button
+                                        type="button"
+                                        onClick={like}
+                                        aria-pressed={!!state.me.liked}
+                                        aria-label={
+                                            state.me.liked
+                                                ? tr('Прибрати лайк')
+                                                : tr('Подобається')
+                                        }
+                                        className={cn(
+                                            'inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition',
+                                            state.me.liked
+                                                ? 'bg-rose-500/20 text-rose-200'
+                                                : 'bg-white/[0.08] text-white hover:bg-white/[0.12]',
+                                        )}
+                                    >
+                                        <Heart
+                                            className={cn(
+                                                'size-4',
+                                                state.me.liked &&
+                                                    'fill-current',
+                                            )}
+                                        />
+                                        <span className="tabular-nums">
+                                            {stream.likes ?? 0}
+                                        </span>
                                     </button>
                                 )}
                                 {state.me?.is_host &&
