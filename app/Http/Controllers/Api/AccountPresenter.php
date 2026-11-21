@@ -97,6 +97,7 @@ class AccountPresenter
             'home_layout' => MemoriesController::layout($user),
             'lobby_categories' => MemoriesController::categories($user),
             'feed_compact' => (bool) $user->pref('feed_compact'),
+            'simple_ui' => (bool) $user->pref('simple_ui'),
             'accent' => is_string($user->pref('accent')) ? $user->pref('accent') : null,
             'lobby_catalog' => MemoriesController::lobbyCatalog($user),
             // Мапа тривог: лише для людей з України (IP, профіль чи обрана область).

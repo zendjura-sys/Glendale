@@ -403,6 +403,13 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             !!auth.user.feed_compact,
         );
     }, [auth.user.feed_compact]);
+    // Режим «Простий» (№280): крупніше, з підписами, без анімацій.
+    useEffect(() => {
+        document.documentElement.classList.toggle(
+            'gc-simple',
+            !!auth.user.simple_ui,
+        );
+    }, [auth.user.simple_ui]);
 
     useEffect(() => {
         if (url.startsWith('/music')) {

@@ -783,6 +783,7 @@ Route::prefix('v1')->group(function () {
             Route::put('settings/navigation/header', [NavigationController::class, 'header']);
             Route::put('settings/theme', [AppearanceController::class, 'theme']);
             Route::put('settings/density', [AppearanceController::class, 'density'])->middleware('throttle:30,1');
+            Route::put('settings/simple-ui', [AppearanceController::class, 'simple'])->middleware('throttle:30,1');
             Route::put('settings/accent', [AppearanceController::class, 'accent'])->middleware('throttle:30,1');
             Route::put('settings/mode', [AppearanceController::class, 'mode']);
             // Свій канал Twitch/YouTube і позначка LIVE у профілі.

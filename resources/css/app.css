@@ -9269,3 +9269,33 @@ html:root.gc-vk[data-theme] .gc-player-glass::before {
     background: color-mix(in srgb, var(--gc-accent) 16%, transparent);
     color: var(--gc-accent);
 }
+
+/* ---------- Режим «Простий» (№280): крупніше, з підписами, без анімацій ---------- */
+html.gc-simple {
+    font-size: 112.5%;
+}
+html.gc-simple *,
+html.gc-simple *::before,
+html.gc-simple *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+}
+/* Телефон: підписи під іконками дока — не треба вгадувати, що за кнопка. */
+@media (max-width: 767px) {
+    html.gc-simple .gc-dock-item {
+        flex-direction: column;
+        gap: 2px;
+        min-width: 56px;
+    }
+    html.gc-simple .gc-dock-label {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+        font-size: 10px;
+        line-height: 1;
+    }
+}

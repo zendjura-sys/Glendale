@@ -10,7 +10,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { installKeyboardGuard } from '@/lib/keyboard';
 import { startSmoothScroll } from '@/lib/smooth-scroll';
-import { LazyMotion } from 'motion/react';
+import { LazyMotion, MotionConfig } from 'motion/react';
 import { lazy, Suspense, useEffect } from 'react';
 import { bootChimeOnce } from '@/lib/sound-fx';
 import { PageSkeleton, skeletonFor } from '@/components/gc/skeletons';
@@ -270,6 +270,7 @@ void createInertiaApp({
                         user?: {
                             username?: string;
                             data_saver?: boolean;
+                            simple_ui?: boolean;
                         } | null;
                     };
                 }
@@ -278,27 +279,34 @@ void createInertiaApp({
 
         return (
             <LazyMotion features={motionFeatures} strict>
-                <TooltipProvider delayDuration={0}>
-                    <SplashDone
-                        user={authUser}
-                        modules={modules}
-                        dataSaver={authUser?.data_saver}
-                    />
-                    <SkipLink />
-                    {/* Збій сторінки — картка з кнопкою оновлення; збій тостів чи банера — лише вони зникають. */}
-                    <ErrorBoundary>
-                        <Suspense
-                            fallback={<BootSkeleton name={page.component} />}
-                        >
-                            {app}
-                        </Suspense>
-                    </ErrorBoundary>
-                    <ErrorBoundary fallback={null}>
-                        <Toaster />
-                        <CookieConsent analytics={analytics} />
-                        <HandoffCard enabled={handoff} />
-                    </ErrorBoundary>
-                </TooltipProvider>
+                {/* Режим «Простий» (№280) — без анімацій, як за системним «менше руху». */}
+                <MotionConfig
+                    reducedMotion={authUser?.simple_ui ? 'always' : 'user'}
+                >
+                    <TooltipProvider delayDuration={0}>
+                        <SplashDone
+                            user={authUser}
+                            modules={modules}
+                            dataSaver={authUser?.data_saver}
+                        />
+                        <SkipLink />
+                        {/* Збій сторінки — картка з кнопкою оновлення; збій тостів чи банера — лише вони зникають. */}
+                        <ErrorBoundary>
+                            <Suspense
+                                fallback={
+                                    <BootSkeleton name={page.component} />
+                                }
+                            >
+                                {app}
+                            </Suspense>
+                        </ErrorBoundary>
+                        <ErrorBoundary fallback={null}>
+                            <Toaster />
+                            <CookieConsent analytics={analytics} />
+                            <HandoffCard enabled={handoff} />
+                        </ErrorBoundary>
+                    </TooltipProvider>
+                </MotionConfig>
             </LazyMotion>
         );
     },

@@ -437,7 +437,7 @@ Future<void> main() async {
   // Зміна мови перебудовує весь застосунок.
   runApp(ValueListenableBuilder<int>(
     valueListenable: I18n.revision,
-    builder: (_, revision, _) => KeyedSubtree(key: ValueKey(revision), child: GameConApp(router: router)),
+    builder: (_, revision, _) => KeyedSubtree(key: ValueKey(revision), child: GameConApp(router: router, session: session)),
   ));
   // Після першого кадру: дозвіл на сповіщення й реєстрація пристрою для push.
   unawaited(Push(session, router).start());
@@ -472,8 +472,9 @@ class _Lost extends StatelessWidget {
 }
 
 class GameConApp extends StatelessWidget {
-  const GameConApp({required this.router, super.key});
+  const GameConApp({required this.router, required this.session, super.key});
   final GoRouter router;
+  final Session session;
 
   @override
   Widget build(BuildContext context) {
@@ -484,11 +485,19 @@ class GameConApp extends StatelessWidget {
       scrollBehavior: const ArcticScrollBehavior(),
       routerConfig: router,
       builder: (context, child) {
-        final mq = MediaQuery.of(context);
-        return MediaQuery(
-          // Захист від гігантського системного шрифту Android + щільніша типографіка.
-          data: mq.copyWith(textScaler: const TextScaler.linear(0.88)),
-          child: BootSplash(child: AppLockGate(child: child ?? const SizedBox.shrink())),
+        final app = BootSplash(child: AppLockGate(child: child ?? const SizedBox.shrink()));
+        return ListenableBuilder(
+          listenable: session,
+          builder: (context, _) {
+            final mq = MediaQuery.of(context);
+            // Режим «Простий» (№280, той самий, що на сайті): крупніший текст і без анімацій.
+            final simple = session.me?['simple_ui'] == true;
+            return MediaQuery(
+              // Захист від гігантського системного шрифту Android + щільніша типографіка.
+              data: mq.copyWith(textScaler: TextScaler.linear(simple ? 1.0 : 0.88), disableAnimations: simple || mq.disableAnimations),
+              child: app,
+            );
+          },
         );
       },
     );

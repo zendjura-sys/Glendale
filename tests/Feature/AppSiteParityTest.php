@@ -85,6 +85,16 @@ class AppSiteParityTest extends TestCase
         $this->withToken($this->app_token($user))->getJson('/api/v1/me')->assertJsonPath('user.header_tabs', []);
     }
 
+    public function test_simple_mode_saved_for_site_and_app(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->putJson('/settings/simple-ui', ['simple' => true])->assertOk()->assertJsonPath('simple', true);
+        $this->assertTrue($user->fresh()->pref('simple_ui'));
+        $this->actingAs($user)->get('/feed')->assertInertia(fn ($page) => $page->where('auth.user.simple_ui', true));
+        $this->withToken($this->app_token($user))->putJson('/api/v1/site/settings/simple-ui', ['simple' => false])->assertOk();
+        $this->withToken($this->app_token($user))->getJson('/api/v1/me')->assertJsonPath('user.simple_ui', false);
+    }
+
     public function test_compact_feed_saved_for_site_and_app(): void
     {
         $user = User::factory()->create();

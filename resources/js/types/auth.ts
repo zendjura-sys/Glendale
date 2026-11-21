@@ -30,6 +30,8 @@ export type User = {
     palette?: string;
     /** Компактна стрічка (№297). */
     feed_compact?: boolean;
+    /** Режим «Простий»: крупніше, з підписами, без анімацій. */
+    simple_ui?: boolean;
     /** Свій акцентний колір (№296), null — колір стилю. */
     accent?: string | null;
     /** Розклад темної теми (№231). */

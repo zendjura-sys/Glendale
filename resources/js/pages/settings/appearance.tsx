@@ -18,6 +18,7 @@ import { update as updateAppearance } from '@/routes/appearance';
 import { Character } from '@/components/character/character';
 import { PlusBadge } from '@/components/gc/plus';
 import { DataSaverSwitch } from '@/components/settings/data-saver-switch';
+import { SimpleModeSwitch } from '@/components/settings/simple-mode-switch';
 import { StreamerModeSwitch } from '@/components/settings/streamer-mode-switch';
 import {
     DigestSwitch,
@@ -845,6 +846,7 @@ export default function Appearance({
                     <DigestSwitch />
                     <WeeklyDigestSwitch />
                     <DataSaverSwitch />
+                    <SimpleModeSwitch />
                     <StreamerModeSwitch />
                 </SettingsCard>
 

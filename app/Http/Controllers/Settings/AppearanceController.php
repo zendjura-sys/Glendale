@@ -249,6 +249,19 @@ class AppearanceController extends Controller
         return response()->json(['ok' => true, 'compact' => (bool) $data['compact']]);
     }
 
+    /**
+     * Режим «Простий» (№280): крупніший текст і кнопки, підписи під іконками, без анімацій і
+     * другорядних прикрас — для тих, кому так зручніше (сайт і застосунок).
+     */
+    public function simple(Request $request): JsonResponse
+    {
+        $data = $request->validate(['simple' => ['required', 'boolean']]);
+        $user = $request->user();
+        $user->forceFill(['preferences' => [...($user->preferences ?? []), 'simple_ui' => (bool) $data['simple']]])->save();
+
+        return response()->json(['ok' => true, 'simple' => (bool) $data['simple']]);
+    }
+
     /** Свій акцентний колір (№296): кнопки, активні пункти й посилання; null — колір стилю. */
     public function accent(Request $request): JsonResponse
     {
