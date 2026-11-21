@@ -2192,8 +2192,8 @@ class _Bubble extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 3),
             child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              Text(authorName, style: body(12.5, color: bot ? const Color(0xFF7CC8FF) : (guest ? muted : const Color(0xFF9AA8FF)), weight: FontWeight.w700)),
-              if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+              Text(authorName, style: body(12.5, color: bot ? const Color(0xFF8FA5FF) : (guest ? muted : const Color(0xFF9AA8FF)), weight: FontWeight.w700)),
+              if (bot) Pill(label: tr('бот'), color: const Color(0xFF8FA5FF)),
               if (guest) Pill(label: tr('гість'), color: muted),
               if (rank != null && !bot && !guest) Pill(label: '${rank['rank']} ${rank['title'] ?? ''}'.trim(), color: muted),
             ]),
@@ -2273,8 +2273,8 @@ class _Bubble extends StatelessWidget {
         ? Column(crossAxisAlignment: own ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
             if (showAuthor)
               Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                Text(authorName, style: body(12, color: bot ? const Color(0xFF7CC8FF) : const Color(0xFF9AA8FF), weight: FontWeight.w700)),
-                if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+                Text(authorName, style: body(12, color: bot ? const Color(0xFF8FA5FF) : const Color(0xFF9AA8FF), weight: FontWeight.w700)),
+                if (bot) Pill(label: tr('бот'), color: const Color(0xFF8FA5FF)),
                 if (guest) Pill(label: tr('гість'), color: muted),
               ]),
             SizedBox(width: 130, height: 130, child: StickerView(text(sticker['url']))),
@@ -2286,8 +2286,8 @@ class _Bubble extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 3),
                     child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                      Text(authorName, style: body(12.5, color: bot ? const Color(0xFF7CC8FF) : (guest ? muted : const Color(0xFF9AA8FF)), weight: FontWeight.w700)),
-                      if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+                      Text(authorName, style: body(12.5, color: bot ? const Color(0xFF8FA5FF) : (guest ? muted : const Color(0xFF9AA8FF)), weight: FontWeight.w700)),
+                      if (bot) Pill(label: tr('бот'), color: const Color(0xFF8FA5FF)),
                       if (guest) Pill(label: tr('гість'), color: muted),
                     ]),
                   ),
@@ -2299,7 +2299,7 @@ class _Bubble extends StatelessWidget {
             constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.74),
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
             decoration: BoxDecoration(
-              gradient: own ? const LinearGradient(colors: [Color(0xFF0A84FF), Color(0xFF8B6BFF)]) : null,
+              gradient: own ? const LinearGradient(colors: [Color(0xFF6B8AFD), Color(0xFF8B6BFF)]) : null,
               color: own ? null : fg.withValues(alpha: 0.07),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
@@ -2324,7 +2324,7 @@ class _Bubble extends StatelessWidget {
                 height: 30,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(color: primary.withValues(alpha: 0.2), shape: BoxShape.circle),
-                child: const Icon(LucideIcons.bot, size: 16, color: Color(0xFF7CC8FF)),
+                child: const Icon(LucideIcons.bot, size: 16, color: Color(0xFF8FA5FF)),
               )
             else if (guest)
               Avatar(name: authorName, size: 30)
@@ -3087,7 +3087,7 @@ class _PartyInviteCard extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: const Color(0xFF0EA5E9).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: const Color(0xFF6B8AFD).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, size: 20, color: const Color(0xFF38BDF8)),
           ),
           const SizedBox(width: 10),

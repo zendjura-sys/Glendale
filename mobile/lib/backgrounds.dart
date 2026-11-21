@@ -33,7 +33,7 @@ List<Decoration> _scene(String preset) => switch (preset) {
           BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x00000000), Color(0x8C1A1020)], stops: [0.55, 1])),
         ],
       'aurora' => const [
-          BoxDecoration(color: Color(0xFF04070D)),
+          BoxDecoration(color: Color(0xFF131313)),
           BoxDecoration(gradient: RadialGradient(center: Alignment(-0.8, -0.9), radius: 1.1, colors: [Color(0x6600D2FF), Color(0x0000D2FF)])),
           BoxDecoration(gradient: RadialGradient(center: Alignment(0.9, -0.2), radius: 0.9, colors: [Color(0x4D22C55E), Color(0x0022C55E)])),
           BoxDecoration(gradient: RadialGradient(center: Alignment(0, 1.1), radius: 1.0, colors: [Color(0x4D0A84FF), Color(0x000A84FF)])),

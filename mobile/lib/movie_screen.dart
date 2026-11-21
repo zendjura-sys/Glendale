@@ -1082,9 +1082,9 @@ class _VoiceBadge extends StatelessWidget {
   final bool subs;
 
   static const _tones = [
-    [Color(0xFF0A84FF), Color(0xFF00D2FF)],
+    [Color(0xFF6B8AFD), Color(0xFF8FA5FF)],
     [Color(0xFF4F8BFF), Color(0xFF38E1FF)],
-    [Color(0xFF38BDF8), Color(0xFF00D2FF)],
+    [Color(0xFF38BDF8), Color(0xFF8FA5FF)],
     [Color(0xFF34D399), Color(0xFF4F8BFF)],
     [Color(0xFFF5C451), Color(0xFFF0734A)],
   ];

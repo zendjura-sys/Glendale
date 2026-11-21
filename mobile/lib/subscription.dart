@@ -255,7 +255,7 @@ class _Hero extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [primary.withValues(alpha: 0.22), const Color(0xFF00D2FF).withValues(alpha: 0.08)],
+          colors: [primary.withValues(alpha: 0.22), const Color(0xFF8FA5FF).withValues(alpha: 0.08)],
         ),
       ),
       child: Row(children: [
@@ -288,7 +288,7 @@ class _PerkCard extends StatelessWidget {
           height: 34,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(11),
-            gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0A84FF), Color(0xFF00D2FF)]),
+            gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF6B8AFD), Color(0xFF8FA5FF)]),
           ),
           child: Icon(perk.icon, size: 17, color: Colors.white),
         ),

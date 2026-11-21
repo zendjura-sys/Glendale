@@ -93,7 +93,7 @@ Future<Uint8List?> wrappedSharePng(Map<String, dynamic> w) async {
   glow(const Offset(180, 160), 760, const Color.fromRGBO(47, 123, 255, 0.9));
   glow(const Offset(960, 1250), 760, const Color.fromRGBO(34, 211, 238, 0.7));
 
-  TextStyle font(double size, FontWeight weight, Color color) => TextStyle(fontFamily: 'Montserrat', fontSize: size, fontWeight: weight, color: color, height: 1);
+  TextStyle font(double size, FontWeight weight, Color color) => TextStyle(fontFamily: 'Onest', fontSize: size, fontWeight: weight, color: color, height: 1);
 
   void paintText(String value, TextStyle style, Offset at, {double maxWidth = 900}) {
     final painter = TextPainter(text: TextSpan(text: value, style: style), textDirection: TextDirection.ltr, maxLines: 1, ellipsis: '…')..layout(maxWidth: maxWidth);

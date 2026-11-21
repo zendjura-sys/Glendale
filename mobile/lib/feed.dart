@@ -20,6 +20,7 @@ import 'widgets.dart';
 import 'wrapped.dart';
 import 'i18n.dart';
 import 'skeletons.dart';
+import 'lobby.dart';
 
 /// Сторінки записів з підвантаженням: стрічка, стіна профілю, спільнота.
 class PostPager {
@@ -159,6 +160,8 @@ class _FeedScreenState extends State<FeedScreen> {
         ],
         if (AppScope.of(context).session.wrappedYear case final year?) ...[WrappedBanner(year: year), const SizedBox(height: 12)],
         if (tomorrow.isNotEmpty) ...[_TomorrowCard(events: tomorrow), const SizedBox(height: 12)],
+        // Лобі (#3): живі блоки в порядку з сайту — «Готовий грати», завдання, челенджі, друзі.
+        if (tab == 'friends') ...[const LobbyBlocks(), const SizedBox(height: 2)],
         Composer(onPosted: _reload),
         SizedBox(height: 12),
         // Вкладки-пігулки, як на сайті: активна — суцільна небесна.
@@ -177,7 +180,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   height: 42,
-                  decoration: BoxDecoration(color: tab == key ? const Color(0xFF0EA5E9) : card, borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: tab == key ? const Color(0xFF6B8AFD) : card, borderRadius: BorderRadius.circular(8)),
                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Icon(icon, size: 16, color: tab == key ? Colors.white : soft),
                     const SizedBox(width: 7),

@@ -65,7 +65,7 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
           androidNotificationIcon: 'drawable/ic_notification',
           androidStopForegroundOnPause: true,
           androidNotificationClickStartsActivity: true,
-          notificationColor: Color(0xFF0A84FF),
+          notificationColor: Color(0xFF6B8AFD),
           // Обкладинка на всю картку плеєра в шторці (Android 11+): більше зображення.
           artDownscaleWidth: 1024,
           artDownscaleHeight: 1024,

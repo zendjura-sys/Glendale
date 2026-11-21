@@ -1,4 +1,4 @@
-// Шрифти для знімків екранів у тестах (GC_SHOTS): Montserrat і всі накреслення Lucide —
+// Шрифти для знімків екранів у тестах (GC_SHOTS): Onest і всі накреслення Lucide —
 // звичайне й варіативні Lucide100…600 (ними намальовані активні іконки доку), інакше замість
 // іконок у знімках виходять квадрати.
 import 'dart:io';
@@ -14,7 +14,7 @@ Future<void> _font(String family, String path) async {
 
 Future<void> loadTestFonts() async {
   for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
-    await _font('Montserrat', 'fonts/Montserrat-$w.ttf');
+    await _font('Onest', 'fonts/Onest-$w.ttf');
   }
   final lucide = '${Platform.environment['HOME']}/.pub-cache/hosted/pub.dev/lucide_icons_flutter-3.1.21/assets';
   await _font('packages/lucide_icons_flutter/Lucide', '$lucide/lucide.ttf');

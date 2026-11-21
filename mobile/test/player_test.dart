@@ -69,7 +69,7 @@ void main() {
     testWidgets('плеєр малюється: $name', (tester) async {
       if (out != null) {
         for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
-          await _font('Montserrat', 'fonts/Montserrat-$w.ttf');
+          await _font('Onest', 'fonts/Onest-$w.ttf');
         }
         final lucide = '${Platform.environment['HOME']}/.pub-cache/hosted/pub.dev/lucide_icons_flutter-3.1.21/assets';
         await _font('packages/lucide_icons_flutter/Lucide', '$lucide/lucide.ttf');

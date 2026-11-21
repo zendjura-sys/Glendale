@@ -1169,7 +1169,7 @@ Future<Uint8List?> lyricsCard(List<String> lines, QueueTrack track, Color? tint)
     painter.paint(canvas, at);
   }
 
-  TextStyle font(double size, FontWeight weight, Color color, [double height = 1.2]) => TextStyle(fontFamily: 'Montserrat', fontSize: size, fontWeight: weight, color: color, height: height);
+  TextStyle font(double size, FontWeight weight, Color color, [double height = 1.2]) => TextStyle(fontFamily: 'Onest', fontSize: size, fontWeight: weight, color: color, height: height);
   var x = 96.0;
   final cover = track.cover == null ? null : await _netImage(track.cover!, 300);
   if (cover != null) {

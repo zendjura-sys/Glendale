@@ -120,7 +120,7 @@ class StoriesStripState extends State<StoriesStrip> {
                         child: Container(
                           width: 24,
                           height: 24,
-                          decoration: BoxDecoration(color: const Color(0xFF0EA5E9), borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(color: const Color(0xFF6B8AFD), borderRadius: BorderRadius.circular(8)),
                           child: const Icon(LucideIcons.plus, size: 15, color: Colors.white),
                         ),
                       ),

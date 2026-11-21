@@ -99,7 +99,7 @@ class _Pill extends StatelessWidget {
         : accent
             ? const Color(0xFF38BDF8)
             : ink.withValues(alpha: 0.72);
-    final bg = active ? const Color(0xFF0EA5E9) : Colors.transparent;
+    final bg = active ? const Color(0xFF6B8AFD) : Colors.transparent;
     return Material(
       color: bg,
       borderRadius: BorderRadius.circular(12),

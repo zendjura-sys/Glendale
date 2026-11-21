@@ -1286,7 +1286,7 @@ class PixelAvatarScreen extends StatefulWidget {
 
 class _PixelAvatarScreenState extends State<PixelAvatarScreen> {
   static const size = 16;
-  static const colors = [Color(0xFF0B1528), Color(0xFFF8FAFC), Color(0xFF0A84FF), Color(0xFF00D2FF), Color(0xFF34D399), Color(0xFFF5C451), Color(0xFFFB923C), Color(0xFFFF4D6D), Color(0xFF94A3B8), Color(0xFF7C4A2D)];
+  static const colors = [Color(0xFF0B1528), Color(0xFFF8FAFC), Color(0xFF6B8AFD), Color(0xFF8FA5FF), Color(0xFF34D399), Color(0xFFF5C451), Color(0xFFFB923C), Color(0xFFFF4D6D), Color(0xFF94A3B8), Color(0xFF7C4A2D)];
   final pixels = List<Color?>.filled(size * size, null);
   Color brush = colors[2];
   bool erase = false;

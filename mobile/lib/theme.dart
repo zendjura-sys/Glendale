@@ -41,57 +41,53 @@ class GcPalette {
   bool get isLight => brightness == Brightness.light;
 }
 
-/// «Неоновий синій» (темна, iOS 27 Achromatic): тло #07090E без кольорових плям, картки суцільні
-/// (див. ArcticGlassThemeExtension.dark); текст #F8FAFC / #94A3B8 / #64748B; акцент #0A84FF / #00D2FF.
+/// «Лобі» — темна й світла палітри (як на сайті, DESIGN.md): графіт і один акцент індиго.
 const neonPalette = GcPalette(
   brightness: Brightness.dark,
-  // iOS 27 Achromatic: нейтральне тло #07090E, суцільні картки #0D1017, вкладене #151922.
-  voidColor: Color(0xFF07090E),
-  abyss: Color(0xFF0A0C12),
-  deep: Color(0xFF0D1017),
-  // Діалоги, снекбари, меню без розмиття.
-  popover: Color(0xFF12141A),
+  // «Лобі» (темна): полотно #131313, картки L1 #22252c, поля L2 #2e333d, акцент #6b8afd.
+  voidColor: Color(0xFF131313),
+  abyss: Color(0xFF161616),
+  deep: Color(0xFF1A1B1E),
+  popover: Color(0xFF22252C),
   ink: AppColors.textPrimary,
-  soft: Color(0xFFCBD5E1),
+  soft: Color(0xFFD6D9DF),
   muted: AppColors.textSecondary,
   faint: AppColors.textMuted,
   primary: AppColors.accentPrimary,
-  card: Color(0xFF0D1017),
-  cardTop: Color(0xFF12151C),
-  raised: Color(0xFF151922),
-  field: Color(0xFF151922),
-  bar: Color.fromRGBO(18, 20, 26, 0.86),
-  line: Color.fromRGBO(255, 255, 255, 0.07),
-  lineStrong: Color.fromRGBO(255, 255, 255, 0.12),
+  card: Color(0xFF22252C),
+  cardTop: Color(0xFF262A32),
+  raised: Color(0xFF2E333D),
+  field: Color(0xFF2E333D),
+  bar: Color.fromRGBO(19, 19, 19, 0.86),
+  line: Color.fromRGBO(255, 255, 255, 0.06),
+  lineStrong: Color.fromRGBO(255, 255, 255, 0.11),
   fg: Colors.white,
-  brand: [AppColors.accentPrimary, Color(0xFF05ABFF), AppColors.accentCyan],
+  brand: [AppColors.accentPrimary, Color(0xFF7678ED), AppColors.accentCyan],
 );
 
-/// «Крижана Арктика» (світла): тло #F1F5F9, білі картки, вкладене #F1F5F9, наведення #E2E8F0;
-/// акцент — глибокий небесний #0284C7 (читається на білому).
 const arcticPalette = GcPalette(
   brightness: Brightness.light,
-  voidColor: Color(0xFFE2ECF8),
-  abyss: Color(0xFFEEF4FC),
-  deep: Color(0xFFF4F8FD),
-  popover: Color(0xFFF6FAFF),
+  // «Лобі» (світла): полотно #f9fafc, картки білі, акцент #7678ed, лічильники #ff7a55.
+  voidColor: Color(0xFFF9FAFC),
+  abyss: Color(0xFFF4F5F9),
+  deep: Color(0xFFFFFFFF),
+  popover: Color(0xFFFFFFFF),
   ink: AppColors.lightTitle,
   soft: AppColors.lightBody,
   muted: AppColors.lightMuted,
-  faint: Color(0xFF8A9AB0),
-  primary: Color(0xFF0A6FE0),
-  card: Color.fromRGBO(255, 255, 255, 0.46),
-  cardTop: Color.fromRGBO(255, 255, 255, 0.72),
+  faint: Color(0xFF8E909C),
+  primary: Color(0xFF7678ED),
+  card: Color(0xFFFFFFFF),
+  cardTop: Color(0xFFFFFFFF),
   raised: Color(0xFFFFFFFF),
-  field: Color.fromRGBO(255, 255, 255, 0.70),
-  bar: Color.fromRGBO(255, 255, 255, 0.78),
-  line: Color(0x170B1528),
-  lineStrong: Color(0x1F0B1528),
+  field: Color(0xFFF0F1F8),
+  bar: Color.fromRGBO(249, 250, 252, 0.86),
+  line: Color(0x14202022),
+  lineStrong: Color(0x1F202022),
   fg: AppColors.lightTitle,
-  brand: [Color(0xFF0A6FE0), Color(0xFF0A8FE6), Color(0xFF00A8E0)],
+  brand: [Color(0xFF7678ED), Color(0xFF6264E0), Color(0xFFFF7A55)],
 );
 
-/// Поточна палітра (ставить ThemeController).
 GcPalette palette = neonPalette;
 
 Color get voidColor => palette.voidColor;
@@ -104,7 +100,7 @@ Color get muted => palette.muted;
 Color get faint => palette.faint;
 
 /// Акцентний текст та іконки (`text-gc-lilac-400` на сайті): у світлій темі темніший, щоб читався на білому.
-Color get accent => palette.isLight ? Color.lerp(palette.primary, palette.ink, 0.12)! : const Color(0xFF7CC8FF);
+Color get accent => palette.isLight ? const Color(0xFF6264E0) : const Color(0xFF8FA5FF);
 Color get primary => palette.primary;
 Color get fg => palette.fg;
 Color get fgSoft => palette.fg.withValues(alpha: 0.7);
@@ -112,8 +108,8 @@ Color get fgSoft => palette.fg.withValues(alpha: 0.7);
 // Акценти однакові в обох темах. Лише сапфір і крижаний ціан — без фіолетового й рожевого:
 // старі імена (violet, pink) лишилися для сумісності, але ведуть у ту саму холодну гаму.
 const neonBlue = AppColors.accentPrimary;
-const indigo = Color(0xFF1F6BFF);
-const violet = Color(0xFF38BDF8);
+const indigo = Color(0xFF6B8AFD);
+const violet = Color(0xFF8FA5FF);
 const pink = Color(0xFFFF4D6D);
 const cyan = AppColors.accentCyan;
 const gold = Color(0xFFF5C451);
@@ -144,11 +140,11 @@ LinearGradient get buttonGradient => palette.isLight ? LinearGradient(colors: [p
 /// Скло карток — з токенів теми (ArcticGlassThemeExtension).
 Gradient get glassGradient => (palette.isLight ? ArcticGlassThemeExtension.daylight : ArcticGlassThemeExtension.dark).glassFill;
 
-/// Montserrat — той самий шрифт, що й на сайті, вбудований у застосунок. Цифри всюди моноширинні
+/// Onest — той самий шрифт, що й на сайті («Лобі»), вбудований у застосунок. Цифри всюди моноширинні
 /// (tabular-nums): таймери, онлайн, FPS і лічильники не «стрибають» при зміні значення.
 const _tabular = [FontFeature.tabularFigures()];
-TextStyle get onest => TextStyle(fontFamily: 'Montserrat', color: ink, fontFeatures: _tabular);
-TextStyle get unbounded => TextStyle(fontFamily: 'Montserrat', color: ink, fontWeight: FontWeight.w700, fontFeatures: _tabular);
+TextStyle get onest => TextStyle(fontFamily: 'Onest', color: ink, fontFeatures: _tabular);
+TextStyle get unbounded => TextStyle(fontFamily: 'Onest', color: ink, fontWeight: FontWeight.w700, fontFeatures: _tabular);
 
 /// Заголовки — щільний трекінг (tracking-tight), що росте з розміром.
 TextStyle display(double size, {Color? color}) => unbounded.copyWith(fontSize: size, color: color ?? ink, height: 1.15, letterSpacing: -0.022 * size);
@@ -162,12 +158,12 @@ ThemeData gameConTheme() {
     colorScheme: palette.isLight
         ? ColorScheme.light(primary: primary, onPrimary: Colors.white, secondary: cyan, surface: popover, onSurface: ink, error: danger)
         : ColorScheme.dark(primary: primary, onPrimary: Colors.white, secondary: cyan, surface: popover, onSurface: ink, error: danger),
-    fontFamily: 'Montserrat',
+    fontFamily: 'Onest',
   );
   return base.copyWith(
     extensions: [palette.isLight ? ArcticGlassThemeExtension.daylight : ArcticGlassThemeExtension.dark],
     textTheme: base.textTheme
-        .apply(fontFamily: 'Montserrat', bodyColor: ink, displayColor: ink)
+        .apply(fontFamily: 'Onest', bodyColor: ink, displayColor: ink)
         .copyWith(
           bodyLarge: base.textTheme.bodyLarge?.copyWith(fontSize: 14, height: 1.35),
           bodyMedium: base.textTheme.bodyMedium?.copyWith(fontSize: 13, height: 1.35),

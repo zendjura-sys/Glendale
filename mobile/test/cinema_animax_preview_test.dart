@@ -38,7 +38,7 @@ void main() {
   Future<void> fonts() async {
     if (out == null) return;
     for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
-      await _font('Montserrat', 'fonts/Montserrat-$w.ttf');
+      await _font('Onest', 'fonts/Onest-$w.ttf');
     }
     final lucide = '${Platform.environment['HOME']}/.pub-cache/hosted/pub.dev/lucide_icons_flutter-3.1.21/assets';
     await _font('packages/lucide_icons_flutter/Lucide', '$lucide/lucide.ttf');
@@ -64,7 +64,7 @@ void main() {
     final key = GlobalKey();
     final movies = [for (var i = 0; i < 8; i++) _movie(i)];
     await tester.pumpWidget(MaterialApp(
-      theme: ThemeData(brightness: Brightness.dark, fontFamily: 'Montserrat', scaffoldBackgroundColor: voidColor),
+      theme: ThemeData(brightness: Brightness.dark, fontFamily: 'Onest', scaffoldBackgroundColor: voidColor),
       home: AppScope(
         session: session,
         player: TrackPlayer(),
@@ -107,7 +107,7 @@ void main() {
       session: session,
       player: TrackPlayer(),
       child: MaterialApp(
-        theme: ThemeData(brightness: Brightness.dark, fontFamily: 'Montserrat', scaffoldBackgroundColor: voidColor),
+        theme: ThemeData(brightness: Brightness.dark, fontFamily: 'Onest', scaffoldBackgroundColor: voidColor),
         builder: (_, child) => RepaintBoundary(key: key, child: child!),
         home: Builder(
           builder: (context) => Scaffold(

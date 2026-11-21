@@ -121,8 +121,8 @@ List<Color> plusHeaderColors(Map<String, dynamic> profile) {
   final accent = _colors(profile['accent']);
   if (accent != null) return accent;
   final name = PlusMark.of(profile)?.name;
-  if (name != null) return [...name, const Color(0xFF00D2FF)];
-  return const [Color(0xFF0A84FF), Color(0xFF00D2FF), Color(0xFF22D3EE)];
+  if (name != null) return [...name, const Color(0xFF8FA5FF)];
+  return const [Color(0xFF6B8AFD), Color(0xFF8FA5FF), Color(0xFF22D3EE)];
 }
 
 /// Позначка GameCon+ біля імені: плоский квадрат з плюсом в акцентному кольорі.
@@ -138,7 +138,7 @@ class PlusBadge extends StatelessWidget {
         width: size,
         height: size,
         alignment: Alignment.center,
-        decoration: BoxDecoration(color: const Color(0xFF0A84FF), borderRadius: BorderRadius.circular(size * 0.31)),
+        decoration: BoxDecoration(color: const Color(0xFF6B8AFD), borderRadius: BorderRadius.circular(size * 0.31)),
         child: Icon(LucideIcons.plus, size: size * 0.75, color: Colors.white),
       ),
     );
