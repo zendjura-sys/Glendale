@@ -111,6 +111,7 @@ import { AffiliationBadges } from '@/components/gc/affiliation-badges';
 import { UserRoles, UserTitle } from '@/components/gc/user-title';
 import { LOCALE, tr } from '@/lib/i18n';
 import { LiveBadge, ProfileStream } from '@/components/streams/stream';
+import { StreamerShowcase } from '@/components/streams/streamer-showcase';
 import type { StreamInfo } from '@/components/streams/stream';
 import { useFeature, usePlugin } from '@/lib/plugins';
 import { setPageBackgroundVideo } from '@/lib/backgrounds';
@@ -1211,6 +1212,17 @@ export default function ProfileShow({
                             </ErrorBoundary>
                         </div>
                     )}
+                    {section === 'main' &&
+                        liveOn &&
+                        account?.type === 'streamer' && (
+                            <ErrorBoundary fallback={null}>
+                                <StreamerShowcase
+                                    stream={stream ?? null}
+                                    account={account}
+                                    schedule={streamSchedule}
+                                />
+                            </ErrorBoundary>
+                        )}
                     <div
                         className={cn(
                             'mt-5 flex flex-col gap-5 xl:flex-row',
@@ -1225,9 +1237,11 @@ export default function ProfileShow({
                                     />
                                 </div>
                             )}
-                            {liveOn && stream && (
-                                <ProfileStream stream={stream} />
-                            )}
+                            {liveOn &&
+                                stream &&
+                                account?.type !== 'streamer' && (
+                                    <ProfileStream stream={stream} />
+                                )}
                             {account && (
                                 <ErrorBoundary fallback={null}>
                                     <AccountCard data={account} />
