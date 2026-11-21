@@ -123,10 +123,10 @@ export function StreamAiPanel({
                     <div className="mb-1 text-xs font-semibold text-white/45">
                         {tr('Промо')}
                     </div>
-                    {promo}
+                    <p className="whitespace-pre-line">{promo}</p>
                     <button
                         type="button"
-                        className="mt-2 text-xs font-semibold text-violet-300 hover:underline"
+                        className="mt-2 block text-xs font-semibold text-violet-300 hover:underline"
                         onClick={() => {
                             void navigator.clipboard.writeText(promo);
                             toast.success(tr('Скопійовано'));
