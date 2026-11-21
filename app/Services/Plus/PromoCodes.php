@@ -23,6 +23,9 @@ use Illuminate\Validation\ValidationException;
  */
 class PromoCodes
 {
+    /** Товари, на які може діяти промокод-знижка (усе платне, крім поповнення балансу). */
+    public const DISCOUNTABLE = ['plus', 'family', 'gift', 'promo', 'phone'];
+
     public const TYPES = ['days', 'discount', 'first_payment', 'trial'];
 
     public function __construct(private readonly Plus $plus, private readonly Catalog $catalog) {}
@@ -66,7 +69,8 @@ class PromoCodes
     public function discountFor(User $user, string $product, int $price): array
     {
         $kind = $this->catalog->get($product)['kind'] ?? null;
-        if (! in_array($kind, ['plus', 'family', 'gift'], true)) {
+        // Баланс — передоплата, знижки на нього немає (інакше промокод перетворюється на гроші).
+        if (! in_array($kind, self::DISCOUNTABLE, true)) {
             return ['redemption' => null, 'amount' => 0];
         }
         $best = ['redemption' => null, 'amount' => 0];
@@ -80,8 +84,8 @@ class PromoCodes
             if ($code->products !== null && $code->products !== [] && ! in_array($product, $code->products, true)) {
                 continue;
             }
-            // Подарунок — не підписка: знижка діє, лише якщо промокод прямо дозволяє тариф подарунка.
-            if ($kind === 'gift' && ($code->products === null || ! in_array($product, $code->products, true))) {
+            // Подарунок, просування й номери — не підписки: знижка діє, лише якщо промокод прямо називає цей товар.
+            if (! in_array($kind, ['plus', 'family'], true) && ($code->products === null || ! in_array($product, $code->products, true))) {
                 continue;
             }
             $amount = $code->percent !== null ? (int) round($price * min(100, $code->percent) / 100) : (int) ($code->amount_off ?? 0) * 100;

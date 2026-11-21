@@ -23,14 +23,14 @@ use Illuminate\Support\Carbon;
  * @property int $likes_count
  * @property Carbon $created_at
  */
-#[Fillable(['post_id', 'photo_id', 'movie_id', 'user_id', 'parent_id', 'body', 'spoiler', 'is_pinned', 'sticker'])]
+#[Fillable(['post_id', 'photo_id', 'movie_id', 'user_id', 'parent_id', 'body', 'spoiler', 'is_pinned', 'sticker', 'toxicity', 'hidden_at', 'hidden_reason', 'restored_by'])]
 class Comment extends Model
 {
     use SoftDeletes;
 
     protected function casts(): array
     {
-        return ['spoiler' => 'boolean', 'is_pinned' => 'boolean'];
+        return ['spoiler' => 'boolean', 'is_pinned' => 'boolean', 'hidden_at' => 'datetime', 'toxicity' => 'integer'];
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Models\Story;
 use App\Models\StoryView;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -76,7 +77,10 @@ class Stories
         return $this->group(array_values($stories->all()), $viewer)[0] ?? null;
     }
 
-    public function create(User $user, UploadedFile $file, ?string $caption, string $privacy, ?int $duration): Story
+    /**
+     * @param  array{question: string, options: list<string>}|null  $poll
+     */
+    public function create(User $user, UploadedFile $file, ?string $caption, string $privacy, ?int $duration, ?array $poll = null): Story
     {
         $video = str_starts_with((string) $file->getMimeType(), 'video/');
         if ($video) {
@@ -102,6 +106,7 @@ class Stories
             'height' => min(65535, $stored['height']),
             'duration' => $video ? max(1, min(Story::MAX_VIDEO_SECONDS, $duration ?? 15)) : Story::IMAGE_SECONDS,
             'caption' => $caption !== null && trim($caption) !== '' ? trim($caption) : null,
+            'poll' => $poll,
             'privacy' => $privacy,
             'expires_at' => now()->addHours(Story::LIFETIME_HOURS),
         ]);
@@ -195,6 +200,54 @@ class Stories
             'expires_at' => $story->expires_at->toIso8601String(),
             'seen' => $seen,
             'views_count' => $own ? $story->views_count : null,
+            'poll' => $this->poll($story, $viewer),
+        ];
+    }
+
+    /**
+     * Голос в опитуванні історії: один на людину, змінити не можна.
+     */
+    public function vote(Story $story, User $viewer, int $option): void
+    {
+        $this->view($story, $viewer);
+        DB::table('story_poll_votes')->insertOrIgnore([
+            'story_id' => $story->id, 'user_id' => $viewer->id, 'choice' => $option, 'created_at' => now(),
+        ]);
+    }
+
+    /**
+     * Опитування для показу: результати видно після голосу (і автору — завжди).
+     *
+     * @return array{question: string, options: list<array{text: string, votes: int|null, percent: int|null}>, voted: int|null, total: int|null}|null
+     */
+    public function poll(Story $story, User $viewer): ?array
+    {
+        $poll = $story->poll;
+        $question = is_array($poll) && is_string($poll['question'] ?? null) ? $poll['question'] : null;
+        $texts = is_array($poll) && is_array($poll['options'] ?? null) ? array_values(array_filter($poll['options'], 'is_string')) : [];
+        if ($question === null || count($texts) < 2) {
+            return null;
+        }
+        $mine = DB::table('story_poll_votes')->where('story_id', $story->id)->where('user_id', $viewer->id)->value('choice');
+        $reveal = $mine !== null || $story->user_id === $viewer->id;
+        $counts = $reveal ? DB::table('story_poll_votes')->where('story_id', $story->id)->groupBy('choice')->selectRaw('choice, COUNT(*) as total')->pluck('total', 'choice') : collect();
+        $total = (int) $counts->sum();
+
+        $options = [];
+        foreach ($texts as $i => $text) {
+            $votes = (int) ($counts[$i] ?? 0);
+            $options[] = [
+                'text' => $text,
+                'votes' => $reveal ? $votes : null,
+                'percent' => $reveal ? ($total > 0 ? (int) round($votes * 100 / $total) : 0) : null,
+            ];
+        }
+
+        return [
+            'question' => $question,
+            'options' => $options,
+            'voted' => is_numeric($mine) ? (int) $mine : null,
+            'total' => $reveal ? $total : null,
         ];
     }
 

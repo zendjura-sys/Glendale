@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Games\GameTags;
 use Database\Factories\PostFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,11 +28,15 @@ use Illuminate\Support\Carbon;
  * @property array{url: string, title: string, thumbnail: string|null, author: string|null, site?: string}|null $link
  * @property array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null $card
  * @property string $visibility
+ * @property int|null $series_id
+ * @property int|null $series_position
  * @property bool $is_pinned
  * @property bool $is_draft
  * @property bool $spoiler
+ * @property bool $subscribers_only Лише для платних підписників автора
  * @property Carbon|null $edited_at
  * @property Carbon|null $publish_at
+ * @property Carbon|null $archived_at
  * @property bool $is_pending
  * @property string|null $tag
  * @property string|null $lang Мова тексту (вгадана за текстом)
@@ -45,11 +50,21 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'audience', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'archived_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang', 'subscribers_only', 'series_id', 'series_position', 'slow_mode_seconds', 'slow_mode_until', 'slow_mode_auto'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
     use HasFactory, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        // #Згадки ігор: запис з’являється на сторінці гри.
+        static::saved(function (Post $post) {
+            if ($post->wasChanged('body') || $post->wasRecentlyCreated) {
+                app(GameTags::class)->sync($post);
+            }
+        });
+    }
 
     public const VISIBILITY_PUBLIC = 'public';
 
@@ -57,7 +72,10 @@ class Post extends Model
 
     public const VISIBILITY_PRIVATE = 'private';
 
-    public const VISIBILITIES = [self::VISIBILITY_PUBLIC, self::VISIBILITY_FRIENDS, self::VISIBILITY_PRIVATE];
+    /** Лише друзям з одного списку автора (FriendMark::LISTS) — поле audience. */
+    public const VISIBILITY_LIST = 'list';
+
+    public const VISIBILITIES = [self::VISIBILITY_PUBLIC, self::VISIBILITY_FRIENDS, self::VISIBILITY_PRIVATE, self::VISIBILITY_LIST];
 
     /** Скільки хвилин після публікації автор ще може змінити текст. */
     public const EDIT_MINUTES = 15;
@@ -65,17 +83,21 @@ class Post extends Model
     protected function casts(): array
     {
         return [
+            'slow_mode_until' => 'datetime',
+            'slow_mode_auto' => 'boolean',
             'is_pinned' => 'boolean',
             'is_draft' => 'boolean',
             'is_pending' => 'boolean',
             'comments_enabled' => 'boolean',
             'spoiler' => 'boolean',
+            'subscribers_only' => 'boolean',
             'as_community' => 'boolean',
             'music' => 'array',
             'link' => 'array',
             'card' => 'array',
             'edited_at' => 'datetime',
             'publish_at' => 'datetime',
+            'archived_at' => 'datetime',
         ];
     }
 
@@ -85,6 +107,14 @@ class Post extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
+     * @return BelongsTo<PostSeries, $this>
+     */
+    public function series(): BelongsTo
+    {
+        return $this->belongsTo(PostSeries::class, 'series_id');
     }
 
     /**
@@ -163,7 +193,7 @@ class Post extends Model
      */
     public function scopeVisibleTo(Builder $query, ?User $viewer, array $friendIds = []): void
     {
-        $query->where('is_draft', false)->where('is_pending', false);
+        $query->where('is_draft', false)->where('is_pending', false)->whereNull('archived_at');
         $query->where(fn (Builder $query) => $query->whereNull('publish_at')->orWhere('publish_at', '<=', now()));
         if ($viewer && ! $viewer->isStaff()) {
             $query->whereNotIn('author_id', UserBlock::query()->where('blocked_id', $viewer->id)->select('user_id'));
@@ -179,7 +209,14 @@ class Post extends Model
                         ->where('wall_id', $viewer->id))
                     ->orWhere(fn (Builder $query) => $query
                         ->where('visibility', self::VISIBILITY_FRIENDS)
-                        ->whereIn('author_id', $friendIds));
+                        ->whereIn('author_id', $friendIds))
+                    ->orWhere(fn (Builder $query) => $query
+                        ->where('visibility', self::VISIBILITY_LIST)
+                        ->whereIn('author_id', $friendIds)
+                        ->whereExists(fn ($q) => $q->selectRaw('1')->from('friend_marks')
+                            ->whereColumn('friend_marks.user_id', 'posts.author_id')
+                            ->whereColumn('friend_marks.list', 'posts.audience')
+                            ->where('friend_marks.friend_id', $viewer->id)));
             }
         });
 

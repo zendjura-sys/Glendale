@@ -16,7 +16,7 @@ class NotificationController extends Controller
     {
         $notifications = NotifyPrefs::visible($request->user()->notifications())->latest()->limit(30)->get();
         $actors = User::query()
-            ->whereIn('id', $notifications->pluck('data.actor_id')->filter()->unique())
+            ->whereIn('id', $notifications->pluck('data.actor_id')->merge($notifications->pluck('data.actor_ids')->flatten())->filter()->unique())
             ->get()
             ->keyBy('id');
         $communities = Community::query()
@@ -49,8 +49,22 @@ class NotificationController extends Controller
                     ],
                     default => null,
                 },
+                // Згруповане сповіщення: скільки людей і до трьох аватарок («Олена, Петро та ще 3»).
+                'count' => (int) ($n->data['count'] ?? 1),
+                'actors' => collect((array) ($n->data['actor_ids'] ?? []))
+                    ->map(fn ($id) => $actors[(int) $id] ?? null)->filter()->map(fn (User $u) => $u->toCard())->values()->all(),
+                // Тривога: червона (в укриття) чи жовта (увага), тип API й час події — для окремої картки.
+                'alert' => str_starts_with((string) ($n->data['kind'] ?? ''), 'air_alert') ? [
+                    'severity' => $n->data['severity'] ?? 'red',
+                    'type' => $n->data['alert_type'] ?? 'AIR',
+                    'ended' => ($n->data['kind'] ?? '') === 'air_alert_end',
+                    'region' => $n->data['region'] ?? null,
+                    'accent' => $n->data['accent'] ?? null,
+                    'striped' => (bool) ($n->data['striped'] ?? false),
+                ] : null,
                 'read' => $n->read_at !== null,
-                'created_at' => $n->created_at->toIso8601String(),
+                // Час події тривоги — коли її побачило опитування API, а не коли спрацювала черга.
+                'created_at' => (string) ($n->data['event_at'] ?? $n->created_at->toIso8601String()),
             ])->values(),
             'unread' => NotifyPrefs::unreadCount($request->user()),
         ]);

@@ -93,7 +93,7 @@ class GameconPlusTest extends TestCase
         app(Wallet::class)->credit($leader, 100000, 'topup', 'Тест');
 
         // GameCon+ отримує сім’я, не лідер; лідер платить і може ввімкнути автопродовження.
-        $this->actingAs($leader)->postJson('/plus/billing/purchase', ['product' => 'family_month', 'family_id' => $family->id, 'renew' => true])->assertOk();
+        $this->actingAs($leader)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'family_month', 'family_id' => $family->id, 'renew' => true])->assertOk();
         $this->assertTrue($family->fresh()->isPlus());
         $this->assertFalse($leader->fresh()->isPlus());
         $this->assertNotNull($family->fresh()->toCard()['plus']);
@@ -102,10 +102,10 @@ class GameconPlusTest extends TestCase
         // Чужа сім’я — ні.
         $stranger = User::factory()->create();
         app(Wallet::class)->credit($stranger, 100000, 'topup', 'Тест');
-        $this->actingAs($stranger)->postJson('/plus/billing/purchase', ['product' => 'family_month', 'family_id' => $family->id])->assertStatus(422);
-        $this->actingAs($stranger)->postJson('/plus/billing/purchase', ['product' => 'promo_top_7', 'server_id' => $server->id])->assertStatus(422);
+        $this->actingAs($stranger)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'family_month', 'family_id' => $family->id])->assertStatus(422);
+        $this->actingAs($stranger)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'promo_top_7', 'server_id' => $server->id])->assertStatus(422);
 
-        $this->actingAs($leader)->postJson('/plus/billing/purchase', ['product' => 'promo_top_7', 'server_id' => $server->id])->assertOk();
+        $this->actingAs($leader)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'promo_top_7', 'server_id' => $server->id])->assertOk();
         $this->assertSame(1, ServerPromotion::query()->live()->count());
         $this->assertSame(100000 - 39900 - 49900, $leader->fresh()->balance);
 

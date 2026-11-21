@@ -1,4 +1,5 @@
 import { InfiniteScroll, router } from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import { FilePlus2, FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FamilyShell } from '@/components/families/family-shell';
@@ -92,7 +93,6 @@ export default function FamilyReports(props: Props) {
                                         preserveScroll: true,
                                         preserveState: true,
                                         replace: true,
-                                        reset: ['reports'],
                                     },
                                 )
                             }
@@ -113,6 +113,13 @@ export default function FamilyReports(props: Props) {
                     ) : (
                         <InfiniteScroll
                             data="reports"
+                            loading={
+                                <ListSkeleton
+                                    rows={3}
+                                    avatar="none"
+                                    card={false}
+                                />
+                            }
                             preserveUrl
                             className="space-y-2"
                         >

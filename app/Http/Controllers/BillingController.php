@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Family;
 use App\Models\PaymentCard;
 use App\Models\PaymentOrder;
+use App\Models\PlusGift;
 use App\Models\PlusRenewal;
 use App\Services\Billing\Catalog;
 use App\Services\Billing\Checkout;
@@ -15,6 +16,7 @@ use App\Services\Plus\PromoCodes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -66,9 +68,15 @@ class BillingController extends Controller
             'phone_operator' => ['nullable', 'string', 'size:2'],
             'phone_digits' => ['nullable', 'string', 'size:7'],
             'gift_to' => ['nullable', 'integer'],
+            'gift_message' => ['nullable', 'string', 'max:200'],
+            'gift_theme' => ['nullable', Rule::in(PlusGift::THEMES)],
+            'gift_at' => ['nullable', 'date_format:Y-m-d'],
             'renew' => ['boolean'],
             'save_card' => ['boolean'],
-        ]);
+            // Згода на негайне надання цифрової послуги й втрату права на відмову (оферта 7.3, Політика повернення).
+            'consent' => ['accepted'],
+        ], ['consent.accepted' => 'Підтвердіть, що просите почати надання послуги одразу (галочка над кнопкою оплати).']);
+        Log::info('billing.consent', ['user' => $request->user()->id, 'product' => $data['product'], 'ip' => $request->ip(), 'at' => now()->toIso8601String()]);
         $order = $this->checkout->start($request->user(), $data['product'], $data, $request->boolean('renew'), $request->boolean('save_card'));
 
         return response()->json([
@@ -84,8 +92,9 @@ class BillingController extends Controller
         $data = $request->validate(['product' => ['required', 'string', Rule::in(array_keys($this->catalog->products()))]]);
         $user = $request->user();
         $price = $this->catalog->priceFor($user, $data['product']);
+        $topup = ($this->catalog->get($data['product'])['kind'] ?? null) === 'balance';
         $promo = $codes->discountFor($user, $data['product'], $price);
-        $credit = min(max(0, (int) $user->balance), $price - $promo['amount']);
+        $credit = $topup ? 0 : min(max(0, (int) $user->balance), $price - $promo['amount']);
 
         return response()->json([
             'price' => $price,

@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -11,6 +13,7 @@ import 'i18n.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 Map<String, String> characterStatuses() => {'active': tr('Грає'), 'retired': tr('На паузі'), 'dead': tr('Загинув')};
 
@@ -45,10 +48,10 @@ class CharacterRow extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Flexible(child: Text(text(character['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w600))),
+                Flexible(child: FitText(text(character['name']) ?? '', style: body(14.5, weight: FontWeight.w600))),
                 if (character['is_main'] == true) ...[const SizedBox(width: 4), const Icon(LucideIcons.star, size: 14, color: gold)],
               ]),
-              if (subtitle.isNotEmpty) Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+              if (subtitle.isNotEmpty) FitText(subtitle, style: body(12, color: muted)),
             ]),
           ),
           if (character['status'] != 'active') Pill(label: characterStatuses()[character['status']] ?? '', color: _statusColor(text(character['status']))),
@@ -112,7 +115,7 @@ class CharacterScreen extends StatelessWidget {
             Row(children: [
               RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/')),
               const SizedBox(width: 8),
-              Expanded(child: Text(text(player['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted))),
+              Expanded(child: FitText(text(player['name']) ?? '', style: body(14, color: muted))),
             ]),
             const SizedBox(height: 10),
             Glass(
@@ -319,7 +322,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final current = mapOf(data['character']);
     final families = maps(data['families']).where((f) => f['server'] == server).toList();
     return ScreenScroll(
@@ -343,13 +346,13 @@ class _CharacterEditScreenState extends State<CharacterEditScreen> {
                   child: Container(
                     width: 140,
                     height: 175,
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: fg.withValues(alpha: 0.05),
                     child: portrait != null
                         ? Image.file(File(portrait!.path), fit: BoxFit.cover)
                         : text(current['portrait_url']) != null
                             ? Image.network(text(current['portrait_url'])!, fit: BoxFit.cover)
                             : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                const Icon(LucideIcons.imagePlus, color: muted),
+                                Icon(LucideIcons.imagePlus, color: muted),
                                 const SizedBox(height: 6),
                                 Text(tr('Портрет персонажа'), textAlign: TextAlign.center, style: body(12, color: muted)),
                               ]),

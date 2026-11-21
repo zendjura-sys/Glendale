@@ -19,7 +19,7 @@ export function PageHeader({
         <div className="mb-6 flex flex-wrap items-end gap-x-4 gap-y-3">
             {/* На телефоні заголовок займає весь рядок, а кнопки переносяться під нього. */}
             <div className="min-w-[min(100%,18rem)] flex-1">
-                <h1 className="font-display text-[26px] leading-tight font-bold text-white">
+                <h1 className="font-display text-[28px] leading-tight font-bold text-white sm:text-[32px]">
                     {title}
                 </h1>
                 {description && (
@@ -40,38 +40,27 @@ export function StatCard({
     value,
     hint,
     icon: Icon,
-    tone = 'from-gc-blue to-gc-indigo',
     delay = 0,
 }: {
     label: string;
     value: ReactNode;
     hint?: ReactNode;
     icon: LucideIcon;
+    /** Колишній колір плитки; лишено для сумісності — плитки тепер в одному акценті. */
     tone?: string;
     delay?: number;
 }) {
     return (
         <div
-            className="glass group relative animate-rise overflow-hidden rounded-3xl p-4 sm:p-5"
+            className="gc-solid group relative animate-rise overflow-hidden rounded-2xl p-4 sm:p-5"
             style={{ animationDelay: `${delay}ms` }}
         >
-            <div
-                className={cn(
-                    'absolute -top-10 -right-10 size-32 rounded-full bg-gradient-to-br opacity-25 blur-2xl transition duration-500 group-hover:opacity-50',
-                    tone,
-                )}
-            />
             <div className="relative flex items-start justify-between gap-2">
                 <span className="min-w-0 text-[13px] font-medium text-white/50">
                     {label}
                 </span>
-                <span
-                    className={cn(
-                        'flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br shadow-[0_8px_24px_-8px_rgb(109_93_252/0.8)] sm:size-9',
-                        tone,
-                    )}
-                >
-                    <Icon className="size-[18px] text-white" />
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-primary/12 text-sky-400 sm:size-9">
+                    <Icon className="size-[18px]" />
                 </span>
             </div>
             <div className="relative mt-3 font-display text-2xl leading-none font-bold text-white sm:text-[30px]">
@@ -107,9 +96,7 @@ export function Toggle({
             onClick={() => onChange(!checked)}
             className={cn(
                 'relative h-6 w-11 shrink-0 rounded-full transition disabled:cursor-not-allowed disabled:opacity-40',
-                checked
-                    ? 'bg-gradient-brand shadow-[0_0_18px_-2px_rgb(109_93_252/0.8)]'
-                    : 'bg-white/10',
+                checked ? 'bg-sky-500' : 'bg-white/10',
             )}
         >
             <span
@@ -123,12 +110,12 @@ export function Toggle({
 }
 
 const pillTones = {
-    default: 'border-white/10 bg-white/[0.04] text-white/60',
+    default: ' gc-solid-2 text-white/60',
     blue: 'border-gc-blue/30 bg-gc-blue/10 text-gc-sky',
     violet: 'border-gc-purple/30 bg-gc-purple/10 text-[#d3b0ff]',
-    gold: 'border-amber-300/30 bg-amber-300/10 text-amber-200',
-    green: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200',
-    red: 'border-rose-400/30 bg-rose-400/10 text-rose-200',
+    gold: ' bg-amber-300/10 text-amber-200',
+    green: ' bg-emerald-400/10 text-emerald-200',
+    red: ' bg-red-400/10 text-red-400',
 };
 
 export function Pill({
@@ -143,7 +130,7 @@ export function Pill({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap',
+                'inline-flex items-center gap-1 rounded-chip px-2 py-0.5 text-xs font-medium whitespace-nowrap',
                 pillTones[tone],
                 className,
             )}
@@ -182,8 +169,8 @@ export function Pagination({ data }: { data: Paginated<unknown> }) {
                             className={cn(
                                 'flex h-9 min-w-9 items-center justify-center rounded-xl px-2 transition',
                                 link.active
-                                    ? 'bg-gradient-brand font-semibold text-white'
-                                    : 'glass text-white/60 hover:text-white',
+                                    ? 'bg-sky-500 font-semibold text-white'
+                                    : 'gc-solid text-white/60 hover:text-white',
                             )}
                         >
                             {label}

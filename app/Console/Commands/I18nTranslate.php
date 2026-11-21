@@ -10,7 +10,7 @@ class I18nTranslate extends Command
 {
     protected $signature = 'i18n:translate {locale? : Код мови; без нього — усі додані мови} {--all : Перекласти заново все, крім виправленого вручну}';
 
-    protected $description = 'Докладає переклади нових рядків інтерфейсу через DeepL';
+    protected $description = 'Докладає переклади нових рядків інтерфейсу через DeepL (ліміт вичерпано — через LibreTranslate)';
 
     public function handle(CatalogTranslator $translator, Locales $locales): int
     {

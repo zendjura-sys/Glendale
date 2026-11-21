@@ -5,6 +5,7 @@ namespace App\Services\Streams;
 use App\Models\User;
 use App\Models\UserStream;
 use App\Notifications\StreamLive;
+use App\Services\Crosspost\Crossposting;
 use App\Services\FriendshipService;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Support\Facades\Cache;
@@ -69,6 +70,7 @@ class LiveStreams
             return null;
         }
         $stream->update(['manual_until' => $on ? now()->addHours(self::MANUAL_HOURS) : null]);
+        Cache::forget('streams.live_ids');
         if ($on) {
             $this->wentLive($stream);
         }
@@ -98,6 +100,37 @@ class LiveStreams
     public function checkOne(UserStream $stream): void
     {
         $stream->platform === 'twitch' ? $this->checkTwitch([$stream]) : $this->checkYoutube($stream);
+    }
+
+    /**
+     * Хто зараз в ефірі (id людей) — для позначки LIVE на аватарах по всьому сайту. Кеш на хвилину.
+     *
+     * @return array<int, true>
+     */
+    public static function liveIds(): array
+    {
+        /** @var array<int, true> */
+        return Cache::remember('streams.live_ids', 60, fn () => UserStream::query()
+            ->where(fn ($q) => $q->where('is_live', true)->orWhere('manual_until', '>', now()))
+            ->pluck('user_id')->mapWithKeys(fn ($id) => [(int) $id => true])->all());
+    }
+
+    /**
+     * Усі, хто зараз в ефірі (сторінка «Зараз в ефірі»): за глядачами, з фільтром за грою.
+     *
+     * @return array{streams: list<array<string, mixed>>, games: list<array{name: string, count: int}>}
+     */
+    public function liveNow(string $host, ?string $game = null): array
+    {
+        $all = UserStream::query()->with('user')
+            ->where(fn ($q) => $q->where('is_live', true)->orWhere('manual_until', '>', now()))
+            ->whereHas('user', fn ($q) => $q->whereNull('banned_at'))
+            ->orderByDesc('viewers')->limit(200)->get();
+        $games = $all->filter(fn (UserStream $s) => filled($s->game))->countBy('game')->sortDesc()->take(12)
+            ->map(fn ($n, $name) => ['name' => (string) $name, 'count' => (int) $n])->values()->all();
+        $list = $game ? $all->where('game', $game) : $all;
+
+        return ['streams' => array_values($list->take(60)->map(fn (UserStream $s) => $this->card($s, $host))->all()), 'games' => $games];
     }
 
     /**
@@ -188,6 +221,9 @@ class LiveStreams
      */
     private function apply(UserStream $stream, bool $live, array $details): void
     {
+        if ($stream->is_live !== $live) {
+            Cache::forget('streams.live_ids');
+        }
         $was = $stream->is_live;
         $stream->forceFill([
             ...($live ? $details : ['viewers' => null]),
@@ -212,6 +248,11 @@ class LiveStreams
         foreach ($friends as $friend) {
             $friend->notify(new StreamLive($user, $stream));
         }
+        app(Crossposting::class)->dispatch('user', $user->id, 'streams', [
+            'title' => $user->name.' почав стрім',
+            'text' => (string) ($stream->title ?? 'Заходьте дивитися!'),
+            'url' => url('/'.$user->username),
+        ]);
     }
 
     private function twitchToken(): ?string

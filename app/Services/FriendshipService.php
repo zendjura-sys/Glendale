@@ -7,6 +7,7 @@ use App\Models\Friendship;
 use App\Models\User;
 use App\Notifications\FriendRequestAccepted;
 use App\Notifications\FriendRequestReceived;
+use App\Support\TeenMode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -59,6 +60,8 @@ class FriendshipService
     public function request(User $from, User $to): string
     {
         abort_if($from->is($to), 422, 'Не можна додати себе в друзі.');
+        // Батьківський контроль (№227): підлітку — лише від друзів його друзів.
+        abort_unless(app(ParentalControl::class)->allowsFriendRequest($from, $to), 403, 'Цій людині можна надіслати заявку лише від друзів її друзів.');
 
         return DB::transaction(function () use ($from, $to) {
             $existing = $this->between($from, $to);
@@ -105,7 +108,7 @@ class FriendshipService
 
     /**
      * Видалити з друзів, відхилити або скасувати заявку.
-     * Колишній друг лишається підписником, як у ВК: заявка повертається йому у вхідні.
+     * Колишній друг лишається підписником, як у класичних соцмережах: заявка повертається йому у вхідні.
      */
     public function remove(User $user, User $other): string
     {
@@ -226,7 +229,7 @@ class FriendshipService
         arsort($scores);
         $ids = array_slice(array_keys($scores), 0, $limit);
 
-        $users = User::query()->whereIn('id', $ids)->whereNull('banned_at')->whereNull('frozen_at')->get()->keyBy('id');
+        $users = TeenMode::hideFrom(User::query(), $user)->whereIn('id', $ids)->whereNull('banned_at')->whereNull('frozen_at')->get()->keyBy('id');
         $result = [];
         foreach ($ids as $id) {
             if ($users->has($id)) {
@@ -235,7 +238,7 @@ class FriendshipService
         }
 
         if (count($result) < $limit) {
-            User::query()
+            TeenMode::hideFrom(User::query(), $user)
                 ->whereNotIn('id', array_merge($excluded, $ids))
                 ->whereNull('banned_at')->whereNull('frozen_at')
                 ->latest()

@@ -1,0 +1,20 @@
+{
+    "name": "gamecon/flarum-login",
+    "description": "Увійти через GameCon (OAuth 2.1)",
+    "keywords": ["flarum", "oauth", "login", "gamecon"],
+    "type": "flarum-extension",
+    "license": "MIT",
+    "version": "1.0.0",
+    "require": {"flarum/core": "^1.8"},
+    "autoload": {
+        "psr-4": {"GameCon\\FlarumLogin\\": "src/"},
+        "files": ["lib/GameConClient.php"]
+    },
+    "extra": {
+        "flarum-extension": {
+            "title": "Увійти через GameCon",
+            "category": "feature",
+            "icon": {"name": "fas fa-gamepad", "backgroundColor": "#4f46e5", "color": "#fff"}
+        }
+    }
+}

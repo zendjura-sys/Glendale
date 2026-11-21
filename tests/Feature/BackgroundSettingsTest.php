@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\VideoBackground;
 use App\Support\Backgrounds;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -24,23 +25,6 @@ class BackgroundSettingsTest extends TestCase
         ];
     }
 
-    public function test_youtube_links_are_reduced_to_an_id(): void
-    {
-        foreach ([
-            'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10s',
-            'youtu.be/dQw4w9WgXcQ',
-            'https://youtube.com/shorts/dQw4w9WgXcQ',
-            'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
-            'https://m.youtube.com/live/dQw4w9WgXcQ?feature=share',
-            'dQw4w9WgXcQ',
-        ] as $url) {
-            $this->assertSame('dQw4w9WgXcQ', Backgrounds::youtubeId($url), $url);
-        }
-        foreach (['', 'https://vimeo.com/123', 'https://evil.example/watch?v=dQw4w9WgXcQ', 'javascript:alert(1)', 'https://youtube.com/watch?v=short'] as $url) {
-            $this->assertNull(Backgrounds::youtubeId($url), $url);
-        }
-    }
-
     public function test_preset_and_motion_are_saved_and_shared(): void
     {
         $user = User::factory()->create();
@@ -58,41 +42,58 @@ class BackgroundSettingsTest extends TestCase
             ->assertSessionHasErrors('background');
     }
 
+    private function video(): VideoBackground
+    {
+        $video = VideoBackground::create(['title' => 'Неон', 'mobile_path' => 'backgrounds/videos/m.mp4', 'desktop_path' => 'backgrounds/videos/d.mp4', 'poster_path' => 'backgrounds/videos/p.webp']);
+        Backgrounds::forgetVideos();
+
+        return $video;
+    }
+
     public function test_video_background_needs_gameconplus(): void
     {
         $user = User::factory()->create();
+        $video = $this->video();
 
-        $this->actingAs($user)->put('/settings/appearance', $this->form([
-            'background_video' => 'https://youtu.be/dQw4w9WgXcQ',
-        ]))->assertSessionHasErrors('background_video');
+        $this->actingAs($user)->put('/settings/appearance', $this->form(['background_video' => $video->id]))
+            ->assertSessionHasErrors('background_video');
         $this->assertNull($user->refresh()->pref('background_video'));
 
         $user->forceFill(['plus_until' => now()->addMonth()])->save();
-        $this->actingAs($user)->put('/settings/appearance', $this->form([
-            'background_video' => 'https://youtu.be/dQw4w9WgXcQ',
-        ]))->assertSessionHasNoErrors();
-        $this->assertSame('dQw4w9WgXcQ', Backgrounds::for($user->refresh())['video']);
+        $this->actingAs($user)->put('/settings/appearance', $this->form(['background_video' => $video->id]))
+            ->assertSessionHasNoErrors();
+        $this->assertSame($video->id, Backgrounds::for($user->refresh())['video']['id'] ?? null);
 
-        $this->actingAs($user)->put('/settings/appearance', $this->form([
-            'background_video' => 'https://vimeo.com/1',
-        ]))->assertSessionHasErrors('background_video');
+        // Посилання YouTube і неіснуючі відеофони більше не приймаються.
+        $this->actingAs($user)->put('/settings/appearance', $this->form(['background_video' => 'https://youtu.be/dQw4w9WgXcQ']))
+            ->assertSessionHasErrors('background_video');
+        $this->actingAs($user)->put('/settings/appearance', $this->form(['background_video' => 999]))
+            ->assertSessionHasErrors('background_video');
 
         // Підписка скінчилася: відео не показується, але прибрати його можна.
         $user->forceFill(['plus_until' => now()->subDay()])->save();
         $this->assertNull(Backgrounds::for($user->refresh())['video']);
-        $this->actingAs($user)->put('/settings/appearance', $this->form(['background_video' => '']))
+        $this->actingAs($user)->put('/settings/appearance', $this->form(['background_video' => null]))
             ->assertSessionHasNoErrors();
         $this->assertNull($user->refresh()->pref('background_video'));
     }
 
+    public function test_old_youtube_choice_is_ignored(): void
+    {
+        $user = User::factory()->create(['plus_until' => now()->addMonth()]);
+        $user->mergePref(['background_video' => 'dQw4w9WgXcQ']);
+        $this->assertNull(Backgrounds::for($user->refresh())['video']);
+    }
+
     public function test_plus_members_video_background_is_shown_on_their_profile(): void
     {
+        $video = $this->video();
         $owner = User::factory()->create(['plus_until' => now()->addMonth()]);
-        $owner->mergePref(['background_video' => 'dQw4w9WgXcQ']);
+        $owner->mergePref(['background_video' => $video->id]);
         $guest = User::factory()->create();
 
         $this->actingAs($guest)->get('/'.$owner->username)
-            ->assertInertia(fn ($page) => $page->where('profile.background_video', 'dQw4w9WgXcQ'));
+            ->assertInertia(fn ($page) => $page->where('profile.background_video.id', $video->id)->where('profile.background_video.title', 'Неон'));
 
         $owner->forceFill(['plus_until' => null])->save();
         $this->actingAs($guest)->get('/'.$owner->username)

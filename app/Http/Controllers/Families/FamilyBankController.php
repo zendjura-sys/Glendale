@@ -52,7 +52,7 @@ class FamilyBankController extends FamilyBaseController
                 'balances' => (int) FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->sum('balance'),
                 'deposits' => (int) FamilyDeposit::query()->where('family_id', $family->id)->where('status', FamilyDeposit::STATUS_ACTIVE)->sum('amount'),
                 'pending_cashouts' => (int) FamilyCashout::query()->where('family_id', $family->id)->where('status', FamilyCashout::STATUS_PENDING)->sum('amount'),
-                'paid_week' => (int) -FamilyTransaction::query()->where('family_id', $family->id)->where('type', 'cashout_paid')->where('created_at', '>=', now()->subWeek())->sum('treasury_delta'),
+                'paid_week' => (int) FamilyCashout::query()->where('family_id', $family->id)->where('status', FamilyCashout::STATUS_PAID)->where('processed_at', '>=', now()->subWeek())->sum('amount'),
             ] : null,
             'roster' => $can['treasury.manage'] ? $this->roster($family) : [],
         ]);

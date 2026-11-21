@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -13,6 +15,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 const _channel = MethodChannel('gamecon/app');
 
@@ -38,12 +41,7 @@ class PlayingBadge extends StatelessWidget {
             Icon(playing['kind'] == 'server' ? LucideIcons.server : LucideIcons.gamepad2, size: 14, color: green),
           const SizedBox(width: 6),
           Flexible(
-            child: Text(
-              tr('Грає в {v}{v2}', {'v': playing['label'], 'v2': note != null ? ' · $note' : ''}),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: body(12.5, color: const Color(0xFFA7F3D0), weight: FontWeight.w600),
-            ),
+            child: FitText(tr('Грає в {v}{v2}', {'v': playing['label'], 'v2': note != null ? ' · $note' : ''}), style: body(12.5, color: const Color(0xFFA7F3D0), weight: FontWeight.w600)),
           ),
         ]),
       ),
@@ -225,7 +223,7 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
   @override
   Widget build(BuildContext context) {
     final d = data;
-    if (d == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (d == null) return const ScreenSkeleton();
     final playing = d['playing'] is Map ? mapOf(d['playing']) : null;
     final discord = mapOf(d['discord']);
     final steamInfo = mapOf(d['steam']);
@@ -243,10 +241,11 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
               IconButton(
                 tooltip: tr('Прибрати'),
                 onPressed: () => _act(() => api.delete(Api.site('/me/playing'))),
-                icon: const Icon(LucideIcons.x, size: 18, color: muted),
+                icon: Icon(LucideIcons.x, size: 18, color: muted),
               ),
             ]),
           ),
+        if (playing != null && playing['id'] != null) ...[const SizedBox(height: 12), PlayingTogether(key: ValueKey('${playing['label']}'))],
         const SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -259,7 +258,7 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
             const SizedBox(height: 12),
             if (Platform.isAndroid) ...[
               Row(children: [
-                const Icon(LucideIcons.smartphone, size: 18, color: primary),
+                Icon(LucideIcons.smartphone, size: 18, color: primary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -269,10 +268,10 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
                 ),
                 GcSwitch(value: mobile && usageAccess, onChanged: _setMobile),
               ]),
-              const Divider(height: 24, color: line),
+              Divider(height: 24, color: line),
             ],
             Row(children: [
-              const Icon(LucideIcons.messageCircle, size: 18, color: primary),
+              Icon(LucideIcons.messageCircle, size: 18, color: primary),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -292,9 +291,9 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
                 ),
             ]),
             if (steamInfo['available'] == true) ...[
-              const Divider(height: 24, color: line),
+              Divider(height: 24, color: line),
               Row(children: [
-                const Icon(LucideIcons.monitor, size: 18, color: primary),
+                Icon(LucideIcons.monitor, size: 18, color: primary),
                 const SizedBox(width: 10),
                 Expanded(child: Text(tr('Steam (ігри на ПК)'), style: body(14, weight: FontWeight.w600))),
                 if (steamInfo['linked'] == true)
@@ -340,7 +339,7 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
             leading: text(o['icon']) != null
                 ? NetImage(text(o['icon']), width: 36, height: 36, radius: 9)
                 : Icon(o['kind'] == 'server' ? LucideIcons.server : LucideIcons.gamepad2, color: muted),
-            title: Text(text(o['label']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
+            title: FitText(text(o['label']) ?? '', style: body(14)),
             subtitle: Text(text(o['hint']) ?? '', style: body(11.5, color: faint)),
             onTap: () => setState(() => picked = o),
           ),
@@ -357,6 +356,89 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
           ),
         ],
       ],
+    );
+  }
+}
+
+
+/// «Граємо зараз»: друзі в тій самій грі й кнопка «Голосова з друзями» (паті з голосовою кімнатою + запрошення).
+class PlayingTogether extends StatefulWidget {
+  const PlayingTogether({super.key});
+
+  @override
+  State<PlayingTogether> createState() => _PlayingTogetherState();
+}
+
+class _PlayingTogetherState extends State<PlayingTogether> {
+  List<Map<String, dynamic>>? friends;
+  bool busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final d = await AppScope.read(context).session.api.get(Api.site('/me/playing/friends'));
+        if (mounted) setState(() => friends = maps(d['friends']));
+      } catch (_) {
+        if (mounted) setState(() => friends = []);
+      }
+    });
+  }
+
+  Future<void> _voice() async {
+    setState(() => busy = true);
+    try {
+      final d = await AppScope.read(context).session.api.post(Api.site('/me/playing/voice'));
+      if (!mounted) return;
+      final invited = intOf(d['invited']);
+      toast(context, invited > 0 ? tr('Голосову створено, запрошено друзів: {n}.', {'n': invited}) : tr('Голосову створено. Друзів у цій грі зараз немає — поділіться посиланням.'));
+      context.push('/party/${d['party_id']}');
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final list = friends;
+    return Glass(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.users, size: 18, color: primary),
+          const SizedBox(width: 8),
+          Expanded(child: Text(tr('Граємо зараз'), style: body(15, weight: FontWeight.w700))),
+          if (list != null && list.isNotEmpty) Text(tr('{n} друзів у грі', {'n': list.length}), style: body(12, color: muted)),
+        ]),
+        const SizedBox(height: 8),
+        if (list == null)
+          const SizedBox(height: 32, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+        else if (list.isEmpty)
+          Text(tr('Друзів у цій грі зараз немає. Голосову все одно можна створити й поділитися посиланням.'), style: body(12.5, color: muted))
+        else
+          SizedBox(
+            height: 36,
+            child: Stack(children: [
+              for (var i = 0; i < list.length && i < 8; i++)
+                Positioned(
+                  left: i * 24.0,
+                  child: GestureDetector(
+                    onTap: () => context.push('/u/${list[i]['username']}'),
+                    child: Avatar(url: text(list[i]['avatar_url']), name: text(list[i]['name']) ?? '?', size: 34),
+                  ),
+                ),
+            ]),
+          ),
+        const SizedBox(height: 10),
+        PrimaryButton(
+          label: list != null && list.isNotEmpty ? tr('Голосова з друзями') : tr('Створити голосову'),
+          icon: LucideIcons.mic,
+          busy: busy,
+          onPressed: busy ? null : _voice,
+        ),
+      ]),
     );
   }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\GenerateTitleCards;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -24,15 +25,19 @@ use Illuminate\Support\Carbon;
  * @property list<array{store: string, url: string}>|null $links
  * @property list<string>|null $collections
  * @property string|null $cover
+ * @property string|null $logo_path логотип (іконка застосунку) для значка біля ніка
+ * @property string|null $logo_source
+ * @property Carbon|null $logo_fetched_at
  * @property Carbon|null $released
  * @property float|null $rating
  * @property int $popularity
  * @property int|null $rawg_id
  * @property int|null $igdb_id
  * @property Carbon|null $links_checked_at
+ * @property Carbon|null $news_checked_at
  * @property bool $is_published
  */
-#[Fillable(['slug', 'name', 'letter', 'category', 'platforms', 'genres', 'modes', 'aliases', 'details', 'links', 'cover', 'released', 'rating', 'popularity', 'rawg_id', 'igdb_id', 'links_checked_at', 'is_published'])]
+#[Fillable(['slug', 'name', 'letter', 'category', 'platforms', 'genres', 'modes', 'aliases', 'details', 'links', 'cover', 'logo_path', 'logo_source', 'logo_fetched_at', 'released', 'rating', 'popularity', 'rawg_id', 'igdb_id', 'links_checked_at', 'news_checked_at', 'is_published'])]
 class Game extends Model
 {
     /** Розділи каталогу — від ПК до мобільних. */
@@ -125,6 +130,16 @@ class Game extends Model
         'website' => 'Офіційний сайт',
     ];
 
+    protected static function booted(): void
+    {
+        // Нова чи оновлена гра в каталозі — картки її персонажів: бракує когось — ІІ додасть (у межах бюджету).
+        static::saved(function (Game $game): void {
+            if ($game->is_published && ($game->wasRecentlyCreated || $game->wasChanged(['is_published', 'name', 'details', 'links', 'igdb_id', 'rawg_id'])) && ! app()->runningUnitTests()) {
+                GenerateTitleCards::dispatch(gameId: $game->id)->afterCommit();
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -133,10 +148,12 @@ class Game extends Model
             'modes' => 'array',
             'details' => 'array',
             'links' => 'array',
+            'logo_fetched_at' => 'datetime',
             'collections' => 'array',
             'released' => 'date',
             'rating' => 'float',
             'links_checked_at' => 'datetime',
+            'news_checked_at' => 'datetime',
             'is_published' => 'boolean',
         ];
     }

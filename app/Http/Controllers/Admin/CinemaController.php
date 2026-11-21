@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RefreshMoviePlayers;
 use App\Jobs\SyncCinemaCatalog;
 use App\Models\Movie;
 use App\Models\MovieRequest;
@@ -28,6 +29,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -214,8 +216,8 @@ class CinemaController extends Controller
     }
 
     /**
-     * Масова проставка плеєрів на всі тайтли. replace — замінювати наявні плеєри; без нього лише
-     * додаються нові озвучки. Що саме змінено — у звіті проставки.
+     * Масове призначення плеєрів на всі тайтли. replace — замінювати наявні плеєри; без нього лише
+     * додаються нові озвучки. Що саме змінено — у звіті призначення.
      */
     public function bulkPlayers(Request $request, BulkPlayers $bulk): RedirectResponse
     {
@@ -228,9 +230,9 @@ class CinemaController extends Controller
         $started = $bulk->start((bool) $data['replace'], $data['type'] ?? null, array_values($data['providers'] ?? []));
         Inertia::flash('toast', $started
             ? ['type' => 'success', 'message' => $data['replace']
-                ? 'Проставку запущено у фоні: плеєри замінюються, нові озвучки додаються.'
-                : 'Проставку запущено у фоні: додаються лише нові озвучки.']
-            : ['type' => 'error', 'message' => 'Проставка вже виконується.']);
+                ? 'Призначення плеєрів запущено у фоні: плеєри замінюються, нові озвучки додаються.'
+                : 'Призначення плеєрів запущено у фоні: додаються лише нові озвучки.']
+            : ['type' => 'error', 'message' => 'Призначення плеєрів уже виконується.']);
 
         return back();
     }
@@ -238,7 +240,7 @@ class CinemaController extends Controller
     public function cancelBulkPlayers(BulkPlayers $bulk): RedirectResponse
     {
         $bulk->cancel();
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Проставку зупинено.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Призначення плеєрів зупинено.']);
 
         return back();
     }
@@ -375,6 +377,38 @@ class CinemaController extends Controller
     {
         $this->save($request, Movie::withTrashed()->findOrFail($movie));
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Зміни збережено.']);
+
+        return back();
+    }
+
+    /**
+     * Масові дії з тайтлами (№266): опублікувати, сховати, оновити плеєри — для позначених у списку.
+     * Видалення тут немає навмисно: лише по одному, через кошик.
+     */
+    public function bulk(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*' => ['integer'],
+            'action' => ['required', Rule::in(['publish', 'hide', 'refresh'])],
+        ]);
+        $action = (string) $data['action'];
+        $ids = array_map('intval', Movie::query()->whereIn('id', $data['ids'])->pluck('id')->all());
+        if ($action === 'refresh') {
+            foreach ($ids as $id) {
+                RefreshMoviePlayers::dispatch($id);
+            }
+        } else {
+            Movie::query()->whereIn('id', $ids)->update(['is_published' => $action === 'publish']);
+        }
+        Cache::forget('cinema.genres');
+        Log::info('admin: cinema bulk '.$action, ['movies' => $ids, 'by' => $request->user()->id]);
+        $count = count($ids);
+        Inertia::flash('toast', ['type' => 'success', 'message' => match ($action) {
+            'publish' => "Опубліковано: {$count}.",
+            'hide' => "Сховано: {$count}.",
+            default => "Оновлення плеєрів запущено: {$count}.",
+        }]);
 
         return back();
     }
@@ -614,7 +648,7 @@ class CinemaController extends Controller
             'movie' => $movie ? [
                 ...$movie->toCard(),
                 ...$movie->only([
-                    'tagline', 'trailer_url', 'rating_tmdb', 'tmdb_id', 'origin', 'description', 'poster_url', 'backdrop_url', 'countries', 'duration', 'age_rating', 'rating_imdb', 'rating_shikimori',
+                    'tagline', 'trailer_url', 'rating_tmdb', 'tmdb_id', 'origin', 'description', 'poster_url', 'backdrop_url', 'countries', 'duration', 'age_rating', 'release_status', 'rating_imdb', 'rating_shikimori',
                     'imdb_id', 'shikimori_id', 'is_published', 'is_featured', 'comments_enabled', 'views_count', 'watchers_count',
                     'comments_count', 'ratings_count',
                 ]),
@@ -649,6 +683,7 @@ class CinemaController extends Controller
             'countries.*' => ['string', 'max:60'],
             'duration' => ['nullable', 'integer', 'min:1', 'max:1500'],
             'age_rating' => ['nullable', 'string', 'max:10'],
+            'release_status' => ['nullable', Rule::in(array_keys(Movie::RELEASE))],
             'rating_imdb' => ['nullable', 'numeric', 'between:0,10'],
             'rating_shikimori' => ['nullable', 'numeric', 'between:0,10'],
             'rating_tmdb' => ['nullable', 'numeric', 'between:0,10'],

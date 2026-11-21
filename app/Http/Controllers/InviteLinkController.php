@@ -7,6 +7,8 @@ use App\Models\Clan;
 use App\Models\Community;
 use App\Models\Family;
 use App\Models\InviteLink;
+use App\Models\PartyPost;
+use App\Models\VoiceRoom;
 use App\Services\InviteLinks;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +33,16 @@ class InviteLinkController extends Controller
     public function community(Request $request, Community $community): JsonResponse
     {
         return $this->issued($this->links->issue($request->user(), InviteLink::COMMUNITY, $community->id));
+    }
+
+    public function party(Request $request, PartyPost $party): JsonResponse
+    {
+        return $this->issued($this->links->issue($request->user(), InviteLink::PARTY, $party->id));
+    }
+
+    public function voice(Request $request, VoiceRoom $room): JsonResponse
+    {
+        return $this->issued($this->links->issue($request->user(), InviteLink::VOICE, $room->id));
     }
 
     public function show(string $token): Response

@@ -8,9 +8,10 @@ export function PlusBadge({ className }: { className?: string }) {
     return (
         <span
             title="GameCon+"
+            role="img"
             aria-label="GameCon+"
             className={cn(
-                'inline-flex size-4 shrink-0 items-center justify-center rounded-[5px] bg-[var(--btn-primary,#6366f1)] text-white',
+                'inline-flex size-4 shrink-0 items-center justify-center rounded-[5px] bg-primary text-white',
                 className,
             )}
         >
@@ -47,6 +48,17 @@ export function plusNameProps(plus: PlusMark | null | undefined): {
     const colors = plus.name?.length ? plus.name : ['#ffffff'];
     const first = colors[0];
     const last = colors[colors.length - 1];
+    // Світіння й веселка лягають поверх звичайного кольору ніку.
+    if (plus.fx === 'neon' || plus.fx === 'rainbow') {
+        return {
+            className:
+                plus.fx === 'neon' ? 'plus-name-neon' : 'plus-name-rainbow',
+            style: {
+                ...(plusNameStyle(plus) ?? { color: first }),
+                ['--plus-glow' as string]: first,
+            },
+        };
+    }
     const stops =
         plus.fx === 'flow'
             ? colors.length > 1
@@ -69,6 +81,20 @@ export function plusNameProps(plus: PlusMark | null | undefined): {
             color: 'transparent',
         },
     };
+}
+
+/**
+ * Стиль імені в стрічці, коментарях і картках: нік GameCon+ (з анімацією), інакше — колір
+ * з нагород сезону (fallback).
+ */
+export function nameDisplayProps(
+    plus: PlusMark | null | undefined,
+    fallback?: CSSProperties,
+): { style?: CSSProperties; className?: string } {
+    if (!plus) return { style: fallback };
+    const props = plusNameProps(plus);
+
+    return props.style ? props : { ...props, style: fallback };
 }
 
 /** Ім’я з кольором GameCon+ і позначкою. */
@@ -102,5 +128,7 @@ export function plusFrameStyle(
 
     return {
         backgroundImage: `linear-gradient(135deg, ${colors.join(', ')})`,
+        // Для руху рамки «spin»: конічний перелив тих самих кольорів.
+        ['--gc-frame-conic' as string]: `conic-gradient(from var(--gc-frame-angle, 0deg), ${colors.join(', ')}, ${colors[0]})`,
     };
 }

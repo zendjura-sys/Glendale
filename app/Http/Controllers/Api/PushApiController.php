@@ -18,6 +18,7 @@ class PushApiController extends ApiController
             'token' => ['required', 'string', 'min:20', 'max:512'],
             'platform' => ['sometimes', Rule::in(PushDevice::PLATFORMS)],
             'local_render' => ['sometimes', 'boolean'],
+            'alert_render' => ['sometimes', 'boolean'],
         ]);
 
         // Токен належить пристрою: якщо на ньому увійшов інший акаунт, пристрій переходить до нього.
@@ -28,6 +29,7 @@ class PushApiController extends ApiController
                 'api_token_id' => $request->attributes->get('api_token_id'),
                 'platform' => $data['platform'] ?? 'android',
                 'local_render' => (bool) ($data['local_render'] ?? false),
+                'alert_render' => (bool) ($data['alert_render'] ?? false),
                 'last_used_at' => now(),
             ],
         );

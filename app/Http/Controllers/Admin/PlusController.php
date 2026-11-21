@@ -118,7 +118,8 @@ class PlusController extends Controller
     {
         $this->admin($request);
         $request->merge(['code' => Str::upper(trim((string) $request->input('code')))]);
-        $keys = array_keys(app(Catalog::class)->products());
+        // Промокоду можна дати будь-яку платну функцію, крім поповнення балансу (це передоплата, не послуга).
+        $keys = array_keys(array_filter(app(Catalog::class)->products(), fn (array $p) => in_array($p['kind'], PromoCodes::DISCOUNTABLE, true)));
         $data = $request->validate([
             'code' => ['nullable', 'string', 'min:4', 'max:32', 'regex:/^[A-Z0-9\-]+$/', Rule::unique('plus_codes', 'code')],
             'type' => ['required', Rule::in(PromoCodes::TYPES)],

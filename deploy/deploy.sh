@@ -11,6 +11,9 @@ cd "$(git rev-parse --show-toplevel)"
 REVISION="$(git rev-parse --short "$REF") $(git log -1 --format=%s "$REF")"
 
 echo "→ Синхронізація $REVISION"
+# Агент має писати в дерево коду (інакше rsync code 23 на файлах від monsory).
+"${SSH[@]}" 'sudo chown -R "$(id -un)":www-data /var/www/gamecon && sudo chmod -R ug+rwX /var/www/gamecon && sudo chmod 640 /var/www/gamecon/.env 2>/dev/null || true'
+
 TMP="$(mktemp -d)"
 chmod 2775 "$TMP"
 git archive "$REF" | tar -x -C "$TMP"
@@ -22,4 +25,6 @@ rsync -az --delete \
     -e "ssh -i $KEY -p ${VDS_PORT:-22}" "$TMP/" "$VDS_USER@$VDS_HOST:/var/www/gamecon/"
 rm -rf "$TMP"
 
-"${SSH[@]}" 'mkdir -p /var/www/gamecon/storage/{app/public,framework/{cache,sessions,views},logs} && bash /var/www/gamecon/deploy/remote.sh'
+# INSTALL_LIBRETRANSLATE=1 ./deploy/deploy.sh — заодно поставити LibreTranslate (deploy/libretranslate.sh).
+LT=0; [ "${INSTALL_LIBRETRANSLATE:-}" = 1 ] && LT=1
+"${SSH[@]}" 'mkdir -p /var/www/gamecon/storage/{app/public,framework/{cache,sessions,views},logs} && INSTALL_LIBRETRANSLATE='"$LT"' bash /var/www/gamecon/deploy/remote.sh'

@@ -32,20 +32,20 @@ class ProfileDecorTest extends TestCase
         $this->actingAs($user)->put('/plus/style', ['name' => 'aurora', 'fx' => 'shine', 'header' => 'aurora', 'accent' => 'ocean'])->assertRedirect();
         $this->assertSame('shine', $user->fresh()->toCard()['plus']['fx']);
 
-        $this->actingAs($viewer)->get(route('profile.show', $user))->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $user))->assertInertia(fn (Assert $page) => $page
             ->where('profile.header_fx', 'aurora')
             ->where('profile.plus.fx', 'shine'));
 
         // Невідомі значення відкидаються.
-        $this->actingAs($user)->put('/plus/style', ['fx' => 'rainbow', 'header' => 'glow'])->assertRedirect();
+        $this->actingAs($user)->put('/plus/style', ['fx' => 'blink', 'header' => 'glow'])->assertRedirect();
         $this->assertArrayNotHasKey('fx', $user->fresh()->plus_style ?? []);
-        $this->actingAs($viewer)->get(route('profile.show', $user))->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $user))->assertInertia(fn (Assert $page) => $page
             ->where('profile.header_fx', null)
             ->where('profile.plus.fx', null));
 
         // Без GameCon+ ефекти не показуються.
         $user->forceFill(['plus_until' => now()->subDay(), 'plus_style' => ['header' => 'rim', 'fx' => 'flow']])->save();
-        $this->actingAs($viewer)->get(route('profile.show', $user))->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $user))->assertInertia(fn (Assert $page) => $page
             ->where('profile.header_fx', null)
             ->where('profile.plus', null));
     }
@@ -62,19 +62,19 @@ class ProfileDecorTest extends TestCase
             WatchPartyMember::query()->create(['watch_party_id' => $party->id, 'user_id' => $u->id, 'last_seen_at' => now()]);
         }
 
-        $this->actingAs($viewer)->get(route('profile.show', $owner))->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $owner))->assertInertia(fn (Assert $page) => $page
             ->has('together', 2)
             ->where('together.0.together', 'Мальчик-генерал')
             ->where('together.0.kind', 'cinema'));
 
         $this->actingAs($owner)->postJson('/me/together', ['hide' => $mate->id])->assertOk()->assertJsonCount(1, 'together');
-        $this->actingAs($viewer)->get(route('profile.show', $owner))->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $owner))->assertInertia(fn (Assert $page) => $page
             ->has('together', 1)->where('together.0.id', $other->id));
 
         // Сховати від інших: власник бачить, гості — ні.
         $this->actingAs($owner)->postJson('/me/together', ['off' => true])->assertOk()->assertJsonPath('off', true);
-        $this->actingAs($viewer)->get(route('profile.show', $owner))->assertInertia(fn (Assert $page) => $page->has('together', 0));
-        $this->actingAs($owner)->get(route('profile.show', $owner))->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $owner))->assertInertia(fn (Assert $page) => $page->has('together', 0));
+        $this->actingAs($owner)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $owner))->assertInertia(fn (Assert $page) => $page
             ->has('together', 1)->where('togetherOff', true));
 
         $this->actingAs($owner)->postJson('/me/together', ['off' => false, 'reset' => true])->assertOk()->assertJsonCount(2, 'together');

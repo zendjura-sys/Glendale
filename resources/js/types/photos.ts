@@ -33,6 +33,8 @@ export type PhotoAlbumCard = {
     comments_enabled: boolean;
     photos_count: number;
     cover_url: string | null;
+    /** Альбом скриншотів гри. */
+    game?: { id: number; slug: string; name: string } | null;
     updated_at: string;
 };
 

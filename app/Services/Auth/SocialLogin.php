@@ -3,6 +3,8 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
+use App\Services\Antispam\FraudGuard;
+use App\Services\CommunityService;
 use App\Services\ImageStorage;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\UploadedFile;
@@ -49,7 +51,7 @@ class SocialLogin
         }
 
         if (! $profile->email || ! $profile->emailVerified) {
-            throw new SocialAuthException("Підтвердіть електронну пошту в {$profile->label()}, щоб зареєструватися через нього.");
+            throw new SocialAuthException("Підтвердьте електронну пошту в {$profile->label()}, щоб зареєструватися через нього.");
         }
 
         if (! $this->settings->get('registration_open')) {
@@ -119,11 +121,14 @@ class SocialLogin
             $this->link($user, $profile);
             // Як і при реєстрації поштою: спершу вибір режиму й знайомство з сайтом.
             $user->mergePref(['onboarded' => false]);
+            app(CommunityService::class)->autoJoin($user);
 
             return $user;
         });
 
         $this->importAvatar($user, $profile->avatarUrl);
+        // Антифрод (№229): позначка, якщо з цієї адреси нещодавно входив заблокований.
+        app(FraudGuard::class)->flagEvasion($user, request()->ip());
 
         return $user;
     }

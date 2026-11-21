@@ -1,7 +1,12 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter_background/flutter_background.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart' show Helper;
 import 'package:go_router/go_router.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -15,6 +20,17 @@ import 'i18n.dart';
 
 /// Висота панелі розмови над міні-плеєром.
 const voiceBarExtent = 64.0;
+
+/// Одна відеодоріжка в дзвінку (камера або екран).
+class CallVideoTile {
+  CallVideoTile({required this.id, required this.identity, required this.name, required this.track, required this.screen, required this.local});
+  final String id;
+  final String identity;
+  final String name;
+  final VideoTrack track;
+  final bool screen;
+  final bool local;
+}
 
 /// Розмова в голосовій кімнаті. Одна на весь застосунок і живе поза екранами,
 /// тому не обривається під час переходів між розділами й коли застосунок згорнуто.
@@ -40,10 +56,24 @@ class VoiceCall extends ChangeNotifier {
   bool micOn = false;
   bool micBlocked = false;
   bool deafened = false;
+  bool cameraOn = false;
+  bool screenShareOn = false;
+  bool frontCamera = true;
+
+  /// Слухач на «сцені»: говорить лише після запрошення, руку піднімає сам.
+  bool stageListener = false;
+  bool handRaised = false;
+  int stageEpoch = 0;
   Set<String> speaking = {};
   DateTime? connectedAt;
 
+  /// Відеокадри дзвінка (локальні й віддалені).
+  final List<CallVideoTile> videos = [];
+
   bool get active => status != 'idle';
+
+  /// У дзвінку або LiveCast є відео / екран — показуємо сцену.
+  bool get hasVideo => (kind == 'call' || kind == 'broadcast') && videos.isNotEmpty;
 
   /// Голосова кімната сім’ї чи спільноти.
   Future<void> join(Api api, Map<String, dynamic> room, {required String label, required String route, void Function(Object error)? onError}) async {
@@ -60,6 +90,42 @@ class VoiceCall extends ChangeNotifier {
         roomName = text(room['name']) ?? tr('Кімната');
         this.label = label;
         this.route = route;
+      },
+    );
+  }
+
+  /// GameCast: підключення до шоу наживо (ведучі говорять, слухачі — слухають).
+  Future<void> show(Api api, int id, String title, {void Function(Object error)? onError}) async {
+    if (kind == 'show' && roomId == id && active) return;
+    await _connect(
+      api,
+      () => api.post(Api.site('/shows/$id/join')),
+      onError: onError,
+      failure: tr('Не вдалося підключитися до шоу.'),
+      meta: () {
+        kind = 'show';
+        roomId = id;
+        roomName = title;
+        label = 'GameCast';
+        route = '/shows/$id';
+      },
+    );
+  }
+
+  /// LiveCast: нативний відеострім (ведучий публікує, глядачі дивляться).
+  Future<void> broadcast(Api api, int id, String title, {void Function(Object error)? onError}) async {
+    if (kind == 'broadcast' && roomId == id && active) return;
+    await _connect(
+      api,
+      () => api.post(Api.site('/livecast/$id/join')),
+      onError: onError,
+      failure: tr('Не вдалося підключитися до LiveCast.'),
+      meta: () {
+        kind = 'broadcast';
+        roomId = id;
+        roomName = title;
+        label = 'LiveCast';
+        route = '/livecast/$id';
       },
     );
   }
@@ -152,12 +218,48 @@ class VoiceCall extends ChangeNotifier {
         })
         ..on<TrackSubscribedEvent>((e) {
           if (deafened && e.track is RemoteAudioTrack) e.track.disable();
+          if (e.track is VideoTrack) {
+            _upsertVideo(
+              id: e.publication.sid,
+              identity: e.participant.identity,
+              name: e.participant.name.isEmpty ? e.participant.identity : e.participant.name,
+              track: e.track as VideoTrack,
+              screen: e.publication.source == TrackSource.screenShareVideo,
+              local: false,
+            );
+          }
+        })
+        ..on<TrackUnsubscribedEvent>((e) {
+          if (e.track is VideoTrack) _removeVideo(e.publication.sid);
+        })
+        ..on<LocalTrackPublishedEvent>((e) {
+          final raw = e.publication.track;
+          if (raw == null || raw is! VideoTrack) return;
+          final local = next.localParticipant;
+          _upsertVideo(
+            id: e.publication.sid,
+            identity: local?.identity ?? 'local',
+            name: local?.name.isNotEmpty == true ? local!.name : tr('Ви'),
+            track: raw as VideoTrack,
+            screen: e.publication.source == TrackSource.screenShareVideo,
+            local: true,
+          );
+        })
+        ..on<LocalTrackUnpublishedEvent>((e) {
+          _removeVideo(e.publication.sid);
         })
         ..on<ParticipantPermissionsUpdatedEvent>((e) {
           if (e.participant != next.localParticipant) return;
-          micBlocked = !e.permissions.canPublish;
-          if (micBlocked) micOn = false;
-          notifyListeners();
+          // Запросили на сцену або повернули в слухачі: LiveKit міняє canPublish.
+          final blocked = !e.permissions.canPublish;
+          final changed = micBlocked != blocked;
+          micBlocked = blocked;
+          if (changed) stageEpoch++;
+          if (blocked && (changed || micOn)) {
+            unawaited(_setMic(false));
+          } else {
+            notifyListeners();
+          }
         })
         ..on<RoomDisconnectedEvent>((e) {
           if (_room != next) return;
@@ -186,12 +288,16 @@ class VoiceCall extends ChangeNotifier {
   Future<void> leave() async {
     final room = _room;
     final call = kind == 'call' ? callId : null;
+    final showId = kind == 'show' ? roomId : null;
+    final broadcastId = kind == 'broadcast' ? roomId : null;
     final api = _api;
     _room = null;
     await room?.disconnect();
     await _reset();
     // Співрозмовник побачить кінець дзвінка одразу, не чекаючи вебхука LiveKit.
     if (call != null && api != null) unawaited(api.post('/api/v1/calls/$call/leave').then((_) => null, onError: (_) => null));
+    if (showId != null && api != null) unawaited(api.post(Api.site('/shows/$showId/leave')).then((_) => null, onError: (_) => null));
+    if (broadcastId != null && api != null) unawaited(api.post(Api.site('/livecast/$broadcastId/leave')).then((_) => null, onError: (_) => null));
   }
 
   Future<void> _reset() async {
@@ -207,8 +313,32 @@ class VoiceCall extends ChangeNotifier {
     connectedAt = null;
     micOn = false;
     micBlocked = false;
+    cameraOn = false;
+    screenShareOn = false;
+    frontCamera = true;
+    videos.clear();
+    stageListener = false;
+    handRaised = false;
+    stageEpoch = 0;
     speaking = {};
     notifyListeners();
+  }
+
+  void _upsertVideo({required String id, required String identity, required String name, required VideoTrack track, required bool screen, required bool local}) {
+    final i = videos.indexWhere((v) => v.id == id);
+    final tile = CallVideoTile(id: id, identity: identity, name: name, track: track, screen: screen, local: local);
+    if (i >= 0) {
+      videos[i] = tile;
+    } else {
+      videos.add(tile);
+    }
+    notifyListeners();
+  }
+
+  void _removeVideo(String id) {
+    final before = videos.length;
+    videos.removeWhere((v) => v.id == id);
+    if (videos.length != before) notifyListeners();
   }
 
   /// Foreground-сервіс із мікрофоном: Android не вимикає розмову у згорнутому застосунку.
@@ -244,11 +374,117 @@ class VoiceCall extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Повертає текст підказки, якщо мікрофон забрав модератор.
+  /// Повертає текст підказки, якщо мікрофон зараз недоступний.
   String? toggleMic() {
-    if (micBlocked) return tr('Модератор вимкнув вам мікрофон.');
+    if (micBlocked) {
+      return stageListener ? tr('Ви слухач. Підніміть руку, щоб вас запросили на сцену.') : tr('Модератор вимкнув вам мікрофон.');
+    }
     unawaited(_setMic(!micOn));
     return null;
+  }
+
+  bool get _videoSurface => kind == 'call' || kind == 'broadcast';
+
+  /// Камера в дзвінку / LiveCast: null — ок, інакше текст помилки.
+  Future<String?> toggleCamera() async {
+    if (!_videoSurface) return tr('Відео доступне в дзвінках і LiveCast.');
+    if (micBlocked) return tr('Немає права публікувати відео.');
+    final local = _room?.localParticipant;
+    if (local == null) return tr('Спочатку підключіться.');
+    final next = !cameraOn;
+    try {
+      await local.setCameraEnabled(
+        next,
+        cameraCaptureOptions: CameraCaptureOptions(cameraPosition: frontCamera ? CameraPosition.front : CameraPosition.back),
+      );
+      cameraOn = next;
+      if (next && screenShareOn) {
+        // Екран і камера можуть йти разом; стан екрана не чіпаємо.
+      }
+      notifyListeners();
+      return null;
+    } catch (_) {
+      cameraOn = false;
+      notifyListeners();
+      return tr('Немає доступу до камери — дозвольте її в налаштуваннях.');
+    }
+  }
+
+  /// Передня / задня камера під час відеодзвінка.
+  Future<String?> flipCamera() async {
+    if (!cameraOn) return null;
+    final local = _room?.localParticipant;
+    final pub = local?.getTrackPublicationBySource(TrackSource.camera);
+    final track = pub?.track;
+    if (track is! LocalVideoTrack) return null;
+    frontCamera = !frontCamera;
+    try {
+      await local!.setCameraEnabled(
+        true,
+        cameraCaptureOptions: CameraCaptureOptions(cameraPosition: frontCamera ? CameraPosition.front : CameraPosition.back),
+      );
+      notifyListeners();
+      return null;
+    } catch (_) {
+      frontCamera = !frontCamera;
+      return tr('Не вдалося перемкнути камеру.');
+    }
+  }
+
+  /// Демонстрація екрана (Android / desktop). На iOS потрібен Broadcast Upload Extension.
+  Future<String?> toggleScreenShare() async {
+    if (!_videoSurface) return tr('Демонстрація екрана доступна в дзвінках і LiveCast.');
+    if (micBlocked) return tr('Немає права публікувати відео.');
+    final local = _room?.localParticipant;
+    if (local == null) return tr('Спочатку підключіться.');
+    if (screenShareOn) {
+      try {
+        await local.setScreenShareEnabled(false);
+        screenShareOn = false;
+        notifyListeners();
+        return null;
+      } catch (_) {
+        return tr('Не вдалося зупинити демонстрацію екрана.');
+      }
+    }
+    if (!kIsWeb && Platform.isAndroid) {
+      final allowed = await Helper.requestCapturePermission();
+      if (!allowed) return tr('Дозвольте захоплення екрана.');
+      await _keepAlive(true);
+    }
+    try {
+      await local.setScreenShareEnabled(true, captureScreenAudio: true);
+      screenShareOn = true;
+      notifyListeners();
+      return null;
+    } catch (_) {
+      screenShareOn = false;
+      notifyListeners();
+      return tr('Не вдалося поділитися екраном.');
+    }
+  }
+
+  /// Слухач на «сцені»: null — руку змінено, інакше текст помилки.
+  Future<String?> toggleHand() async {
+    final api = _api;
+    final id = roomId;
+    if (api == null || id == null || kind != 'room' || !stageListener) return tr('Руку піднімають слухачі на сцені.');
+    try {
+      await api.post('/api/v1/voice/rooms/$id/hand', {'raised': !handRaised});
+      handRaised = !handRaised;
+      stageEpoch++;
+      notifyListeners();
+      return null;
+    } catch (e) {
+      return e is ApiException ? e.message : tr('Не вдалося змінити руку.');
+    }
+  }
+
+  void setStageRole({required bool listener, required bool hand}) {
+    if (stageListener == listener && handRaised == hand) return;
+    stageListener = listener;
+    handRaised = hand;
+    notifyListeners();
   }
 
   Future<void> toggleDeafen() async {
@@ -303,7 +539,7 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   }
 
   void _onCall() {
-    final key = '${call.status}:${call.roomId}';
+    final key = '${call.status}:${call.roomId}:${call.stageEpoch}';
     if (key != _seen && call.status != 'connecting') _load();
     _seen = key;
     if (mounted) setState(() {});
@@ -312,7 +548,9 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   Future<void> _load() async {
     try {
       final result = await api.get(path);
-      if (mounted) setState(() => data = result);
+      if (!mounted) return;
+      _syncStage(result);
+      setState(() => data = result);
     } catch (_) {
       // Немає доступу або голос вимкнено — панель просто не показуємо.
     }
@@ -321,9 +559,35 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   Future<void> _run(Future<Map<String, dynamic>> Function() action) async {
     try {
       final result = await action();
-      if (mounted) setState(() => data = result);
+      if (!mounted) return;
+      _syncStage(result);
+      setState(() => data = result);
     } catch (e) {
       if (mounted) toast(context, e);
+    }
+  }
+
+  /// Роль у кімнаті, до якої зараз підключені: слухач бачить руку й на панелі розмови.
+  void _syncStage(Map<String, dynamic> result) {
+    if (call.kind != 'room' || call.roomId == null) return;
+    final meId = AppScope.read(context).session.myId;
+    final manage = result['can_manage'] == true;
+    for (final room in maps(result['rooms'])) {
+      if (intOf(room['id']) != call.roomId) continue;
+      Map<String, dynamic>? me;
+      for (final person in maps(room['participants'])) {
+        if (intOf(person['id']) == meId) me = person;
+      }
+      final onStage = room['stage'] == true;
+      final listener = onStage && !manage && me != null && me['speaker'] != true;
+      final becameSpeaker = onStage && !manage && me != null && me['speaker'] == true;
+      final wasListener = call.stageListener;
+      call.setStageRole(listener: listener, hand: listener && me['hand'] == true);
+      // Лише запрошення на сцену, не вимкнення режиму й не зникнення зі списку.
+      if (wasListener && becameSpeaker && call.status == 'connected' && mounted) {
+        toast(context, tr('Ви на сцені.'));
+      }
+      return;
     }
   }
 
@@ -333,11 +597,15 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   }
 
   Future<void> _roomMenu(Map<String, dynamic> room) async {
+    final stageOn = AppScope.read(context).session.pluginOn('voice_stage');
+    final stage = room['stage'] == true;
     final action = await showGcSheet<String>(
       context,
       title: text(room['name']),
       builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
         _SheetAction(icon: LucideIcons.pencil, label: tr('Перейменувати'), onTap: () => Navigator.pop(sheet, 'rename')),
+        if (stageOn)
+          _SheetAction(icon: LucideIcons.presentation, label: stage ? tr('Вимкнути сцену') : tr('Зробити сценою'), onTap: () => Navigator.pop(sheet, 'stage')),
         if (room['system'] != true) _SheetAction(icon: LucideIcons.trash2, label: tr('Видалити'), danger: true, onTap: () => Navigator.pop(sheet, 'delete')),
       ]),
     );
@@ -346,6 +614,8 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
     if (action == 'rename') {
       final name = (await askText(context, tr('Нова назва'), initial: text(room['name']) ?? ''))?.trim();
       if (name != null && name.isNotEmpty) await _run(() => api.patch('/api/v1/voice/rooms/$id', {'name': name}));
+    } else if (action == 'stage') {
+      await _run(() => api.patch('/api/v1/voice/rooms/$id', {'stage': !stage}));
     } else if (action == 'delete' && await confirm(context, tr('Видалити кімнату «{v}»?', {'v': text(room['name'])}), danger: true, action: tr('Видалити'))) {
       await _run(() => api.delete('/api/v1/voice/rooms/$id'));
     }
@@ -353,10 +623,19 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
 
   Future<void> _memberMenu(Map<String, dynamic> room, Map<String, dynamic> person) async {
     final muted = person['muted'] == true;
+    final stage = room['stage'] == true;
+    final speaker = person['speaker'] == true;
+    final lead = person['manager'] == true;
     final action = await showGcSheet<String>(
       context,
       title: text(person['name']),
       builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
+        if (stage && !lead)
+          _SheetAction(
+            icon: LucideIcons.presentation,
+            label: speaker ? tr('Повернути в слухачі') : tr('Запросити на сцену'),
+            onTap: () => Navigator.pop(sheet, speaker ? 'listener' : 'speaker'),
+          ),
         _SheetAction(icon: muted ? LucideIcons.mic : LucideIcons.micOff, label: muted ? tr('Дозволити мікрофон') : tr('Вимкнути мікрофон'), onTap: () => Navigator.pop(sheet, muted ? 'unmute' : 'mute')),
         _SheetAction(icon: LucideIcons.userX, label: tr('Виключити з кімнати'), danger: true, onTap: () => Navigator.pop(sheet, 'kick')),
       ]),
@@ -378,10 +657,10 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
         padding: const EdgeInsets.fromLTRB(14, 12, 8, 10),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            const Icon(LucideIcons.volume2, size: 18, color: primary),
+            Icon(LucideIcons.volume2, size: 18, color: primary),
             const SizedBox(width: 8),
             Expanded(child: Text(tr('Голосові кімнати'), style: body(15, weight: FontWeight.w700))),
-            if (manage) IconButton(onPressed: _create, icon: const Icon(LucideIcons.plus, size: 20, color: muted), tooltip: tr('Нова кімната')),
+            if (manage) IconButton(onPressed: _create, icon: Icon(LucideIcons.plus, size: 20, color: muted), tooltip: tr('Нова кімната')),
           ]),
           if (!enabled)
             Padding(
@@ -397,9 +676,16 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   Widget _room(Map<String, dynamic> room, bool enabled, bool manage) {
     final id = intOf(room['id']);
     final locked = room['locked'] == true;
+    final stage = room['stage'] == true;
     final here = call.kind == 'room' && call.roomId == id && call.active;
     final people = maps(room['participants']);
     final count = intOf(room['count']);
+    final meId = AppScope.read(context).session.myId;
+    Map<String, dynamic>? me;
+    for (final person in people) {
+      if (intOf(person['id']) == meId) me = person;
+    }
+    final mine = me;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Material(
@@ -419,24 +705,44 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
               if (here && call.status == 'connecting')
                 const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
               else
-                Icon(locked ? LucideIcons.lock : LucideIcons.volume2, size: 18, color: locked ? faint : (here ? green : muted)),
+                Icon(locked ? LucideIcons.lock : (stage ? LucideIcons.presentation : LucideIcons.volume2), size: 18, color: locked ? faint : (here ? green : muted)),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  text(room['name']) ?? '',
-                  overflow: TextOverflow.ellipsis,
-                  style: body(14.5, color: locked ? faint : (here ? ink : soft), weight: here ? FontWeight.w700 : FontWeight.w500),
-                ),
+                child: FitText(text(room['name']) ?? '', style: body(14.5, color: locked ? faint : (here ? ink : soft), weight: here ? FontWeight.w700 : FontWeight.w500)),
               ),
-              if (count > 0) Text('$count', style: body(12.5, color: muted)),
+              if (stage)
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(color: gold.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(999)),
+                  child: Text(tr('Сцена'), style: body(10.5, color: gold, weight: FontWeight.w700)),
+                ),
+              if (count > 0) Padding(padding: const EdgeInsets.only(left: 6), child: Text('$count', style: body(12.5, color: muted))),
               if (manage) ...[
                 const SizedBox(width: 4),
-                InkResponse(onTap: () => _roomMenu(room), radius: 18, child: const Icon(LucideIcons.ellipsis, size: 18, color: faint)),
+                InkResponse(onTap: () => _roomMenu(room), radius: 18, child: Icon(LucideIcons.ellipsis, size: 18, color: faint)),
               ],
             ]),
           ),
         ),
       ),
+      if (stage && here && !manage && mine != null && mine['speaker'] != true)
+        Padding(
+          padding: const EdgeInsets.only(left: 36, right: 8, bottom: 4),
+          child: Row(children: [
+            Expanded(child: Text(tr('Ви слухач.'), style: body(12.5, color: muted))),
+            TextButton.icon(
+              onPressed: () => _run(() => api.post('/api/v1/voice/rooms/$id/hand', {'raised': mine['hand'] != true})),
+              icon: Icon(LucideIcons.hand, size: 16, color: mine['hand'] == true ? gold : ink),
+              label: Text(mine['hand'] == true ? tr('Опустити руку') : tr('Підняти руку'), style: body(12.5, color: mine['hand'] == true ? gold : ink, weight: FontWeight.w700)),
+            ),
+          ]),
+        )
+      else if (stage && here && !manage && mine != null && mine['speaker'] == true)
+        Padding(
+          padding: const EdgeInsets.only(left: 36, right: 8, bottom: 4),
+          child: Text(tr('Ви на сцені.'), style: body(12.5, color: green, weight: FontWeight.w600)),
+        ),
       for (final person in people)
         Padding(
           padding: const EdgeInsets.only(left: 34, right: 4, bottom: 2),
@@ -456,8 +762,13 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
                   child: Avatar(name: text(person['name']) ?? '', url: absolute(person['avatar_url']), size: 26),
                 ),
                 const SizedBox(width: 8),
-                Expanded(child: Text(text(person['name']) ?? '', overflow: TextOverflow.ellipsis, style: body(13, color: soft))),
-                if (person['muted'] == true) const Icon(LucideIcons.micOff, size: 15, color: dangerSoft),
+                Expanded(child: FitText(text(person['name']) ?? '', style: body(13, color: soft))),
+                if (stage && person['hand'] == true) Tooltip(message: tr('Підняв руку'), child: const Icon(LucideIcons.hand, size: 15, color: gold)),
+                if (stage && person['speaker'] == true && person['muted'] != true)
+                  Tooltip(message: tr('На сцені'), child: const Icon(LucideIcons.mic, size: 15, color: green)),
+                if (stage && person['speaker'] != true && person['hand'] != true)
+                  Tooltip(message: tr('Слухач'), child: Icon(LucideIcons.headphones, size: 15, color: faint)),
+                if (person['muted'] == true) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(LucideIcons.micOff, size: 15, color: dangerSoft)),
               ]),
             ),
           ),
@@ -539,10 +850,23 @@ class _VoiceBarState extends State<VoiceBar> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(call.roomName, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700)),
-                    Text(call.status == 'connecting' ? tr('Підключення…') : (call.kind == 'call' ? '${call.label} · ${_elapsed(call.connectedAt)}' : call.label), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                    FitText(call.roomName, style: body(14, weight: FontWeight.w700)),
+                    FitText(call.status == 'connecting' ? tr('Підключення…') : (call.kind == 'call' ? '${call.label} · ${_elapsed(call.connectedAt)}' : call.label), style: body(12, color: muted)),
                   ]),
                 ),
+                if (call.stageListener)
+                  _BarButton(
+                    icon: LucideIcons.hand,
+                    selected: call.handRaised,
+                    tooltip: call.handRaised ? tr('Опустити руку') : tr('Підняти руку'),
+                    onTap: call.status == 'connected'
+                        ? () {
+                            unawaited(call.toggleHand().then((hint) {
+                              if (hint != null && context.mounted) toast(context, hint);
+                            }));
+                          }
+                        : null,
+                  ),
                 _BarButton(
                   icon: call.micOn ? LucideIcons.mic : LucideIcons.micOff,
                   active: call.micOn,
@@ -554,6 +878,44 @@ class _VoiceBarState extends State<VoiceBar> {
                         }
                       : null,
                 ),
+                if (call.kind == 'call' || call.kind == 'broadcast') ...[
+                  _BarButton(
+                    icon: call.cameraOn ? LucideIcons.video : LucideIcons.videoOff,
+                    active: call.cameraOn,
+                    tooltip: call.cameraOn ? tr('Вимкнути камеру') : tr('Увімкнути камеру'),
+                    onTap: call.status == 'connected'
+                        ? () {
+                            unawaited(call.toggleCamera().then((hint) {
+                              if (hint != null && context.mounted) toast(context, hint);
+                            }));
+                          }
+                        : null,
+                  ),
+                  if (call.cameraOn)
+                    _BarButton(
+                      icon: LucideIcons.switchCamera,
+                      active: true,
+                      tooltip: tr('Перемкнути камеру'),
+                      onTap: () {
+                        unawaited(call.flipCamera().then((hint) {
+                          if (hint != null && context.mounted) toast(context, hint);
+                        }));
+                      },
+                    ),
+                  _BarButton(
+                    icon: LucideIcons.monitorUp,
+                    active: call.screenShareOn,
+                    selected: call.screenShareOn,
+                    tooltip: call.screenShareOn ? tr('Зупинити екран') : tr('Поділитися екраном'),
+                    onTap: call.status == 'connected'
+                        ? () {
+                            unawaited(call.toggleScreenShare().then((hint) {
+                              if (hint != null && context.mounted) toast(context, hint);
+                            }));
+                          }
+                        : null,
+                  ),
+                ],
                 _BarButton(
                   icon: call.deafened ? LucideIcons.headphoneOff : LucideIcons.headphones,
                   active: !call.deafened,
@@ -571,17 +933,18 @@ class _VoiceBarState extends State<VoiceBar> {
 }
 
 class _BarButton extends StatelessWidget {
-  const _BarButton({required this.icon, required this.tooltip, required this.onTap, this.active = true, this.leave = false});
+  const _BarButton({required this.icon, required this.tooltip, required this.onTap, this.active = true, this.leave = false, this.selected = false});
   final IconData icon;
   final String tooltip;
   final VoidCallback? onTap;
   final bool active;
   final bool leave;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    final bg = leave ? danger : (active ? Colors.white.withValues(alpha: 0.06) : danger.withValues(alpha: 0.16));
-    final fg = leave ? Colors.white : (active ? ink : dangerSoft);
+    final bg = leave ? danger : (selected ? gold.withValues(alpha: 0.22) : (active ? palette.fg.withValues(alpha: 0.06) : danger.withValues(alpha: 0.16)));
+    final fg = leave ? Colors.white : (selected ? gold : (active ? ink : dangerSoft));
     return Padding(
       padding: const EdgeInsets.only(left: 6),
       child: Tooltip(

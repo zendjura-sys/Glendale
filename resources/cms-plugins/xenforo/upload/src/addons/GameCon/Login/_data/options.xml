@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<options>
+  <option option_id="gameconClientId" edit_format="textbox" data_type="string">
+    <default_value></default_value>
+    <relation group_id="gameconLogin" display_order="10"/>
+  </option>
+  <option option_id="gameconClientSecret" edit_format="textbox" data_type="string">
+    <default_value></default_value>
+    <edit_format_params>type=password</edit_format_params>
+    <relation group_id="gameconLogin" display_order="20"/>
+  </option>
+  <option option_id="gameconBase" edit_format="textbox" data_type="string">
+    <default_value>https://gamecon.online</default_value>
+    <relation group_id="gameconLogin" display_order="30"/>
+  </option>
+</options>

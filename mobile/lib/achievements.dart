@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
@@ -31,6 +33,24 @@ const _icons = <String, IconData>{
   'megaphone': LucideIcons.megaphone,
 };
 
+/// Як на сайті: підпис «є у N% людей» лише в отриманого бейджа, якщо він рідший за 10%.
+const _rareThreshold = 10.0;
+
+double? _badgeRarity(Map<String, dynamic> b) {
+  final raw = b['rarity'];
+  if (raw is num) return raw.toDouble();
+  if (raw is String) return double.tryParse(raw);
+  return null;
+}
+
+/// «є у {p}% людей» — як rarityLabel на сайті. Менше 1% показуємо як «<1».
+String _rarityLabel(double rarity) => tr('є у {p}% людей', {'p': rarity < 1 ? '<1' : '${rarity.round()}'});
+
+bool _showRarity(Map<String, dynamic> b) {
+  final rarity = _badgeRarity(b);
+  return b['earned'] == true && rarity != null && rarity < _rareThreshold;
+}
+
 /// Рівень (досвід до наступного) і бейджі за активність — у профілі.
 class AchievementsPanel extends StatefulWidget {
   const AchievementsPanel({required this.data, required this.isSelf, super.key});
@@ -54,6 +74,7 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
     final percent = ((xp - from) / (to - from).clamp(1, 1 << 30)).clamp(0.0, 1.0);
     final badges = maps(d['badges']);
     final shown = all ? badges : badges.where((b) => b['earned'] == true).toList();
+    final rareRow = shown.any(_showRarity);
 
     return Glass(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
@@ -64,7 +85,7 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
             height: 48,
             decoration: BoxDecoration(gradient: buttonGradient, borderRadius: BorderRadius.circular(16)),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(tr('РІВ.'), style: body(8.5, color: Colors.white70, weight: FontWeight.w700)),
+              Text(tr('РІВ.'), style: body(8.5, color: fgSoft, weight: FontWeight.w700)),
               Text('$level', style: body(18, color: Colors.white, weight: FontWeight.w800)),
             ]),
           ),
@@ -79,7 +100,7 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
               const SizedBox(height: 6),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(value: percent, minHeight: 6, backgroundColor: Colors.white.withValues(alpha: 0.08), color: primary),
+                child: LinearProgressIndicator(value: percent, minHeight: 6, backgroundColor: fg.withValues(alpha: 0.08), color: primary),
               ),
               const SizedBox(height: 4),
               Text(tr('{xp} / {to} досвіду до рівня {v}', {'xp': xp, 'to': to, 'v': level + 1}), style: body(11, color: faint)),
@@ -101,28 +122,40 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 10,
             crossAxisSpacing: 8,
-            childAspectRatio: 0.82,
+            childAspectRatio: rareRow ? 0.62 : 0.82,
             children: [
-              for (final b in shown)
-                Tooltip(
-                  message: '${b['title']} — ${b['text']}${b['earned'] == true ? '' : ' (${b['progress']}/${b['target']})'}',
-                  triggerMode: TooltipTriggerMode.tap,
-                  child: Column(children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: b['earned'] == true ? gold.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.04),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: b['earned'] == true ? gold.withValues(alpha: 0.4) : line),
-                      ),
-                      child: Icon(_icons[b['icon']] ?? LucideIcons.award, size: 21, color: b['earned'] == true ? gold : faint),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(text(b['title']) ?? '', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11, color: b['earned'] == true ? soft : faint)),
-                  ]),
-                ),
+              for (final b in shown) _badge(b),
             ],
+          ),
+      ]),
+    );
+  }
+
+  Widget _badge(Map<String, dynamic> b) {
+    final earned = b['earned'] == true;
+    final rarity = _badgeRarity(b);
+    final progress = earned || b['secret'] == true ? '' : ' (${b['progress']}/${b['target']})';
+    final rare = rarity == null ? '' : ' · ${_rarityLabel(rarity)}';
+    return Tooltip(
+      message: '${b['title']} — ${b['text']}$progress$rare',
+      triggerMode: TooltipTriggerMode.tap,
+      child: Column(children: [
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: earned ? gold.withValues(alpha: 0.15) : fg.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: earned ? gold.withValues(alpha: 0.4) : line),
+          ),
+          child: Icon(_icons[b['icon']] ?? LucideIcons.award, size: 21, color: earned ? gold : faint),
+        ),
+        const SizedBox(height: 5),
+        FitText(text(b['title']) ?? '', style: body(11, color: earned ? soft : faint), textAlign: TextAlign.center, maxLines: 2),
+        if (_showRarity(b) && rarity != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(_rarityLabel(rarity), style: body(9.5, color: gold.withValues(alpha: 0.85)), textAlign: TextAlign.center, maxLines: 2),
           ),
       ]),
     );

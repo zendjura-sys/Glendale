@@ -5,11 +5,14 @@ namespace Tests\Feature;
 use App\Jobs\SendPushNotification;
 use App\Models\PushDevice;
 use App\Models\User;
+use App\Services\Alerts\AlertWatcher;
 use App\Services\Push\FcmClient;
+use App\Services\Push\PushNotifier;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class PushNotificationsTest extends TestCase
@@ -136,5 +139,47 @@ class PushNotificationsTest extends TestCase
             && $request['message']['data']['conversation_id'] === '7');
         Http::assertSent(fn ($request) => ($request['message']['token'] ?? null) === $legacy
             && $request['message']['notification']['title'] === 'Олена');
+    }
+
+    public function test_alert_push_is_data_only_only_for_apps_with_shelter_button(): void
+    {
+        $this->configureFcm();
+        $user = User::factory()->create();
+        $token = $this->token($user);
+        $new = str_repeat('h', 40);
+        $old = str_repeat('i', 40);
+        $this->withToken($token)->postJson('/api/v1/push/devices', ['token' => $new, 'platform' => 'android', 'local_render' => true, 'alert_render' => true])->assertOk();
+        // Застосунок до 1.1.125: малює чати сам, а тривогу — ні.
+        $this->withToken($token)->postJson('/api/v1/push/devices', ['token' => $old, 'platform' => 'android', 'local_render' => true])->assertOk();
+
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'ya29.test', 'expires_in' => 3600]),
+            'fcm.googleapis.com/*' => Http::response(['name' => 'projects/gamecon-test/messages/1']),
+        ]);
+
+        (new SendPushNotification($user->id, 'GameCon', 'Повітряна тривога: Житомир', ['type' => 'notification', 'kind' => 'air_alert', 'url' => '/alerts'], 'air_alerts', 'air-alert', dataOnly: true, ttl: 60))->handle(app(FcmClient::class));
+
+        Http::assertSent(fn ($request) => ($request['message']['token'] ?? null) === $new
+            && ! isset($request['message']['notification'])
+            && $request['message']['data']['kind'] === 'air_alert'
+            && $request['message']['android']['ttl'] === '60s');
+        Http::assertSent(fn ($request) => ($request['message']['token'] ?? null) === $old
+            && $request['message']['notification']['body'] === 'Повітряна тривога: Житомир');
+    }
+
+    public function test_hush_skips_social_push_but_keeps_urgent_ones(): void
+    {
+        $this->configureFcm();
+        Bus::fake([SendPushNotification::class]);
+        $user = User::factory()->create();
+        PushDevice::query()->create(['user_id' => $user->id, 'token' => str_repeat('h', 40), 'platform' => 'android']);
+        // Тривога в місці людини.
+        $this->mock(AlertWatcher::class, fn ($mock) => $mock->shouldReceive('hushed')->andReturn(true));
+        $push = fn (string $kind) => app(PushNotifier::class)->notification($user, $user->notifications()->create(['id' => (string) Str::uuid(), 'type' => 'test', 'data' => ['kind' => $kind, 'text' => 'Текст']]));
+
+        $push('friend_request');
+        Bus::assertNotDispatched(SendPushNotification::class);
+        $push('new_login');
+        Bus::assertDispatched(SendPushNotification::class, fn (SendPushNotification $job) => $job->data['kind'] === 'new_login');
     }
 }

@@ -113,7 +113,7 @@ class PhoneNumbersTest extends TestCase
         $this->actingAs($buyer)->getJson('/phone/check?operator=05&digits=1928374')->assertOk()
             ->assertJsonPath('available', false)->assertJsonPath('reason', 'Номер уже зайнятий.');
         $this->actingAs($owner)->getJson('/phone/check?operator=05&digits=1928374')->assertJsonPath('reason', 'Це вже ваш номер.');
-        $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['product' => 'phone_regular', 'phone_operator' => '05', 'phone_digits' => '1928374'])
+        $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'phone_regular', 'phone_operator' => '05', 'phone_digits' => '1928374'])
             ->assertUnprocessable();
 
         // Навіть в обхід перевірок база не прийме дубль.
@@ -131,7 +131,7 @@ class PhoneNumbersTest extends TestCase
         $this->assertSame(19900, $check['full_price']);
         $this->assertSame(15900, $check['price']); // −20% для GameCon+
 
-        $response = $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['product' => 'phone_gold', 'phone_operator' => '77', 'phone_digits' => '1234567'])->assertOk();
+        $response = $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'phone_gold', 'phone_operator' => '77', 'phone_digits' => '1234567'])->assertOk();
         $order = PaymentOrder::query()->findOrFail($response->json('order.id'));
         $this->assertSame(15900, $order->amount);
 
@@ -150,7 +150,7 @@ class PhoneNumbersTest extends TestCase
         $this->assertSame('purchased', app(PhoneNumbers::class)->current($buyer)?->kind);
 
         // Купити ще один можна будь-коли, без тижневого обмеження.
-        $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['product' => 'phone_regular', 'phone_operator' => '12', 'phone_digits' => '9182736'])->assertOk();
+        $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'phone_regular', 'phone_operator' => '12', 'phone_digits' => '9182736'])->assertOk();
 
         // Повернення коштів — номер звільняється.
         app(Shop::class)->refund(PlusPayment::query()->findOrFail($number->payment_id), null);
@@ -160,9 +160,9 @@ class PhoneNumbersTest extends TestCase
     public function test_wrong_price_level_or_cancelled_order_releases_the_number(): void
     {
         $buyer = User::factory()->create();
-        $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['product' => 'phone_regular', 'phone_operator' => '77', 'phone_digits' => '7777777'])
+        $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'phone_regular', 'phone_operator' => '77', 'phone_digits' => '7777777'])
             ->assertUnprocessable();
-        $response = $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['product' => 'phone_diamond', 'phone_operator' => '77', 'phone_digits' => '7777777'])->assertOk();
+        $response = $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'phone_diamond', 'phone_operator' => '77', 'phone_digits' => '7777777'])->assertOk();
         $this->actingAs($buyer)->deleteJson('/plus/billing/orders/'.$response->json('order.id'))->assertOk();
         $this->assertSame(0, PhoneNumber::query()->count());
     }
@@ -249,11 +249,11 @@ class PhoneNumbersTest extends TestCase
         $friendOld = app(PhoneNumbers::class)->current($friend);
 
         // Лише друзям.
-        $this->actingAs($giver)->postJson('/plus/billing/purchase', ['product' => 'phone_gold', 'phone_operator' => '77', 'phone_digits' => '1234567', 'gift_to' => $stranger->id])
+        $this->actingAs($giver)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'phone_gold', 'phone_operator' => '77', 'phone_digits' => '1234567', 'gift_to' => $stranger->id])
             ->assertUnprocessable()->assertJsonValidationErrors('friend');
 
         // Оплата подарунка (зі знижкою GameCon+ дарувальника).
-        $response = $this->actingAs($giver)->postJson('/plus/billing/purchase', ['product' => 'phone_gold', 'phone_operator' => '77', 'phone_digits' => '1234567', 'gift_to' => $friend->id])->assertOk();
+        $response = $this->actingAs($giver)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'phone_gold', 'phone_operator' => '77', 'phone_digits' => '1234567', 'gift_to' => $friend->id])->assertOk();
         $order = PaymentOrder::query()->findOrFail($response->json('order.id'));
         $this->assertSame(15900, $order->amount);
         $this->paid($order);
@@ -290,7 +290,7 @@ class PhoneNumbersTest extends TestCase
         $friend = User::factory()->create();
         $this->befriend($giver, $friend);
         $this->actingAs($giver)->postJson('/phone/random')->assertOk();
-        $response = $this->actingAs($giver)->postJson('/plus/billing/purchase', ['product' => 'phone_regular', 'phone_operator' => '12', 'phone_digits' => '9182736', 'gift_to' => $friend->id])->assertOk();
+        $response = $this->actingAs($giver)->postJson('/plus/billing/purchase', ['consent' => true, 'product' => 'phone_regular', 'phone_operator' => '12', 'phone_digits' => '9182736', 'gift_to' => $friend->id])->assertOk();
         $this->paid(PaymentOrder::query()->findOrFail($response->json('order.id')));
         $offer = PhoneOffer::query()->sole();
 

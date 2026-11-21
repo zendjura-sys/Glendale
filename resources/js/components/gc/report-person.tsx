@@ -16,6 +16,10 @@ const REASONS = () => [
     { value: 'fake', label: tr('Фейкова сторінка') },
     { value: 'scam', label: tr('Шахрайство') },
     { value: 'cheat', label: tr('Читерство') },
+    {
+        value: 'child_safety',
+        label: tr('Загроза дитині, сексуальна експлуатація'),
+    },
     { value: 'other', label: tr('Інше') },
 ];
 
@@ -43,7 +47,7 @@ export function ReportPersonButton({
                 {tr('Поскаржитися')}
             </button>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+                <DialogContent className="glass-strong rounded-dialog p-6 text-white sm:max-w-md">
                     <DialogTitle className="font-display text-lg">
                         {tr('Скарга на {name}', { name })}
                     </DialogTitle>
@@ -73,7 +77,7 @@ export function ReportPersonButton({
                                         'flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm transition',
                                         form.data.reason === reason.value
                                             ? 'bg-gc-indigo/20 text-white'
-                                            : 'text-white/70 hover:bg-white/[0.05]',
+                                            : 'text-white/70 hover:bg-[var(--gc-l3)]',
                                     )}
                                 >
                                     <input
@@ -103,7 +107,7 @@ export function ReportPersonButton({
                             className="input-glass w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                         />
                         {form.errors.reason && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {form.errors.reason}
                             </p>
                         )}

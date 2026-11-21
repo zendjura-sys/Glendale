@@ -37,7 +37,7 @@ export function ContactShareDialog({
 
     return (
         <Dialog open={open} onOpenChange={close}>
-            <DialogContent className="glass-strong max-w-md gap-0 border-white/10 p-5">
+            <DialogContent className="glass-strong max-w-md gap-0 p-5">
                 <DialogTitle className="font-display text-lg text-white">
                     {tr('Надіслати контакт')}
                 </DialogTitle>
@@ -90,9 +90,8 @@ export function ContactShareDialog({
                                     close(false);
                                 }}
                                 className={cn(
-                                    'flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/[0.05]',
-                                    picked?.id === user.id &&
-                                        'bg-gc-indigo/15 ring-1 ring-[#8b7dff]/40',
+                                    'flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[var(--gc-l3)]',
+                                    picked?.id === user.id && 'bg-gc-indigo/15',
                                 )}
                             >
                                 <UserAvatar
@@ -103,14 +102,18 @@ export function ContactShareDialog({
                                 <span className="min-w-0 flex-1">
                                     <span className="flex items-center gap-1 truncate text-sm font-medium text-white">
                                         {user.name}
-                                        {user.is_verified && <VerifiedBadge />}
+                                        {user.is_verified && (
+                                            <VerifiedBadge
+                                                kind={user.verified_kind}
+                                            />
+                                        )}
                                     </span>
                                     <span className="block truncate text-xs text-white/40">
                                         @{user.username}
                                     </span>
                                 </span>
                                 {user.is_friend && (
-                                    <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-xs font-medium text-emerald-200">
+                                    <span className="rounded-chip bg-emerald-400/10 px-2 py-0.5 text-xs font-medium text-emerald-200">
                                         {tr('друг')}
                                     </span>
                                 )}
@@ -127,7 +130,7 @@ export function ContactShareDialog({
                         onShare(picked);
                         close(false);
                     }}
-                    className="btn-glow mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand text-sm font-semibold text-white transition disabled:opacity-40 disabled:shadow-none"
+                    className="btn-glow mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-sky-500 text-sm font-semibold text-white transition disabled:opacity-40 disabled:shadow-none"
                 >
                     <SendHorizonal className="size-4" />
                     {picked

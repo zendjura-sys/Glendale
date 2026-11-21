@@ -109,7 +109,7 @@ export default function AdminGeo({
                 />
             </div>
 
-            <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+            <section className="gc-solid mb-6 rounded-3xl p-4 sm:p-5">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                     <h2 className="flex-1 font-display text-lg font-semibold text-white">
                         {tr('Заблоковані країни')}
@@ -123,7 +123,7 @@ export default function AdminGeo({
                                 { preserveScroll: true },
                             )
                         }
-                        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm text-white/75 hover:bg-white/10"
+                        className="gc-solid-2 inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/75 hover:bg-white/10"
                     >
                         <RefreshCw className="size-4" /> {tr('Оновити базу')}
                     </button>
@@ -139,7 +139,7 @@ export default function AdminGeo({
                                 key={code}
                                 type="button"
                                 onClick={() => toggle(code)}
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/15 px-2.5 py-1 text-sm text-rose-100 hover:bg-rose-500/25"
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-red-500/15 px-2.5 py-1 text-sm text-red-400 hover:bg-red-500/25"
                             >
                                 {flag(code)} {byCode.get(code) ?? code}
                                 <X className="size-3.5" />
@@ -162,7 +162,7 @@ export default function AdminGeo({
                             key={c.code}
                             type="button"
                             onClick={() => toggle(c.code)}
-                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm text-white/75 hover:bg-white/[0.06]"
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm text-white/75 hover:bg-[var(--gc-l3)]"
                         >
                             <span>{flag(c.code)}</span>
                             <span className="flex-1 truncate">{c.name}</span>
@@ -186,7 +186,7 @@ export default function AdminGeo({
                     )}
                 </label>
                 {form.errors.blocked && (
-                    <p className="mt-2 text-xs text-rose-300">
+                    <p className="mt-2 text-xs text-red-400">
                         {form.errors.blocked}
                     </p>
                 )}
@@ -204,7 +204,7 @@ export default function AdminGeo({
                 </button>
             </section>
 
-            <section className="glass rounded-3xl p-4 sm:p-5">
+            <section className="gc-solid rounded-3xl p-4 sm:p-5">
                 <h2 className="mb-1 font-display text-lg font-semibold text-white">
                     MaxMind GeoLite2
                 </h2>
@@ -255,7 +255,7 @@ export default function AdminGeo({
                     </button>
                 </form>
                 {(keys.errors.account_id || keys.errors.license_key) && (
-                    <p className="mt-2 text-xs text-rose-300">
+                    <p className="mt-2 text-xs text-red-400">
                         {keys.errors.account_id ?? keys.errors.license_key}
                     </p>
                 )}

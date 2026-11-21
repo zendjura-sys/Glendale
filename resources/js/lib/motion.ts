@@ -31,7 +31,8 @@ export function motionOr(
     return reduce ? INSTANT : transition;
 }
 
-/** Зникнення з розмиттям і поява (для AnimatePresence mode="wait"). */
+/** Зникнення й поява зі зсувом (для AnimatePresence mode="wait"). Без filter: blur — анімоване
+ * розмиття тексту на планшетах змушувало браузер перемальовувати шар, і текст блимав. */
 export function blurSwap(reduce: boolean | null) {
     return reduce
         ? {
@@ -40,15 +41,15 @@ export function blurSwap(reduce: boolean | null) {
               exit: { opacity: 1 },
           }
         : {
-              initial: { opacity: 0, filter: 'blur(10px)' },
+              initial: { opacity: 0, y: 8 },
               animate: {
                   opacity: 1,
-                  filter: 'blur(0px)',
-                  transition: { duration: 0.45, ease: EASE_OUT, delay: 0.12 },
+                  y: 0,
+                  transition: { duration: 0.4, ease: EASE_OUT, delay: 0.12 },
               },
               exit: {
                   opacity: 0,
-                  filter: 'blur(10px)',
+                  y: -6,
                   transition: { duration: 0.22, ease: EASE_OUT },
               },
           };

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'alerts.dart' show AlertPlacePickerPage;
 import 'api.dart';
 import 'families.dart';
 import 'posts.dart';
@@ -309,7 +312,7 @@ class _QueueTabState extends State<QueueTab> {
               Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(14)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Row(children: [
                     Expanded(child: Text(text(mapOf(c['member'])['display']) ?? '', style: body(13.5, weight: FontWeight.w600).copyWith(fontFamily: 'monospace'))),
@@ -437,13 +440,13 @@ class _BankTabState extends State<BankTab> {
                       visualDensity: VisualDensity.compact,
                       tooltip: tr('Скасувати'),
                       onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('bank/cashouts/${c['id']}/cancel')), keep: keep),
-                      icon: const Icon(LucideIcons.x, size: 18, color: muted),
+                      icon: Icon(LucideIcons.x, size: 18, color: muted),
                     ),
                   if (c['has_proof'] == true)
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       onPressed: () => openAuthImages(context, [ctx.path('bank/cashouts/${c['id']}/proof')], 0),
-                      icon: const Icon(LucideIcons.image, size: 18, color: muted),
+                      icon: Icon(LucideIcons.image, size: 18, color: muted),
                     ),
                 ]),
               ),
@@ -489,7 +492,7 @@ class _BankTabState extends State<BankTab> {
               Container(
                 margin: const EdgeInsets.only(top: 10),
                 padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
+                decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12)),
                 child: Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -715,36 +718,71 @@ class WarehouseTab extends StatelessWidget {
             title: '${categories[entry.key] ?? entry.key}',
             icon: LucideIcons.package,
             children: [
-              for (final item in entry.value)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: item['is_archived'] == true ? 0.015 : 0.035),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: item['low'] == true ? danger.withValues(alpha: 0.4) : line),
-                  ),
-                  child: Column(children: [
-                    Row(children: [
-                      Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('${item['name']}${item['is_archived'] == true ? ' (архів)' : ''}', style: body(14, weight: FontWeight.w600)),
-                          if (item['hourly_quota'] != null) Text(tr('квота {v}/год', {'v': item['hourly_quota']}), style: body(11.5, color: muted)),
-                        ]),
-                      ),
-                      Text('${item['quantity']}', style: display(18, color: item['low'] == true ? dangerSoft : ink)),
-                      const SizedBox(width: 4),
-                      Text(text(item['unit']) ?? tr('шт'), style: body(12, color: muted)),
-                    ]),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      Expanded(child: GhostButton(label: tr('Взяти'), icon: LucideIcons.upload, compact: true, onPressed: intOf(item['quantity']) > 0 && item['is_archived'] != true ? () => _move(context, item, 'take') : null)),
-                      const SizedBox(width: 8),
-                      Expanded(child: GhostButton(label: tr('Покласти'), icon: LucideIcons.download, compact: true, onPressed: item['is_archived'] != true ? () => _move(context, item, 'put') : null)),
-                      if (manage) IconButton(visualDensity: VisualDensity.compact, onPressed: () => _editItem(context, item: item), icon: const Icon(LucideIcons.pencil, size: 18, color: muted)),
-                    ]),
-                  ]),
-                ),
+              // Компактна сітка 2 в ряд — навіть одна позиція не тягнеться на всю ширину.
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final tileW = (constraints.maxWidth - 8) / 2;
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final item in entry.value)
+                        SizedBox(
+                          width: tileW,
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: item['low'] == true
+                                  ? danger.withValues(alpha: 0.1)
+                                  : (item['is_archived'] == true ? raised.withValues(alpha: 0.5) : raised),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(children: [
+                                  Expanded(
+                                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                      FitText('${item['name']}${item['is_archived'] == true ? ' (архів)' : ''}', style: body(12.5, weight: FontWeight.w600), maxLines: 2),
+                                      if (item['hourly_quota'] != null) Text(tr('квота {v}/год', {'v': item['hourly_quota']}), style: body(10.5, color: muted)),
+                                    ]),
+                                  ),
+                                  Text('${item['quantity']}', style: display(16, color: item['low'] == true ? dangerSoft : ink)),
+                                ]),
+                                const SizedBox(height: 8),
+                                Row(children: [
+                                  Expanded(
+                                    child: GhostButton(
+                                      label: tr('Взяти'),
+                                      icon: LucideIcons.upload,
+                                      compact: true,
+                                      onPressed: intOf(item['quantity']) > 0 && item['is_archived'] != true ? () => _move(context, item, 'take') : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: GhostButton(
+                                      label: tr('Покласти'),
+                                      icon: LucideIcons.download,
+                                      compact: true,
+                                      onPressed: item['is_archived'] != true ? () => _move(context, item, 'put') : null,
+                                    ),
+                                  ),
+                                  if (manage)
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      onPressed: () => _editItem(context, item: item),
+                                      icon: Icon(LucideIcons.pencil, size: 16, color: muted),
+                                    ),
+                                ]),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
       ],
@@ -787,7 +825,7 @@ class WarehouseTab extends StatelessWidget {
                   ]),
                 ),
                 if (text(l['proof_url']) != null)
-                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => openAuthImages(context, [sitePathOf(text(l['proof_url'])!)], 0), icon: const Icon(LucideIcons.image, size: 18, color: muted)),
+                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => openAuthImages(context, [sitePathOf(text(l['proof_url'])!)], 0), icon: Icon(LucideIcons.image, size: 18, color: muted)),
               ]),
             ),
         ],
@@ -884,7 +922,7 @@ class _MembersTabState extends State<MembersTab> {
     final saved = await showGcSheet<bool>(
       context,
       title: tr('Ранги й права'),
-      subtitle: tr('Ранг 10 і власник можуть усе. Відмітьте, які ранги мають кожне право.'),
+      subtitle: tr('Ранг 10 і власник можуть усе. Позначте, які ранги мають кожне право.'),
       height: MediaQuery.sizeOf(context).height * 0.9,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
@@ -964,7 +1002,7 @@ class _MembersTabState extends State<MembersTab> {
                 ].join(' · '),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                   if (m['balance'] != null) Text(hryvnia(m['balance']), style: body(12.5, color: green, weight: FontWeight.w700)),
-                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => _manage(m), icon: const Icon(LucideIcons.slidersHorizontal, size: 18, color: muted)),
+                  IconButton(visualDensity: VisualDensity.compact, onPressed: () => _manage(m), icon: Icon(LucideIcons.slidersHorizontal, size: 18, color: muted)),
                 ]),
               ),
           ]),
@@ -1127,7 +1165,7 @@ class _DisciplineTabState extends State<DisciplineTab> {
             Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12), border: Border.all(color: p['active'] == true ? danger.withValues(alpha: 0.35) : line)),
+              decoration: BoxDecoration(color: p['active'] == true ? danger.withValues(alpha: 0.12) : raised, borderRadius: BorderRadius.circular(14)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
                   Text(text(p['type_label']) ?? '', style: body(13.5, weight: FontWeight.w700, color: p['active'] == true ? dangerSoft : soft)),
@@ -1227,7 +1265,7 @@ class EventsTab extends StatelessWidget {
     final ok = await showGcSheet<String>(
       context,
       title: tr('Підсумок: {v}', {'v': event['title']}),
-      subtitle: tr('Відмітьте присутніх — їм нарахуються бали й нагорода.'),
+      subtitle: tr('Позначте присутніх — їм нарахуються бали й нагорода.'),
       height: MediaQuery.sizeOf(context).height * 0.8,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => Column(children: [
@@ -1371,7 +1409,7 @@ List<Widget> ratingTab(FamilyContext ctx) {
             SizedBox(width: 44, child: Text(tr('КОНТР.'), textAlign: TextAlign.center, style: body(11, color: faint, weight: FontWeight.w700))),
             SizedBox(width: 44, child: Text(tr('БАЛИ'), textAlign: TextAlign.right, style: body(11, color: faint, weight: FontWeight.w700))),
           ]),
-          const Divider(color: line),
+          Divider(color: line),
           for (final r in rows)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 4),
@@ -1380,7 +1418,7 @@ List<Widget> ratingTab(FamilyContext ctx) {
                 SizedBox(width: 22, child: Text('${r['place']}', style: body(12.5, color: intOf(r['place']) <= 3 ? gold : muted, weight: FontWeight.w700))),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(r['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5).copyWith(fontFamily: 'monospace')),
+                    FitText(text(r['display']) ?? '', style: body(12.5).copyWith(fontFamily: 'monospace')),
                     Text(text(r['rank_title']) ?? '', style: body(11, color: muted)),
                   ]),
                 ),
@@ -1413,7 +1451,7 @@ List<Widget> auditTab(FamilyContext ctx) {
         ),
         const SizedBox(height: 8),
         Row(children: [
-          const Icon(LucideIcons.lock, size: 14, color: muted),
+          Icon(LucideIcons.lock, size: 14, color: muted),
           const SizedBox(width: 6),
           Expanded(child: Text(tr('Записи незмінні: їх не може відредагувати чи видалити навіть лідер.'), style: body(12, color: muted))),
         ]),
@@ -1446,6 +1484,8 @@ class _SettingsTabState extends State<SettingsTab> {
   late final tag = TextEditingController(text: text(profile['tag']) ?? '');
   late final description = TextEditingController(text: text(profile['description']) ?? '');
   late bool recruiting = profile['is_recruiting'] == true;
+  late final serverInfo = mapOf(widget.ctx.data['server']);
+  late int? serverId = serverInfo['current'] is num ? (serverInfo['current'] as num).toInt() : null;
   XFile? logo;
   XFile? cover;
 
@@ -1516,7 +1556,7 @@ class _SettingsTabState extends State<SettingsTab> {
   Widget _group(String title, List<Widget> children) => Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+        decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(16)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Text(title, style: body(14, weight: FontWeight.w700)), const SizedBox(height: 10), ...children]),
       );
 
@@ -1557,6 +1597,33 @@ class _SettingsTabState extends State<SettingsTab> {
           PrimaryButton(label: tr('Зберегти профіль'), onPressed: _saveProfile),
         ],
       ),
+      // Сервер сім’ї: засновник переносить сім’ю на інший сервер (раз на тиждень, тег має бути вільним).
+      if (serverInfo['can_change'] == true)
+        _card(
+          title: tr('Сервер сім’ї'),
+          icon: LucideIcons.server,
+          subtitle: tr('Перенесіть сім’ю на інший сервер. Тег має бути вільним на новому сервері; змінювати сервер можна раз на тиждень.'),
+          children: [
+            GcSelect<int>(
+              expand: true,
+              value: serverId,
+              items: [for (final s in maps(serverInfo['servers'])) (intOf(s['id']), text(s['name']) ?? '')],
+              onChanged: (v) => setState(() => serverId = v),
+            ),
+            const SizedBox(height: 10),
+            PrimaryButton(
+              label: tr('Змінити сервер'),
+              icon: LucideIcons.arrowRightLeft,
+              onPressed: serverId == null || serverId == intOf(serverInfo['current'])
+                  ? null
+                  : () async {
+                      if (!await confirm(context, tr('Перенести сім’ю на інший сервер?'))) return;
+                      if (!context.mounted) return;
+                      await ctx.act(context, () => ctx.api.put(ctx.path('settings/server'), {'server_id': serverId}));
+                    },
+            ),
+          ],
+        ),
       _card(
         title: tr('Правила й ставки'),
         icon: LucideIcons.listChecks,
@@ -1629,6 +1696,27 @@ class _SettingsTabState extends State<SettingsTab> {
           LabeledField(label: tr('Токен Telegram-бота'), hint: text(hooks['telegram_token']) ?? tr('Створіть бота в @BotFather'), child: GcField(controller: telegramToken, label: '123456789:AA…', dense: true)),
           const SizedBox(height: 8),
           LabeledField(label: 'Chat ID', child: GcField(controller: telegramChat, label: '-1001234567890', dense: true)),
+          const SizedBox(height: 8),
+          // Тривоги в боті: те саме дерево місць, що й у розділі «Тривоги».
+          LabeledField(
+            label: tr('Тривоги в боті'),
+            hint: text(mapOf(hooks['alerts'])['path']) ?? tr('Бот напише про початок і відбій тривоги в обраному місці.'),
+            child: Row(children: [
+              Expanded(
+                child: GhostButton(
+                  label: text(mapOf(hooks['alerts'])['name']) ?? tr('Оберіть місце'),
+                  icon: LucideIcons.siren,
+                  compact: true,
+                  onPressed: () async {
+                    final id = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const AlertPlacePickerPage()));
+                    if (id != null && context.mounted) await ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'alerts': id}));
+                  },
+                ),
+              ),
+              if (hooks['alerts'] != null)
+                TextButton(onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'clear': 'alerts'})), child: Text(tr('Вимкнути'), style: body(12.5, color: dangerSoft))),
+            ]),
+          ),
           const SizedBox(height: 10),
           Row(children: [
             if (hooks['discord'] != null) TextButton(onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'clear': 'discord'})), child: Text(tr('Прибрати Discord'), style: body(12.5, color: dangerSoft))),
@@ -1670,6 +1758,252 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
         ],
       ),
+      if (ctx.data['can_delete'] == true) ...[
+        const SizedBox(height: 12),
+        Glass(
+          border: danger,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CardTitle(tr('Видалення сім’ї'), icon: LucideIcons.trash2),
+            const SizedBox(height: 8),
+            Text(tr('Сім’я зникне для всіх учасників разом зі штабом, банком і складом.'), style: body(13, color: muted)),
+            const SizedBox(height: 12),
+            DangerButton(
+              label: tr('Видалити сім’ю'),
+              icon: LucideIcons.trash2,
+              expand: true,
+              onPressed: () async {
+                final slug = text(ctx.family['slug']) ?? ctx.slug;
+                final typed = await askText(context, tr('Підтвердження видалення'), hint: tr('Введіть «{slug}»', {'slug': slug}), action: tr('Видалити'));
+                if (typed == null || !context.mounted) return;
+                if (typed.trim() != slug) {
+                  toast(context, tr('Введіть адресу сім’ї, щоб підтвердити видалення.'));
+                  return;
+                }
+                if (await attempt(context, () => ctx.api.delete(familyPath(ctx.slug), {'confirm': slug})) && context.mounted) {
+                  context.go('/families');
+                }
+              },
+            ),
+          ]),
+        ),
+      ],
     ]);
+  }
+}
+
+/// Календар змін і чергувань — як на сайті (/f/{slug}/shifts): тиждень, хто чергує, «Взяти» й «Відмовитися»;
+/// керівництво створює зміни й призначає учасників.
+class ShiftsTab extends StatelessWidget {
+  const ShiftsTab({required this.ctx, super.key});
+  final FamilyContext ctx;
+
+  Future<void> _create(BuildContext context) async {
+    final title = TextEditingController();
+    DateTime start = DateTime.now().add(const Duration(hours: 1));
+    double hours = 2;
+    // Завдання зміни: зараховується кожному окремо зі схвалених звітів.
+    final goalTypes = mapOf(ctx.data['goal_types']);
+    final tiers = mapOf(ctx.data['tiers']);
+    String? goalType;
+    String? goalTier;
+    final goalCount = TextEditingController(text: '1');
+    final ok = await showGcSheet<bool>(
+      context,
+      title: tr('Нова зміна'),
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+          GcField(controller: title, label: tr('Назва, напр. «Чергування на складі»')),
+          const SizedBox(height: 10),
+          GhostButton(
+            label: '${shortStamp(start.toIso8601String())} ${clock(start.toIso8601String())}',
+            icon: LucideIcons.calendarClock,
+            onPressed: () async {
+              final d = await showDatePicker(context: sheet, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 60)), initialDate: start);
+              if (d == null || !sheet.mounted) return;
+              final t = await showTimePicker(context: sheet, initialTime: TimeOfDay.fromDateTime(start));
+              if (t == null) return;
+              setSheet(() => start = DateTime(d.year, d.month, d.day, t.hour, t.minute));
+            },
+          ),
+          const SizedBox(height: 10),
+          Row(children: [
+            Text(tr('Тривалість: {n} год', {'n': hours % 1 == 0 ? hours.toInt() : hours}), style: body(13.5)),
+            Expanded(child: Slider(value: hours, min: 0.5, max: 12, divisions: 23, onChanged: (v) => setSheet(() => hours = v))),
+          ]),
+          DropdownButtonFormField<String>(
+            initialValue: goalType,
+            decoration: InputDecoration(labelText: tr('Завдання зміни')),
+            items: [
+              DropdownMenuItem(value: null, child: Text(tr('Без завдання'))),
+              for (final e in goalTypes.entries) DropdownMenuItem(value: e.key, child: Text(tr('${e.value}'))),
+            ],
+            onChanged: (v) => setSheet(() => goalType = v),
+          ),
+          if (goalType == 'contract') ...[
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: goalTier,
+              decoration: InputDecoration(labelText: tr('Складність')),
+              items: [
+                DropdownMenuItem(value: null, child: Text(tr('Будь-яка'))),
+                for (final e in tiers.entries) DropdownMenuItem(value: e.key, child: Text(tr('${e.value}'))),
+              ],
+              onChanged: (v) => setSheet(() => goalTier = v),
+            ),
+          ],
+          if (goalType != null) ...[
+            const SizedBox(height: 8),
+            GcField(controller: goalCount, label: tr('Скільки разів (кожному)'), keyboard: TextInputType.number),
+          ],
+          const SizedBox(height: 12),
+          PrimaryButton(label: tr('Створити'), onPressed: () => Navigator.pop(sheet, true)),
+        ]),
+      ),
+    );
+    if (ok != true || !context.mounted || title.text.trim().length < 2) return;
+    await ctx.act(context, () => ctx.api.post(ctx.path('shifts'), {
+          'title': title.text.trim(),
+          'starts_at': start.toUtc().toIso8601String(),
+          'hours': hours,
+          if (goalType != null) ...{'goal_type': goalType, 'goal_tier': goalTier, 'goal_count': int.tryParse(goalCount.text) ?? 1},
+        }));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shifts = maps(ctx.data['shifts']);
+    final manage = ctx.allowed('events.manage');
+    final week = mapOf(ctx.data['week']);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _card(
+        title: tr('Зміни й чергування'),
+        icon: LucideIcons.calendarClock,
+        subtitle: text(week['start']) != null ? tr('Тиждень з {d}', {'d': shortStamp(week['start'])}) : null,
+        trailing: manage ? GhostButton(label: tr('Нова'), icon: LucideIcons.plus, compact: true, expand: false, onPressed: () => _create(context)) : null,
+        children: [
+          if (shifts.isEmpty) QuietEmpty(icon: LucideIcons.calendarClock, text: tr('Цього тижня змін немає.')),
+          // Компактна сітка 2 в ряд — як на сайті, без розтягнутих на всю ширину днів.
+          if (shifts.isNotEmpty)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final tileW = (constraints.maxWidth - 8) / 2;
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final s in shifts)
+                      SizedBox(
+                        width: tileW,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(16)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              FitText(text(s['title']) ?? '', style: body(12.5, weight: FontWeight.w700), maxLines: 2),
+                              const SizedBox(height: 2),
+                              Text('${shortStamp(s['starts_at'])} ${clock(s['starts_at'])}–${clock(s['ends_at'])}', style: body(10.5, color: muted)),
+                              const SizedBox(height: 4),
+                              Row(children: [
+                                if (s['member'] != null) ...[Icon(LucideIcons.crown, size: 12, color: gold), const SizedBox(width: 3)],
+                                Flexible(child: FitText(mapOf(s['member'])['display'] != null ? '${mapOf(s['member'])['display']}' : tr('Вільна'), style: body(11, color: s['member'] == null ? green : soft))),
+                              ]),
+                              const SizedBox(height: 8),
+                              if (s['member'] == null)
+                                PrimaryButton(label: tr('Взяти'), compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/claim'))))
+                              else if (s['mine'] == true)
+                                GhostButton(label: tr('Відмовитися'), compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/release'))))
+                              else if (s['can_join'] == true)
+                                GhostButton(label: tr('В напарники'), icon: LucideIcons.userRoundPlus, compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/join'))))
+                              else if (s['partner'] != null)
+                                GhostButton(
+                                  label: s['partner'] == 'pending' ? tr('Скасувати') : tr('Вийти'),
+                                  compact: true,
+                                  onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('shifts/${s['id']}/leave'))),
+                                ),
+                              if (manage)
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    tooltip: tr('Видалити'),
+                                    icon: Icon(LucideIcons.trash2, size: 16, color: dangerSoft),
+                                    onPressed: () async {
+                                      if (await confirm(context, tr('Видалити зміну?'), danger: true) && context.mounted) {
+                                        await ctx.act(context, () => ctx.api.delete(ctx.path('shifts/${s['id']}')));
+                                      }
+                                    },
+                                  ),
+                                ),
+                              if (s['goal'] is Map) _ShiftGoal(goal: mapOf(s['goal'])),
+                              for (final p in maps(s['partners'])) _ShiftPartner(ctx: ctx, shift: s, partner: p),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+        ],
+      ),
+    ]);
+  }
+}
+
+/// Завдання зміни: прогрес бригадира (у кожного напарника — свій, у рядку напарника).
+class _ShiftGoal extends StatelessWidget {
+  const _ShiftGoal({required this.goal});
+  final Map<String, dynamic> goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = intOf(goal['count'], 1);
+    final progress = intOf(goal['progress']).clamp(0, count);
+    final done = goal['done'] == true;
+    final color = done ? green : (goal['missed'] == true ? dangerSoft : primary);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.target, size: 14, color: color),
+          const SizedBox(width: 6),
+          Expanded(child: Text(tr(text(goal['label']) ?? ''), style: body(12.5, color: done ? green : soft))),
+          Text('$progress/$count', style: body(12, color: muted)),
+        ]),
+        const SizedBox(height: 4),
+        LinearProgressIndicator(value: count == 0 ? 0 : progress / count, minHeight: 5, borderRadius: BorderRadius.circular(9), color: color, backgroundColor: fg.withValues(alpha: 0.08)),
+      ]),
+    );
+  }
+}
+
+/// Напарник зміни: бригадир схвалює заявки; у схваленого — свій прогрес завдання.
+class _ShiftPartner extends StatelessWidget {
+  const _ShiftPartner({required this.ctx, required this.shift, required this.partner});
+  final FamilyContext ctx;
+  final Map<String, dynamic> shift;
+  final Map<String, dynamic> partner;
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = partner['status'] == 'pending';
+    final goal = partner['goal'] is Map ? mapOf(partner['goal']) : null;
+    final count = intOf(mapOf(shift['goal'])['count'], 1);
+    final url = ctx.path('shifts/${shift['id']}/partners/${partner['id']}');
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(children: [
+        Icon(LucideIcons.usersRound, size: 14, color: muted),
+        const SizedBox(width: 6),
+        Expanded(child: Text(text(partner['display']) ?? '', style: body(12.5, color: soft), overflow: TextOverflow.ellipsis)),
+        if (pending) Text(tr('чекає'), style: body(12, color: gold)),
+        if (goal != null) Text('${intOf(goal['progress']).clamp(0, count)}/$count', style: body(12, color: goal['done'] == true ? green : muted)),
+        if (pending && shift['can_lead'] == true) ...[
+          IconButton(tooltip: tr('Взяти в напарники'), visualDensity: VisualDensity.compact, icon: Icon(LucideIcons.check, size: 18, color: green), onPressed: () => ctx.act(context, () => ctx.api.post(url, {'accept': true}))),
+          IconButton(tooltip: tr('Відхилити'), visualDensity: VisualDensity.compact, icon: Icon(LucideIcons.x, size: 18, color: muted), onPressed: () => ctx.act(context, () => ctx.api.post(url, {'accept': false}))),
+        ],
+      ]),
+    );
   }
 }

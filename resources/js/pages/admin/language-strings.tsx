@@ -81,8 +81,8 @@ export default function LanguageStrings({
                         className={cn(
                             'h-10 rounded-xl px-3 text-sm',
                             filters.filter === key
-                                ? 'bg-gradient-brand text-white'
-                                : 'bg-white/[0.04] text-white/60 hover:text-white',
+                                ? 'bg-sky-500 text-white'
+                                : 'gc-solid-2 text-white/60 hover:text-white',
                         )}
                     >
                         {label}
@@ -103,7 +103,7 @@ export default function LanguageStrings({
                         type="button"
                         disabled={page <= 1}
                         onClick={() => visit({ page: page - 1 })}
-                        className="rounded-lg px-3 py-1.5 hover:bg-white/[0.06] disabled:opacity-30"
+                        className="rounded-lg px-3 py-1.5 hover:bg-[var(--gc-l3)] disabled:opacity-30"
                     >
                         ←
                     </button>
@@ -112,7 +112,7 @@ export default function LanguageStrings({
                         type="button"
                         disabled={page >= pages}
                         onClick={() => visit({ page: page + 1 })}
-                        className="rounded-lg px-3 py-1.5 hover:bg-white/[0.06] disabled:opacity-30"
+                        className="rounded-lg px-3 py-1.5 hover:bg-[var(--gc-l3)] disabled:opacity-30"
                     >
                         →
                     </button>
@@ -133,7 +133,7 @@ function StringRow({ item, url }: { item: Item; url: string }) {
         );
 
     return (
-        <div className="glass rounded-2xl p-3">
+        <div className="gc-solid rounded-2xl p-3">
             <p className="text-sm whitespace-pre-line text-white/70">
                 {item.source}
             </p>
@@ -148,7 +148,7 @@ function StringRow({ item, url }: { item: Item; url: string }) {
                     placeholder={tr('Без перекладу — показується українською')}
                     className={cn(
                         'input-glass min-w-0 flex-1 rounded-xl px-3 py-2 text-sm text-white',
-                        item.manual && 'ring-1 ring-amber-400/40',
+                        item.manual && ' ',
                     )}
                 />
                 <button
@@ -164,7 +164,7 @@ function StringRow({ item, url }: { item: Item; url: string }) {
                     <button
                         type="button"
                         onClick={() => save('')}
-                        className="rounded-xl bg-white/[0.06] p-2.5 text-white/60 hover:text-white"
+                        className="gc-solid-2 rounded-xl p-2.5 text-white/60 hover:text-white"
                         aria-label={tr('Повернути автопереклад')}
                         title={tr('Повернути автопереклад')}
                     >

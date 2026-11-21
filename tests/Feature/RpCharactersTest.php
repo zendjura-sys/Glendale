@@ -89,7 +89,7 @@ class RpCharactersTest extends TestCase
 
         $this->actingAs($stranger)->get(route('servers.show', $server))
             ->assertInertia(fn (Assert $page) => $page->has('characters', 2));
-        $this->actingAs($stranger)->get('/'.$player->username)
+        $this->actingAs($stranger)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get('/'.$player->username)
             ->assertInertia(fn (Assert $page) => $page->has('characters', 2));
 
         $this->actingAs($player)->delete(route('characters.photos.destroy', [$first, 0]))->assertRedirect();

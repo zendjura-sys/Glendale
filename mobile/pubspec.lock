@@ -90,7 +90,7 @@ packages:
     source: hosted
     version: "0.1.4"
   audio_session:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: audio_session
       sha256: f9e7711a0e24ca8b40f5d7ac374c3c6e55016f3157912badd18199cdbbca5c4d
@@ -465,7 +465,7 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_webrtc:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: flutter_webrtc
       sha256: c1d3674f61b14cbe98b60f0cce396835b1483163e644b8cd26fd3fdd55360fb9
@@ -640,6 +640,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.2"
+  in_app_purchase:
+    dependency: "direct main"
+    description:
+      name: in_app_purchase
+      sha256: d8317ec2ed6fe33199957d67ee67e08a4fd4871ef93b91d7611d8ee560892afc
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.3.1"
+  in_app_purchase_android:
+    dependency: "direct main"
+    description:
+      name: in_app_purchase_android
+      sha256: eac857f7408769a68194be99ceb233ad4e3599e55ccd6422afaf0c7fd5066738
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.4"
+  in_app_purchase_platform_interface:
+    dependency: transitive
+    description:
+      name: in_app_purchase_platform_interface
+      sha256: "0b0076cac8ce4fa7048f01e76af8b123aeb6a7c4e0dea2a5206d6664454f3e36"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.1"
+  in_app_purchase_storekit:
+    dependency: transitive
+    description:
+      name: in_app_purchase_storekit
+      sha256: "21af88fc18865a7ee4c2468b33a726101b6c034cfe79bd1a1e1d1450a6d3a3a9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.13+3"
   jni:
     dependency: transitive
     description:
@@ -788,10 +820,10 @@ packages:
     dependency: transitive
     description:
       name: meta
-      sha256: c82594181e3312f3d0695fc95aaaf7758d75b8d4ae2bbecf223b9fd5109a059d
+      sha256: "307249ce4ff29d58a18e97f6345f539382eb9c9c29ecda628900f31de0443dd9"
       url: "https://pub.dev"
     source: hosted
-    version: "1.18.3"
+    version: "1.19.0"
   mime:
     dependency: transitive
     description:
@@ -808,6 +840,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  mobile_scanner:
+    dependency: "direct main"
+    description:
+      name: mobile_scanner
+      sha256: "5a51ea79f0cf8293f616a5d08baae185b59b5e6bb24df01f2a63037ade0bade0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.4.2"
   nm:
     dependency: transitive
     description:
@@ -944,6 +984,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
+  qr:
+    dependency: transitive
+    description:
+      name: qr
+      sha256: "2c0189dca64a3ab08dda7acd7911c89af2374f08eb4eaded3e8ef4609f3b9c8b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.3"
+  qr_flutter:
+    dependency: "direct main"
+    description:
+      name: qr_flutter
+      sha256: "5095f0fc6e3f71d08adef8feccc8cea4f12eec18a2e31c2e8d82cb6019f4b097"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.0"
   record:
     dependency: "direct main"
     description:
@@ -1032,6 +1088,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.2"
+  share_plus:
+    dependency: "direct main"
+    description:
+      name: share_plus
+      sha256: "223873d106614442ea6f20db5a038685cc5b32a2fba81cdecaefbbae0523f7fa"
+      url: "https://pub.dev"
+    source: hosted
+    version: "12.0.2"
+  share_plus_platform_interface:
+    dependency: transitive
+    description:
+      name: share_plus_platform_interface
+      sha256: "88023e53a13429bd65d8e85e11a9b484f49d4c190abbd96c7932b74d6927cc9a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.0"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -1281,10 +1353,10 @@ packages:
     dependency: transitive
     description:
       name: vector_math
-      sha256: "1d774bbdf6b72a0b12122fc1560c9c2d2a67db5a4a4cc2bd8a5c990ab20e3188"
+      sha256: fa49e1674cb84acb900141714e6c6e1f9ae099827c24d141430ff6819db4e1bc
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.0"
+    version: "2.4.4"
   video_player:
     dependency: "direct main"
     description:

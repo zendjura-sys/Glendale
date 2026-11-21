@@ -24,7 +24,7 @@ export function LyricsDialog({
 
     return (
         <Dialog open={track !== null} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+            <DialogContent className="glass-strong gap-0 rounded-3xl p-6 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-xl">
                     {track?.title}
                 </DialogTitle>

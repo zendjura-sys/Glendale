@@ -9,6 +9,7 @@ use App\Models\Photo;
 use App\Models\PhotoAlbum;
 use App\Models\User;
 use App\Notifications\PhotoInteraction;
+use App\Services\Moderation\ToxicComments;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
 use App\Services\ReactionDigest;
@@ -108,8 +109,12 @@ class PhotoController extends Controller
             'caption' => ['sometimes', 'nullable', 'string', 'max:500'],
             'alt' => ['sometimes', 'nullable', 'string', 'max:200'],
             'is_sensitive' => ['sometimes', 'boolean'],
+            'game_id' => ['sometimes', 'nullable', 'integer', 'exists:games,id'],
         ]);
         $changes = [];
+        if (array_key_exists('game_id', $data)) {
+            $changes['game_id'] = $data['game_id'] !== null ? (int) $data['game_id'] : null;
+        }
         if (array_key_exists('caption', $data)) {
             $changes['caption'] = trim((string) $data['caption']) ?: null;
         }
@@ -223,8 +228,9 @@ class PhotoController extends Controller
             'sticker' => $data['sticker'] ?? null,
         ]);
         $photo->increment('comments_count');
+        app(ToxicComments::class)->check($comment);
 
-        if ($photo->user && $photo->user_id !== $user->id) {
+        if ($photo->user && $photo->user_id !== $user->id && $comment->hidden_at === null) {
             $excerpt = $comment->body !== '' ? Str::limit($comment->body, 80) : Stickers::emoji($comment->sticker);
             $photo->user->notify(new PhotoInteraction(PhotoInteraction::COMMENT, $user, $photo, $excerpt));
         }

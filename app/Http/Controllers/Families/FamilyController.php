@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Families;
 
+use App\Models\Conversation;
 use App\Models\Family;
 use App\Models\FamilyAuditLog;
 use App\Models\FamilyEvent;
@@ -9,16 +10,21 @@ use App\Models\FamilyItem;
 use App\Models\FamilyMember;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
+use App\Models\Message;
 use App\Models\User;
 use App\Services\Donations\MonobankJar;
+use App\Services\Families\FamilyCharter;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\MemberStats;
+use App\Services\Families\WeeklyGoals;
 use App\Services\ImageStorage;
+use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -33,7 +39,9 @@ class FamilyController extends FamilyBaseController
         $filters = $request->validate([
             'server' => ['nullable', 'string', 'max:80'],
             'q' => ['nullable', 'string', 'max:60'],
+            'tab' => ['nullable', 'in:all,recruiting,top'],
         ]);
+        $tab = $filters['tab'] ?? 'all';
 
         $mine = FamilyMember::query()
             ->with('family.server')
@@ -59,6 +67,8 @@ class FamilyController extends FamilyBaseController
             ->where('status', Family::STATUS_VERIFIED)
             ->when($server, fn (Builder $q, GtaServer $s) => $q->where('server_id', $s->id))
             ->when($filters['q'] ?? null, fn (Builder $q, string $t) => $q->where(fn (Builder $q) => $q->where('name', 'like', "%{$t}%")->orWhere('tag', 'like', "%{$t}%")))
+            // «Шукаємо»: лише сім’ї з відкритим набором — свіжіші вище.
+            ->when($tab === 'recruiting', fn (Builder $q) => $q->where('is_recruiting', true)->orderByDesc('updated_at'))
             ->orderByDesc('members_count')
             ->orderByDesc('id')
             ->paginate(24)
@@ -68,7 +78,10 @@ class FamilyController extends FamilyBaseController
         return Inertia::render('families/index', [
             'mine' => $mine,
             'families' => $discover,
-            'filters' => ['server' => $server?->slug, 'q' => $filters['q'] ?? ''],
+            'filters' => ['server' => $server?->slug, 'q' => $filters['q'] ?? '', 'tab' => $tab],
+            // Рейтинг сезону (місяця) серед усіх сімей — бали з підтверджених звітів.
+            'top' => $tab === 'top' ? Inertia::defer(fn () => $this->seasonTop($server)) : null,
+            'recruitingCount' => Family::query()->where('status', Family::STATUS_VERIFIED)->where('is_recruiting', true)->count(),
             'servers' => $this->servers(),
         ]);
     }
@@ -87,7 +100,7 @@ class FamilyController extends FamilyBaseController
         $data = $request->validate([
             'server_id' => ['required', 'integer', Rule::exists('gta_servers', 'id')->where('status', GtaServer::STATUS_PUBLISHED)->whereNull('deleted_at')],
             'name' => ['required', 'string', 'min:2', 'max:60'],
-            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $request->integer('server_id'))],
+            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $request->integer('server_id'))->whereNull('deleted_at')],
             'description' => ['nullable', 'string', 'max:2000'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
             ...self::nicknameRules(),
@@ -123,9 +136,14 @@ class FamilyController extends FamilyBaseController
         $can = $this->gate->abilities($member, $family);
 
         return $this->page($family, $member, 'families/overview', 'overview', [
+            'onboarding' => FamilyOnboardingController::card($family, $member),
             'donation' => Inertia::defer(fn () => app(MonobankJar::class)->card($family->donation_jar, $family->donation_note)),
+            // Чат сім'ї на огляді: скільки написали сьогодні, останні повідомлення й ШІ-підсумок.
+            'chat' => fn () => $this->chatCard($request->user(), $family),
             'stats' => $stats->overview($family, $member),
             'leaders' => array_slice($rating->leaderboard($family, 'week'), 0, 5),
+            // Тижневі завдання сім’ї з прогресом (задає лідер у налаштуваннях).
+            'goals' => app(WeeklyGoals::class)->progress($family),
             'events' => FamilyEvent::query()->where('family_id', $family->id)
                 ->where('status', FamilyEvent::STATUS_PLANNED)
                 ->where('starts_at', '>=', now()->subHours(3))
@@ -143,12 +161,46 @@ class FamilyController extends FamilyBaseController
         ]);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function chatCard(User $user, Family $family): ?array
+    {
+        if ($family->conversation_id === null || ! app(ModuleManager::class)->enabled('messages')) {
+            return null;
+        }
+        $conversation = Conversation::query()->find($family->conversation_id);
+        if (! $conversation instanceof Conversation || $conversation->participantFor($user) === null) {
+            return null;
+        }
+        $texts = Message::query()->where('conversation_id', $conversation->id)
+            ->where('type', Message::TYPE_TEXT)->whereNotNull('body')->whereNull('publish_at');
+        $latest = (clone $texts)->with('user')->latest('id')->limit(3)->get()->reverse()->values();
+        // Як у самому чаті: RP-нік [static], а не справжнє ім'я.
+        $nicks = FamilyMember::query()->where('family_id', $family->id)
+            ->whereIn('user_id', $latest->pluck('user_id')->filter()->all())->get()
+            ->mapWithKeys(fn (FamilyMember $m) => [$m->user_id => $m->displayName()]);
+
+        return [
+            'id' => $conversation->id,
+            'today' => (clone $texts)->where('created_at', '>=', now('Europe/Kyiv')->startOfDay()->setTimezone(config('app.timezone')))->count(),
+            'latest' => $latest->map(fn (Message $m) => [
+                'id' => $m->id,
+                'name' => (string) ($nicks[$m->user_id] ?? $m->user->name ?? 'Учасник'),
+                'body' => Str::limit(str_replace("\n", ' ', (string) $m->body), 160),
+                'at' => $m->created_at->toIso8601String(),
+            ])->all(),
+            'ai' => app(Plugins::class)->on('ai_summary'),
+        ];
+    }
+
     public function apply(Request $request, Family $family, FamilyService $families): RedirectResponse
     {
-        $data = $request->validate([
-            ...self::nicknameRules(),
-            'note' => ['nullable', 'string', 'max:1000'],
-        ], self::nicknameMessages());
+        $rules = [...self::nicknameRules(), 'note' => ['nullable', 'string', 'max:1000'], 'answers' => ['nullable', 'array'], 'quiz' => ['nullable', 'array', 'max:'.FamilyCharter::MAX_QUESTIONS], 'quiz.*' => ['nullable', 'integer', 'min:0', 'max:9']];
+        foreach ($family->applicationQuestions() as $q) {
+            $rules['answers.'.$q['id']] = [$q['required'] ? 'required' : 'nullable', 'string', 'max:500'];
+        }
+        $data = $request->validate($rules, [...self::nicknameMessages(), 'answers.*.required' => 'Дайте відповідь на обов’язкове питання анкети.']);
 
         $families->apply($family, $request->user(), $data);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Заявку надіслано! Офіцери сім’ї розглянуть її найближчим часом.']);
@@ -233,6 +285,12 @@ class FamilyController extends FamilyBaseController
             'blocked' => $isLeader && app(Plugins::class)->on('family_blacklist')
                 ? User::query()->whereIn('id', DB::table('family_blocks')->where('family_id', $family->id)->pluck('user_id'))->get()->map(fn (User $user) => $user->toCard())->values()
                 : [],
+            'questions' => $family->applicationQuestions(),
+            'charter' => [
+                'has_text' => app(FamilyCharter::class)->text($family) !== null,
+                'quiz' => app(FamilyCharter::class)->publicQuiz($family),
+                'pass' => app(FamilyCharter::class)->passPercent($family),
+            ],
             'application' => $application ? [
                 'status' => $application->status,
                 'display' => $application->displayName(),
@@ -250,6 +308,33 @@ class FamilyController extends FamilyBaseController
 
     /**
      * @return list<array<string, mixed>>
+     */
+    /**
+     * Глобальний рейтинг сімей за місяць (або сервера, якщо вибрано): топ-50 за балами.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function seasonTop(?GtaServer $server): array
+    {
+        $rating = app(FamilyRating::class);
+
+        $key = 'families.top.'.($server !== null ? $server->id : 'all').'.'.now()->format('Y-m');
+
+        return array_values(Cache::remember($key, now()->addMinutes(15), function () use ($rating, $server) {
+            $rows = Family::query()->with('server')
+                ->where('status', Family::STATUS_VERIFIED)
+                ->when($server, fn (Builder $q, GtaServer $s) => $q->where('server_id', $s->id))
+                ->orderByDesc('members_count')->limit(200)->get()
+                ->map(fn (Family $f) => [...$f->toCard(), 'score' => $rating->familyScore($f)])
+                ->filter(fn (array $row) => $row['score'] > 0)
+                ->sortByDesc('score')->take(50)->values();
+
+            return $rows->map(fn (array $row, int $i) => [...$row, 'place' => $i + 1])->all();
+        }));
+    }
+
+    /**
+     * @return list<array{id: int, slug: string, name: string, icon: string|null, platform: string}>
      */
     private function servers(): array
     {

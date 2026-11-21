@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\BillingNotice;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Plus\PromoCodes;
+use App\Services\System\AdminAlerts;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -52,8 +53,10 @@ class Checkout
         $target = $this->shop->target($payer, $product, $input);
         $recurring = (bool) ($this->catalog->get($product)['recurring'] ?? false);
         $price = $this->catalog->priceFor($payer, $product);
+        // Поповнення балансу оплачується лише карткою: сам баланс у нього не зараховується.
+        $topup = ($this->catalog->get($product)['kind'] ?? null) === 'balance';
         $promo = app(PromoCodes::class)->discountFor($payer, $product, $price);
-        $credit = min(max(0, (int) $payer->balance), $price - $promo['amount']);
+        $credit = $topup ? 0 : min(max(0, (int) $payer->balance), $price - $promo['amount']);
         $renew = $renew && $recurring;
 
         $order = PaymentOrder::query()->create([
@@ -141,7 +144,8 @@ class Checkout
     public function chargeSaved(PlusRenewal $renewal, PaymentCard $card): PaymentOrder
     {
         $payer = $renewal->user;
-        $price = $this->catalog->price($renewal->product);
+        // Ціна на момент продовження: якщо лідер досі з GameCon+ — сімейний тариф зі знижкою.
+        $price = $this->catalog->priceFor($payer, $renewal->product);
         $promo = app(PromoCodes::class)->discountFor($payer, $renewal->product, $price);
         $credit = min(max(0, (int) $payer->balance), $price - $promo['amount']);
         $order = PaymentOrder::query()->create([
@@ -339,6 +343,7 @@ class Checkout
             ->update(['status' => PaymentOrder::FAILED, 'failure' => mb_substr($reason, 0, 255)]);
         if ($changed > 0) {
             $this->releasePhone($order);
+            app(AdminAlerts::class)->paymentFailed($order, $reason);
         }
         if ($changed === 0 || $order->kind !== 'renewal' || $order->renewal_id === null) {
             return;

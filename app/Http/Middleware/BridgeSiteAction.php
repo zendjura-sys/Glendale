@@ -6,6 +6,9 @@ use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Events\PreparingResponse;
+use Illuminate\Support\Facades\Event;
+use Inertia\Response as InertiaResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -17,9 +20,30 @@ use Symfony\Component\HttpFoundation\Response;
  * - Сторінки сайту (`Inertia::render`) на GET віддаються як JSON їхніх props: запит позначаємо
  *   заголовком X-Inertia, і Inertia сама повертає об’єкт сторінки.
  * - Помилки валідації й `abort()` для `api/*` уже рендеряться в JSON.
+ * - Відкладені props (`Inertia::defer`) застосунок окремим запитом не догружає, тож міст віддає їх
+ *   одразу: перед рендером сторінки ставимо заголовок часткового перезавантаження з її ж компонентом —
+ *   Inertia тоді рахує всі props, включно з відкладеними (див. listen()).
  */
 class BridgeSiteAction
 {
+    /** Позначка запиту-сторінки мосту (GET), для якого треба віддати й відкладені props. */
+    private const PAGE = 'gc.bridge.page';
+
+    /** Реєструється в AppServiceProvider::boot(). */
+    public static function listen(): void
+    {
+        Event::listen(PreparingResponse::class, function (PreparingResponse $event): void {
+            if (! $event->response instanceof InertiaResponse || $event->request->attributes->get(self::PAGE) !== true) {
+                return;
+            }
+            // Компонент — захищене поле Inertia\Response; часткове перезавантаження без only/except = усі props.
+            $component = (fn () => $this->component)->call($event->response);
+            if (is_string($component) && $component !== '') {
+                $event->request->headers->set('X-Inertia-Partial-Component', $component);
+            }
+        });
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
         // `session()` і `$request->session()` мають бачити одне й те саме сховище в пам’яті.
@@ -30,6 +54,7 @@ class BridgeSiteAction
         $page = $request->isMethod('GET');
         if ($page) {
             $request->headers->set('X-Inertia', 'true');
+            $request->attributes->set(self::PAGE, true);
         }
 
         $response = $next($request);

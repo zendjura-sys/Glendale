@@ -20,6 +20,7 @@ export type GtaServerCard = {
     discord_online: number | null;
     stats_updated_at: string | null;
     is_featured: boolean;
+    is_verified?: boolean;
     families_count: number;
     votes_month?: number;
     /** Платне просування: top, highlight, banner. */
@@ -101,7 +102,12 @@ export type FamilySection =
     | 'members'
     | 'discipline'
     | 'events'
+    | 'shifts'
     | 'rating'
+    | 'charter'
+    | 'wiki'
+    | 'relations'
+    | 'history'
     | 'audit'
     | 'settings';
 
@@ -113,6 +119,8 @@ export type FamilyShellProps = {
         conversation_id: number | null;
         owner_id: number | null;
         rank_titles: Record<string, string>;
+        shifts_enabled?: boolean;
+        sections?: Record<string, boolean>;
     };
     me: MemberCard & { balance: number };
     can: FamilyAbilities;

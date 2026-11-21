@@ -49,7 +49,9 @@ class FamilyMemberController extends FamilyBaseController
             'members' => $members,
             'applications' => $can['members.manage']
                 ? FamilyMember::query()->with('user')->where('family_id', $family->id)->where('status', FamilyMember::STATUS_PENDING)->oldest('updated_at')->get()
-                    ->map(fn (FamilyMember $m) => [...$m->toCard($family), 'note' => $m->application_note, 'applied_at' => $m->updated_at->toIso8601String()])
+                    ->map(fn (FamilyMember $m) => [...$m->toCard($family), 'note' => $m->application_note, 'applied_at' => $m->updated_at->toIso8601String(),
+                        'answers' => collect($family->applicationQuestions())->map(fn (array $q) => ['question' => $q['text'], 'answer' => $m->answers[$q['id']] ?? null])
+                            ->filter(fn (array $a) => $a['answer'] !== null)->values()])
                 : [],
             'permissions' => Family::PERMISSIONS,
             'voice_rooms' => $access['labels'],

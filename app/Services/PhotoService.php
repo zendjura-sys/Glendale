@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Community;
+use App\Models\Game;
 use App\Models\Like;
 use App\Models\Photo;
 use App\Models\PhotoAlbum;
@@ -266,6 +267,7 @@ class PhotoService
             'comments_enabled' => $album->comments_enabled,
             'photos_count' => $album->photos_count,
             'cover_url' => $album->cover?->url,
+            'game' => $album->game_id ? Game::query()->whereKey($album->game_id)->first(['id', 'slug', 'name'])?->only(['id', 'slug', 'name']) : null,
             'updated_at' => $album->updated_at->toIso8601String(),
         ];
     }

@@ -2,6 +2,8 @@ import type { Room, RoomOptions } from 'livekit-client';
 import { useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
+import { createVoiceMeter, newAudioContext } from '@/lib/character';
+import type { VoiceReading } from '@/lib/character';
 import { tr } from '@/lib/i18n';
 
 /**
@@ -26,10 +28,20 @@ export type CallState = {
     invited: number[];
 };
 
+export type VoiceVideoTile = {
+    id: string;
+    identity: string;
+    name: string;
+    screen: boolean;
+    local: boolean;
+    /** HTMLVideoElement, уже прив’язаний до трека LiveKit. */
+    el: HTMLVideoElement;
+};
+
 export type VoiceState = {
     status: 'idle' | 'connecting' | 'connected';
-    kind: 'room' | 'call' | null;
-    /** Голосова кімната (kind = room). */
+    kind: 'room' | 'call' | 'show' | 'broadcast' | null;
+    /** Голосова кімната / шоу / LiveCast. */
     roomId: number | null;
     /** Дзвінок і його бесіда (kind = call). */
     callId: number | null;
@@ -43,8 +55,11 @@ export type VoiceState = {
     micOn: boolean;
     /** Модератор забрав мікрофон. */
     micBlocked: boolean;
+    cameraOn: boolean;
+    screenShareOn: boolean;
     deafened: boolean;
     speaking: string[];
+    videos: VoiceVideoTile[];
     connectedAt: number | null;
 };
 
@@ -61,8 +76,11 @@ const initial: VoiceState = {
     identity: null,
     micOn: false,
     micBlocked: false,
+    cameraOn: false,
+    screenShareOn: false,
     deafened: false,
     speaking: [],
+    videos: [],
     connectedAt: null,
 };
 
@@ -70,6 +88,33 @@ let state = initial;
 const listeners = new Set<() => void>();
 let room: Room | null = null;
 const audio = new Set<HTMLMediaElement>();
+const videoEls = new Map<string, HTMLVideoElement>();
+/** Гучність і тембр кожного, хто говорить (identity → вимірювач), — для персонажів у шоу. */
+const meters = new Map<string, ReturnType<typeof createVoiceMeter>>();
+let meterCtx: AudioContext | null = null;
+
+function meterFor(identity: string, track: MediaStreamTrack) {
+    try {
+        meterCtx ??= newAudioContext();
+        meters.get(identity)?.stop();
+        meters.set(
+            identity,
+            createVoiceMeter(new MediaStream([track]), meterCtx),
+        );
+    } catch {
+        // Без Web Audio персонажі просто не рухають ротом.
+    }
+}
+
+function dropMeter(identity: string) {
+    meters.get(identity)?.stop();
+    meters.delete(identity);
+}
+
+/** Гучність і тембр людини в розмові (null — мовчить або не в розмові). */
+export function voiceLevel(identity: string): VoiceReading | null {
+    return meters.get(identity)?.read() ?? null;
+}
 
 function set(patch: Partial<VoiceState>) {
     state = { ...state, ...patch };
@@ -92,9 +137,72 @@ export function voiceState(): VoiceState {
     return state;
 }
 
+function publishVideos() {
+    set({
+        videos: [...videoEls.entries()].map(([id, el]) => {
+            const meta = (
+                el.dataset.meta ? JSON.parse(el.dataset.meta) : {}
+            ) as {
+                identity?: string;
+                name?: string;
+                screen?: boolean;
+                local?: boolean;
+            };
+
+            return {
+                id,
+                identity: meta.identity ?? id,
+                name: meta.name ?? id,
+                screen: Boolean(meta.screen),
+                local: Boolean(meta.local),
+                el,
+            };
+        }),
+    });
+}
+
+function attachVideo(
+    id: string,
+    track: { attach: (el?: HTMLMediaElement) => HTMLMediaElement },
+    meta: { identity: string; name: string; screen: boolean; local: boolean },
+) {
+    const prev = videoEls.get(id);
+    if (prev) {
+        track.attach(prev);
+        prev.dataset.meta = JSON.stringify(meta);
+        publishVideos();
+
+        return;
+    }
+    const el = track.attach() as HTMLVideoElement;
+    el.playsInline = true;
+    el.muted = meta.local;
+    el.autoplay = true;
+    el.className = 'h-full w-full object-cover';
+    el.dataset.meta = JSON.stringify(meta);
+    videoEls.set(id, el);
+    publishVideos();
+}
+
+function detachVideo(
+    id: string,
+    track?: { detach: (el?: HTMLMediaElement) => HTMLMediaElement[] },
+) {
+    const el = videoEls.get(id);
+    if (!el) return;
+    if (track) track.detach(el);
+    else el.remove();
+    videoEls.delete(id);
+    publishVideos();
+}
+
 function cleanup() {
     audio.forEach((el) => el.remove());
     audio.clear();
+    videoEls.forEach((el) => el.remove());
+    videoEls.clear();
+    meters.forEach((m) => m.stop());
+    meters.clear();
     room = null;
     set({ ...initial, deafened: state.deafened });
 }
@@ -149,19 +257,51 @@ async function connect(
         room = next;
         if (access.call) set({ callId: access.call.id });
 
-        next.on(RoomEvent.TrackSubscribed, (track) => {
-            if (track.kind !== Track.Kind.Audio) return;
-            const el = track.attach();
-            el.muted = state.deafened;
-            el.style.display = 'none';
-            document.body.appendChild(el);
-            audio.add(el);
-        });
-        next.on(RoomEvent.TrackUnsubscribed, (track) => {
-            track.detach().forEach((el) => {
-                audio.delete(el);
-                el.remove();
+        next.on(RoomEvent.TrackSubscribed, (track, pub, participant) => {
+            if (track.kind === Track.Kind.Audio) {
+                meterFor(participant.identity, track.mediaStreamTrack);
+                const el = track.attach();
+                el.muted = state.deafened;
+                el.style.display = 'none';
+                document.body.appendChild(el);
+                audio.add(el);
+
+                return;
+            }
+            if (track.kind !== Track.Kind.Video) return;
+            attachVideo(pub.trackSid, track, {
+                identity: participant.identity,
+                name: participant.name || participant.identity,
+                screen: pub.source === Track.Source.ScreenShare,
+                local: false,
             });
+        });
+        next.on(RoomEvent.TrackUnsubscribed, (track, pub, participant) => {
+            if (track.kind === Track.Kind.Audio) {
+                dropMeter(participant.identity);
+                track.detach().forEach((el) => {
+                    audio.delete(el);
+                    el.remove();
+                });
+
+                return;
+            }
+            if (track.kind === Track.Kind.Video)
+                detachVideo(pub.trackSid, track);
+        });
+        next.on(RoomEvent.LocalTrackPublished, (pub, participant) => {
+            const track = pub.track;
+            if (!track || track.kind !== Track.Kind.Video) return;
+            attachVideo(pub.trackSid, track, {
+                identity: participant.identity,
+                name: participant.name || tr('Ви'),
+                screen: pub.source === Track.Source.ScreenShare,
+                local: true,
+            });
+        });
+        next.on(RoomEvent.LocalTrackUnpublished, (pub) => {
+            if (pub.track?.kind === Track.Kind.Video)
+                detachVideo(pub.trackSid, pub.track);
         });
         next.on(RoomEvent.ActiveSpeakersChanged, (speakers) =>
             set({ speaking: speakers.map((p) => p.identity) }),
@@ -169,7 +309,21 @@ async function connect(
         next.on(RoomEvent.ParticipantPermissionsChanged, (_prev, p) => {
             if (p !== next.localParticipant) return;
             const blocked = p.permissions?.canPublish === false;
+            const wasBlocked = state.micBlocked;
             set({ micBlocked: blocked, micOn: blocked ? false : state.micOn });
+            if (state.kind === 'show') {
+                // Шоу: ведучий дав слово — мікрофон вмикається сам; час вийшов — вимикається.
+                if (blocked && !wasBlocked) {
+                    dropMeter(p.identity);
+                    toast(tr('Мікрофон вимкнено — ви знову слухаєте'));
+                }
+                if (!blocked && wasBlocked) {
+                    toast.success(tr('Вам дали слово — говоріть'));
+                    void setMic(true);
+                }
+
+                return;
+            }
             if (blocked) toast(tr('Модератор вимкнув вам мікрофон'));
         });
         next.on(RoomEvent.Disconnected, (reason) => {
@@ -285,22 +439,93 @@ export function declineCall(call: CallState) {
     void api('POST', `/calls/${call.id}/decline`).catch(() => undefined);
 }
 
+/** Шоу наживо: ведучі й гість говорять, решта слухає. */
+export async function joinShow(show: { id: number; title: string }) {
+    if (
+        state.kind === 'show' &&
+        state.roomId === show.id &&
+        state.status !== 'idle'
+    )
+        return;
+
+    await connect(
+        () => api<Access>('POST', `/shows/${show.id}/join`),
+        {
+            kind: 'show',
+            roomId: show.id,
+            roomName: show.title,
+            label: tr('Шоу'),
+            href: `/shows/${show.id}`,
+            owner: null,
+        },
+        tr('Не вдалося підключитися до шоу'),
+    );
+}
+
+/** LiveCast: нативний відеострім (ведучий публікує, глядачі дивляться). */
+export async function joinBroadcast(stream: { id: number; title: string }) {
+    if (
+        state.kind === 'broadcast' &&
+        state.roomId === stream.id &&
+        state.status !== 'idle'
+    )
+        return;
+
+    await connect(
+        () => api<Access>('POST', `/livecast/${stream.id}/join`),
+        {
+            kind: 'broadcast',
+            roomId: stream.id,
+            roomName: stream.title,
+            label: 'LiveCast',
+            href: `/livecast/${stream.id}`,
+            owner: null,
+        },
+        tr('Не вдалося підключитися до LiveCast'),
+    );
+}
+
 export async function leaveVoice() {
     const current = room;
     const callId = state.kind === 'call' ? state.callId : null;
+    const showId = state.kind === 'show' ? state.roomId : null;
+    const broadcastId = state.kind === 'broadcast' ? state.roomId : null;
     room = null;
     await current?.disconnect().catch(() => undefined);
     cleanup();
     // Сервер дізнається й з вебхука, але так співрозмовник побачить кінець дзвінка одразу.
     if (callId)
         void api('POST', `/calls/${callId}/leave`).catch(() => undefined);
+    if (showId)
+        void api('POST', `/shows/${showId}/leave`).catch(() => undefined);
+    if (broadcastId)
+        void api('POST', `/livecast/${broadcastId}/leave`).catch(
+            () => undefined,
+        );
+}
+
+/** Камера й демонстрація екрана: дзвінки, LiveCast і голосові кімнати (№235). */
+function canPublishVideo(): boolean {
+    return (
+        state.kind === 'call' ||
+        state.kind === 'broadcast' ||
+        state.kind === 'room'
+    );
+}
+
+function canShareScreen(): boolean {
+    return canPublishVideo();
 }
 
 async function setMic(on: boolean) {
     if (!room) return;
     try {
-        await room.localParticipant.setMicrophoneEnabled(on);
+        const pub = await room.localParticipant.setMicrophoneEnabled(on);
         set({ micOn: on });
+        const identity = room.localParticipant.identity;
+        const track = pub?.track?.mediaStreamTrack;
+        if (on && track) meterFor(identity, track);
+        else dropMeter(identity);
     } catch {
         set({ micOn: false });
         toast.error(
@@ -322,4 +547,58 @@ export function toggleDeafen() {
     const deafened = !state.deafened;
     audio.forEach((el) => (el.muted = deafened));
     set({ deafened });
+}
+
+async function setCamera(on: boolean) {
+    if (!room || !canPublishVideo()) return;
+    try {
+        await room.localParticipant.setCameraEnabled(on);
+        set({ cameraOn: on });
+    } catch {
+        set({ cameraOn: false });
+        toast.error(tr('Немає доступу до камери — дозвольте її в браузері'));
+    }
+}
+
+export function toggleCamera() {
+    if (state.micBlocked) {
+        toast(tr('Модератор вимкнув вам мікрофон'));
+
+        return;
+    }
+    if (!canPublishVideo()) {
+        toast(tr('Відео доступне в дзвінках, кімнатах і LiveCast'));
+
+        return;
+    }
+    void setCamera(!state.cameraOn);
+}
+
+async function setScreenShare(on: boolean) {
+    if (!room || !canShareScreen()) return;
+    try {
+        await room.localParticipant.setScreenShareEnabled(on, {
+            audio: true,
+        });
+        set({ screenShareOn: on });
+    } catch {
+        set({ screenShareOn: false });
+        if (on) toast.error(tr('Не вдалося поділитися екраном'));
+    }
+}
+
+export function toggleScreenShare() {
+    if (state.micBlocked) {
+        toast(tr('Немає права публікувати відео'));
+
+        return;
+    }
+    if (!canShareScreen()) {
+        toast(
+            tr('Демонстрація екрана доступна в дзвінках, кімнатах і LiveCast'),
+        );
+
+        return;
+    }
+    void setScreenShare(!state.screenShareOn);
 }

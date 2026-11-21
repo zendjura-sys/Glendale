@@ -164,6 +164,48 @@ class TmdbProvider extends MetadataProvider
     }
 
     /**
+     * Персонажі фільму чи серіалу для колекційних карток: перші ролі акторського складу
+     * (ім'я персонажа, фото — актора в ролі з TMDB).
+     *
+     * @return list<array{source_id: string, name: string, image_url: string|null, role: string, popularity: int}>
+     */
+    public function characters(Movie $movie, int $limit = 6): array
+    {
+        if (! $this->configured()) {
+            return [];
+        }
+        [$kind, $id] = $this->resolve($movie);
+        if (! $id) {
+            return [];
+        }
+        $d = $this->get('/'.$kind.'/'.$id.($kind === 'tv' ? '/aggregate_credits' : '/credits'), ['language' => $this->language()]);
+        $out = [];
+        foreach (array_slice((array) ($d['cast'] ?? []), 0, 20) as $i => $c) {
+            if (! is_array($c)) {
+                continue;
+            }
+            $character = self::str($kind === 'tv' ? ($c['roles'][0]['character'] ?? null) : ($c['character'] ?? null), 120);
+            $character = $character ? trim((string) preg_replace('/\s*\(.*?\)\s*/u', ' ', $character)) : null;
+            if (! $character || str_contains(mb_strtolower($character), 'voice') || ! isset($c['id'])) {
+                continue;
+            }
+            $profile = self::str($c['profile_path'] ?? null);
+            $out[] = [
+                'source_id' => (string) $c['id'],
+                'name' => mb_substr($character, 0, 120),
+                'image_url' => $profile ? 'https://image.tmdb.org/t/p/w342'.$profile : null,
+                'role' => $i < 3 ? 'main' : 'supporting',
+                'popularity' => max(1, 100 - $i * 8),
+            ];
+            if (count($out) >= $limit) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * @return array{0: string, 1: string|null}
      */
     private function resolve(Movie $movie): array

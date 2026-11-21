@@ -18,7 +18,7 @@ export default function SavedMessages({ items }: { items: Item[] }) {
         <>
             <Head title={tr('Обрані')} />
             <div className="mx-auto w-full max-w-xl space-y-4">
-                <h1 className="font-display text-2xl font-bold text-white">
+                <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                     {tr('Обрані повідомлення')}
                 </h1>
                 {items.length === 0 ? (
@@ -33,7 +33,7 @@ export default function SavedMessages({ items }: { items: Item[] }) {
                             <Link
                                 key={item.id}
                                 href={item.href}
-                                className="glass block rounded-3xl p-4 transition hover:border-white/15"
+                                className="gc-solid block rounded-2xl p-4 transition hover:border-white/15"
                             >
                                 <span className="block text-xs text-white/40">
                                     {item.author ?? tr('Повідомлення')} ·{' '}

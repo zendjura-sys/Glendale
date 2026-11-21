@@ -26,16 +26,16 @@ class ProfileVisitorsOrderBirthdayTest extends TestCase
         $friendships->accept($owner, $viewer);
         $this->withoutVite();
 
-        $this->actingAs($viewer)->get(route('profile.show', $owner))->assertOk();
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $owner))->assertOk();
         $this->assertSame(0, ProfileVisit::query()->count());
 
-        $this->actingAs($owner)->get(route('profile.show', $owner))
+        $this->actingAs($owner)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $owner))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('showVisitors', false)
                 ->where('visitors', [])
                 ->where('birthdayToday', true)
-                ->where('blockOrder.0', 'platforms'));
+                ->where('blockOrder.0', 'track'));
 
         $this->actingAs($owner)->put(route('appearance.update'), $this->appearance([
             'show_visitors' => true,
@@ -45,7 +45,7 @@ class ProfileVisitorsOrderBirthdayTest extends TestCase
         $owner->refresh();
         $this->assertTrue($owner->pref('show_visitors'));
         $this->assertSame(
-            ['photos', 'friends', 'platforms', 'steam', 'about', 'achievements', 'audio', 'characters'],
+            ['photos', 'friends', 'track', 'platforms', 'steam', 'steam_achievements', 'setup', 'stream_schedule', 'cards', 'games', 'cinema_stats', 'about', 'achievements', 'audio', 'characters'],
             $owner->pref('profile_blocks'),
         );
 
@@ -54,11 +54,11 @@ class ProfileVisitorsOrderBirthdayTest extends TestCase
         $this->assertTrue($owner->pref('show_visitors'));
         $this->assertSame('photos', $owner->pref('profile_blocks')[0]);
 
-        $this->actingAs($viewer)->get(route('profile.show', $owner))->assertOk();
-        $this->actingAs($viewer)->get(route('profile.show', $owner))->assertOk();
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $owner))->assertOk();
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $owner))->assertOk();
         $this->assertSame(1, ProfileVisit::query()->count());
 
-        $this->actingAs($viewer)->get(route('profile.show', $owner))
+        $this->actingAs($viewer)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $owner))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('showVisitors', false)
@@ -66,14 +66,14 @@ class ProfileVisitorsOrderBirthdayTest extends TestCase
                 ->where('birthdayToday', true)
                 ->where('blockOrder.0', 'photos'));
 
-        $this->actingAs($owner)->get(route('profile.show', $owner))
+        $this->actingAs($owner)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $owner))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('showVisitors', true)
                 ->where('visitors.0.username', 'taras')
                 ->where('blockOrder.0', 'photos'));
 
-        $this->actingAs($owner)->get(route('profile.show', $viewer))
+        $this->actingAs($owner)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $viewer))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->where('birthdayToday', false));
 

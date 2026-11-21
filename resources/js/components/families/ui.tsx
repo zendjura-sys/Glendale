@@ -1,28 +1,36 @@
 import type { LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { m, useReducedMotion } from 'motion/react';
+import { useId, type ReactNode } from 'react';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { GcSegmented } from '@/components/gc/gc-segmented';
 import { cn } from '@/lib/utils';
 import { LOCALE } from '@/lib/i18n';
 
 export const btnPrimary =
-    'btn-glow inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50';
+    'btn-glow inline-flex h-9 items-center justify-center gap-1.5 rounded-xl px-3.5 text-xs font-semibold disabled:opacity-50 sm:h-10 sm:px-4 sm:text-sm';
 export const btnGhost =
-    'glass inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-sm text-white/75 transition hover:text-white disabled:opacity-50';
+    'gc-solid-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/75 transition hover:text-white disabled:opacity-50 sm:h-10 sm:px-3.5 sm:text-sm';
+// Тоновані кнопки дій (як «Виплатити з казни» / «Видати догану»): суцільний тон без рамок.
 export const btnDanger =
-    'inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-rose-500/15 px-3.5 text-sm font-medium text-rose-200 transition hover:bg-rose-500/25 disabled:opacity-50';
+    'inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-red-500/15 px-3 text-xs font-semibold text-red-400 transition hover:bg-red-500/25 disabled:opacity-50 sm:h-10 sm:text-sm';
 export const btnSuccess =
-    'inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-400/15 px-3.5 text-sm font-medium text-emerald-200 transition hover:bg-emerald-400/25 disabled:opacity-50';
+    'inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-emerald-500/15 px-3 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/25 disabled:opacity-50 sm:h-10 sm:text-sm';
 export const textareaClass =
-    'input-glass w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none';
+    'input-glass w-full rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none sm:px-3.5 sm:py-2.5 sm:text-sm';
 
+/**
+ * Картка розділу: кольорова іконка, жирний заголовок, дія чи лічильник праворуч;
+ * суцільна поверхня без рамок (вкладені елементи — gc-solid-2).
+ */
 export function Panel({
     title,
     icon: Icon,
+    tone = 'text-sky-400',
     actions,
     children,
     className,
@@ -30,6 +38,8 @@ export function Panel({
 }: {
     title?: ReactNode;
     icon?: LucideIcon;
+    /** Колір іконки заголовка. */
+    tone?: string;
     actions?: ReactNode;
     children: ReactNode;
     className?: string;
@@ -38,22 +48,22 @@ export function Panel({
     return (
         <section
             className={cn(
-                'glass rounded-3xl',
-                padded && 'p-4 sm:p-5',
+                'gc-solid rounded-2xl',
+                padded && 'p-3 sm:p-3.5',
                 className,
             )}
         >
             {(title || actions) && (
                 <div
                     className={cn(
-                        'mb-4 flex flex-wrap items-center gap-2',
-                        !padded && 'px-4 pt-4 sm:px-5 sm:pt-5',
+                        'mb-2.5 flex flex-wrap items-center gap-2',
+                        !padded && 'px-3 pt-3 sm:px-3.5 sm:pt-3.5',
                     )}
                 >
                     {title && (
-                        <h2 className="flex min-w-0 flex-1 items-center gap-2 font-display text-base font-semibold text-white">
+                        <h2 className="flex min-w-0 flex-1 items-center gap-2 font-display text-sm font-semibold tracking-tight text-white">
                             {Icon && (
-                                <Icon className="size-4 text-gc-lilac-200" />
+                                <Icon className={cn('size-4 shrink-0', tone)} />
                             )}
                             {title}
                         </h2>
@@ -80,29 +90,34 @@ export function Metric({
     icon?: LucideIcon;
 }) {
     return (
-        <div className="glass relative overflow-hidden rounded-2xl px-4 py-3.5">
-            <div className="flex items-center justify-between gap-2 text-xs font-medium text-white/45">
-                {label}
-                {Icon && <Icon className="size-4 text-white/30" />}
+        // Плитка-показник: підпис, велике число в тоні, підказка нижче («+$1.4M за тиждень»).
+        <div className="gc-solid relative overflow-hidden rounded-2xl px-3 py-3">
+            <div className="flex items-center justify-between gap-2 text-[11px] font-medium text-white/60">
+                <span className="min-w-0 truncate">{label}</span>
+                {Icon && <Icon className={cn('size-3.5 shrink-0', tone)} />}
             </div>
             <div
                 className={cn(
-                    'mt-1.5 font-display text-2xl leading-tight font-bold',
+                    'mt-1 truncate font-display text-xl leading-tight font-extrabold tabular-nums sm:text-[22px]',
                     tone,
                 )}
             >
                 {value}
             </div>
-            {hint && <div className="mt-1 text-xs text-white/40">{hint}</div>}
+            {hint && (
+                <div className="mt-0.5 text-[11px] leading-tight text-white/45">
+                    {hint}
+                </div>
+            )}
         </div>
     );
 }
 
 const rankTones = [
-    'bg-white/[0.06] text-white/60',
-    'bg-sky-400/10 text-sky-200',
-    'bg-violet-400/12 text-violet-200',
-    'bg-amber-300/15 text-amber-200',
+    'gc-solid-2 text-white/60',
+    'bg-sky-500/15 text-sky-400',
+    'bg-emerald-500/15 text-emerald-400',
+    'bg-amber-400/15 text-amber-400',
 ];
 
 export function RankBadge({
@@ -116,19 +131,19 @@ export function RankBadge({
 }) {
     const tone =
         rank >= 10
-            ? 'bg-gradient-to-r from-amber-300/30 to-rose-400/30 text-amber-100 ring-1 ring-amber-300/30'
+            ? 'bg-amber-400/20 text-amber-400'
             : rankTones[Math.min(3, Math.floor((rank - 1) / 3))];
 
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap',
+                'inline-flex items-center gap-1 rounded-chip px-2 py-0.5 text-xs font-semibold whitespace-nowrap',
                 tone,
                 className,
             )}
         >
             <span className="tabular-nums">{rank}</span>
-            {title && <span className="font-medium opacity-80">{title}</span>}
+            {title && <span className="font-medium">{title}</span>}
         </span>
     );
 }
@@ -144,33 +159,56 @@ export function Segmented<T extends string>({
     onChange: (value: T) => void;
     className?: string;
 }) {
+    const reduce = useReducedMotion();
+    const layoutId = useId();
+
     return (
         <div
             className={cn(
-                'flex max-w-full overflow-x-auto rounded-xl bg-white/[0.04] p-1 text-sm',
+                'gc-solid relative flex max-w-full [scrollbar-width:none] overflow-x-auto rounded-xl p-1 text-sm',
                 className,
             )}
         >
-            {options.map((o) => (
-                <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => onChange(o.value)}
-                    className={cn(
-                        'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition',
-                        value === o.value
-                            ? 'bg-white/10 text-white'
-                            : 'text-white/50 hover:text-white',
-                    )}
-                >
-                    {o.label}
-                    {!!o.badge && (
-                        <span className="rounded-full bg-rose-500/80 px-1.5 text-[11px] leading-4 text-white">
-                            {o.badge}
-                        </span>
-                    )}
-                </button>
-            ))}
+            {options.map((o) => {
+                const on = value === o.value;
+                return (
+                    <button
+                        key={o.value}
+                        type="button"
+                        onClick={() => onChange(o.value)}
+                        className={cn(
+                            'relative inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition-colors',
+                            on
+                                ? 'text-white'
+                                : 'text-white/60 hover:text-white',
+                        )}
+                    >
+                        {on && (
+                            <m.span
+                                layoutId={`seg-${layoutId}`}
+                                className="absolute inset-0 rounded-lg bg-sky-500"
+                                transition={
+                                    reduce
+                                        ? { duration: 0 }
+                                        : {
+                                              type: 'spring',
+                                              stiffness: 420,
+                                              damping: 34,
+                                              mass: 0.8,
+                                          }
+                                }
+                                aria-hidden
+                            />
+                        )}
+                        <span className="relative">{o.label}</span>
+                        {!!o.badge && (
+                            <span className="relative rounded-full bg-red-500 px-1.5 text-[11px] leading-4 text-white">
+                                {o.badge}
+                            </span>
+                        )}
+                    </button>
+                );
+            })}
         </div>
     );
 }
@@ -196,7 +234,7 @@ export function Modal({
         <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
             <DialogContent
                 className={cn(
-                    'glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-3xl border-white/10 p-5 text-white sm:p-6',
+                    'glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-dialog p-5 text-white sm:p-6',
                     wide ? 'sm:max-w-2xl' : 'sm:max-w-md',
                 )}
             >
@@ -249,9 +287,9 @@ export function Amount({
             className={cn(
                 'font-semibold whitespace-nowrap tabular-nums',
                 value > 0
-                    ? 'text-emerald-300'
+                    ? 'text-emerald-400'
                     : value < 0
-                      ? 'text-rose-300'
+                      ? 'text-red-400'
                       : 'text-white/50',
                 className,
             )}

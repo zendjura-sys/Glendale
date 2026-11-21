@@ -2,10 +2,13 @@ import { usePage } from '@inertiajs/react';
 import { Check, Languages } from 'lucide-react';
 import { toast } from 'sonner';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSub,
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ApiError, api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
@@ -85,11 +88,52 @@ export function LanguageMenu() {
                     >
                         <span className="flex-1">{l.native}</span>
                         {l.code === locale && (
-                            <Check className="size-4 text-gc-lilac-200" />
+                            <Check className="size-4 text-sky-400" />
                         )}
                     </DropdownMenuItem>
                 ))}
             </DropdownMenuSubContent>
         </DropdownMenuSub>
+    );
+}
+
+/** Кнопка мови в шапці гостьових сторінок: код мови, меню зі списком. */
+export function LanguageButton({ className }: { className?: string }) {
+    const { locale, locales } = useLocales();
+    if (locales.length < 2) {
+        return null;
+    }
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger
+                aria-label={tr('Мова')}
+                title={tr('Мова')}
+                className={cn(
+                    'gc-icon-button h-10 items-center justify-center gap-1 rounded-xl px-2 text-[13px] font-semibold uppercase transition',
+                    className,
+                )}
+            >
+                <Languages className="size-[17px]" />
+                <span className="max-sm:hidden">{locale}</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="end"
+                className="max-h-80 min-w-40 overflow-y-auto"
+            >
+                {locales.map((l) => (
+                    <DropdownMenuItem
+                        key={l.code}
+                        onSelect={() => l.code !== locale && setLocale(l.code)}
+                        className="rounded-lg focus:bg-white/[0.06]"
+                    >
+                        <span className="flex-1">{l.native}</span>
+                        {l.code === locale && (
+                            <Check className="size-4 text-sky-400" />
+                        )}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

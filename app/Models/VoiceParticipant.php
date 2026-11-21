@@ -13,9 +13,11 @@ use Illuminate\Support\Carbon;
  * @property int $voice_room_id
  * @property int $user_id
  * @property bool $muted
+ * @property bool $speaker на «сцені» може говорити
+ * @property Carbon|null $hand_raised_at слухач підняв руку
  * @property Carbon $joined_at
  */
-#[Fillable(['voice_room_id', 'user_id', 'muted', 'joined_at'])]
+#[Fillable(['voice_room_id', 'user_id', 'muted', 'speaker', 'hand_raised_at', 'joined_at'])]
 class VoiceParticipant extends Model
 {
     public $timestamps = false;
@@ -24,6 +26,8 @@ class VoiceParticipant extends Model
     {
         return [
             'muted' => 'boolean',
+            'speaker' => 'boolean',
+            'hand_raised_at' => 'datetime',
             'joined_at' => 'datetime',
         ];
     }

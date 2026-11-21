@@ -2,6 +2,7 @@
 
 namespace App\Services\Voice;
 
+use App\Services\Edge\EdgeNode;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -9,13 +10,45 @@ use Illuminate\Support\Facades\Http;
 /**
  * Сервер голосу LiveKit: токени доступу до кімнат, перевірка вебхуків і керування учасниками.
  * Ключі — в адмінці (Інтеграції → Голосові кімнати) або в .env (LIVEKIT_*).
+ * Якщо в «Інтеграції → Edge-вузол» голос перемкнено на вузол — адреса (і ключі вузла, якщо задані) звідти.
  */
 class LiveKit
 {
     /** Скільки живе токен входу: лише для підключення, далі LiveKit тримає з’єднання сам. */
     public const TOKEN_TTL = 6 * 3600;
 
-    public function __construct(private readonly SiteSettings $settings) {}
+    /**
+     * Джерела публікації для дзвінків у бесідах: голос, камера й демонстрація екрана.
+     *
+     * @var list<string>
+     */
+    public const CALL_SOURCES = ['microphone', 'camera', 'screen_share', 'screen_share_audio'];
+
+    /**
+     * Джерела для голосових кімнат / шоу / спільного перегляду: лише мікрофон.
+     *
+     * @var list<string>
+     */
+    public const VOICE_SOURCES = ['microphone'];
+
+    /**
+     * Голосові кімнати: голос, відеодзвінок (камера) і демонстрація екрана.
+     *
+     * @var list<string>
+     */
+    public const ROOM_SOURCES = ['microphone', 'camera', 'screen_share', 'screen_share_audio'];
+
+    /**
+     * Нативні стріми (окремо від GameCast): голос, камера, екран.
+     *
+     * @var list<string>
+     */
+    public const BROADCAST_SOURCES = ['microphone', 'camera', 'screen_share', 'screen_share_audio'];
+
+    public function __construct(
+        private readonly SiteSettings $settings,
+        private readonly EdgeNode $edge,
+    ) {}
 
     public function configured(): bool
     {
@@ -25,21 +58,25 @@ class LiveKit
     /** Публічна адреса для клієнтів (wss://…). */
     public function url(): ?string
     {
-        $value = $this->settings->get('livekit_url') ?: config('services.livekit.url');
+        $value = $this->edge->voice()
+            ? $this->edge->voiceUrl()
+            : ($this->settings->get('livekit_url') ?: config('services.livekit.url'));
 
         return is_string($value) && preg_match('#\Awss?://#i', $value) === 1 ? rtrim($value, '/') : null;
     }
 
     public function key(): ?string
     {
-        $value = $this->settings->get('livekit_api_key') ?: config('services.livekit.key');
+        $value = ($this->edge->voice() ? $this->settings->get('edge_livekit_api_key') : null)
+            ?: $this->settings->get('livekit_api_key') ?: config('services.livekit.key');
 
         return is_string($value) && $value !== '' ? $value : null;
     }
 
     public function secret(): ?string
     {
-        $value = $this->settings->secret('livekit_api_secret') ?? config('services.livekit.secret');
+        $value = ($this->edge->voice() ? $this->settings->secret('edge_livekit_api_secret') : null)
+            ?? $this->settings->secret('livekit_api_secret') ?? config('services.livekit.secret');
 
         return is_string($value) && $value !== '' ? $value : null;
     }
@@ -74,7 +111,7 @@ class LiveKit
                 'canPublish' => true,
                 'canSubscribe' => true,
                 'canPublishData' => true,
-                'canPublishSources' => ['microphone'],
+                'canPublishSources' => self::VOICE_SOURCES,
                 ...$grant,
             ],
         ], fn ($v) => $v !== null));
@@ -109,9 +146,20 @@ class LiveKit
         return is_array($data) ? $data : null;
     }
 
-    /** Вимикає учаснику мікрофон (і не дає ввімкнути, доки модератор не дозволить). */
-    public function setCanPublish(string $room, string $identity, bool $allowed): bool
+    /**
+     * Дозволяє або забирає право публікувати.
+     *
+     * @param  list<string>|null  $sources  lowercase (microphone, camera…); null — лише мікрофон
+     */
+    public function setCanPublish(string $room, string $identity, bool $allowed, ?array $sources = null): bool
     {
+        $list = $allowed
+            ? array_map(
+                static fn (string $s) => strtoupper($s),
+                $sources ?? self::VOICE_SOURCES,
+            )
+            : [];
+
         return $this->call('UpdateParticipant', $room, [
             'room' => $room,
             'identity' => $identity,
@@ -119,7 +167,7 @@ class LiveKit
                 'canPublish' => $allowed,
                 'canSubscribe' => true,
                 'canPublishData' => true,
-                'canPublishSources' => $allowed ? ['MICROPHONE'] : [],
+                'canPublishSources' => $list,
             ],
         ]);
     }

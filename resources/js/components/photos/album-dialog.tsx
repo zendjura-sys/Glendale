@@ -6,8 +6,10 @@ import {
     DialogDescription,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useState } from 'react';
+import { GameSearch } from '@/components/gc/game-search';
 import { cn } from '@/lib/utils';
-import type { AlbumPrivacy, PhotoAlbumCard } from '@/types';
+import type { AlbumPrivacy, GameCard, PhotoAlbumCard } from '@/types';
 import { tr } from '@/lib/i18n';
 
 export const privacyMeta: Record<
@@ -50,7 +52,11 @@ export function AlbumDialog({
         privacy: album?.privacy ?? ('public' as AlbumPrivacy),
         comments_enabled: album?.comments_enabled ?? true,
         community: community ?? null,
+        game_id: album?.game?.id ?? (null as number | null),
     });
+    const [game, setGame] = useState<GameCard | null>(
+        (album?.game as GameCard | undefined) ?? null,
+    );
 
     const submit = () => {
         const options = {
@@ -67,7 +73,7 @@ export function AlbumDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
+            <DialogContent className="glass-strong gap-0 rounded-dialog p-6 text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
                     {album ? tr('Редагування альбому') : tr('Новий альбом')}
                 </DialogTitle>
@@ -91,7 +97,7 @@ export function AlbumDialog({
                     />
                 </label>
                 {form.errors.title && (
-                    <p className="mt-1 text-xs text-rose-300">
+                    <p className="mt-1 text-xs text-red-400">
                         {form.errors.title}
                     </p>
                 )}
@@ -132,10 +138,10 @@ export function AlbumDialog({
                                         form.setData('privacy', value)
                                     }
                                     className={cn(
-                                        'flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-xs transition',
+                                        'flex flex-col items-center gap-1.5 rounded-2xl px-2 py-3 text-xs transition',
                                         active
-                                            ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white shadow-[0_0_24px_-10px_rgb(124_92_255/0.9)]'
-                                            : 'border-white/[0.07] bg-white/[0.03] text-white/55 hover:border-white/15',
+                                            ? 'bg-gc-indigo/15 text-white'
+                                            : 'gc-solid-2 text-white/55 hover:border-white/15',
                                     )}
                                 >
                                     <meta.icon className="size-4" />
@@ -150,8 +156,8 @@ export function AlbumDialog({
                     </div>
                 </div>
 
-                <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-2xl bg-white/[0.03] px-4 py-3 text-sm text-white/80">
-                    <MessageCircle className="size-4 text-gc-lilac-300" />
+                <label className="gc-solid-2 mt-4 flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/80">
+                    <MessageCircle className="size-4 text-sky-400" />
                     <span className="flex-1">{tr('Дозволити коментарі')}</span>
                     <input
                         type="checkbox"
@@ -165,6 +171,22 @@ export function AlbumDialog({
                         className="size-4 accent-[#7c5cff]"
                     />
                 </label>
+
+                <div className="mt-4">
+                    <p className="mb-1.5 text-sm text-white/60">
+                        {tr('Гра (альбом скриншотів)')}
+                    </p>
+                    <GameSearch
+                        value={game}
+                        onChange={(g) => {
+                            setGame(g);
+                            form.setData('game_id', g?.id ?? null);
+                        }}
+                        placeholder={tr(
+                            'Необов’язково — фото потраплять у «Скриншоти» гри',
+                        )}
+                    />
+                </div>
 
                 <div className="mt-6 flex justify-end gap-2">
                     <button

@@ -101,7 +101,7 @@ class ReviewsLibraryConsolesTest extends TestCase
             'links' => [['store' => 'steam', 'url' => 'https://store.steampowered.com/app/730']],
         ]);
 
-        $this->withoutVite()->actingAs($player)->get(route('profile.show', $player))
+        $this->withoutVite()->actingAs($player)->withHeader('X-Inertia-Partial-Component', 'profile/show')->get(route('profile.show', $player))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('profile.platforms.xbox_name', 'Nova Player')

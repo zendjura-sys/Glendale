@@ -1,23 +1,43 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import {
     Bell,
     Check,
     ChevronDown,
+    ChevronRight,
     ChevronUp,
     Eye,
     Languages,
+    LayoutGrid,
     Moon,
     UsersRound,
-    Youtube,
+    Video,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
-import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
+import { update as updateAppearance } from '@/routes/appearance';
+import { Character } from '@/components/character/character';
 import { PlusBadge } from '@/components/gc/plus';
+import { DataSaverSwitch } from '@/components/settings/data-saver-switch';
+import { SimpleModeSwitch } from '@/components/settings/simple-mode-switch';
+import { StreamerModeSwitch } from '@/components/settings/streamer-mode-switch';
+import {
+    DigestSwitch,
+    WeeklyDigestSwitch,
+} from '@/components/settings/digest-switch';
+import { GameThemePicker } from '@/components/settings/game-theme-picker';
+import type { GameThemeValue } from '@/components/settings/game-theme-picker';
+import { NotifySoundPicker } from '@/components/settings/notify-sound-picker';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { ModeCard } from '@/components/modes/mode-card';
 import { countChanges, PendingBar } from '@/components/settings/pending-bar';
-import { SettingsCard } from '@/layouts/settings/layout';
+import {
+    SettingsCard,
+    SettingsRow,
+    SettingsRows,
+    SettingsSwitch,
+} from '@/layouts/settings/layout';
+import { normalizeCharacter } from '@/lib/character';
+import type { CharacterConfig } from '@/lib/character';
 import {
     applyTextSize,
     readTextSize,
@@ -28,25 +48,40 @@ import {
 import {
     BACKGROUNDS,
     setBackgroundPreview,
-    youtubeId,
+    useIsPhone,
+    videoSource,
 } from '@/lib/backgrounds';
 import { tr } from '@/lib/i18n';
+import { EventFrameSwitch } from '@/components/gc/engagement';
 import type { NetworkMode } from '@/lib/modes';
-import { SKINS } from '@/lib/skins';
+import { SKINS, THEMES } from '@/lib/skins';
+import { applyTheme } from '@/lib/theme';
+import type { ThemePref } from '@/lib/theme';
 import { motionOr, POP, SNAP } from '@/lib/motion';
-import { usePlugin } from '@/lib/plugins';
+import { useFeature, usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
+import { applyAccent } from '@/components/gc/palette-sync';
 import type {
     SiteBackgroundPreset,
     SiteBackgroundPrefs,
+    VideoBackground,
     UserCard,
 } from '@/types';
 
 type PaletteOption = { id: string; name: string; colors: string[] };
 
 const BLOCK_LABELS: Record<string, string> = {
-    platforms: 'Платформи',
+    track: 'Пісня профілю',
+    platforms: 'Платформи й ігрові ID',
     steam: 'Бібліотека Steam',
+    steam_achievements: 'Досягнення Steam',
+    setup: 'Мій сетап',
+    stream_schedule: 'Розклад стрімів',
+    cards: 'Колекційні картки',
+    games: 'Ігри: граю зараз',
+    cinema_stats: 'Статистика кіно',
     about: 'Про себе',
     achievements: 'Досягнення',
     characters: 'Персонажі RP',
@@ -61,6 +96,7 @@ type NotifyPrefs = {
     mentions: boolean;
     events: boolean;
     playing: boolean;
+    deals: boolean;
     site: boolean;
     email: boolean;
     push: boolean;
@@ -72,6 +108,7 @@ const NOTIFY_TYPES: { key: keyof NotifyPrefs; label: string }[] = [
     { key: 'mentions', label: 'Згадки' },
     { key: 'events', label: 'Події' },
     { key: 'playing', label: 'Друзі в грі' },
+    { key: 'deals', label: 'Роздачі й знижки' },
 ];
 
 const NOTIFY_CHANNELS: { key: keyof NotifyPrefs; label: string }[] = [
@@ -91,13 +128,15 @@ type Form = {
     show_visitors: boolean;
     profile_blocks: string[];
     notify: NotifyPrefs;
+    notify_sections: Record<string, boolean>;
     mute_words: string[];
     hide_spoilers: boolean;
     background: SiteBackgroundPreset;
     background_motion: boolean;
-    background_video: string;
+    background_video: number | null;
     network_mode: string;
     skin: string;
+    theme: ThemePref;
     seasonal: boolean;
 };
 
@@ -113,17 +152,24 @@ export default function Appearance({
     friends,
     closeFriends,
     notify,
+    notifySections = [],
     muteWords,
     hideSpoilers,
     background,
+    videos = [],
     isPlus,
     modes,
     networkMode,
     moduleNames,
     skin,
+    theme,
     seasonal,
+    gameTheme,
+    gameThemeOn = true,
+    character = null,
 }: {
     palette: string;
+    character?: Partial<CharacterConfig> | null;
     palettes: PaletteOption[];
     quiet: { enabled: boolean; from: string; to: string };
     languages: string[];
@@ -134,16 +180,22 @@ export default function Appearance({
     friends: UserCard[];
     closeFriends: number[];
     notify: NotifyPrefs;
+    notifySections?: { key: string; label: string; on: boolean }[];
     muteWords: string[];
     hideSpoilers: boolean;
     background: SiteBackgroundPrefs;
+    videos?: VideoBackground[];
     isPlus: boolean;
     modes: NetworkMode[];
     networkMode: string;
     moduleNames: Record<string, string>;
     skin: string;
+    theme: ThemePref;
     seasonal: boolean;
+    gameTheme?: GameThemeValue;
+    gameThemeOn?: boolean;
 }) {
+    const characterOn = usePlugin('characters');
     const palettesOn = usePlugin('palettes');
     const quietOn = usePlugin('quiet_hours');
     const notifyOn = usePlugin('notify_switches');
@@ -164,22 +216,34 @@ export default function Appearance({
         show_visitors,
         profile_blocks,
         notify,
+        notify_sections: Object.fromEntries(
+            notifySections.map((s) => [s.key, s.on]),
+        ),
         mute_words: muteWords,
         hide_spoilers: hideSpoilers,
         background: background.preset,
         background_motion: background.motion,
-        background_video: background.video
-            ? `https://youtu.be/${background.video}`
-            : '',
+        background_video: background.video?.id ?? null,
         network_mode: networkMode,
         skin,
+        theme,
         seasonal,
     });
     const [phrase, setPhrase] = useState('');
     const reduce = useReducedMotion();
     const user = usePage().props.auth.user;
+    const activeModules = usePage().props.modules ?? [];
+    const playingOn = useFeature('playing');
+    // Перемикачі лише для розділів, що є в режимі.
+    const notifyTypes = NOTIFY_TYPES.filter(
+        (item) =>
+            (item.key !== 'events' || activeModules.includes('events')) &&
+            (item.key !== 'playing' || playingOn) &&
+            (item.key !== 'deals' || activeModules.includes('games')),
+    );
     const siteBackground = usePage().props.siteBackground ?? null;
     const savedSkin = useRef(skin);
+    const savedTheme = useRef<ThemePref>(theme);
     // Збережений стан: від нього рахуються незбережені зміни й до нього повертає «Скасувати».
     const [saved, setSaved] = useState(form.data);
     const [textSize, setTextSize] = useState<TextSize>(readTextSize);
@@ -195,31 +259,42 @@ export default function Appearance({
         setBackgroundPreview({
             preset: form.data.background,
             motion: form.data.background_motion,
-            video: isPlus ? youtubeId(form.data.background_video) : null,
+            video: isPlus
+                ? (videos.find((v) => v.id === form.data.background_video) ??
+                  null)
+                : null,
         });
     }, [
         form.data.background,
         form.data.background_motion,
         form.data.background_video,
         isPlus,
+        videos,
     ]);
     useEffect(() => () => setBackgroundPreview(null), []);
     // Пішли без «Зберегти» — повертається збережений стиль.
     useEffect(
         () => () => {
             document.documentElement.dataset.skin = savedSkin.current;
+            applyTheme(savedTheme.current, savedSkin.current);
         },
         [],
     );
 
+    const pickTheme = (id: ThemePref) => {
+        applyTheme(id, form.data.skin);
+        form.setData('theme', id);
+    };
+
     const pickSkin = (id: string) => {
         document.documentElement.dataset.skin = id;
+        applyTheme(form.data.theme, id);
         form.setData((data) => ({
             ...data,
             skin: id,
             // Material іде в парі з «Авророю» (як у задумі стилю); фон можна змінити окремо.
             background:
-                id === 'material' && !youtubeId(data.background_video)
+                id === 'material' && data.background_video === null
                     ? 'aurora'
                     : data.background,
         }));
@@ -237,11 +312,13 @@ export default function Appearance({
             setSavedText(textSize);
         }
         if (countChanges(form.data, saved) === 0) return;
-        form.submit(AppearanceController.update(), {
+        // Іменований маршрут сайту: метод update має ще й адресу мосту застосунку (/api/v1/site/…).
+        form.submit(updateAppearance(), {
             preserveScroll: true,
             onSuccess: () => {
                 setSaved(form.data);
                 savedSkin.current = form.data.skin;
+                savedTheme.current = form.data.theme;
             },
         });
     };
@@ -251,6 +328,7 @@ export default function Appearance({
         form.clearErrors();
         document.documentElement.dataset.palette = saved.palette;
         document.documentElement.dataset.skin = saved.skin;
+        applyTheme(saved.theme, saved.skin);
         previewText(savedText);
     };
 
@@ -271,7 +349,7 @@ export default function Appearance({
             <Head title={tr('Вигляд')} />
             <form id="appearance-form" onSubmit={submit} className="space-y-4">
                 {/* Живий попередній перегляд: палітра й розмір тексту змінюються тут одразу. */}
-                <div className="liquid-glass overflow-hidden rounded-3xl p-5 sm:p-6">
+                <div className="liquid-glass overflow-hidden rounded-xl p-5 sm:p-6">
                     <span aria-hidden className="liquid-glass__glare" />
                     <p className="text-xs text-white/40">
                         {tr('Попередній перегляд — зміни видно одразу')}
@@ -288,19 +366,111 @@ export default function Appearance({
                                 )}
                             </p>
                             <div className="mt-3 flex flex-wrap items-center gap-2">
-                                <span className="inline-flex h-8 items-center rounded-full bg-primary px-3.5 text-xs font-semibold text-primary-foreground">
+                                <span className="inline-flex h-8 items-center rounded-chip bg-[color-mix(in_oklab,var(--primary)_72%,black)] px-3.5 text-xs font-semibold text-[#fff]">
                                     {tr('Я в ділі')}
                                 </span>
-                                <span className="inline-flex h-8 items-center rounded-full border border-white/15 px-3.5 text-xs font-medium text-white/70">
+                                <span className="inline-flex h-8 items-center rounded-chip px-3.5 text-xs font-medium text-white/70">
                                     {tr('Пізніше')}
                                 </span>
-                                <span className="text-xs font-medium text-primary">
+                                <span className="text-xs font-medium text-[var(--gc-accent)]">
                                     {tr('12 відповідей')}
                                 </span>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                {characterOn && (
+                    <Link
+                        href="/settings/character"
+                        className="gc-solid flex items-center gap-4 rounded-xl p-3 pr-4 transition hover:bg-white/[0.03]"
+                    >
+                        <span className="size-16 shrink-0 overflow-hidden rounded-2xl bg-[#121214]">
+                            <Character
+                                config={normalizeCharacter(character)}
+                                background={false}
+                                zoom="card"
+                                outfit={false}
+                                className="size-full"
+                            />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-[15px] font-semibold text-white">
+                                {tr('Персонаж')}
+                            </span>
+                            <span className="mt-0.5 block text-[13px] leading-snug text-white/50">
+                                {character
+                                    ? tr(
+                                          'Обличчя, зачіска, одяг — говорить вашим голосом у GameCast.',
+                                      )
+                                    : tr(
+                                          'Створіть свого персонажа — він говоритиме вашим голосом у GameCast.',
+                                      )}
+                            </span>
+                        </span>
+                        <ChevronRight className="size-5 shrink-0 text-white/40" />
+                    </Link>
+                )}
+
+                <SettingsCard
+                    title={tr('Тема')}
+                    description={
+                        form.data.skin === 'gamecon'
+                            ? tr(
+                                  'Темна «Неоновий синій» чи світла «Крижана Арктика». Фон сайту підлаштовується під тему.',
+                              )
+                            : tr(
+                                  'Світла тема є в стилі GameCon. Цей стиль завжди темний.',
+                              )
+                    }
+                >
+                    <div
+                        role="radiogroup"
+                        aria-label={tr('Тема')}
+                        className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
+                    >
+                        {THEMES().map((item) => {
+                            const active = form.data.theme === item.id;
+
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={active}
+                                    onClick={() => pickTheme(item.id)}
+                                    className="group flex flex-col justify-start text-left"
+                                >
+                                    <span
+                                        className={cn(
+                                            'theme-thumb relative block aspect-[4/3] overflow-hidden rounded-xl transition',
+                                            `theme-thumb--${item.id}`,
+                                            active
+                                                ? 'ring-2 ring-primary'
+                                                : 'group-hover:ring-white/30',
+                                        )}
+                                    >
+                                        <span className="theme-thumb__card" />
+                                        <span className="theme-thumb__line" />
+                                        <span className="theme-thumb__button" />
+                                        {active && (
+                                            <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                                <Check className="size-3.5" />
+                                            </span>
+                                        )}
+                                    </span>
+                                    <span className="mt-2 block text-sm font-medium text-white">
+                                        {item.name}
+                                    </span>
+                                    <span className="block text-xs text-white/45">
+                                        {item.hint}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {form.data.theme === 'schedule' && <DarkSchedule />}
+                </SettingsCard>
 
                 <SettingsCard
                     title={tr('Стиль інтерфейсу')}
@@ -327,11 +497,11 @@ export default function Appearance({
                                 >
                                     <span
                                         className={cn(
-                                            'skin-thumb relative block aspect-[4/3] overflow-hidden rounded-2xl ring-1 transition',
+                                            'skin-thumb relative block aspect-[4/3] overflow-hidden rounded-xl transition',
                                             `skin-thumb--${item.id}`,
                                             active
                                                 ? 'ring-2 ring-primary'
-                                                : 'ring-white/10 group-hover:ring-white/30',
+                                                : 'group-hover:ring-white/30',
                                         )}
                                     >
                                         <span className="skin-thumb__card" />
@@ -414,7 +584,7 @@ export default function Appearance({
                         {BACKGROUNDS(Boolean(siteBackground)).map((item) => {
                             const active =
                                 form.data.background === item.id &&
-                                !youtubeId(form.data.background_video);
+                                form.data.background_video === null;
 
                             return (
                                 <button
@@ -422,23 +592,23 @@ export default function Appearance({
                                     type="button"
                                     role="radio"
                                     aria-checked={active}
-                                    // Вибір сцени замінює відеофон (порожнє поле посилання).
+                                    // Вибір сцени замінює відеофон.
                                     onClick={() =>
                                         form.setData((data) => ({
                                             ...data,
                                             background: item.id,
-                                            background_video: '',
+                                            background_video: null,
                                         }))
                                     }
                                     className="group flex flex-col justify-start text-left"
                                 >
                                     <span
                                         className={cn(
-                                            'bg-thumb relative block aspect-[16/10] overflow-hidden rounded-2xl ring-1 transition',
+                                            'bg-thumb relative block aspect-[16/10] overflow-hidden rounded-xl transition',
                                             `bg-thumb--${item.id}`,
                                             active
                                                 ? 'ring-2 ring-primary'
-                                                : 'ring-white/10 group-hover:ring-white/30',
+                                                : 'group-hover:ring-white/30',
                                         )}
                                         style={
                                             item.id === 'custom'
@@ -483,78 +653,33 @@ export default function Appearance({
                         })}
                     </div>
 
-                    <label className="mt-5 flex min-h-11 items-center gap-3 text-sm text-white">
-                        <input
-                            type="checkbox"
+                    <SettingsRows>
+                        <SettingsSwitch
+                            label={tr('Рухомий фон')}
+                            hint={tr('вимкніть, щоб сцена стояла нерухомо')}
                             checked={form.data.background_motion}
-                            onChange={(e) =>
-                                form.setData(
-                                    'background_motion',
-                                    e.target.checked,
-                                )
+                            onChange={(on) =>
+                                form.setData('background_motion', on)
                             }
-                            className="gc-switch"
                         />
-                        {tr('Рухомий фон')}
-                        <span className="text-xs text-white/40">
-                            {tr('вимкніть, щоб сцена стояла нерухомо')}
-                        </span>
-                    </label>
-
-                    <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-white">
-                        <input
-                            type="checkbox"
+                        <SettingsSwitch
+                            label={tr('Святкові прикраси')}
+                            hint={tr(
+                                'сніг на Новий рік, писанки на Великдень…',
+                            )}
                             checked={form.data.seasonal}
-                            onChange={(e) =>
-                                form.setData('seasonal', e.target.checked)
-                            }
-                            className="gc-switch"
+                            onChange={(on) => form.setData('seasonal', on)}
                         />
-                        {tr('Святкові прикраси')}
-                        <span className="text-xs text-white/40">
-                            {tr('сніг на Новий рік, писанки на Великдень…')}
-                        </span>
-                    </label>
+                        <EventFrameSwitch />
+                    </SettingsRows>
 
-                    <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-white">
-                            <Youtube className="size-4 text-[#ff4e45]" />
-                            {tr('Відео з YouTube як фон')}
-                            <PlusBadge className="size-4" />
-                        </div>
-                        <p className="mt-1 text-xs text-white/45">
-                            {isPlus
-                                ? tr(
-                                      'Вставте посилання — відео гратиме без звуку по колу замість сцени. Порожнє поле — повернути сцену.',
-                                  )
-                                : tr('Власний відеофон — привілей GameCon+.')}
-                        </p>
-                        <input
-                            type="url"
-                            inputMode="url"
-                            value={form.data.background_video}
-                            onChange={(e) =>
-                                form.setData('background_video', e.target.value)
-                            }
-                            disabled={!isPlus && !form.data.background_video}
-                            placeholder="https://youtu.be/…"
-                            aria-label={tr('Посилання на відео YouTube')}
-                            className="input-glass mt-3 h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none disabled:opacity-50"
-                        />
-                        {form.errors.background_video && (
-                            <p className="mt-2 text-xs text-rose-300">
-                                {form.errors.background_video}
-                            </p>
-                        )}
-                        {!isPlus && (
-                            <a
-                                href="/plus"
-                                className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
-                            >
-                                {tr('Дізнатися про GameCon+')}
-                            </a>
-                        )}
-                    </div>
+                    <VideoPicker
+                        videos={videos}
+                        value={form.data.background_video}
+                        isPlus={isPlus}
+                        error={form.errors.background_video}
+                        onChange={(id) => form.setData('background_video', id)}
+                    />
                 </SettingsCard>
 
                 <SettingsCard
@@ -579,17 +704,17 @@ export default function Appearance({
                                     aria-checked={active}
                                     onClick={() => previewText(size)}
                                     className={cn(
-                                        'relative flex h-14 items-center justify-center rounded-2xl transition-colors',
+                                        'relative flex h-14 items-center justify-center rounded-xl transition-colors',
                                         active
                                             ? 'text-white'
-                                            : 'bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white',
+                                            : 'gc-solid-2 text-white/50 hover:bg-[var(--gc-l3)] hover:text-white',
                                     )}
                                 >
                                     {active && (
                                         <m.span
                                             layoutId="text-size-active"
                                             transition={motionOr(reduce, SNAP)}
-                                            className="absolute inset-0 rounded-2xl border border-primary/60 bg-primary/10"
+                                            className="absolute inset-0 rounded-xl border-primary/60 bg-primary/10"
                                         />
                                     )}
                                     <span
@@ -603,6 +728,8 @@ export default function Appearance({
                         })}
                     </div>
                 </SettingsCard>
+
+                <AccentPicker />
 
                 {palettesOn && (
                     <SettingsCard
@@ -622,14 +749,14 @@ export default function Appearance({
                                         onClick={() => pick(item.id)}
                                         aria-pressed={active}
                                         className={cn(
-                                            'flex min-h-11 items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition',
+                                            'flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-left transition',
                                             active
-                                                ? 'border-white/30 bg-white/[0.08]'
-                                                : 'border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06]',
+                                                ? 'bg-white/[0.08]'
+                                                : 'gc-solid-2 hover:bg-[var(--gc-l3)]',
                                         )}
                                     >
                                         <span
-                                            className="flex size-9 shrink-0 overflow-hidden rounded-full ring-1 ring-white/15"
+                                            className="flex size-9 shrink-0 overflow-hidden rounded-full"
                                             aria-hidden
                                         >
                                             {item.colors.map((color) => (
@@ -679,109 +806,124 @@ export default function Appearance({
 
                 {quietOn && (
                     <SettingsCard
+                        list
                         title={tr('Тихі години')}
                         description={tr(
                             'Лайки, коментарі й заявки в друзі не приходять у цей час. Нагадування про події лишаються.',
                         )}
                     >
-                        <label className="flex min-h-11 items-center gap-3 text-sm text-white">
+                        <SettingsSwitch
+                            icon={<Moon />}
+                            label={tr('Не турбувати вночі')}
+                            checked={form.data.quiet_enabled}
+                            onChange={(on) => form.setData('quiet_enabled', on)}
+                        />
+                        <SettingsRow label={tr('Від')} htmlFor="quiet-from">
                             <input
-                                type="checkbox"
-                                checked={form.data.quiet_enabled}
+                                id="quiet-from"
+                                type="time"
+                                value={form.data.quiet_from}
                                 onChange={(e) =>
-                                    form.setData(
-                                        'quiet_enabled',
-                                        e.target.checked,
-                                    )
+                                    form.setData('quiet_from', e.target.value)
                                 }
-                                className="gc-switch"
+                                className="input-glass block h-10 rounded-lg px-3 text-sm text-white"
                             />
-                            <Moon className="size-4 text-white/50" />
-                            {tr('Не турбувати вночі')}
-                        </label>
-                        <div className="mt-3 flex flex-wrap gap-3">
-                            <label className="text-xs text-white/50">
-                                {tr('Від')}
-                                <input
-                                    type="time"
-                                    value={form.data.quiet_from}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'quiet_from',
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="input-glass mt-1 block h-11 rounded-xl px-3 text-sm text-white"
-                                />
-                            </label>
-                            <label className="text-xs text-white/50">
-                                {tr('До')}
-                                <input
-                                    type="time"
-                                    value={form.data.quiet_to}
-                                    onChange={(e) =>
-                                        form.setData('quiet_to', e.target.value)
-                                    }
-                                    className="input-glass mt-1 block h-11 rounded-xl px-3 text-sm text-white"
-                                />
-                            </label>
-                        </div>
+                        </SettingsRow>
+                        <SettingsRow label={tr('До')} htmlFor="quiet-to">
+                            <input
+                                id="quiet-to"
+                                type="time"
+                                value={form.data.quiet_to}
+                                onChange={(e) =>
+                                    form.setData('quiet_to', e.target.value)
+                                }
+                                className="input-glass block h-10 rounded-lg px-3 text-sm text-white"
+                            />
+                        </SettingsRow>
                     </SettingsCard>
                 )}
 
+                <SettingsCard list title={tr('Дайджест і трафік')}>
+                    <DigestSwitch />
+                    <WeeklyDigestSwitch />
+                    <DataSaverSwitch />
+                    <SimpleModeSwitch />
+                    <StreamerModeSwitch />
+                </SettingsCard>
+
+                <SettingsCard
+                    list
+                    title={tr('Звук сповіщень')}
+                    description={tr(
+                        'Нові повідомлення й сповіщення, поки сайт відкритий.',
+                    )}
+                >
+                    <NotifySoundPicker />
+                </SettingsCard>
+
                 {notifyOn && (
                     <SettingsCard
+                        list
                         title={tr('Сповіщення')}
                         description={tr(
-                            'Лайки, коментарі, згадки, події й друзі в грі. Сайт, пошта і push вмикаються окремо.',
+                            'Про що повідомляти. Сайт, пошта і push вмикаються окремо.',
                         )}
                     >
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {NOTIFY_TYPES.map((item) => (
-                                <label
-                                    key={item.key}
-                                    className="flex min-h-11 items-center gap-3 text-sm text-white"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={form.data.notify[item.key]}
-                                        onChange={(e) =>
-                                            form.setData('notify', {
-                                                ...form.data.notify,
-                                                [item.key]: e.target.checked,
+                        {notifyTypes.map((item) => (
+                            <SettingsSwitch
+                                key={item.key}
+                                label={tr(item.label)}
+                                checked={form.data.notify[item.key]}
+                                onChange={(on) =>
+                                    form.setData('notify', {
+                                        ...form.data.notify,
+                                        [item.key]: on,
+                                    })
+                                }
+                            />
+                        ))}
+                        {notifySections.length > 0 && (
+                            <>
+                                <p className="-mx-4 flex items-center gap-2 border-[var(--gc-hairline)] px-4 pt-4 pb-1 text-[13px] text-white/50 sm:-mx-5 sm:px-5">
+                                    <LayoutGrid className="size-3.5" />
+                                    {tr('Розділи')}
+                                </p>
+                                {notifySections.map((item) => (
+                                    <SettingsSwitch
+                                        key={item.key}
+                                        label={tr(item.label)}
+                                        checked={
+                                            form.data.notify_sections[
+                                                item.key
+                                            ] ?? true
+                                        }
+                                        onChange={(on) =>
+                                            form.setData('notify_sections', {
+                                                ...form.data.notify_sections,
+                                                [item.key]: on,
                                             })
                                         }
-                                        className="gc-switch"
                                     />
-                                    {tr(item.label)}
-                                </label>
-                            ))}
-                        </div>
-                        <p className="mt-4 mb-2 flex items-center gap-2 text-xs text-white/45">
+                                ))}
+                            </>
+                        )}
+                        <p className="-mx-4 flex items-center gap-2 border-[var(--gc-hairline)] px-4 pt-4 pb-1 text-[13px] text-white/50 sm:-mx-5 sm:px-5">
                             <Bell className="size-3.5" />
                             {tr('Куди надсилати')}
                         </p>
-                        <div className="flex flex-wrap gap-4">
-                            {NOTIFY_CHANNELS.map((item) => (
-                                <label
-                                    key={item.key}
-                                    className="flex min-h-11 items-center gap-3 text-sm text-white"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={form.data.notify[item.key]}
-                                        onChange={(e) =>
-                                            form.setData('notify', {
-                                                ...form.data.notify,
-                                                [item.key]: e.target.checked,
-                                            })
-                                        }
-                                        className="gc-switch"
-                                    />
-                                    {tr(item.label)}
-                                </label>
-                            ))}
-                        </div>
+                        {NOTIFY_CHANNELS.map((item) => (
+                            <SettingsSwitch
+                                key={item.key}
+                                label={tr(item.label)}
+                                checked={form.data.notify[item.key]}
+                                onChange={(on) =>
+                                    form.setData('notify', {
+                                        ...form.data.notify,
+                                        [item.key]: on,
+                                    })
+                                }
+                            />
+                        ))}
                     </SettingsCard>
                 )}
 
@@ -793,20 +935,17 @@ export default function Appearance({
                         )}
                     >
                         {spoilersOn && (
-                            <label className="mb-3 flex min-h-11 items-center gap-3 text-sm text-white">
-                                <input
-                                    type="checkbox"
+                            <div className="-mx-4 -mt-4 mb-4 border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:-mt-3.5 sm:px-5">
+                                <SettingsSwitch
+                                    label={tr(
+                                        'Ховати спойлери на всьому сайті',
+                                    )}
                                     checked={form.data.hide_spoilers}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'hide_spoilers',
-                                            event.target.checked,
-                                        )
+                                    onChange={(on) =>
+                                        form.setData('hide_spoilers', on)
                                     }
-                                    className="gc-switch"
                                 />
-                                {tr('Ховати спойлери на всьому сайті')}
-                            </label>
+                            </div>
                         )}
                         {mutedOn && (
                             <>
@@ -880,7 +1019,7 @@ export default function Appearance({
                                                     ),
                                                 )
                                             }
-                                            className="min-h-11 rounded-full bg-white/[0.06] px-3 text-sm text-white/80"
+                                            className="gc-solid-2 min-h-11 rounded-control px-3 text-sm text-white/80"
                                         >
                                             {item} ×
                                         </button>
@@ -893,48 +1032,41 @@ export default function Appearance({
 
                 {(groupOn || visitorsOn || languagesOn) && (
                     <SettingsCard
+                        list
                         title={tr('Як тебе бачать')}
                         description={tr(
                             'Мови спілкування і прапорець для тих, хто шукає групу.',
                         )}
                     >
                         {groupOn && (
-                            <label className="flex min-h-11 items-center gap-3 text-sm text-white">
-                                <input
-                                    type="checkbox"
-                                    checked={form.data.looking_for_group}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'looking_for_group',
-                                            e.target.checked,
-                                        )
-                                    }
-                                    className="gc-switch"
-                                />
-                                <UsersRound className="size-4 text-white/50" />
-                                {tr('Шукаю групу')}
-                            </label>
+                            <SettingsSwitch
+                                icon={<UsersRound />}
+                                label={tr('Шукаю групу')}
+                                checked={form.data.looking_for_group}
+                                onChange={(on) =>
+                                    form.setData('looking_for_group', on)
+                                }
+                            />
                         )}
                         {visitorsOn && (
-                            <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-white">
-                                <input
-                                    type="checkbox"
-                                    checked={form.data.show_visitors}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'show_visitors',
-                                            e.target.checked,
-                                        )
-                                    }
-                                    className="gc-switch"
-                                />
-                                <Eye className="size-4 text-white/50" />
-                                {tr('Хто заходив')}
-                            </label>
+                            <SettingsSwitch
+                                icon={<Eye />}
+                                label={tr('Хто заходив')}
+                                checked={form.data.show_visitors}
+                                onChange={(on) =>
+                                    form.setData('show_visitors', on)
+                                }
+                            />
                         )}
                         {languagesOn && (
-                            <>
-                                <p className="mt-4 mb-2 flex items-center gap-2 text-xs text-white/45">
+                            <div
+                                className={cn(
+                                    'pb-4',
+                                    (groupOn || visitorsOn) &&
+                                        '-mx-4 border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:px-5',
+                                )}
+                            >
+                                <p className="mt-4 mb-2 flex items-center gap-2 text-[13px] text-white/50">
                                     <Languages className="size-3.5" />
                                     {tr('Мови, якими говорю')}
                                 </p>
@@ -955,10 +1087,10 @@ export default function Appearance({
                                                 }
                                                 aria-pressed={on}
                                                 className={cn(
-                                                    'min-h-11 rounded-full px-3 text-sm',
+                                                    'min-h-11 rounded-control px-3 text-sm',
                                                     on
                                                         ? 'bg-white text-gc-ink'
-                                                        : 'bg-white/[0.06] text-white/75',
+                                                        : 'gc-solid-2 text-white/75',
                                                 )}
                                             >
                                                 {language.native}
@@ -966,7 +1098,7 @@ export default function Appearance({
                                         );
                                     })}
                                 </div>
-                            </>
+                            </div>
                         )}
                     </SettingsCard>
                 )}
@@ -1008,10 +1140,10 @@ export default function Appearance({
                                         )
                                     }
                                     className={cn(
-                                        'min-h-11 rounded-full px-3 text-sm',
+                                        'min-h-11 rounded-control px-3 text-sm',
                                         on
                                             ? 'bg-white text-gc-ink'
-                                            : 'bg-white/[0.06] text-white/75',
+                                            : 'gc-solid-2 text-white/75',
                                     )}
                                 >
                                     {friend.first_name}
@@ -1021,18 +1153,31 @@ export default function Appearance({
                     </div>
                 </SettingsCard>
 
+                {gameThemeOn && (
+                    <SettingsCard
+                        list
+                        title={tr('Тема профілю за грою')}
+                        description={tr(
+                            'Шапка й акценти вашої сторінки — кольорами обкладинки улюбленої гри. Власні кольори GameCon+ мають перевагу.',
+                        )}
+                    >
+                        <GameThemePicker value={gameTheme ?? null} />
+                    </SettingsCard>
+                )}
+
                 {orderOn && (
                     <SettingsCard
+                        list
                         title={tr('Порядок блоків')}
                         description={tr('Як блоки стоять на вашій сторінці.')}
                     >
-                        <div className="space-y-2">
+                        <div>
                             {form.data.profile_blocks.map((key, index) => (
                                 <div
                                     key={key}
-                                    className="flex min-h-11 items-center gap-2 rounded-2xl bg-white/[0.04] px-3"
+                                    className="gc-row flex min-h-12 items-center gap-2"
                                 >
-                                    <span className="min-w-0 flex-1 truncate text-sm text-white">
+                                    <span className="min-w-0 flex-1 truncate text-[15px] text-white">
                                         {tr(BLOCK_LABELS[key] ?? key)}
                                     </span>
                                     <button
@@ -1093,5 +1238,245 @@ export default function Appearance({
                 form="appearance-form"
             />
         </>
+    );
+}
+
+/**
+ * Відеофони з бібліотеки адміністрації (GameCon+): відео без звуку по колу замість сцени.
+ * На смартфоні грає вертикальна версія, на ПК і планшеті — горизонтальна.
+ */
+function VideoPicker({
+    videos,
+    value,
+    isPlus,
+    error,
+    onChange,
+}: {
+    videos: VideoBackground[];
+    value: number | null;
+    isPlus: boolean;
+    error?: string;
+    onChange: (id: number | null) => void;
+}) {
+    const phone = useIsPhone();
+    if (videos.length === 0) return null;
+
+    return (
+        <div className="pt-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-white">
+                <Video className="size-4 text-white/60" />
+                {tr('Відеофон')}
+                <PlusBadge className="size-4" />
+            </div>
+            <p className="mt-1 text-xs text-white/45">
+                {isPlus
+                    ? tr(
+                          'Відео без звуку грає по колу замість сцени. На смартфоні — вертикальна версія, на ПК і планшеті — горизонтальна.',
+                      )
+                    : tr('Відеофони — привілей GameCon+.')}
+            </p>
+            <div
+                className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3"
+                role="radiogroup"
+                aria-label={tr('Відеофон')}
+            >
+                {videos.map((video) => {
+                    const active = value === video.id;
+                    const src = videoSource(video, phone);
+
+                    return (
+                        <button
+                            key={video.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            disabled={!isPlus}
+                            onClick={() => onChange(active ? null : video.id)}
+                            className="group flex flex-col text-left disabled:cursor-not-allowed"
+                        >
+                            <span
+                                className={cn(
+                                    'relative block aspect-[16/10] overflow-hidden rounded-lg bg-black transition',
+                                    active
+                                        ? 'ring-2 ring-primary'
+                                        : 'group-hover:ring-1 group-hover:ring-white/30',
+                                    !isPlus && 'opacity-50',
+                                )}
+                            >
+                                {src && (
+                                    <video
+                                        src={src}
+                                        poster={video.poster ?? undefined}
+                                        muted
+                                        loop
+                                        playsInline
+                                        preload="metadata"
+                                        onMouseEnter={(e) =>
+                                            void e.currentTarget
+                                                .play()
+                                                .catch(() => {})
+                                        }
+                                        onMouseLeave={(e) =>
+                                            e.currentTarget.pause()
+                                        }
+                                        className="size-full object-cover"
+                                    />
+                                )}
+                                {active && (
+                                    <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                        <Check className="size-3.5" />
+                                    </span>
+                                )}
+                            </span>
+                            <span className="mt-2 block truncate text-sm font-medium text-white">
+                                {video.title}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+            {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+            {!isPlus && (
+                <a
+                    href="/plus"
+                    className="mt-3 inline-flex text-xs font-medium text-[var(--gc-accent)] hover:underline"
+                >
+                    {tr('Дізнатися про GameCon+')}
+                </a>
+            )}
+        </div>
+    );
+}
+
+/** Свій акцентний колір (№296): готові кольори або будь-який свій; «Як у стилі» — скинути. */
+const ACCENTS = [
+    '#6b8afd',
+    '#7678ed',
+    '#ff7a55',
+    '#3ee0a8',
+    '#f2556b',
+    '#ffc861',
+    '#38bdf8',
+    '#e879f9',
+];
+
+function AccentPicker() {
+    const { auth } = usePage().props;
+    const [color, setColor] = useState<string | null>(auth.user.accent ?? null);
+    const save = (next: string | null) => {
+        const previous = color;
+        setColor(next);
+        applyAccent(next);
+        api('PUT', '/settings/accent', { color: next }).catch(() => {
+            setColor(previous);
+            applyAccent(previous);
+            toast.error(tr('Не вдалося зберегти колір.'));
+        });
+    };
+
+    return (
+        <SettingsCard
+            title={tr('Акцентний колір')}
+            description={tr(
+                'Колір кнопок, активних пунктів і посилань на всьому сайті й у застосунку.',
+            )}
+        >
+            <div
+                className="flex flex-wrap items-center gap-2"
+                role="radiogroup"
+                aria-label={tr('Акцентний колір')}
+            >
+                <button
+                    type="button"
+                    role="radio"
+                    aria-checked={color === null}
+                    onClick={() => save(null)}
+                    className={cn(
+                        'gc-ghost-btn',
+                        color === null && 'text-[var(--gc-text)]',
+                    )}
+                >
+                    {tr('Як у стилі')}
+                </button>
+                {ACCENTS.map((c) => (
+                    <button
+                        key={c}
+                        type="button"
+                        role="radio"
+                        aria-checked={color === c}
+                        aria-label={c}
+                        onClick={() => save(c)}
+                        className={cn(
+                            'size-9 rounded-full transition',
+                            color === c
+                                ? 'ring-2 ring-[var(--gc-text)] ring-offset-2 ring-offset-[var(--gc-l1)]'
+                                : 'hover:scale-105',
+                        )}
+                        style={{ background: c }}
+                    />
+                ))}
+                <label className="gc-ghost-btn cursor-pointer">
+                    <input
+                        type="color"
+                        value={color ?? '#6b8afd'}
+                        // Під час вибору — лише попередній показ; зберігаємо, коли вікно кольору закрили.
+                        onChange={(e) => {
+                            setColor(e.target.value);
+                            applyAccent(e.target.value);
+                        }}
+                        onBlur={(e) => save(e.target.value)}
+                        className="size-5 cursor-pointer rounded border-0 bg-transparent p-0"
+                        aria-label={tr('Свій колір')}
+                    />
+                    {tr('Свій')}
+                </label>
+            </div>
+        </SettingsCard>
+    );
+}
+
+/** Розклад темної теми (№231): з якої до якої години темна (місцевий час пристрою). */
+function DarkSchedule() {
+    const { auth } = usePage().props;
+    const [from, setFrom] = useState(auth.user.theme_schedule?.from ?? '19:00');
+    const [to, setTo] = useState(auth.user.theme_schedule?.to ?? '07:00');
+    const save = (f: string, t: string) => {
+        document.documentElement.dataset.darkFrom = f;
+        document.documentElement.dataset.darkTo = t;
+        applyTheme('schedule');
+        api('PUT', '/settings/theme', {
+            theme: 'schedule',
+            dark_from: f,
+            dark_to: t,
+        }).catch(() => toast.error(tr('Не вдалося зберегти розклад.')));
+    };
+
+    return (
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <label className="flex items-center gap-2">
+                {tr('Темна з')}
+                <input
+                    type="time"
+                    value={from}
+                    onChange={(e) => {
+                        setFrom(e.target.value);
+                        save(e.target.value, to);
+                    }}
+                    className="gc-field h-10"
+                />
+            </label>
+            <label className="flex items-center gap-2">
+                {tr('до')}
+                <input
+                    type="time"
+                    value={to}
+                    onChange={(e) => {
+                        setTo(e.target.value);
+                        save(from, e.target.value);
+                    }}
+                    className="gc-field h-10"
+                />
+            </label>
+        </div>
     );
 }

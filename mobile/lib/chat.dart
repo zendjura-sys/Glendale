@@ -4,28 +4,72 @@ import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'ai_tools.dart';
 import 'api.dart';
+import 'catch_up.dart';
+import 'chat_extras.dart';
 import 'listen_together.dart';
 import 'posts.dart';
 import 'push.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'video_note.dart';
 import 'voice_note.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
+
+/// Чернетка незакінченого повідомлення — лише на цьому пристрої (як `gc-draft:chat:{id}` у localStorage сайту).
+/// Порожній текст прибирає запис. Список бесід слухає [changed], щоб показати «Чернетка: …».
+class ChatDrafts {
+  static final changed = ValueNotifier<int>(0);
+  static final _tails = <int, Future<void>>{};
+
+  static String key(int id) => 'gc-draft:chat:$id';
+
+  static String read(SharedPreferences prefs, int id) => prefs.getString(key(id)) ?? '';
+
+  /// Записи одного чату йдуть чергою, щоб старіший текст не перезаписав новіший.
+  static Future<void> write(SharedPreferences prefs, int id, String text) {
+    final previous = _tails[id] ?? Future<void>.value();
+    final next = previous.then((_) => _commit(prefs, id, text), onError: (_, _) => _commit(prefs, id, text));
+    _tails[id] = next;
+    return next;
+  }
+
+  static Future<void> _commit(SharedPreferences prefs, int id, String text) async {
+    final store = text.trim().isEmpty ? null : text;
+    if (store == prefs.getString(key(id))) return;
+    if (store == null) {
+      await prefs.remove(key(id));
+    } else {
+      await prefs.setString(key(id), store);
+    }
+    changed.value++;
+  }
+}
 
 // ───────────────────────── Список бесід ─────────────────────────
 
 class MessagesScreen extends StatefulWidget {
-  const MessagesScreen({super.key});
+  const MessagesScreen({this.selected, super.key});
+
+  /// Планшет (ширина ≥ 900): відкрита бесіда праворуч, список ліворуч.
+  final int? selected;
+
+  /// З якої ширини чати — дві панелі.
+  static const splitWidth = 900.0;
 
   @override
   State<MessagesScreen> createState() => _MessagesScreenState();
@@ -33,6 +77,7 @@ class MessagesScreen extends StatefulWidget {
 
 class _MessagesScreenState extends State<MessagesScreen> {
   final query = TextEditingController();
+  late int? selected = widget.selected;
   List<Map<String, dynamic>> conversations = [];
   bool loading = true;
   Timer? poll;
@@ -72,6 +117,27 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final split = MediaQuery.sizeOf(context).width >= MessagesScreen.splitWidth;
+    if (!split) return _list(context, split: false);
+    // Планшет: список (360) | бесіда. Вибір бесіди не відкриває новий екран, а міняє праву панель.
+    return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      SizedBox(width: 360, child: _list(context, split: true)),
+      VerticalDivider(width: 1, thickness: 1, color: fg.withValues(alpha: 0.08)),
+      Expanded(
+        child: selected == null
+            ? Center(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(LucideIcons.messagesSquare, size: 42, color: muted),
+                  const SizedBox(height: 10),
+                  Text(tr('Оберіть бесіду ліворуч'), style: body(15, color: muted)),
+                ]),
+              )
+            : ChatScreen(key: ValueKey('split-$selected'), id: selected!),
+      ),
+    ]);
+  }
+
+  Widget _list(BuildContext context, {required bool split}) {
     final q = query.text.trim().toLowerCase();
     final shown = q.isEmpty ? conversations : conversations.where((c) => (text(c['title']) ?? '').toLowerCase().contains(q)).toList();
     return ScreenScroll(
@@ -91,7 +157,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               GcField(controller: query, label: tr('Пошук'), icon: LucideIcons.search, dense: true, onChanged: (_) => setState(() {})),
               const SizedBox(height: 8),
               if (loading)
-                const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+                const ListSkeleton(rows: 5)
               else if (conversations.isEmpty)
                 EmptyState(
                   boxed: false,
@@ -105,7 +171,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
               else if (shown.isEmpty)
                 QuietEmpty(icon: LucideIcons.searchX, text: tr('Нічого не знайдено'))
               else
-                for (final conversation in shown) _ConversationRow(conversation: conversation),
+                for (final conversation in shown)
+                  _ConversationRow(
+                    key: ValueKey(conversation['id']),
+                    conversation: conversation,
+                    active: split && intOf(conversation['id']) == selected,
+                    onOpen: split ? () => setState(() => selected = intOf(conversation['id'])) : null,
+                  ),
             ],
           ),
         ),
@@ -114,22 +186,75 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 }
 
-class _ConversationRow extends StatelessWidget {
-  const _ConversationRow({required this.conversation});
+class _ConversationRow extends StatefulWidget {
+  const _ConversationRow({required this.conversation, this.active = false, this.onOpen, super.key});
   final Map<String, dynamic> conversation;
+  final bool active;
+  final VoidCallback? onOpen;
+
+  @override
+  State<_ConversationRow> createState() => _ConversationRowState();
+}
+
+class _ConversationRowState extends State<_ConversationRow> {
+  String draft = '';
+
+  @override
+  void initState() {
+    super.initState();
+    ChatDrafts.changed.addListener(_onDrafts);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    draft = _read();
+  }
+
+  @override
+  void didUpdateWidget(_ConversationRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.conversation['id'] != widget.conversation['id']) draft = _read();
+  }
+
+  @override
+  void dispose() {
+    ChatDrafts.changed.removeListener(_onDrafts);
+    super.dispose();
+  }
+
+  String _read() => ChatDrafts.read(AppScope.read(context).session.prefs, intOf(widget.conversation['id']));
+
+  void _onDrafts() {
+    if (!mounted) return;
+    final next = _read();
+    if (next != draft) setState(() => draft = next);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final conversation = widget.conversation;
     final last = conversation['last_message'] is Map ? mapOf(conversation['last_message']) : null;
     final peer = conversation['peer'] is Map ? mapOf(conversation['peer']) : null;
     final group = conversation['type'] == 'group';
     final unread = intOf(conversation['unread']);
     final title = text(conversation['title']) ?? tr('Бесіда');
     final prefix = last == null ? '' : (last['is_own'] == true ? tr('Ви: ') : (group && text(last['author']) != null ? '${last['author']}: ' : ''));
+    final preview = draft.trim().isNotEmpty
+        ? TextSpan(children: [
+            TextSpan(text: tr('Чернетка:'), style: body(13, color: danger, weight: FontWeight.w600)),
+            TextSpan(text: ' ${draft.split('\n').first}'),
+          ])
+        : TextSpan(children: [
+            TextSpan(text: prefix, style: body(13, color: soft.withValues(alpha: 0.8))),
+            TextSpan(text: text(last?['preview']) ?? tr('Немає повідомлень')),
+          ]);
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: () => context.push('/messages/${conversation['id']}'),
-      child: Padding(
+      onTap: widget.onOpen ?? () => context.push('/messages/${conversation['id']}'),
+      child: Container(
+        decoration: widget.active ? BoxDecoration(color: primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)) : null,
+        child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
         child: Row(
           children: [
@@ -137,7 +262,7 @@ class _ConversationRow extends StatelessWidget {
                 ? Container(
                     width: 50,
                     height: 50,
-                    decoration: const BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle),
+                    decoration: BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle),
                     child: const Icon(LucideIcons.usersRound, color: Colors.white),
                   )
                 : Avatar(url: text(conversation['avatar_url']), name: title, size: 50, online: peer?['is_online'] == true),
@@ -147,20 +272,17 @@ class _ConversationRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700))),
-                    if (conversation['is_muted'] == true) const Padding(padding: EdgeInsets.only(right: 4), child: Icon(LucideIcons.bellOff, size: 14, color: faint)),
+                    Expanded(child: FitText(title, style: body(15, weight: FontWeight.w700))),
+                    if (conversation['is_muted'] == true) Padding(padding: EdgeInsets.only(right: 4), child: Icon(LucideIcons.bellOff, size: 14, color: faint)),
                     if (last != null) Text(shortStamp(last['created_at']), style: body(11.5, color: muted)),
                   ]),
                   const SizedBox(height: 3),
                   Row(children: [
                     Expanded(
                       child: Text.rich(
-                        TextSpan(children: [
-                          TextSpan(text: prefix, style: body(13, color: soft.withValues(alpha: 0.8))),
-                          TextSpan(text: text(last?['preview']) ?? tr('Немає повідомлень')),
-                        ]),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        preview,
+                        maxLines: 2,
+                        overflow: TextOverflow.fade,
                         style: body(13, color: muted),
                       ),
                     ),
@@ -177,6 +299,7 @@ class _ConversationRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -290,8 +413,8 @@ class _NewConversationState extends State<_NewConversation> {
                         avatar: Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? '?', size: 22),
                         label: Text(text(user['first_name']) ?? text(user['name']) ?? '', style: body(12.5)),
                         onDeleted: () => setState(() => picked.remove(user)),
-                        backgroundColor: Colors.white.withValues(alpha: 0.06),
-                        side: const BorderSide(color: line),
+                        backgroundColor: fg.withValues(alpha: 0.06),
+                        side: BorderSide(color: line),
                       ),
                   ]),
                 ),
@@ -355,6 +478,11 @@ class _ChatScreenState extends State<ChatScreen> {
   final scroll = ScrollController();
   final input = TextEditingController();
   final focus = FocusNode();
+  SharedPreferences? _prefs;
+  String? _draftCache;
+  bool _drafts = false;
+  bool _draftListening = false;
+  Timer? _draftTimer;
   Map<String, dynamic>? replyTo;
   Map<String, dynamic>? editing;
   final images = <XFile>[];
@@ -368,6 +496,8 @@ class _ChatScreenState extends State<ChatScreen> {
   Offset drag = Offset.zero;
   final bubbleKeys = <int, GlobalKey>{};
   int? flashId;
+  bool catchUpClosed = false;
+  final _reacting = <int>{};
 
   Api get api => AppScope.read(context).session.api;
   int? get myId => AppScope.read(context).session.myId;
@@ -377,7 +507,10 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     recorder.addListener(_onRecorder);
     recorder.onLimit = () => _stopVoice(send: true);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _armDrafts();
+      _load();
+    });
     unawaited(Push.instance?.seenChat(widget.id));
     poll = Timer.periodic(const Duration(seconds: 4), (_) => _refresh());
     scroll.addListener(() {
@@ -388,6 +521,10 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     poll?.cancel();
+    _draftTimer?.cancel();
+    if (_draftListening) input.removeListener(_scheduleDraft);
+    // Останні символи могли ще не встигнути зберегтися (пауза 300 мс). Редагування чужого тексту не пишемо.
+    if (_drafts && editing == null && _prefs != null) unawaited(ChatDrafts.write(_prefs!, widget.id, input.text));
     scroll.dispose();
     input.dispose();
     focus.dispose();
@@ -399,6 +536,48 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _onRecorder() {
     if (mounted) setState(() {});
+  }
+
+  /// Як useDraft на сайті: підставити збережене, якщо поле порожнє, далі писати з паузою 300 мс.
+  /// Ключа `local_drafts` у профілі застосунку може не бути — тоді чернетки увімкнені, як дефолт сайту.
+  void _armDrafts() {
+    if (!mounted || _prefs != null) return;
+    final session = AppScope.read(context).session;
+    _prefs = session.prefs;
+    final plugins = session.me?['plugins'];
+    _drafts = plugins is! Map || !plugins.containsKey('local_drafts') || plugins['local_drafts'] == true;
+    if (!_drafts) return;
+    final saved = ChatDrafts.read(session.prefs, widget.id);
+    _draftCache = saved;
+    if (saved.isNotEmpty && input.text.trim().isEmpty && editing == null) {
+      input.value = TextEditingValue(text: saved, selection: TextSelection.collapsed(offset: saved.length));
+      setState(() {});
+    }
+    input.addListener(_scheduleDraft);
+    _draftListening = true;
+  }
+
+  void _scheduleDraft() {
+    if (!_drafts || editing != null) return;
+    // Пам’ять одразу, SharedPreferences — з паузою, як localStorage на сайті.
+    _draftCache = input.text;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(milliseconds: 300), _flushDraft);
+  }
+
+  void _flushDraft() {
+    _draftTimer?.cancel();
+    if (!_drafts || editing != null) return;
+    _draftCache ??= input.text;
+    final prefs = _prefs;
+    if (prefs == null) return;
+    unawaited(ChatDrafts.write(prefs, widget.id, _draftCache!));
+  }
+
+  /// Повернути чернетку в поле (після редагування повідомлення поле знову порожнє).
+  void _fillDraft() {
+    final saved = _drafts ? (_draftCache ?? '') : '';
+    input.value = TextEditingValue(text: saved, selection: TextSelection.collapsed(offset: saved.length));
   }
 
   Future<void> _load() async {
@@ -490,6 +669,7 @@ class _ChatScreenState extends State<ChatScreen> {
           input.clear();
           images.clear();
           files.clear();
+          _flushDraft();
         }
         replyTo = null;
       });
@@ -512,7 +692,7 @@ class _ChatScreenState extends State<ChatScreen> {
         final index = messages.indexWhere((m) => m['id'] == message['id']);
         if (index >= 0 && data['message'] is Map) messages[index] = mapOf(data['message']);
         editing = null;
-        input.clear();
+        _fillDraft();
       });
     } catch (e) {
       if (mounted) toast(context, e);
@@ -557,6 +737,70 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     final note = await recorder.finish();
     if (note != null) await _sendVoice(note);
+  }
+
+  /// Відеокружок: системна камера або коротке відео з галереї (окремого пакета камери немає).
+  Future<void> _videoNote() async {
+    if (recorder.active || sending) return;
+    final choice = await showGcSheet<String>(
+      context,
+      title: tr('Відеокружок'),
+      builder: (sheet) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          _AttachOption(icon: LucideIcons.camera, color: const Color(0xFFEF4444), title: tr('Зняти'), subtitle: tr('Фронтальна камера, до 60 с'), onTap: () => Navigator.pop(sheet, 'camera')),
+          _AttachOption(icon: LucideIcons.image, color: const Color(0xFF38BDF8), title: tr('З галереї'), subtitle: tr('Коротке відео до 60 с'), onTap: () => Navigator.pop(sheet, 'gallery')),
+        ]),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    final XFile? file;
+    try {
+      file = await ImagePicker().pickVideo(
+        source: choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        preferredCameraDevice: CameraDevice.front,
+        maxDuration: const Duration(seconds: videoNoteMaxSeconds),
+      );
+    } catch (_) {
+      if (mounted) toast(context, tr('Немає доступу до камери або мікрофона.'));
+      return;
+    }
+    if (file == null || !mounted) return;
+    final prepared = await prepareVideoNote(path: file.path, name: file.name, mime: file.mimeType);
+    if (!mounted) return;
+    if (prepared.error != null) {
+      toast(context, prepared.error!);
+      return;
+    }
+    await _sendVideoNote(prepared);
+  }
+
+  Future<void> _sendVideoNote(PreparedVideoNote note) async {
+    final path = note.path;
+    final filename = note.filename;
+    final seconds = note.seconds;
+    if (path == null || filename == null || seconds == null) return;
+    setState(() => sending = true);
+    try {
+      final data = await api.upload(
+        '/api/v1/messages/${widget.id}',
+        {
+          'video_duration': '$seconds',
+          if (replyTo != null) 'reply_to_id': '${replyTo!['id']}',
+        },
+        [await http.MultipartFile.fromPath('video_note', path, filename: filename)],
+      );
+      if (!mounted) return;
+      setState(() {
+        if (data['message'] is Map) messages.add(mapOf(data['message']));
+        replyTo = null;
+      });
+      if (scroll.hasClients) unawaited(scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
   }
 
   Future<void> _sendVoice(VoiceNote note) async {
@@ -611,8 +855,9 @@ class _ChatScreenState extends State<ChatScreen> {
   void _reply(Map<String, dynamic> message) {
     unawaited(HapticFeedback.lightImpact());
     setState(() {
-      if (editing != null) input.clear();
+      final wasEditing = editing != null;
       editing = null;
+      if (wasEditing) _fillDraft();
       replyTo = message;
     });
     focus.requestFocus();
@@ -642,14 +887,19 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _attach() async {
+    final group = mapOf(conversation)['type'] == 'group';
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           _AttachOption(icon: LucideIcons.image, color: Color(0xFF38BDF8), title: tr('Фото'), subtitle: 'JPG, PNG, WebP, GIF', onTap: () => Navigator.pop(sheet, 'photo')),
+          if (AppScope.read(context).session.pluginOn('view_once'))
+            _AttachOption(icon: LucideIcons.eye, color: Color(0xFFF59E0B), title: tr('Фото на один перегляд'), subtitle: tr('Відкриється лише раз'), onTap: () => Navigator.pop(sheet, 'once')),
           _AttachOption(icon: LucideIcons.file, color: violet, title: tr('Файл'), subtitle: tr('до 50 МБ'), onTap: () => Navigator.pop(sheet, 'file')),
           _AttachOption(icon: LucideIcons.userRound, color: Color(0xFF2DD4BF), title: tr('Контакт'), subtitle: tr('Пошук на GameCon'), onTap: () => Navigator.pop(sheet, 'contact')),
+          if (group)
+            _AttachOption(icon: LucideIcons.chartBar, color: Color(0xFFFBBF24), title: tr('Опитування'), subtitle: tr('Голосування в групі'), onTap: () => Navigator.pop(sheet, 'poll')),
         ]),
       ),
     );
@@ -661,9 +911,138 @@ class _ChatScreenState extends State<ChatScreen> {
       case 'file':
         final result = await FilePicker.platform.pickFiles(allowMultiple: true);
         if (result != null) setState(() => files.addAll(result.files.take(10 - images.length - files.length)));
+      case 'once':
+        final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 88);
+        if (picked != null) await _sendOnce(picked);
       case 'contact':
         final user = await _pickContact();
         if (user != null) await _send(extra: {'contact_id': '${user['id']}'});
+      case 'poll':
+        await _createPoll();
+    }
+  }
+
+  /// Нове опитування в групі: питання, 2–10 варіантів, кілька відповідей, анонімно.
+  Future<void> _createPoll() async {
+    final question = TextEditingController();
+    final options = [TextEditingController(), TextEditingController()];
+    final retired = <TextEditingController>[];
+    var multiple = false;
+    var anonymous = false;
+    var busy = false;
+    final created = await showGcSheet<Map<String, dynamic>>(
+      context,
+      title: tr('Опитування'),
+      height: MediaQuery.sizeOf(context).height * 0.78,
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) {
+          final filled = [for (final o in options) if (o.text.trim().isNotEmpty) o.text.trim()];
+          final ready = question.text.trim().length >= 2 && filled.length >= 2;
+          Future<void> submit() async {
+            if (busy || !ready) return;
+            setSheet(() => busy = true);
+            try {
+              final data = await api.post(Api.site('/messages/${widget.id}/polls'), {
+                'question': question.text.trim(),
+                'options': filled,
+                'multiple': multiple,
+                'anonymous': anonymous,
+              });
+              if (sheet.mounted && data['message'] is Map) Navigator.pop(sheet, mapOf(data['message']));
+            } catch (e) {
+              if (sheet.mounted) {
+                setSheet(() => busy = false);
+                toast(sheet, e);
+              }
+            }
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              TextField(
+                controller: question,
+                maxLength: 200,
+                autofocus: true,
+                onChanged: (_) => setSheet(() {}),
+                decoration: InputDecoration(hintText: tr('Питання'), counterText: ''),
+              ),
+              for (var i = 0; i < options.length; i++)
+                Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                  Expanded(
+                    child: TextField(
+                      controller: options[i],
+                      maxLength: 80,
+                      onChanged: (_) => setSheet(() {}),
+                      decoration: InputDecoration(hintText: tr('Варіант {n}', {'n': '${i + 1}'}), counterText: ''),
+                    ),
+                  ),
+                  if (options.length > 2)
+                    IconButton(
+                      tooltip: tr('Прибрати варіант'),
+                      onPressed: () {
+                        final removed = options[i];
+                        setSheet(() {
+                          options.removeAt(i);
+                          retired.add(removed);
+                        });
+                      },
+                      icon: Icon(LucideIcons.x, size: 18, color: muted),
+                    ),
+                ]),
+              if (options.length < 10)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => setSheet(() => options.add(TextEditingController())),
+                    icon: const Icon(LucideIcons.plus, size: 16),
+                    label: Text(tr('Додати варіант')),
+                  ),
+                ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: multiple,
+                onChanged: busy ? null : (v) => setSheet(() => multiple = v),
+                title: Text(tr('Можна обрати кілька'), style: body(14)),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: anonymous,
+                onChanged: busy ? null : (v) => setSheet(() => anonymous = v),
+                title: Text(tr('Анонімне — не показувати, хто як голосував'), style: body(14)),
+              ),
+              const SizedBox(height: 8),
+              PrimaryButton(
+                label: tr('Надіслати опитування'),
+                icon: LucideIcons.chartBar,
+                busy: busy,
+                onPressed: busy || !ready ? null : () => unawaited(submit()),
+              ),
+            ]),
+          );
+        },
+      ),
+    );
+    question.dispose();
+    for (final o in [...options, ...retired]) {
+      o.dispose();
+    }
+    if (created != null && mounted) {
+      setState(() => messages.add(created));
+      if (scroll.hasClients) unawaited(scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut));
+    }
+  }
+
+  /// Одне фото «на один перегляд» — одразу, без підпису.
+  Future<void> _sendOnce(XFile image) async {
+    setState(() => sending = true);
+    try {
+      final data = await api.upload('/api/v1/messages/${widget.id}', {'view_once': '1'}, [await http.MultipartFile.fromPath('images[]', image.path, filename: image.name)]);
+      if (mounted && data['message'] is Map) setState(() => messages.add(mapOf(data['message'])));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => sending = false);
     }
   }
 
@@ -697,28 +1076,57 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _messageMenu(Map<String, dynamic> message) async {
     final own = intOf(mapOf(message['user'])['id']) == myId;
     final hasText = (text(message['body']) ?? '').isNotEmpty;
+    final session = AppScope.read(context).session;
+    final chat = conversation ?? const {};
+    final group = chat['type'] == 'group';
+    final threads = group && session.pluginOn('chat_threads');
+    final canPin = session.pluginOn('chat_pins') && (chat['can_pin'] == true || (!group && chat['can_pin'] != false));
+    final pinned = maps(chat['pins']).any((p) => intOf(p['id']) == intOf(message['id']));
+    final reactionsOn = session.pluginOn('message_reactions') && message['type'] != 'system';
+    final canBan = canOfferGuestBan(chat, message, ipBansOn: session.pluginOn('ip_bans'), isAdmin: session.isAdmin, myRole: text(chat['my_role']));
+    final canRestrict = !own && canOfferChatRestrict(chat, message, restrictionsOn: session.pluginOn('chat_restrictions'));
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
         padding: EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (reactionsOn) _ReactionPicker(mine: _myReaction(message), onPick: (emoji) => Navigator.pop(sheet, emoji)),
           SheetAction(icon: LucideIcons.reply, label: tr('Відповісти'), onTap: () => Navigator.pop(sheet, 'reply')),
+          if (threads) SheetAction(icon: LucideIcons.messagesSquare, label: tr('Відповісти в гілці'), onTap: () => Navigator.pop(sheet, 'thread')),
+          if (canPin) SheetAction(icon: LucideIcons.pin, label: pinned ? tr('Відкріпити') : tr('Закріпити'), onTap: () => Navigator.pop(sheet, 'pin')),
           if (hasText) SheetAction(icon: LucideIcons.copy, label: tr('Копіювати текст'), onTap: () => Navigator.pop(sheet, 'copy')),
           if (own && hasText && message['type'] == 'text') SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
           if (own) SheetAction(icon: LucideIcons.trash2, label: tr('Видалити'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
           if (!own && hasText && I18n.translate) SheetAction(icon: LucideIcons.languages, label: tr('Перекласти'), onTap: () => Navigator.pop(sheet, 'translate')),
+          if (canRestrict) SheetAction(icon: LucideIcons.gavel, label: tr('Тайм-аут або виключення'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'restrict')),
+          if (canBan) SheetAction(icon: LucideIcons.ban, label: tr('Заблокувати гостя'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'ban')),
           if (!own) SheetAction(icon: LucideIcons.flag, label: tr('Поскаржитися'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'report')),
         ]),
       ),
     );
     if (!mounted || choice == null) return;
+    if (_messageReactions.contains(choice)) {
+      final mine = _myReaction(message);
+      await _react(message, choice == mine ? null : choice);
+      return;
+    }
     switch (choice) {
+      case 'thread':
+        await _openThread(message);
+      case 'pin':
+        try {
+          final r = await api.post(Api.site('/messages/${widget.id}/messages/${message['id']}/pin'));
+          if (mounted) setState(() => conversation?['pins'] = r['pins']);
+        } catch (e) {
+          if (mounted) toast(context, e);
+        }
       case 'reply':
         _reply(message);
       case 'copy':
         await Clipboard.setData(ClipboardData(text: text(message['body']) ?? ''));
         if (mounted) toast(context, tr('Скопійовано.'));
       case 'edit':
+        _flushDraft();
         setState(() {
           replyTo = null;
           editing = message;
@@ -733,9 +1141,74 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       case 'report':
         await _report(message);
+      case 'ban':
+        await _banGuest(message);
+      case 'restrict':
+        final user = mapOf(message['user']);
+        if (await showChatRestrict(context, conversationId: widget.id, user: user) && mounted) await _refresh();
       case 'translate':
         await _translate(message);
     }
+  }
+
+  /// Емодзі, який поставила ця людина (одна реакція на повідомлення).
+  String? _myReaction(Map<String, dynamic> message) {
+    final me = myId;
+    if (me == null) return null;
+    for (final reaction in maps(message['reactions'])) {
+      final ids = reaction['user_ids'];
+      if (ids is List && ids.any((id) => intOf(id) == me)) return text(reaction['emoji']);
+    }
+    return null;
+  }
+
+  /// Поставити або замінити реакцію. null — зняти (той самий емодзі ще раз).
+  Future<void> _react(Map<String, dynamic> message, String? emoji) async {
+    final id = intOf(message['id']);
+    if (message['type'] == 'system' || _reacting.contains(id)) return;
+    _reacting.add(id);
+    try {
+      final data = await api.post(Api.site('/messages/${widget.id}/messages/$id/react'), {'emoji': emoji});
+      if (!mounted) return;
+      final updated = data['message'];
+      if (updated is Map) {
+        setState(() {
+          final index = messages.indexWhere((m) => intOf(m['id']) == id);
+          if (index >= 0) messages[index] = mapOf(updated);
+        });
+      }
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      _reacting.remove(id);
+    }
+  }
+
+  Future<void> _openReactions(Map<String, dynamic> message) async {
+    final mine = _myReaction(message);
+    final picked = await showGcSheet<String>(
+      context,
+      title: tr('Реакція'),
+      builder: (sheet) => _ReactionPicker(mine: mine, onPick: (emoji) => Navigator.pop(sheet, emoji)),
+    );
+    if (!mounted || picked == null) return;
+    await _react(message, picked == mine ? null : picked);
+  }
+
+  /// Гілка під повідомленням групи — у шторці; після закриття оновлюємо лічильник.
+  Future<void> _openThread(Map<String, dynamic> message) async {
+    await showGcSheet<void>(
+      context,
+      title: tr('Гілка'),
+      height: MediaQuery.sizeOf(context).height * 0.8,
+      builder: (sheet) => Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), child: ThreadSheet(conversationId: widget.id, rootId: intOf(message['id']))),
+    );
+    unawaited(_refresh());
+  }
+
+  Future<void> _editNote() async {
+    final saved = await editChatNote(context, widget.id, text(conversation?['note']));
+    if (saved != null && mounted) setState(() => conversation?['note'] = saved.isEmpty ? null : saved);
   }
 
   /// Переклад повідомлення мовою інтерфейсу (DeepL, кешується на сервері).
@@ -760,9 +1233,26 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Бан гостя гостьового чату: той самий строк і «на всьому сайті», що в діалозі сайту. Повідомлення зникає.
+  Future<void> _banGuest(Map<String, dynamic> message) async {
+    final session = AppScope.read(context).session;
+    final staff = session.isAdmin || session.me?['role'] == 'moderator';
+    final channelId = int.tryParse('${conversation?['community_channel_id']}');
+    final guestChat = conversation?['guest_chat'] == true || (channelId != null && channelId > 0);
+    final banned = await confirmGuestBan(
+      context,
+      conversationId: widget.id,
+      messageId: intOf(message['id']),
+      guestName: messageGuestName(message),
+      canEverywhere: staff,
+      preferEverywhere: staff && !guestChat,
+    );
+    if (banned && mounted) setState(() => messages.removeWhere((m) => m['id'] == message['id']));
+  }
+
   /// Скарга на повідомлення — потрапляє в Адмінку → Модерація (а в чаті сім’ї — ще й керівництву).
   Future<void> _report(Map<String, dynamic> message) async {
-    final reasons = [('spam', tr('Спам або реклама')), ('abuse', tr('Образи чи мат')), ('scam', tr('Шахрайство')), ('other', tr('Інше'))];
+    final reasons = [('spam', tr('Спам або реклама')), ('abuse', tr('Образи чи мат')), ('scam', tr('Шахрайство')), ('child_safety', tr('Загроза дитині, сексуальна експлуатація')), ('other', tr('Інше'))];
     final reason = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
@@ -793,9 +1283,14 @@ class _ChatScreenState extends State<ChatScreen> {
     if (chat == null) {
       return error != null
           ? Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.messageCircle, title: tr('Бесіда недоступна'), text: '$error', action: tr('Назад'), onAction: () => context.go('/messages'))))
-          : const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+          : const ListSkeleton(rows: 6);
     }
     final group = chat['type'] == 'group';
+    final session = AppScope.of(context).session;
+    final backgroundsOn = session.pluginOn('chat_backgrounds');
+    final botsOn = group && chatCanModerate(chat) && chatBotsOn(session);
+    final timeout = chatTimeoutText(chat['timeout_until']);
+    final locked = chat['can_write'] == false || timeout != null;
     final peer = chat['peer'] is Map ? mapOf(chat['peer']) : null;
     final readUpTo = intOf(chat['read_up_to']);
     final reversed = messages.reversed.toList();
@@ -813,18 +1308,18 @@ class _ChatScreenState extends State<ChatScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 8, 6, 8),
               child: Row(children: [
-                IconButton(onPressed: () => context.canPop() ? context.pop() : context.go('/messages'), icon: const Icon(LucideIcons.arrowLeft, color: soft)),
+                IconButton(onPressed: () => context.canPop() ? context.pop() : context.go('/messages'), icon: Icon(LucideIcons.arrowLeft, color: soft)),
                 Expanded(
                   child: GestureDetector(
                     onTap: () => group ? _showMembers() : (peer != null ? context.push('/u/${peer['username']}') : null),
                     child: Row(children: [
                       group && text(chat['avatar_url']) == null
-                          ? Container(width: 38, height: 38, decoration: const BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle), child: const Icon(LucideIcons.usersRound, size: 20, color: Colors.white))
+                          ? Container(width: 38, height: 38, decoration: BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle), child: const Icon(LucideIcons.usersRound, size: 20, color: Colors.white))
                           : Avatar(url: text(chat['avatar_url']), name: text(chat['title']) ?? '?', size: 38, online: peer?['is_online'] == true),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(text(chat['title']) ?? tr('Бесіда'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700)),
+                          FitText(text(chat['title']) ?? tr('Бесіда'), style: body(15, weight: FontWeight.w700)),
                           if (subtitle.isNotEmpty) Text(subtitle, style: body(12, color: peer?['is_online'] == true ? green : muted)),
                         ]),
                       ),
@@ -839,49 +1334,104 @@ class _ChatScreenState extends State<ChatScreen> {
                 IconButton(
                   tooltip: tr('Слухати музику разом'),
                   onPressed: () => startListening(context, trackId: AppScope.read(context).player.current?.id, conversationId: widget.id),
-                  icon: const Icon(LucideIcons.headphones, color: muted),
+                  icon: Icon(LucideIcons.headphones, color: muted),
                 ),
                 _CallButton(chat: chat, conversation: widget.id),
-                if (group) IconButton(onPressed: _showMembers, icon: const Icon(LucideIcons.info, color: muted)),
+                if (session.pluginOn('chat_notes'))
+                  IconButton(
+                    tooltip: tr('Нотатка до чату'),
+                    onPressed: _editNote,
+                    icon: Icon(LucideIcons.stickyNote, color: text(chat['note']) != null ? const Color(0xFFFCD34D) : muted),
+                  ),
+                if (group || session.pluginOn('chat_media_panel') || backgroundsOn || botsOn) IconButton(tooltip: tr('Меню бесіди'), onPressed: _chatMenu, icon: Icon(LucideIcons.ellipsisVertical, color: muted)),
               ]),
             ),
             Divider(height: 1, color: line),
+            if (session.pluginOn('chat_pins')) PinnedBar(pins: maps(chat['pins']), onJump: _jumpTo),
+            if (session.pluginOn('chat_notes') && text(chat['note']) != null)
+              InkWell(
+                onTap: _editNote,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  child: Row(children: [
+                    const Icon(LucideIcons.stickyNote, size: 14, color: Color(0xFFFCD34D)),
+                    const SizedBox(width: 8),
+                    Expanded(child: FitText(text(chat['note'])!, style: body(12.5, color: muted))),
+                  ]),
+                ),
+              ),
             _CallBanner(chat: chat, conversation: widget.id),
             Expanded(
-              child: messages.isEmpty
-                  ? QuietEmpty(icon: LucideIcons.hand, text: tr('Напишіть перше повідомлення'))
-                  : ListView.builder(
-                      controller: scroll,
-                      reverse: true,
-                      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
-                      itemCount: reversed.length,
-                      itemBuilder: (context, i) {
-                        final message = reversed[i];
-                        final previous = i + 1 < reversed.length ? reversed[i + 1] : null;
-                        final day = _dayOf(message['created_at']);
-                        final showDay = previous == null || _dayOf(previous['created_at']) != day;
-                        final id = intOf(message['id']);
-                        final bubble = _Bubble(
-                          message: message,
-                          own: intOf(mapOf(message['user'])['id']) == myId,
-                          group: group,
-                          read: id <= readUpTo,
-                          onMenu: () => _messageMenu(message),
-                          onQuote: _jumpTo,
-                          conversationId: widget.id,
-                        );
-                        return Column(key: bubbleKeys.putIfAbsent(id, GlobalKey.new), children: [
-                          if (showDay) _DayLabel(iso: message['created_at']),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            decoration: BoxDecoration(color: flashId == id ? primary.withValues(alpha: 0.16) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
-                            child: message['type'] == 'system' || chat['can_write'] == false ? bubble : _SwipeToReply(onReply: () => _reply(message), child: bubble),
-                          ),
-                        ]);
-                      },
+              child: Stack(
+                children: [
+                  if (backgroundsOn)
+                    Positioned.fill(
+                      child: IgnorePointer(child: ChatBackdrop(background: chat['background'] is Map ? mapOf(chat['background']) : null)),
                     ),
+                  Positioned.fill(
+                    child: messages.isEmpty
+                        ? QuietEmpty(icon: LucideIcons.hand, text: tr('Напишіть перше повідомлення'))
+                        : ListView.builder(
+                            controller: scroll,
+                            reverse: true,
+                            padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+                            itemCount: reversed.length,
+                            itemBuilder: (context, i) {
+                              final message = reversed[i];
+                              final previous = i + 1 < reversed.length ? reversed[i + 1] : null;
+                              final day = _dayOf(message['created_at']);
+                              final showDay = previous == null || _dayOf(previous['created_at']) != day;
+                              final id = intOf(message['id']);
+                              final reactionsOn = session.pluginOn('message_reactions') && message['type'] != 'system';
+                              final bubble = _Bubble(
+                                message: message,
+                                own: intOf(mapOf(message['user'])['id']) == myId,
+                                group: group,
+                                read: id <= readUpTo,
+                                onMenu: () => _messageMenu(message),
+                                onQuote: _jumpTo,
+                                conversationId: widget.id,
+                                onThread: () => _openThread(message),
+                                canReact: reactionsOn,
+                                canClosePoll: chat['can_pin'] == true,
+                                mine: _myReaction(message),
+                                onToggle: reactionsOn ? (emoji) => _react(message, emoji) : null,
+                                onAdd: reactionsOn ? () => _openReactions(message) : null,
+                              );
+                              return Column(key: bubbleKeys.putIfAbsent(id, GlobalKey.new), children: [
+                                if (showDay) _DayLabel(iso: message['created_at']),
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  decoration: BoxDecoration(color: flashId == id ? primary.withValues(alpha: 0.16) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
+                                  child: message['type'] == 'system' || locked ? bubble : _SwipeToReply(onReply: () => _reply(message), child: bubble),
+                                ),
+                              ]);
+                            },
+                          ),
+                  ),
+                  if (!catchUpClosed && group && session.pluginOn('chat_catch_up') && chat['catch_up'] is Map && intOf(mapOf(chat['catch_up'])['count']) > 0)
+                    Positioned(
+                      left: 8,
+                      right: 8,
+                      top: 8,
+                      child: CatchUpCard(
+                        data: mapOf(chat['catch_up']),
+                        onClose: () => setState(() => catchUpClosed = true),
+                        onJump: (id) {
+                          setState(() => catchUpClosed = true);
+                          _jumpTo(id);
+                        },
+                      ),
+                    ),
+                ],
+              ),
             ),
-            if (chat['can_write'] == false)
+            if (timeout != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 14, 16, 16 + ShellChrome.bottomOf(context)),
+                child: Text(timeout, textAlign: TextAlign.center, style: body(13, color: muted)),
+              )
+            else if (chat['can_write'] == false)
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(tr('Ви не можете написати цьому користувачу.'), textAlign: TextAlign.center, style: body(13, color: muted)),
@@ -906,8 +1456,11 @@ class _ChatScreenState extends State<ChatScreen> {
             ? (tr('Відповідь {v}', {'v': text(mapOf(replyTo!['user'])['first_name']) ?? ''}), text(replyTo!['preview']) ?? '', LucideIcons.reply)
             : null;
     return Container(
-      padding: EdgeInsets.fromLTRB(8, 6, 8, 8 + ShellChrome.bottomOf(context)),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: line))),
+      padding: EdgeInsets.fromLTRB(10, 8, 10, 8 + math.max(ShellChrome.bottomOf(context), 8)),
+      decoration: BoxDecoration(
+        color: const Color(0xD907090E),
+        border: Border(top: BorderSide(color: line.withValues(alpha: 0.7))),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -920,17 +1473,18 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(banner.$1, style: body(12, color: primary, weight: FontWeight.w700)),
-                    Text(banner.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                    FitText(banner.$2, style: body(12.5, color: muted)),
                   ]),
                 ),
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   onPressed: () => setState(() {
-                    if (editing != null) input.clear();
+                    final wasEditing = editing != null;
                     editing = null;
                     replyTo = null;
+                    if (wasEditing) _fillDraft();
                   }),
-                  icon: const Icon(LucideIcons.x, size: 18, color: muted),
+                  icon: Icon(LucideIcons.x, size: 18, color: muted),
                 ),
               ]),
             ),
@@ -952,30 +1506,27 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: Container(
                         width: 120,
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(color: fg.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
                         child: Row(children: [
                           const Icon(LucideIcons.file, size: 18, color: violet),
                           const SizedBox(width: 6),
-                          Expanded(child: Text(files[i].name, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11))),
+                          Expanded(child: FitText(files[i].name, style: body(11), maxLines: 2)),
                         ]),
                       ),
                     ),
                 ],
               ),
             ),
+          // Три елементи: вкладення · капсула тексту · мікрофон/надіслати
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: recorder.active
-                    ? _recordingBar()
-                    : Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        if (editing == null) RoundIcon(icon: LucideIcons.paperclip, onTap: _attach, color: soft, tooltip: tr('Вкладення')),
-                        const SizedBox(width: 4),
-                        Expanded(child: _field()),
-                      ]),
-              ),
-              const SizedBox(width: 6),
+              if (editing == null && !recorder.active) ...[
+                RoundIcon(icon: LucideIcons.paperclip, onTap: _attach, color: soft, size: 42, tooltip: tr('Вкладення')),
+                const SizedBox(width: 8),
+              ],
+              Expanded(child: recorder.active ? _recordingBar() : _field()),
+              const SizedBox(width: 8),
               _trailing(),
             ],
           ),
@@ -993,30 +1544,33 @@ class _ChatScreenState extends State<ChatScreen> {
       return RoundIcon(icon: editing != null ? LucideIcons.check : LucideIcons.send, onTap: sending || empty ? null : _send, filled: true, size: 44);
     }
     final recording = recorder.active;
-    return Tooltip(
-      message: tr('Утримуйте, щоб записати голосове'),
-      child: GestureDetector(
-        onTap: sending ? null : () => _startVoice(hold: false),
-        onLongPressStart: sending ? null : (_) => _startVoice(hold: true),
-        onLongPressMoveUpdate: _onHoldMove,
-        onLongPressEnd: (_) => _onHoldEnd(),
-        onLongPressCancel: _onHoldEnd,
-        child: AnimatedScale(
-          scale: recording ? 1.3 : 1,
-          duration: const Duration(milliseconds: 160),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: buttonGradient,
-              shape: BoxShape.circle,
-              boxShadow: recording ? [BoxShadow(color: primary.withValues(alpha: 0.55), blurRadius: 18)] : null,
+    final notes = AppScope.read(context).session.pluginOn('video_notes');
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      if (notes && !recording) ...[
+        RoundIcon(icon: LucideIcons.camera, onTap: sending ? null : _videoNote, color: soft, size: 44, tooltip: tr('Відеокружок')),
+        const SizedBox(width: 6),
+      ],
+      Tooltip(
+        message: tr('Утримуйте, щоб записати голосове'),
+        child: GestureDetector(
+          onTap: sending ? null : () => _startVoice(hold: false),
+          onLongPressStart: sending ? null : (_) => _startVoice(hold: true),
+          onLongPressMoveUpdate: _onHoldMove,
+          onLongPressEnd: (_) => _onHoldEnd(),
+          onLongPressCancel: _onHoldEnd,
+          child: AnimatedScale(
+            scale: recording ? 1.3 : 1,
+            duration: const Duration(milliseconds: 160),
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle),
+              child: const Icon(LucideIcons.mic, color: Colors.white, size: 21),
             ),
-            child: const Icon(LucideIcons.mic, color: Colors.white, size: 21),
           ),
         ),
       ),
-    );
+    ]);
   }
 
   Widget _recordingBar() {
@@ -1026,7 +1580,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(22), border: Border.all(color: lineStrong)),
+      decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(22)),
       child: Row(children: [
         if (locked)
           IconButton(
@@ -1055,11 +1609,11 @@ class _ChatScreenState extends State<ChatScreen> {
               : Opacity(
                   opacity: cancelHint,
                   child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    const Icon(LucideIcons.chevronLeft, size: 16, color: muted),
-                    Flexible(child: Text(tr('Вліво — скасувати'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted))),
+                    Icon(LucideIcons.chevronLeft, size: 16, color: muted),
+                    Flexible(child: FitText(tr('Вліво — скасувати'), style: body(12.5, color: muted))),
                     const SizedBox(width: 8),
-                    const Icon(LucideIcons.lock, size: 14, color: faint),
-                    const Icon(LucideIcons.chevronUp, size: 14, color: faint),
+                    Icon(LucideIcons.lock, size: 14, color: faint),
+                    Icon(LucideIcons.chevronUp, size: 14, color: faint),
                     const SizedBox(width: 4),
                   ]),
                 ),
@@ -1069,27 +1623,82 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _field() {
+    final aiWriter = AppScope.read(context).session.aiOn('ai_writer');
     return TextField(
       controller: input,
       focusNode: focus,
       minLines: 1,
-      maxLines: 6,
+      maxLines: 5,
       textCapitalization: TextCapitalization.sentences,
       onChanged: (_) => setState(() {}),
-      style: body(16),
+      style: body(15),
       decoration: InputDecoration(
-        hintText: tr('Напишіть повідомлення…'),
-        hintStyle: body(14.5, color: faint),
+        hintText: tr('Повідомлення...'),
+        hintStyle: body(15, color: faint),
         filled: true,
-        fillColor: field,
+        fillColor: const Color(0xE612151E),
         isDense: true,
-        contentPadding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: lineStrong)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: lineStrong)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: primary, width: 1.4)),
-        suffixIcon: editing == null ? IconButton(onPressed: _stickers, icon: const Icon(LucideIcons.smile, color: muted)) : null,
+        contentPadding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+        // Без «подвійної» акцентної рамки — лише м’який білий контур у фокусі.
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.24))),
+        suffixIcon: editing == null || aiWriter
+            ? Row(mainAxisSize: MainAxisSize.min, children: [
+                if (aiWriter) AiWriterButton(input: input),
+                if (editing == null)
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: _stickers,
+                    icon: Icon(LucideIcons.smile, size: 20, color: muted),
+                  ),
+              ])
+            : null,
       ),
     );
+  }
+
+  /// Меню бесіди: матеріали, фон, боти (групи), «Підсумок від ШІ» і відомості про бесіду.
+  Future<void> _chatMenu() async {
+    final session = AppScope.read(context).session;
+    final chat = conversation ?? const <String, dynamic>{};
+    final group = chat['type'] == 'group';
+    final summary = session.aiOn('ai_summary') && group;
+    final shared = session.pluginOn('chat_media_panel');
+    final backgrounds = session.pluginOn('chat_backgrounds');
+    final bots = group && chatCanModerate(chat) && chatBotsOn(session);
+    final choice = await showGcSheet<String>(
+      context,
+      builder: (sheet) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (shared) SheetAction(icon: LucideIcons.folderOpen, label: tr('Матеріали чату'), onTap: () => Navigator.pop(sheet, 'shared')),
+          if (backgrounds) SheetAction(icon: LucideIcons.wallpaper, label: tr('Фон чату'), onTap: () => Navigator.pop(sheet, 'background')),
+          if (bots) SheetAction(icon: LucideIcons.bot, label: tr('Боти бесіди'), onTap: () => Navigator.pop(sheet, 'bots')),
+          if (summary) SheetAction(icon: LucideIcons.sparkles, label: tr('Підсумок від ШІ'), color: cyan, onTap: () => Navigator.pop(sheet, 'summary')),
+          if (group) SheetAction(icon: LucideIcons.info, label: tr('Учасники й налаштування'), onTap: () => Navigator.pop(sheet, 'members')),
+        ]),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'shared') await showChatShared(context, conversationId: widget.id, onJump: _jumpTo);
+    if (!mounted) return;
+    if (choice == 'background') {
+      final saved = await showChatBackground(
+        context,
+        conversationId: widget.id,
+        current: text(conversation?['my_background']),
+        shared: text(conversation?['shared_background']),
+        canShare: chatCanModerate(conversation ?? chat),
+      );
+      if (saved != null && mounted && conversation != null) setState(() => applyChatBackground(conversation!, saved));
+    }
+    if (!mounted) return;
+    if (choice == 'bots') await showChatBots(context, widget.id);
+    if (!mounted) return;
+    if (choice == 'summary') await showAiSummary(context, widget.id);
+    if (!mounted) return;
+    if (choice == 'members') await _showMembers();
   }
 
   // ── Учасники групи ──
@@ -1105,6 +1714,7 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (sheet) => _GroupInfo(
         conversation: chat,
         myId: myId,
+        onJump: _jumpTo,
         onChanged: () async {
           await _load();
         },
@@ -1186,7 +1796,7 @@ class _DayLabel extends StatelessWidget {
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: fg.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
           child: Text(label, style: body(11.5, color: muted, weight: FontWeight.w600)),
         ),
       ),
@@ -1287,7 +1897,7 @@ class _SwipeToReplyState extends State<_SwipeToReply> with SingleTickerProviderS
                   child: Container(
                     width: 32,
                     height: 32,
-                    decoration: BoxDecoration(color: armed ? primary : Colors.white.withValues(alpha: 0.12), shape: BoxShape.circle),
+                    decoration: BoxDecoration(color: armed ? primary : fg.withValues(alpha: 0.12), shape: BoxShape.circle),
                     child: const Icon(LucideIcons.reply, size: 17, color: Colors.white),
                   ),
                 ),
@@ -1300,9 +1910,224 @@ class _SwipeToReplyState extends State<_SwipeToReply> with SingleTickerProviderS
   }
 }
 
-/// Повідомлення: текст, відповідь, фото, файли, голосове, стікер, контакт, системне.
+/// Той самий набір, що `MessageReaction::EMOJI` і пікер реакцій на сайті.
+const _messageReactions = ['👍', '❤️', '🔥', '😂', '😮', '😢', '🎉', '👎'];
+
+/// Опитування в груповому чаті — як chat-poll на сайті.
+class _ChatPollCard extends StatefulWidget {
+  const _ChatPollCard({
+    required this.conversationId,
+    required this.messageId,
+    required this.poll,
+    required this.own,
+    required this.canClose,
+    required this.onUpdated,
+    this.body,
+  });
+  final int conversationId;
+  final int messageId;
+  final Map<String, dynamic> poll;
+  final bool own;
+  final bool canClose;
+  final String? body;
+  final ValueChanged<Map<String, dynamic>> onUpdated;
+
+  @override
+  State<_ChatPollCard> createState() => _ChatPollCardState();
+}
+
+class _ChatPollCardState extends State<_ChatPollCard> {
+  late Map<String, dynamic> poll = Map<String, dynamic>.from(widget.poll);
+  late List<int> mine = _mineOf(poll);
+  bool busy = false;
+
+  List<int> _mineOf(Map<String, dynamic> source) {
+    final raw = source['mine'];
+    if (raw is! List) return [];
+    return [for (final o in raw) intOf(o)];
+  }
+
+  @override
+  void didUpdateWidget(covariant _ChatPollCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!busy && oldWidget.poll != widget.poll) {
+      poll = Map<String, dynamic>.from(widget.poll);
+      mine = _mineOf(poll);
+    }
+  }
+
+  bool get closed => poll['closed'] == true;
+  bool get multiple => poll['multiple'] == true;
+  bool get reveal => closed || mine.isNotEmpty;
+
+  Future<void> _vote(int index) async {
+    if (busy || closed) return;
+    final next = multiple
+        ? (mine.contains(index) ? [for (final i in mine) if (i != index) i] : [...mine, index])
+        : (mine.length == 1 && mine.first == index ? <int>[] : [index]);
+    setState(() => busy = true);
+    try {
+      final data = await AppScope.read(context).session.api.post(
+            Api.site('/messages/${widget.conversationId}/messages/${widget.messageId}/vote'),
+            {'options': next},
+          );
+      final message = mapOf(data['message']);
+      final updated = message['poll'] is Map ? mapOf(message['poll']) : poll;
+      if (!mounted) return;
+      setState(() {
+        poll = updated;
+        mine = _mineOf(updated);
+        busy = false;
+      });
+      widget.onUpdated(updated);
+    } catch (e) {
+      if (mounted) {
+        setState(() => busy = false);
+        toast(context, e);
+      }
+    }
+  }
+
+  Future<void> _close() async {
+    if (busy || closed || !widget.canClose) return;
+    setState(() => busy = true);
+    try {
+      final data = await AppScope.read(context).session.api.post(Api.site('/messages/${widget.conversationId}/messages/${widget.messageId}/close-poll'));
+      final message = mapOf(data['message']);
+      final updated = message['poll'] is Map ? mapOf(message['poll']) : poll;
+      if (!mounted) return;
+      setState(() {
+        poll = updated;
+        busy = false;
+      });
+      widget.onUpdated(updated);
+    } catch (e) {
+      if (mounted) {
+        setState(() => busy = false);
+        toast(context, e);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final options = maps(poll['options']);
+    final total = intOf(poll['total']);
+    final tone = widget.own ? Colors.white : ink;
+    final softTone = widget.own ? Colors.white70 : muted;
+    final title = closed
+        ? tr('Опитування закрито')
+        : (poll['anonymous'] == true ? tr('Анонімне опитування') : tr('Опитування'));
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
+        Icon(LucideIcons.chartBar, size: 14, color: softTone),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            multiple ? '$title · ${tr('кілька відповідей')}' : title,
+            style: body(11.5, color: softTone, weight: FontWeight.w700),
+          ),
+        ),
+      ]),
+      if (widget.body != null && widget.body!.isNotEmpty) ...[
+        const SizedBox(height: 4),
+        Text(widget.body!, style: body(15, color: tone, weight: FontWeight.w700)),
+      ],
+      const SizedBox(height: 8),
+      for (var i = 0; i < options.length; i++) ...[
+        if (i > 0) const SizedBox(height: 6),
+        _option(options[i], i, total, tone, softTone),
+      ],
+      const SizedBox(height: 6),
+      Row(children: [
+        Text('$total ${plural(total, tr('голос'), tr('голоси'), tr('голосів'))}', style: body(12, color: softTone)),
+        const Spacer(),
+        if (widget.canClose && !closed)
+          TextButton.icon(
+            onPressed: busy ? null : () => unawaited(_close()),
+            style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 6)),
+            icon: Icon(LucideIcons.lock, size: 14, color: softTone),
+            label: Text(tr('Закрити'), style: body(12, color: widget.own ? Colors.white : soft, weight: FontWeight.w600)),
+          ),
+      ]),
+    ]);
+  }
+
+  Widget _option(Map<String, dynamic> opt, int index, int total, Color tone, Color softTone) {
+    final count = intOf(opt['count']);
+    final percent = total > 0 ? ((count / total) * 100).round() : 0;
+    final selected = mine.contains(index);
+    final voters = maps(opt['voters']);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Material(
+        color: widget.own ? Colors.white.withValues(alpha: 0.08) : fg.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: closed || busy ? null : () => unawaited(_vote(index)),
+          child: Stack(children: [
+            if (reveal)
+              Positioned.fill(
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: (percent / 100).clamp(0.0, 1.0),
+                  child: ColoredBox(color: selected ? primary.withValues(alpha: 0.45) : Colors.white.withValues(alpha: widget.own ? 0.16 : 0.08)),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              child: Row(children: [
+                Container(
+                  width: 16,
+                  height: 16,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(multiple ? 4 : 8),
+                    border: Border.all(color: selected ? primary : (widget.own ? Colors.white70 : muted), width: 1.4),
+                    color: selected ? primary : Colors.transparent,
+                  ),
+                  child: selected ? const Icon(LucideIcons.check, size: 11, color: Colors.white) : null,
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: Text(text(opt['text']) ?? '', style: body(13.5, color: tone, weight: FontWeight.w600))),
+                if (reveal) Text('$percent%', style: body(12, color: softTone, weight: FontWeight.w700).copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+      if (reveal && poll['anonymous'] != true && voters.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 4, left: 2),
+          child: Row(children: [
+            for (final voter in voters.take(5))
+              Padding(
+                padding: const EdgeInsets.only(right: 3),
+                child: Avatar(url: text(voter['avatar_url']), name: text(voter['name']) ?? '', size: 18),
+              ),
+          ]),
+        ),
+    ]);
+  }
+}
+
+/// Повідомлення: текст, відповідь, фото, файли, голосове, відеокружок, стікер, контакт, системне.
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, required this.own, required this.group, required this.read, required this.onMenu, required this.onQuote, required this.conversationId});
+  const _Bubble({
+    required this.message,
+    required this.own,
+    required this.group,
+    required this.read,
+    required this.onMenu,
+    required this.onQuote,
+    required this.conversationId,
+    this.onThread,
+    this.canReact = false,
+    this.canClosePoll = false,
+    this.mine,
+    this.onToggle,
+    this.onAdd,
+  });
   final Map<String, dynamic> message;
   final bool own;
   final bool group;
@@ -1310,6 +2135,12 @@ class _Bubble extends StatelessWidget {
   final VoidCallback onMenu;
   final ValueChanged<int> onQuote;
   final int conversationId;
+  final VoidCallback? onThread;
+  final bool canReact;
+  final bool canClosePoll;
+  final String? mine;
+  final ValueChanged<String>? onToggle;
+  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -1322,31 +2153,49 @@ class _Bubble extends StatelessWidget {
     }
     final user = mapOf(message['user']);
     final rank = user['family_rank'] is Map ? mapOf(user['family_rank']) : null;
+    final bot = messageIsBot(message);
+    final guest = !bot && messageIsGuest(message);
+    final authorName = bot ? messageBotName(message) : (guest ? messageGuestName(message) : (text(user['name']) ?? ''));
+    final showAuthor = !own && (group || bot || guest);
     final attachments = maps(message['attachments']);
-    final photos = attachments.where((a) => a['type'] == 'image').toList();
+    final photos = attachments.where((a) => a['type'] == 'image' && a['view_once'] != true).toList();
+    final once = attachments.where((a) => a['view_once'] == true).toList();
+    final thread = message['thread'] is Map ? mapOf(message['thread']) : null;
     final docs = attachments.where((a) => a['type'] == 'file').toList();
     final voice = attachments.where((a) => a['type'] == 'voice').toList();
+    final notes = attachments.where((a) => a['type'] == 'video_note').toList();
     final sticker = message['sticker'] is Map ? mapOf(message['sticker']) : null;
     final contact = message['contact'] is Map ? mapOf(message['contact']) : null;
     final reply = message['reply_to'] is Map ? mapOf(message['reply_to']) : null;
     final rawBody = text(message['body']);
     final bodyText = rawBody == null ? null : maskProfanity(rawBody, text(AppScope.read(context).session.me?['profanity_mask']));
+    final bareNote = notes.length == 1 &&
+        photos.isEmpty &&
+        once.isEmpty &&
+        docs.isEmpty &&
+        voice.isEmpty &&
+        contact == null &&
+        reply == null &&
+        (bodyText == null || bodyText.isEmpty) &&
+        (thread == null || intOf(thread['count']) == 0);
     final meta = Row(mainAxisSize: MainAxisSize.min, children: [
-      if (message['edited_at'] != null) Text(tr('ред. '), style: body(11, color: own ? Colors.white60 : faint)),
-      Text(clock(message['created_at']), style: body(11, color: own ? Colors.white70 : faint)),
-      if (own) ...[const SizedBox(width: 3), Icon(read ? LucideIcons.checkCheck : LucideIcons.check, size: 14, color: Colors.white70)],
+      if (message['edited_at'] != null) Text(tr('ред. '), style: body(11, color: own ? fg.withValues(alpha: 0.60) : faint)),
+      Text(clock(message['created_at']), style: body(11, color: own ? fgSoft : faint)),
+      if (own) ...[const SizedBox(width: 3), Icon(read ? LucideIcons.checkCheck : LucideIcons.check, size: 14, color: fgSoft)],
     ]);
 
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (group && !own)
+        if (showAuthor)
           Padding(
             padding: const EdgeInsets.only(bottom: 3),
             child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              Text(text(user['name']) ?? '', style: body(12.5, color: const Color(0xFF9AA8FF), weight: FontWeight.w700)),
-              if (rank != null) Pill(label: '${rank['rank']} ${rank['title'] ?? ''}'.trim(), color: muted),
+              Text(authorName, style: body(12.5, color: bot ? const Color(0xFF7CC8FF) : (guest ? muted : const Color(0xFF9AA8FF)), weight: FontWeight.w700)),
+              if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+              if (guest) Pill(label: tr('гість'), color: muted),
+              if (rank != null && !bot && !guest) Pill(label: '${rank['rank']} ${rank['title'] ?? ''}'.trim(), color: muted),
             ]),
           ),
         if (reply != null)
@@ -1358,17 +2207,47 @@ class _Bubble extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
-                border: Border(left: BorderSide(color: own ? Colors.white70 : primary, width: 2.5)),
+                border: Border(left: BorderSide(color: own ? fgSoft : primary, width: 2.5)),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(text(reply['author']) ?? '', style: body(11.5, color: own ? Colors.white : const Color(0xFF9AA8FF), weight: FontWeight.w700)),
-                Text(reply['deleted'] == true ? tr('Повідомлення видалено') : (text(reply['preview']) ?? ''), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: own ? Colors.white70 : muted)),
+                FitText(reply['deleted'] == true ? tr('Повідомлення видалено') : (text(reply['preview']) ?? ''), style: body(12, color: own ? fgSoft : muted), maxLines: 2),
               ]),
             ),
           ),
-        if (photos.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 4), child: SizedBox(width: 240, child: MediaGrid(items: photos))),
+        if (type == 'poll' && message['poll'] is Map)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: _ChatPollCard(
+              conversationId: conversationId,
+              messageId: intOf(message['id']),
+              poll: mapOf(message['poll']),
+              body: bodyText,
+              own: own,
+              canClose: own || canClosePoll || message['can_close_poll'] == true,
+              onUpdated: (next) => message['poll'] = next,
+            ),
+          )
+        else if (photos.isNotEmpty)
+          Padding(padding: const EdgeInsets.only(bottom: 4), child: SizedBox(width: 240, child: MediaGrid(items: photos))),
+        if (type != 'poll') for (final a in once) ViewOnceChip(attachment: a, own: own),
+        if (thread != null && intOf(thread['count']) > 0)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: GestureDetector(
+              onTap: onThread,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(LucideIcons.messagesSquare, size: 14, color: own ? Colors.white : primary),
+                const SizedBox(width: 6),
+                Text(tr('{count} відп. у гілці', {'count': '${intOf(thread['count'])}'}), style: body(12.5, color: own ? Colors.white : primary, weight: FontWeight.w600)),
+              ]),
+            ),
+          ),
         for (final doc in docs) _FileChip(file: doc, own: own),
-        for (final clip in voice) _VoiceClip(clip: clip, own: own),
+        for (final clip in voice) _VoiceClip(clip: clip, own: own, conversationId: conversationId, messageId: intOf(message['id'])),
+        if (!bareNote)
+          for (final note in notes)
+            Padding(padding: const EdgeInsets.only(bottom: 4), child: VideoNotePlayer(key: ValueKey('vn-${note['id']}'), note: note)),
         if (contact != null)
           GestureDetector(
             onTap: () => context.push('/u/${contact['username']}'),
@@ -1377,11 +2256,14 @@ class _Bubble extends StatelessWidget {
               const SizedBox(width: 10),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(text(contact['name']) ?? '', style: body(14, weight: FontWeight.w700)),
-                Text('@${contact['username']}', style: body(12, color: own ? Colors.white70 : muted)),
+                Text('@${contact['username']}', style: body(12, color: own ? fgSoft : muted)),
               ]),
             ]),
           ),
-        if (bodyText != null && bodyText.isNotEmpty) Text(bodyText, style: body(15, color: own ? Colors.white : ink).copyWith(height: 1.35)),
+        if (partyInvite(rawBody) case final invite?)
+          _PartyInviteCard(invite: invite, own: own)
+        else if (type != 'poll' && bodyText != null && bodyText.isNotEmpty)
+          Text(bodyText, style: body(15, color: own ? Colors.white : ink).copyWith(height: 1.35)),
         const SizedBox(height: 3),
         Align(alignment: Alignment.bottomRight, widthFactor: 1, child: meta),
       ],
@@ -1389,16 +2271,36 @@ class _Bubble extends StatelessWidget {
 
     final bubble = sticker != null
         ? Column(crossAxisAlignment: own ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
-            if (group && !own) Text(text(user['name']) ?? '', style: body(12, color: const Color(0xFF9AA8FF), weight: FontWeight.w700)),
-            SizedBox(width: 130, height: 130, child: NetImage(text(sticker['url']), fit: BoxFit.contain)),
+            if (showAuthor)
+              Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                Text(authorName, style: body(12, color: bot ? const Color(0xFF7CC8FF) : const Color(0xFF9AA8FF), weight: FontWeight.w700)),
+                if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+                if (guest) Pill(label: tr('гість'), color: muted),
+              ]),
+            SizedBox(width: 130, height: 130, child: StickerView(text(sticker['url']))),
             meta,
           ])
+        : bareNote
+            ? Column(crossAxisAlignment: own ? CrossAxisAlignment.end : CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                if (showAuthor)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 3),
+                    child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                      Text(authorName, style: body(12.5, color: bot ? const Color(0xFF7CC8FF) : (guest ? muted : const Color(0xFF9AA8FF)), weight: FontWeight.w700)),
+                      if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
+                      if (guest) Pill(label: tr('гість'), color: muted),
+                    ]),
+                  ),
+                VideoNotePlayer(key: ValueKey('vn-${notes.first['id']}'), note: notes.first),
+                const SizedBox(height: 3),
+                meta,
+              ])
         : Container(
             constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.74),
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
             decoration: BoxDecoration(
-              gradient: own ? const LinearGradient(colors: [Color(0xFF6D5DFC), Color(0xFF8B6BFF)]) : null,
-              color: own ? null : Colors.white.withValues(alpha: 0.07),
+              gradient: own ? const LinearGradient(colors: [Color(0xFF0A84FF), Color(0xFF8B6BFF)]) : null,
+              color: own ? null : fg.withValues(alpha: 0.07),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
                 topRight: const Radius.circular(18),
@@ -1415,13 +2317,154 @@ class _Bubble extends StatelessWidget {
         mainAxisAlignment: own ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (group && !own) ...[
-            GestureDetector(onTap: () => context.push('/u/${user['username']}'), child: Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? '?', size: 30)),
+          if (showAuthor && group) ...[
+            if (bot)
+              Container(
+                width: 30,
+                height: 30,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: primary.withValues(alpha: 0.2), shape: BoxShape.circle),
+                child: const Icon(LucideIcons.bot, size: 16, color: Color(0xFF7CC8FF)),
+              )
+            else if (guest)
+              Avatar(name: authorName, size: 30)
+            else
+              GestureDetector(onTap: () => context.push('/u/${user['username']}'), child: Avatar(url: text(user['avatar_url']), name: authorName.isEmpty ? '?' : authorName, size: 30)),
             const SizedBox(width: 6),
           ],
-          Flexible(child: GestureDetector(onLongPress: onMenu, child: bubble)),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: own ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                GestureDetector(onLongPress: onMenu, child: bubble),
+                _ReactionRow(reactions: maps(message['reactions']), own: own, mine: mine, canReact: canReact, onToggle: onToggle, onAdd: onAdd),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// Пікер із восьми емодзі чату. Повтор уже своєї реакції знімає її.
+class _ReactionPicker extends StatelessWidget {
+  const _ReactionPicker({required this.mine, required this.onPick});
+  final String? mine;
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 2,
+        runSpacing: 2,
+        children: [
+          for (final emoji in _messageReactions)
+            GestureDetector(
+              onTap: () => onPick(emoji),
+              child: Semantics(
+                button: true,
+                selected: emoji == mine,
+                label: tr('Реакція {emoji}', {'emoji': emoji}),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: emoji == mine ? primary.withValues(alpha: 0.25) : null,
+                    shape: BoxShape.circle,
+                    border: emoji == mine ? Border.all(color: primary.withValues(alpha: 0.6)) : null,
+                  ),
+                  child: Text(emoji, style: const TextStyle(fontSize: 22)),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Чіпи під повідомленням: емодзі й кількість. Своя реакція підсвічена; тап перемикає її.
+class _ReactionRow extends StatelessWidget {
+  const _ReactionRow({required this.reactions, required this.own, required this.mine, required this.canReact, this.onToggle, this.onAdd});
+  final List<Map<String, dynamic>> reactions;
+  final bool own;
+  final String? mine;
+  final bool canReact;
+  final ValueChanged<String>? onToggle;
+  final VoidCallback? onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final chips = [for (final reaction in reactions) if (text(reaction['emoji']) != null) reaction];
+    if (chips.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        alignment: own ? WrapAlignment.end : WrapAlignment.start,
+        children: [
+          for (final reaction in chips)
+            _ReactionChip(
+              emoji: text(reaction['emoji'])!,
+              count: intOf(reaction['count']),
+              selected: text(reaction['emoji']) == mine,
+              onTap: canReact && onToggle != null ? () => onToggle!(text(reaction['emoji'])!) : null,
+            ),
+          if (canReact && onAdd != null)
+            Tooltip(
+              message: tr('Реакція'),
+              child: GestureDetector(
+                onTap: onAdd,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.07), shape: BoxShape.circle),
+                  child: Icon(LucideIcons.smilePlus, size: 15, color: muted),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReactionChip extends StatelessWidget {
+  const _ReactionChip({required this.emoji, required this.count, required this.selected, this.onTap});
+  final String emoji;
+  final int count;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: selected ? primary.withValues(alpha: 0.25) : fg.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(999),
+        border: selected ? Border.all(color: primary.withValues(alpha: 0.6)) : null,
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(emoji, style: const TextStyle(fontSize: 14, height: 1.2)),
+        if (count > 1) ...[
+          const SizedBox(width: 4),
+          Text('$count', style: body(12, color: selected ? ink : muted, weight: FontWeight.w600)),
+        ],
+      ]),
+    );
+    if (onTap == null) return chip;
+    return GestureDetector(
+      onTap: onTap,
+      child: Semantics(button: true, selected: selected, label: tr('Реакція {emoji}', {'emoji': emoji}), child: chip),
     );
   }
 }
@@ -1456,14 +2499,14 @@ class _FileChip extends StatelessWidget {
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(color: own ? Colors.white24 : violet.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: own ? fg.withValues(alpha: 0.24) : violet.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(10)),
             child: const Icon(LucideIcons.download, size: 18, color: Colors.white),
           ),
           const SizedBox(width: 10),
           Flexible(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(text(file['name']) ?? tr('Файл'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)),
-              Text(label, style: body(11.5, color: own ? Colors.white70 : muted)),
+              FitText(text(file['name']) ?? tr('Файл'), style: body(13.5, weight: FontWeight.w600)),
+              Text(label, style: body(11.5, color: own ? fgSoft : muted)),
             ]),
           ),
         ]),
@@ -1474,7 +2517,9 @@ class _FileChip extends StatelessWidget {
 
 /// Голосове повідомлення: власний маленький програвач (не чіпає музичну чергу).
 class _VoiceClip extends StatefulWidget {
-  const _VoiceClip({required this.clip, required this.own});
+  const _VoiceClip({required this.clip, required this.own, required this.conversationId, required this.messageId});
+  final int conversationId;
+  final int messageId;
   final Map<String, dynamic> clip;
   final bool own;
 
@@ -1525,19 +2570,39 @@ class _VoiceClipState extends State<_VoiceClip> {
     playing ? await player!.pause() : await player!.play();
   }
 
+  /// Розшифровка (плагін voice_transcripts): сервер розпізнає раз і зберігає.
+  late String? transcript = text(widget.clip['transcript']);
+  bool transcribing = false;
+  bool showText = false;
+
+  Future<void> _transcribe() async {
+    if (transcript != null) return setState(() => showText = !showText);
+    setState(() => transcribing = true);
+    try {
+      final data = await AppScope.read(context).session.api.post(Api.site('/messages/${widget.conversationId}/messages/${widget.messageId}/transcribe'));
+      if (mounted) setState(() => (transcript = '${data['text'] ?? ''}', showText = true));
+    } catch (e) {
+      if (mounted) toast(context, e is ApiException ? e.message : tr('Не вдалося розшифрувати.'));
+    } finally {
+      if (mounted) setState(() => transcribing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final canTranscribe = transcript != null || AppScope.read(context).session.pluginOn('voice_transcripts');
     final waveform = (widget.clip['waveform'] is List ? (widget.clip['waveform'] as List) : const []).map((v) => (v is num ? v / 100 : 0.3).clamp(0.08, 1.0)).toList();
     final bars = waveform.isEmpty ? List<double>.filled(28, 0.35) : waveform;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(mainAxisSize: MainAxisSize.min, children: [
         GestureDetector(
           onTap: _toggle,
           child: Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(color: widget.own ? Colors.white24 : primary, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: widget.own ? fg.withValues(alpha: 0.24) : primary, shape: BoxShape.circle),
             child: Icon(playing ? LucideIcons.pause : LucideIcons.play, color: Colors.white, size: 22),
           ),
         ),
@@ -1553,7 +2618,7 @@ class _VoiceClipState extends State<_VoiceClip> {
                     width: 2.2,
                     height: 4 + bars[i] * 20,
                     decoration: BoxDecoration(
-                      color: (i / bars.length) <= progress ? Colors.white : Colors.white.withValues(alpha: 0.35),
+                      color: (i / bars.length) <= progress ? Colors.white : fg.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1562,7 +2627,27 @@ class _VoiceClipState extends State<_VoiceClip> {
           ]),
         ),
         const SizedBox(width: 8),
-        Text(duration(widget.clip['duration']), style: body(11.5, color: widget.own ? Colors.white70 : muted)),
+        Text(duration(widget.clip['duration']), style: body(11.5, color: widget.own ? fgSoft : muted)),
+        if (canTranscribe) ...[
+          const SizedBox(width: 4),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            tooltip: tr('Текст'),
+            onPressed: transcribing ? null : _transcribe,
+            icon: transcribing
+                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                : Icon(LucideIcons.captions, size: 18, color: widget.own ? fgSoft : muted),
+          ),
+        ],
+      ]),
+      if (showText && transcript != null)
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 260),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(transcript!.isEmpty ? tr('Слів не розпізнано.') : transcript!, style: body(13.5, color: widget.own ? Colors.white : null)),
+          ),
+        ),
       ]),
     );
   }
@@ -1691,7 +2776,7 @@ class _StickerPickerState extends State<_StickerPicker> {
                   crossAxisSpacing: 8,
                   children: [
                     for (final sticker in maps(pack['stickers']))
-                      InkWell(borderRadius: BorderRadius.circular(12), onTap: () => widget.onSticker(sticker), child: NetImage(text(sticker['url']), fit: BoxFit.contain)),
+                      InkWell(borderRadius: BorderRadius.circular(12), onTap: () => widget.onSticker(sticker), child: StickerView(text(sticker['url']))),
                   ],
                 ),
         ),
@@ -1702,11 +2787,12 @@ class _StickerPickerState extends State<_StickerPicker> {
 
 /// Інформація про групу: назва, фото, учасники (додати / видалити), вихід.
 class _GroupInfo extends StatefulWidget {
-  const _GroupInfo({required this.conversation, required this.myId, required this.onChanged, required this.onLeft});
+  const _GroupInfo({required this.conversation, required this.myId, required this.onChanged, required this.onLeft, required this.onJump});
   final Map<String, dynamic> conversation;
   final int? myId;
   final Future<void> Function() onChanged;
   final VoidCallback onLeft;
+  final ValueChanged<int> onJump;
 
   @override
   State<_GroupInfo> createState() => _GroupInfoState();
@@ -1787,12 +2873,96 @@ class _GroupInfoState extends State<_GroupInfo> {
     }
   }
 
+  bool _canRestrict(Map<String, dynamic> member) {
+    if (!manager || intOf(member['id']) == widget.myId || member['role'] == 'owner') return false;
+    if (member['role'] == 'admin' && widget.conversation['my_role'] != 'owner') return false;
+    return text(member['username']) != null;
+  }
+
+  Future<void> _lift(Map<String, dynamic> member) async {
+    if (!await attempt(context, () => api.delete(Api.site('/messages/$id/members/${member['username']}/restrict')))) return;
+    if (!mounted) return;
+    setState(() {
+      final index = members.indexWhere((item) => item['id'] == member['id']);
+      if (index >= 0) members[index] = {...members[index], 'timeout_until': null};
+    });
+    await widget.onChanged();
+  }
+
+  Future<void> _restrict(Map<String, dynamic> member) async {
+    if (!await showChatRestrict(context, conversationId: id, user: member) || !mounted) return;
+    await widget.onChanged();
+    if (!mounted) return;
+    final fresh = await api.get('/api/v1/messages/$id');
+    if (mounted) setState(() => members = maps(mapOf(fresh['conversation'])['members']));
+  }
+
+  Future<void> _background() async {
+    final saved = await showChatBackground(
+      context,
+      conversationId: id,
+      current: text(widget.conversation['my_background']),
+      shared: text(widget.conversation['shared_background']),
+      canShare: manager,
+    );
+    if (saved == null || !mounted) return;
+    applyChatBackground(widget.conversation, saved);
+    await widget.onChanged();
+  }
+
+  Widget _tool(IconData icon, String title, String subtitle, VoidCallback onTap) {
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(icon, color: accent),
+        title: Text(title, style: body(15, weight: FontWeight.w600)),
+        subtitle: Text(subtitle, style: body(12, color: muted)),
+        trailing: Icon(LucideIcons.chevronRight, size: 18, color: faint),
+        onTap: onTap,
+      ),
+    );
+  }
+
+  Widget? _memberTools(Map<String, dynamic> member) {
+    final session = AppScope.read(context).session;
+    final restrictions = session.pluginOn('chat_restrictions');
+    final timedOut = text(member['timeout_until']) != null;
+    final canRemove = manager && intOf(member['id']) != widget.myId && member['role'] != 'owner';
+    final canRestrict = restrictions && _canRestrict(member);
+    if (!timedOut && !canRemove && !canRestrict) return null;
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      if (timedOut && restrictions && manager)
+        TextButton(
+          onPressed: () => _lift(member),
+          style: TextButton.styleFrom(visualDensity: VisualDensity.compact, foregroundColor: const Color(0xFFFDE68A), padding: const EdgeInsets.symmetric(horizontal: 8)),
+          child: Text(tr('Зняти'), style: body(12, color: const Color(0xFFFDE68A), weight: FontWeight.w700)),
+        )
+      else if (timedOut)
+        Pill(label: tr('Тайм-аут'), icon: LucideIcons.clock, color: const Color(0xFFFDE68A)),
+      if (canRestrict)
+        IconButton(
+          tooltip: tr('Тайм-аут або виключення'),
+          onPressed: () => _restrict(member),
+          icon: Icon(LucideIcons.gavel, color: muted, size: 18),
+        ),
+      if (canRemove) IconButton(onPressed: () => _remove(member), icon: Icon(LucideIcons.userRoundMinus, color: muted, size: 20)),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final me = members.where((m) => intOf(m['id']) == widget.myId).firstOrNull;
+    final session = AppScope.read(context).session;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       children: [
+        if (session.pluginOn('chat_media_panel'))
+          _tool(LucideIcons.images, tr('Матеріали чату'), tr('Фото, файли, посилання й голосові'), () => showChatShared(context, conversationId: id, onJump: widget.onJump)),
+        if (session.pluginOn('chat_backgrounds'))
+          _tool(LucideIcons.wallpaper, tr('Фон чату'), manager ? tr('Для мене або для всіх') : tr('Особистий фон бачите лише ви.'), _background),
+        if (manager && chatBotsOn(session))
+          _tool(LucideIcons.bot, tr('Боти бесіди'), tr('Привітання, автопости й ШІ-бот'), () => showChatBots(context, id)),
         if (manager)
           Row(children: [
             Expanded(child: GhostButton(label: tr('Назва'), icon: LucideIcons.pencil, compact: true, onPressed: _rename)),
@@ -1810,9 +2980,7 @@ class _GroupInfoState extends State<_GroupInfo> {
               'admin' => tr('Адміністратор'),
               _ => '@${member['username']}',
             },
-            trailing: manager && intOf(member['id']) != widget.myId && member['role'] != 'owner'
-                ? IconButton(onPressed: () => _remove(member), icon: const Icon(LucideIcons.userRoundMinus, color: muted, size: 20))
-                : null,
+            trailing: _memberTools(member),
           ),
         const SizedBox(height: 12),
         if (me != null) DangerButton(label: tr('Вийти з бесіди'), icon: LucideIcons.logOut, expand: true, onPressed: () => _remove(me)),
@@ -1874,12 +3042,7 @@ class _CallBanner extends StatelessWidget {
             const Icon(LucideIcons.phone, size: 16, color: green),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                '${chat['type'] == 'group' ? 'Іде груповий дзвінок' : 'Іде дзвінок'} · ${joined.map((p) => text(p['name']) ?? '').join(', ')}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: body(13, color: soft),
-              ),
+              child: FitText('${chat['type'] == 'group' ? 'Іде груповий дзвінок' : 'Іде дзвінок'} · ${joined.map((p) => text(p['name']) ?? '').join(', ')}', style: body(13, color: soft)),
             ),
             if (canCall)
               TextButton(
@@ -1892,6 +3055,52 @@ class _CallBanner extends StatelessWidget {
           ]),
         );
       },
+    );
+  }
+}
+
+/// Запрошення «слухати / дивитися разом» з чату: тип, назва й шлях кімнати в застосунку.
+typedef PartyInvite = ({String kind, String title, String path});
+
+final _partyPattern = RegExp(r'^\s*(?:🎧|🎬)?\s*(.+?):\s*https?://[^\s/]+/(listen|watch)/([A-Za-z0-9_-]+)\s*$', unicode: true);
+
+/// Повідомлення-запрошення — замість посилання показуємо картку з кнопкою «Приєднатися».
+PartyInvite? partyInvite(String? body) {
+  final match = body == null ? null : _partyPattern.firstMatch(body);
+  if (match == null) return null;
+  return (kind: match.group(2)!, title: match.group(1)!.trim(), path: '/${match.group(2)}/${match.group(3)}');
+}
+
+class _PartyInviteCard extends StatelessWidget {
+  const _PartyInviteCard({required this.invite, required this.own});
+  final PartyInvite invite;
+  final bool own;
+
+  @override
+  Widget build(BuildContext context) {
+    final listen = invite.kind == 'listen';
+    final icon = listen ? LucideIcons.headphones : LucideIcons.clapperboard;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 220),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: const Color(0xFF0EA5E9).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, size: 20, color: const Color(0xFF38BDF8)),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(listen ? tr('Запрошення слухати разом') : tr('Запрошення дивитися разом'), style: body(12, color: own ? Colors.white70 : muted)),
+              Text(invite.title, style: body(14.5, color: own ? Colors.white : ink, weight: FontWeight.w600)),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        PrimaryButton(label: tr('Приєднатися'), icon: icon, compact: true, onPressed: () => context.push(invite.path)),
+      ]),
     );
   }
 }

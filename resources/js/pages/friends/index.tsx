@@ -1,10 +1,19 @@
-import { Deferred, Head, InfiniteScroll, Link, router } from '@inertiajs/react';
+import {
+    Deferred,
+    Head,
+    InfiniteScroll,
+    Link,
+    router,
+    usePage,
+} from '@inertiajs/react';
+import { ListSkeleton } from '@/components/gc/skeletons';
 import {
     Briefcase,
     Clapperboard,
     Inbox,
+    LayoutGrid,
+    List,
     MessageCircleOff,
-    Radio,
     Search,
     Send,
     Sparkles,
@@ -12,11 +21,16 @@ import {
     UsersRound,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { FriendListRow } from '@/components/gc/friend-list-row';
+import { GcSegmented } from '@/components/gc/gc-segmented';
 import { PersonCard } from '@/components/gc/person-card';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
 import { tr } from '@/lib/i18n';
+import { friendListAllowed } from '@/lib/modes';
+import { AnimatePresence, m, useReducedMotion } from 'motion/react';
+import { blurSwap, motionOr, SNAP } from '@/lib/motion';
 
 type Tab =
     | 'all'
@@ -36,10 +50,13 @@ type Props = {
     suggestions?: Person[];
 };
 
-const tabs: { key: Tab; label: string; icon: typeof UsersRound }[] = [
-    { key: 'all', label: tr('Усі друзі'), icon: UsersRound },
-    { key: 'online', label: tr('Онлайн'), icon: Radio },
-    { key: 'requests', label: tr('Заявки'), icon: Inbox },
+const primaryTabs: { key: Tab; label: string }[] = [
+    { key: 'all', label: tr('Усі друзі') },
+    { key: 'online', label: tr('Онлайн') },
+    { key: 'requests', label: tr('Заявки') },
+];
+
+const extraTabs: { key: Tab; label: string; icon: typeof UsersRound }[] = [
     { key: 'outgoing', label: tr('Надіслані'), icon: Send },
     { key: 'raid', label: tr('Рейд'), icon: Swords },
     { key: 'cinema', label: tr('Кіно'), icon: Clapperboard },
@@ -84,8 +101,18 @@ const empty: Record<Tab, { title: string; text: string }> = {
     },
 };
 
+function tabHref(key: Tab) {
+    return key === 'all' ? '/friends' : `/friends?tab=${key}`;
+}
+
 export default function Friends({ tab, q, users, counts, suggestions }: Props) {
     const [search, setSearch] = useState(q);
+    /** Плитка лише на md+; на телефоні завжди список. */
+    const [view, setView] = useState<'list' | 'grid'>('list');
+    const { modules } = usePage().props;
+    const useGrid = view === 'grid';
+    const reduce = useReducedMotion();
+    const swap = blurSwap(reduce);
 
     useEffect(() => {
         if (search === q) return;
@@ -103,76 +130,153 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
         return () => clearTimeout(timer);
     }, [search, q, tab]);
 
+    const extras = extraTabs.filter((item) =>
+        friendListAllowed(item.key, modules),
+    );
+
     return (
         <>
             <Head title={tr('Друзі')} />
-            <div className="space-y-5">
-                <div className="glass flex flex-col gap-3 rounded-3xl p-3 md:flex-row md:items-center">
-                    <div className="scrollbar-none flex gap-1 overflow-x-auto">
-                        {tabs.map((item) => (
-                            <Link
-                                key={item.key}
-                                href={
-                                    item.key === 'all'
-                                        ? '/friends'
-                                        : `/friends?tab=${item.key}`
+            <div className="space-y-3 sm:space-y-4">
+                <div className="gc-solid flex flex-col gap-2.5 rounded-2xl p-2.5 sm:p-3">
+                    <GcSegmented
+                        value={
+                            primaryTabs.some((t) => t.key === tab) ? tab : 'all'
+                        }
+                        options={primaryTabs.map((item) => ({
+                            key: item.key,
+                            label: item.label,
+                            href: tabHref(item.key),
+                            count: counts[item.key],
+                            badge:
+                                item.key === 'requests' && counts.requests > 0,
+                        }))}
+                    />
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        {extras.length > 0 && (
+                            <div className="scrollbar-none flex min-w-0 flex-1 gap-1 overflow-x-auto">
+                                {extras.map((item) => (
+                                    <Link
+                                        key={item.key}
+                                        href={tabHref(item.key)}
+                                        className={cn(
+                                            'flex shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-medium transition',
+                                            tab === item.key
+                                                ? 'nav-active text-white'
+                                                : 'text-white/50 hover:bg-[var(--gc-l3)] hover:text-white',
+                                        )}
+                                    >
+                                        <item.icon className="size-3.5" />
+                                        {item.label}
+                                        <span className="rounded-full bg-white/[0.07] px-1.5 text-[10px] leading-4 text-white/55 tabular-nums">
+                                            {counts[item.key]}
+                                        </span>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                        <label className="input-glass flex h-9 w-full items-center gap-2 rounded-xl px-2.5 sm:ml-auto sm:w-64">
+                            <Search className="size-3.5 text-white/40" />
+                            <input
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
                                 }
+                                placeholder={tr('Пошук серед друзів')}
+                                className="min-w-0 flex-1 bg-transparent text-xs text-white placeholder:text-white/35 focus:outline-none"
+                            />
+                        </label>
+                        <div className="hidden items-center gap-0.5 rounded-xl border border-white/[0.07] bg-white/[0.03] p-0.5 md:flex">
+                            <button
+                                type="button"
+                                aria-label={tr('Список')}
+                                onClick={() => setView('list')}
                                 className={cn(
-                                    'flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition',
-                                    tab === item.key
-                                        ? 'nav-active text-white'
-                                        : 'text-white/55 hover:bg-white/[0.04] hover:text-white',
+                                    'flex size-8 items-center justify-center rounded-lg transition',
+                                    !useGrid
+                                        ? 'bg-white/[0.1] text-white'
+                                        : 'text-white/45 hover:text-white',
                                 )}
                             >
-                                <item.icon
-                                    className={cn(
-                                        'size-4',
-                                        tab === item.key && 'text-gc-lilac-400',
-                                    )}
-                                />
-                                {item.label}
-                                <span
-                                    className={cn(
-                                        'rounded-full px-1.5 text-[11px] leading-5 tabular-nums',
-                                        item.key === 'requests' &&
-                                            counts.requests > 0
-                                            ? 'bg-gradient-brand text-white'
-                                            : 'bg-white/[0.07] text-white/60',
-                                    )}
-                                >
-                                    {counts[item.key]}
-                                </span>
-                            </Link>
-                        ))}
+                                <List className="size-3.5" />
+                            </button>
+                            <button
+                                type="button"
+                                aria-label={tr('Плитка')}
+                                onClick={() => setView('grid')}
+                                className={cn(
+                                    'flex size-8 items-center justify-center rounded-lg transition',
+                                    useGrid
+                                        ? 'bg-white/[0.1] text-white'
+                                        : 'text-white/45 hover:text-white',
+                                )}
+                            >
+                                <LayoutGrid className="size-3.5" />
+                            </button>
+                        </div>
                     </div>
-                    <label className="input-glass flex h-10 items-center gap-2 rounded-xl px-3 md:ml-auto md:w-72">
-                        <Search className="size-4 text-white/40" />
-                        <input
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            placeholder={tr('Пошук серед друзів')}
-                            className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
-                        />
-                    </label>
                 </div>
 
-                {users.data.length === 0 ? (
-                    <EmptyState
-                        icon={tab === 'requests' ? Inbox : UsersRound}
-                        title={empty[tab].title}
-                        text={empty[tab].text}
-                    />
-                ) : (
-                    <InfiniteScroll
-                        data="users"
-                        preserveUrl
-                        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+                <AnimatePresence mode="wait" initial={false}>
+                    <m.div
+                        key={`${tab}-${useGrid ? 'g' : 'l'}`}
+                        {...swap}
+                        className="min-w-0"
                     >
-                        {users.data.map((person) => (
-                            <PersonCard key={person.id} person={person} />
-                        ))}
-                    </InfiniteScroll>
-                )}
+                        {users.data.length === 0 ? (
+                            <EmptyState
+                                icon={tab === 'requests' ? Inbox : UsersRound}
+                                title={empty[tab].title}
+                                text={empty[tab].text}
+                            />
+                        ) : (
+                            <InfiniteScroll
+                                data="users"
+                                loading={<ListSkeleton rows={3} card={false} />}
+                                preserveUrl
+                                className={cn(
+                                    useGrid
+                                        ? 'grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-2.5 lg:grid-cols-4'
+                                        : 'flex flex-col gap-2',
+                                )}
+                            >
+                                {users.data.map((person, index) => (
+                                    <m.div
+                                        key={person.id}
+                                        initial={
+                                            reduce
+                                                ? false
+                                                : { opacity: 0, y: 6 }
+                                        }
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={motionOr(reduce, {
+                                            ...SNAP,
+                                            delay: Math.min(index, 8) * 0.03,
+                                        })}
+                                    >
+                                        {useGrid ? (
+                                            <>
+                                                <div className="md:hidden">
+                                                    <FriendListRow
+                                                        person={person}
+                                                    />
+                                                </div>
+                                                <div className="hidden md:block">
+                                                    <PersonCard
+                                                        person={person}
+                                                    />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <FriendListRow person={person} />
+                                        )}
+                                    </m.div>
+                                ))}
+                            </InfiniteScroll>
+                        )}
+                    </m.div>
+                </AnimatePresence>
 
                 <Widget title={tr('Можливо, ви знайомі')} icon={Sparkles}>
                     <Deferred
@@ -180,16 +284,20 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
                         fallback={<WidgetSkeleton rows={2} />}
                     >
                         {suggestions && suggestions.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                            <div className="flex flex-col gap-2 md:grid md:grid-cols-3 md:gap-2.5 lg:grid-cols-4">
                                 {suggestions.map((person) => (
-                                    <PersonCard
-                                        key={person.id}
-                                        person={person}
-                                    />
+                                    <div key={person.id}>
+                                        <div className="md:hidden">
+                                            <FriendListRow person={person} />
+                                        </div>
+                                        <div className="hidden md:block">
+                                            <PersonCard person={person} />
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         ) : (
-                            <p className="px-1 text-sm text-white/45">
+                            <p className="px-1 text-[11px] leading-tight text-white/45">
                                 {tr('Рекомендацій поки немає.')}
                             </p>
                         )}

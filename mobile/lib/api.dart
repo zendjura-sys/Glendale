@@ -1,12 +1,16 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:http/http.dart' as http;
 
 import 'i18n.dart';
 
 class ApiException implements Exception {
-  ApiException(this.message);
+  ApiException(this.message, [this.status]);
   final String message;
+
+  /// HTTP-статус відповіді сервера (null — немає зв’язку чи помилка до запиту).
+  final int? status;
   @override
   String toString() => message;
 }
@@ -96,7 +100,10 @@ class Api {
 
   static const root = 'https://gamecon.online';
 
-  Future<Map<String, dynamic>> get(String path) => _send('GET', path);
+  /// Чи дійшов останній запит до GameCon: false — немає інтернету (музика переходить на завантажене).
+  static final online = ValueNotifier<bool>(true);
+
+  Future<Map<String, dynamic>> get(String path, {Map<String, String>? headers}) => _send('GET', path, null, headers);
   Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body]) => _send('POST', path, body);
   Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) => _send('PUT', path, body);
   Future<Map<String, dynamic>> patch(String path, Map<String, dynamic> body) => _send('PATCH', path, body);
@@ -139,7 +146,7 @@ class Api {
     return Map<String, dynamic>.from(user);
   }
 
-  Future<Map<String, dynamic>> _send(String method, String path, [Map<String, dynamic>? body]) async {
+  Future<Map<String, dynamic>> _send(String method, String path, [Map<String, dynamic>? body, Map<String, String>? extra]) async {
     final uri = Uri.parse('$root$path');
     final headers = {
       'Accept': 'application/json',
@@ -147,6 +154,7 @@ class Api {
       'X-Locale': I18n.requested,
       if (body != null) 'Content-Type': 'application/json',
       if (token() != null) 'Authorization': 'Bearer ${token()}',
+      ...?extra,
     };
     final encoded = body == null ? null : jsonEncode(body);
     late http.Response response;
@@ -161,10 +169,12 @@ class Api {
       }.timeout(const Duration(seconds: 40));
     } catch (e) {
       if (e is ApiException) rethrow;
+      online.value = false;
       throw ApiException(tr('Немає зв’язку з GameCon.'));
     }
+    online.value = true;
     if (response.statusCode >= 400) {
-      throw ApiException(_explain(response.body));
+      throw ApiException(_explain(response.body), response.statusCode);
     }
     if (response.body.isEmpty) return {};
     final decoded = jsonDecode(response.body);
@@ -192,6 +202,17 @@ class Api {
       }
     } catch (_) {}
     return tr('Щось пішло не так.');
+  }
+
+  /// Закрити чужу сесію, не підміняючи поточний токен (прибрати акаунт зі списку).
+  static Future<void> logoutToken(String token) async {
+    try {
+      await http.post(Uri.parse('$root/api/v1/logout'), headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'GameCon/1.0 (Flutter)',
+        'Authorization': 'Bearer $token',
+      }).timeout(const Duration(seconds: 8));
+    } catch (_) {}
   }
 
   /// Завантаження файлу з авторизацією (докази звітів, вкладення чату).

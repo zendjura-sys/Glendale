@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<option_groups>
+  <group group_id="gameconLogin" icon="fa-gamepad" display_order="9000" advanced="0"/>
+</option_groups>

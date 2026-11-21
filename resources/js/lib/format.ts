@@ -113,6 +113,9 @@ const SHORT = [
 
 /** Коротке число: 999 → 999, 1 000 → 1K, 15 300 → 15,3K, 1 000 000 → 1M. */
 export function shortNumber(value: number): string {
+    if (!Number.isFinite(value)) {
+        return '0';
+    }
     const abs = Math.abs(value);
     const sign = value < 0 ? '−' : '';
     for (const { at, suffix } of SHORT) {
@@ -157,8 +160,10 @@ export function lastSeen(iso: string | null, gender?: string | null): string {
 }
 
 export function initials(name: string): string {
+    // Лише літери й цифри: «[SCL] Scaletta Family» → «SS», а не «[S».
     return name
         .split(/\s+/)
+        .map((part) => part.replace(/[^\p{L}\p{N}]/gu, ''))
         .filter(Boolean)
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())

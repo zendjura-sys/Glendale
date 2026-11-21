@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Billing\Catalog;
+use App\Services\Billing\CommunityPromotion;
 use App\Services\Billing\Shop;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
@@ -36,6 +38,15 @@ class LegalController extends Controller
         return $this->document($request, 'refund');
     }
 
+    /**
+     * Стандарти безпеки дітей: заборона CSAE, як повідомити, контакт відповідальних (вимога Google Play
+     * для соцмереж). Публічна HTML-сторінка без входу.
+     */
+    public function childSafety(Request $request): Response
+    {
+        return $this->document($request, 'child-safety');
+    }
+
     /** Контакти для зв’язку з клієнтами (окремий розділ — вимога еквайрингу monobank). */
     public function contacts(Request $request): Response
     {
@@ -53,6 +64,9 @@ class LegalController extends Controller
             'products' => collect(Shop::catalog())->filter(fn (array $p) => $p['available'])
                 ->map(fn (array $p, string $key) => ['key' => $key, ...$p])->values(),
             'reactions' => count((array) config('plus.reactions')),
+            'family_plus_discount' => app(Catalog::class)->familyPlusDiscount(),
+            // Просування спільноти оплачується з балансу (ціна в сотих одиниці → ₴).
+            'community_promo' => ['price' => intdiv(app(CommunityPromotion::class)->price(), 100), 'days' => CommunityPromotion::DAYS],
             'limits' => config('plus.limits'),
         ]);
     }
@@ -68,7 +82,7 @@ class LegalController extends Controller
         return Inertia::render('legal/show', [
             ...$this->chrome($actual),
             'document' => $document,
-            'title' => __('ui.'.$document, [], $actual),
+            'title' => __('ui.'.str_replace('-', '_', $document), [], $actual),
             'html' => View::file(View::getFinder()->find($view), ['legal' => $legal])->render(),
             'is_master' => $actual === $master,
             'master' => $master,
@@ -129,6 +143,7 @@ class LegalController extends Controller
                 'refund' => $t('refund'),
                 'pricing' => $t('pricing'),
                 'contacts' => $t('contacts'),
+                'child_safety' => $t('child_safety'),
                 'view_original' => $t('view_original'),
                 'prevail' => $t('prevail'),
                 // Застереження мовою майстер-версії (українською) — показується завжди.
@@ -141,7 +156,7 @@ class LegalController extends Controller
     }
 
     /**
-     * @return array{operator: string, email: string, address: string|null, tax_id: string|null, registry: string|null, phone: string|null, tax_status: string|null, country: string, updated: string, site: string, name: string}
+     * @return array{operator: string, developer: string, email: string, address: string|null, tax_id: string|null, registry: string|null, phone: string|null, tax_status: string|null, country: string, updated: string, site: string, name: string}
      */
     private function details(): array
     {
@@ -149,6 +164,7 @@ class LegalController extends Controller
 
         return [
             'operator' => $this->value('operator'),
+            'developer' => $this->value('developer'),
             'email' => $this->value('email'),
             'address' => $optional('address'),
             'tax_id' => $optional('tax_id'),

@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Notifications\ReferralActivated;
 use App\Notifications\ReferralJoined;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Throwable;
@@ -62,6 +65,18 @@ class Referrals
         $inviter->notify(new ReferralJoined($user));
     }
 
+    /** Запрошений підтвердив пошту — запрошувачу сповіщення з прогресом до наступної нагороди. */
+    public function activated(User $user): void
+    {
+        $inviter = $user->invited_by ? User::query()->find($user->invited_by) : null;
+        if (! $inviter instanceof User || $inviter->banned_at !== null) {
+            return;
+        }
+        $active = $this->active($inviter);
+        $target = collect(self::LADDER)->first(fn (int $t) => $active < $t);
+        $inviter->notify(new ReferralActivated($user, $active, $target));
+    }
+
     /** Активні запрошені — ті, хто підтвердив пошту. */
     public function active(User $user): int
     {
@@ -69,12 +84,16 @@ class Referrals
     }
 
     /**
-     * @return array{link: string, total: int, active: int, xp: int, ladder: list<array{target: int, reached: bool}>, people: list<array<string, mixed>>}
+     * @return array{link: string, total: int, active: int, xp: int, ladder: list<array{target: int, reached: bool}>, next: array{target: int, left: int, from: int}|null, people: list<array<string, mixed>>}
      */
     public function summary(User $user): array
     {
         $active = $this->active($user);
-        $people = User::query()->where('invited_by', $user->id)->latest('id')->limit(30)->get();
+        $people = User::query()->where('invited_by', $user->id)->withCount('posts')
+            ->withExists(['playedPlaces as played'])->latest('id')->limit(30)->get();
+        // Наступна сходинка: скільки ще активних друзів і звідки рахувати смужку.
+        $target = collect(self::LADDER)->first(fn (int $t) => $active < $t);
+        $from = (int) collect(self::LADDER)->filter(fn (int $t) => $t <= $active)->last();
 
         return [
             'link' => $this->link($user),
@@ -82,7 +101,51 @@ class Referrals
             'active' => $active,
             'xp' => $active * self::XP,
             'ladder' => array_map(fn (int $target) => ['target' => $target, 'reached' => $active >= $target], self::LADDER),
-            'people' => array_values($people->map(fn (User $p) => [...$p->toCard(), 'active' => $p->email_verified_at !== null])->all()),
+            'next' => $target === null ? null : ['target' => $target, 'left' => $target - $active, 'from' => $from],
+            // Перші кроки запрошеного: пошта, аватар, перший допис, «граю в…».
+            'people' => array_values($people->map(fn (User $p) => [
+                ...$p->toCard(),
+                'active' => $p->email_verified_at !== null,
+                'steps' => [
+                    'verified' => $p->email_verified_at !== null,
+                    'avatar' => $p->avatar_path !== null,
+                    'post' => (int) $p->posts_count > 0,
+                    'played' => (bool) $p->getAttribute('played'),
+                ],
+            ])->all()),
+        ];
+    }
+
+    /**
+     * Таблиця лідерів: хто привів найбільше активних друзів (за місяць або за весь час) і моє місце.
+     * Рахуються лише підтверджені пошти й незаблоковані запрошувачі. Кеш — 10 хвилин.
+     *
+     * @return array{period: string, top: list<array<string, mixed>>, me: array{place: int|null, count: int}}
+     */
+    public function leaderboard(User $user, string $period = 'month'): array
+    {
+        $period = $period === 'all' ? 'all' : 'month';
+        /** @var list<array{id: int, n: int}> $rows */
+        $rows = Cache::remember("referrals:board:{$period}", now()->addMinutes(10), fn () => User::query()
+            ->whereNotNull('invited_by')->whereNotNull('email_verified_at')
+            ->when($period === 'month', fn ($q) => $q->where('created_at', '>=', now()->subDays(30)))
+            ->whereIn('invited_by', User::query()->select('id')->whereNull('banned_at'))
+            ->select('invited_by', DB::raw('count(*) as n'))->groupBy('invited_by')
+            ->orderByDesc('n')->orderBy('invited_by')->get()
+            ->map(fn ($r) => ['id' => (int) $r->invited_by, 'n' => (int) $r->n])->values()->all());
+
+        $top = array_slice($rows, 0, 20);
+        $people = User::query()->whereIn('id', array_column($top, 'id'))->get()->keyBy('id');
+        $index = array_search($user->id, array_column($rows, 'id'), true);
+
+        return [
+            'period' => $period,
+            'top' => array_values(array_filter(array_map(fn (array $r, int $i) => $people->has($r['id']) ? [
+                ...$people[$r['id']]->toCard(),
+                'place' => $i + 1,
+                'count' => $r['n'],
+            ] : null, $top, array_keys($top)))),
+            'me' => ['place' => $index === false ? null : $index + 1, 'count' => $index === false ? 0 : $rows[$index]['n']],
         ];
     }
 }

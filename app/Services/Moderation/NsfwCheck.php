@@ -5,6 +5,8 @@ namespace App\Services\Moderation;
 use App\Models\ImageFlag;
 use App\Models\Photo;
 use App\Models\PostAttachment;
+use App\Services\Ai\AiAssistant;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -25,14 +27,28 @@ class NsfwCheck
 
     public function configured(): bool
     {
+        return $this->sightengine() || $this->viaAi();
+    }
+
+    private function sightengine(): bool
+    {
         return filled($this->settings->get('sightengine_user')) && $this->settings->secret('sightengine_secret') !== null;
+    }
+
+    /** Без Sightengine фото оцінює ШІ сайту, якщо ввімкнено «ШІ-модерацію». */
+    private function viaAi(): bool
+    {
+        return app(Plugins::class)->on('ai_moderation');
     }
 
     /** Ймовірність відвертого вмісту 0..1 або null, якщо перевірити не вдалося. */
     public function score(string $path): ?float
     {
-        if (! $this->configured() || ! Storage::disk('public')->exists($path)) {
+        if (! Storage::disk('public')->exists($path)) {
             return null;
+        }
+        if (! $this->sightengine()) {
+            return $this->viaAi() ? app(AiAssistant::class)->imageScore($path) : null;
         }
         try {
             $response = Http::timeout(20)

@@ -53,6 +53,8 @@ abstract class FamilyBaseController extends Controller
                 'conversation_id' => $family->conversation_id,
                 'owner_id' => $family->owner_id,
                 'rank_titles' => $family->rankTitles(),
+                'shifts_enabled' => $family->sectionEnabled('shifts'),
+                'sections' => $family->sections(),
             ],
             'me' => [...$member->toCard($family), 'balance' => $member->balance],
             'can' => $can,

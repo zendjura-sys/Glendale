@@ -20,7 +20,7 @@ export const BADGE_COLORS = [
 export type BadgeColor = (typeof BADGE_COLORS)[number];
 
 export const badgeTone: Record<BadgeColor, string> = {
-    indigo: 'bg-gc-indigo/15 text-gc-lilac-300',
+    indigo: 'bg-gc-indigo/15 text-sky-400',
     sky: 'bg-gc-blue/15 text-gc-sky',
     emerald: 'bg-gc-mint/15 text-gc-mint',
     amber: 'bg-gc-amber/15 text-gc-amber',
@@ -44,7 +44,7 @@ export function RoleBadge({
     return (
         <span
             className={cn(
-                'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] leading-4 font-semibold',
+                'inline-flex items-center rounded-chip px-2 py-0.5 text-[11px] leading-4 font-semibold',
                 tone,
                 className,
             )}
@@ -77,7 +77,7 @@ export function RoleTitleDialog({
 
     return (
         <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-            <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+            <DialogContent className="glass-strong rounded-dialog p-6 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-lg">
                     {tr('Підпис ролі')}
                 </DialogTitle>
@@ -115,7 +115,7 @@ export function RoleTitleDialog({
                                 onClick={() => setColor(item)}
                                 className={cn(
                                     'rounded-full ring-offset-2 ring-offset-transparent transition',
-                                    color === item && 'ring-2 ring-white/60',
+                                    color === item && 'ring-2',
                                 )}
                             >
                                 <RoleBadge

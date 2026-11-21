@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\Sticker;
 use App\Models\StickerPack;
+use App\Support\StickerFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -108,11 +109,10 @@ class StickerController extends Controller
     {
         $request->validate([
             'stickers' => ['required', 'array', 'max:40'],
-            'stickers.*' => ['image', 'mimes:png,webp,gif', 'max:1024', 'dimensions:max_width=1024,max_height=1024'],
+            'stickers.*' => StickerFiles::rules(1024, 1024),
             'emoji' => ['nullable', 'string', 'max:16'],
         ], [
-            'stickers.*.dimensions' => 'Стікер має бути не більше 1024×1024 px.',
-            'stickers.*.mimes' => 'Підтримуються PNG, WebP і GIF.',
+            'stickers.*.mimetypes' => 'Підтримуються PNG, WebP, GIF і відеостікери WebM.',
         ]);
 
         $files = $request->file('stickers', []);
@@ -121,7 +121,7 @@ class StickerController extends Controller
         $position = (int) $pack->stickers()->max('position');
 
         foreach ($files as $file) {
-            $extension = $file->getMimeType() === 'image/gif' ? 'gif' : ($file->getMimeType() === 'image/webp' ? 'webp' : 'png');
+            $extension = StickerFiles::extension($file);
 
             $pack->stickers()->create([
                 'path' => $file->storeAs("stickers/{$pack->slug}", Str::random(24).'.'.$extension, 'public'),

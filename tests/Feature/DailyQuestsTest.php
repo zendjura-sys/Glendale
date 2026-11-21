@@ -58,14 +58,19 @@ class DailyQuestsTest extends TestCase
         $busy = User::factory()->create(['email' => 'busy@example.com']);
         $this->actingAs($busy)->post(route('quests.claim', $quests->picks($busy)[0]))->assertSessionHasErrors('quest');
 
-        $this->actingAs($other)->post(route('quests.claim', $quests->picks($other)[0]))->assertRedirect();
+        $otherPick = $quests->picks($other)[0];
+        $this->actingAs($other)->post(route('quests.claim', $otherPick))->assertRedirect();
+        // Завдання дня випадкові за датою: одне завдання іншого гравця може коштувати більше за два наші
+        // (25 проти 10 + 10). Місце рахуємо з фактичних очок — тест не залежить від дня запуску.
+        $otherXp = DailyQuests::POOL[$otherPick]['xp'];
         $this->actingAs($other)->get(route('quests.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('quests/index')
                 ->has('quests', 3)
-                ->where('season.top.0.user.id', $user->id)
-                ->where('season.top.0.points', $xp)
-                ->where('season.me.place', 2));
+                ->where('season.top.0.user.id', $otherXp > $xp ? $other->id : $user->id)
+                ->where('season.top.0.points', max($xp, $otherXp))
+                ->where('season.me.points', $otherXp)
+                ->where('season.me.place', $otherXp < $xp ? 2 : 1));
     }
 }

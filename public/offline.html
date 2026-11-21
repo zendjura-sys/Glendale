@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="uk">
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <title>Немає мережі — GameCon</title>
+        <meta name="theme-color" content="#05070f" />
+        <style>
+            :root {
+                color-scheme: dark;
+            }
+            body {
+                margin: 0;
+                min-height: 100dvh;
+                display: grid;
+                place-items: center;
+                background: #05070f;
+                color: #fff;
+                font:
+                    15px/1.5 system-ui,
+                    -apple-system,
+                    'Segoe UI',
+                    sans-serif;
+                padding: 16px;
+                box-sizing: border-box;
+            }
+            .card {
+                max-width: 380px;
+                width: 100%;
+                text-align: center;
+                padding: 28px 22px;
+                border-radius: 22px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .logo {
+                width: 56px;
+                height: 56px;
+                border-radius: 16px;
+                background: #0b1020;
+                display: inline-grid;
+                place-items: center;
+                border: 1px solid rgba(99, 102, 241, 0.5);
+            }
+            h1 {
+                font-size: 21px;
+                margin: 16px 0 6px;
+            }
+            p {
+                margin: 0 0 18px;
+                color: rgba(255, 255, 255, 0.6);
+            }
+            a,
+            button {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+                border: 0;
+                border-radius: 12px;
+                padding: 12px;
+                font: inherit;
+                font-weight: 600;
+                cursor: pointer;
+                text-decoration: none;
+            }
+            button {
+                background: #4f46e5;
+                color: #fff;
+            }
+            a {
+                margin-top: 8px;
+                background: rgba(255, 255, 255, 0.07);
+                color: rgba(255, 255, 255, 0.85);
+            }
+        </style>
+    </head>
+    <body>
+        <main class="card">
+            <span class="logo" aria-hidden="true"
+                ><svg width="24" height="24" viewBox="0 0 24 24" fill="#a78bfa">
+                    <path d="M7 4.5v15l12-7.5z" /></svg
+            ></span>
+            <h1>Немає мережі</h1>
+            <p>
+                Стрічка, повідомлення й сповіщення, які ви вже відкривали,
+                доступні й без інтернету.
+            </p>
+            <button type="button" onclick="location.reload()">
+                Спробувати ще
+            </button>
+            <a href="/feed">Відкрити стрічку</a>
+        </main>
+    </body>
+</html>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<template_modifications>
+  <modification type="public" template="login" modification_key="gamecon_login_button" description="Кнопка «Увійти через GameCon» на сторінці входу" execution_order="10" enabled="1" action="str_replace">
+    <find><![CDATA[<xf:title>]]></find>
+    <replace><![CDATA[<xf:include template="gamecon_login_button" />
+<xf:title>]]></replace>
+  </modification>
+</template_modifications>

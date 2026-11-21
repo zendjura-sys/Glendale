@@ -1,0 +1,1205 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:math' as math;
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'alerts_config.dart';
+import 'alerts_map.dart';
+import 'api.dart';
+import 'i18n.dart';
+import 'state.dart';
+import 'theme.dart';
+import 'ukraine_outline.dart';
+import 'widgets.dart';
+
+/// Шари мапи (фільтри): тривоги й окремо кожен тип цілей.
+const alertLayers = ['alerts', 'uav', 'missile', 'ballistic', 'kab', 'mig'];
+
+/// Проєкція для мапи України (як на сайті): lng 22.0–40.4, lat 44.2–52.5.
+Offset _project(double lat, double lng, Size size) =>
+    Offset((lng - 22.0) / (40.4 - 22.0) * size.width, (52.5 - lat) / (52.5 - 44.2) * size.height);
+
+Path _outline(Size size) {
+  final path = Path();
+  for (final ring in ukraineOutline) {
+    for (var i = 0; i < ring.length; i++) {
+      final p = _project(ring[i][1], ring[i][0], size);
+      i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
+    }
+    path.close();
+  }
+  return path;
+}
+
+/// «1 год 05 хв» від початку тривоги.
+String alertDuration(dynamic startedAt) {
+  final start = DateTime.tryParse('${startedAt ?? ''}');
+  if (start == null) return '';
+  final total = math.max(0, DateTime.now().difference(start).inMinutes);
+  final h = total ~/ 60;
+  final m = total % 60;
+  // Тривала тривога (окуповані території тощо) — у днях.
+  if (h >= 48) return tr('{d} дн.', {'d': '${h ~/ 24}'});
+  return h > 0 ? tr('{h} год {m} хв', {'h': '$h', 'm': m.toString().padLeft(2, '0')}) : tr('{m} хв', {'m': '$m'});
+}
+
+double _d(dynamic v) => v is num ? v.toDouble() : double.tryParse('$v') ?? 0;
+
+/// Свій звук тривоги з файлового менеджера: копія в теці застосунку.
+class AlertSound {
+  static const _key = 'alerts.sound_path';
+  static const _onKey = 'alerts.sound_on';
+  static const _channel = MethodChannel('gamecon/app');
+  static final _player = AudioPlayer();
+
+  static String? path(SharedPreferences prefs) => prefs.getString(_key);
+  static bool enabled(SharedPreferences prefs) => prefs.getBool(_onKey) ?? true;
+  static Future<void> setEnabled(SharedPreferences prefs, bool on) => prefs.setBool(_onKey, on);
+
+  static Future<String?> pick(SharedPreferences prefs) async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.audio);
+    final source = result?.files.single.path;
+    if (source == null) return null;
+    final dir = await getApplicationSupportDirectory();
+    final ext = source.contains('.') ? source.substring(source.lastIndexOf('.')) : '.mp3';
+    final target = File('${dir.path}/alert_sound$ext');
+    await File(source).copy(target.path);
+    await prefs.setString(_key, target.path);
+    return target.path;
+  }
+
+  static Future<void> clear(SharedPreferences prefs) async {
+    final old = prefs.getString(_key);
+    await prefs.remove(_key);
+    if (old != null) {
+      try {
+        await File(old).delete();
+      } catch (_) {}
+    }
+  }
+
+  /// Програти сигнал: свій файл, інакше системний звук і вібрація.
+  static Future<void> play(SharedPreferences prefs) async {
+    if (!enabled(prefs)) return;
+    unawaited(HapticFeedback.heavyImpact());
+    final file = path(prefs);
+    if (file != null && File(file).existsSync()) {
+      try {
+        await _player.setFilePath(file);
+        await _player.seek(Duration.zero);
+        unawaited(_player.play());
+        return;
+      } catch (_) {}
+    }
+    await SystemSound.play(SystemSoundType.alert);
+  }
+
+  /// Системні налаштування каналу «Повітряна тривога»: там Android дає обрати будь-який звук
+  /// і для сповіщень, коли застосунок закрито.
+  static Future<void> openChannelSettings() async {
+    try {
+      await _channel.invokeMethod('channelSettings', {'channel': 'air_alerts'});
+    } catch (_) {}
+  }
+}
+
+/// Мапа тривог: області, цілі з курсом, мій регіон, укриття, звук, фільтри й джерела.
+class AlertsScreen extends StatefulWidget {
+  const AlertsScreen({super.key});
+
+  @override
+  State<AlertsScreen> createState() => _AlertsScreenState();
+}
+
+typedef _Legend = ({List<AlertTypeCode> types, List<AlertScaleCode> scales, List<(String?, String, String)> glyphs});
+
+/// Компактна легенда: лише типи, масштаби й значки цілей, які зараз є на мапі.
+_Legend _legendOf(List<Map<String, dynamic>> regions, List<Map<String, dynamic>> units, List<Map<String, dynamic>> threats) {
+  final types = <AlertTypeCode>{};
+  final scales = <AlertScaleCode>{};
+  for (final r in regions) {
+    for (final c in (r['alerts'] as List?) ?? [r['alert']]) {
+      final t = AlertsConfig.typeOf(c);
+      if (t != null) types.add(t);
+    }
+    final levels = (r['threat_levels'] as List?) ?? const [];
+    for (final c in levels) {
+      final t = AlertsConfig.typeOf(c);
+      if (t != null) types.add(t);
+    }
+    if (r['alert'] == 'AIR') {
+      final sc = AlertsConfig.scaleOf(r['scale']);
+      if (sc != null) scales.add(sc);
+    }
+  }
+  for (final u in units) {
+    final t = AlertsConfig.typeOf(u['type']);
+    if (t != null) types.add(t);
+    final sc = AlertsConfig.scaleOf(u['scale']);
+    if (t == AlertTypeCode.air && sc != null) scales.add(sc);
+  }
+  types..remove(AlertTypeCode.clear)..remove(AlertTypeCode.noData);
+  String glyph(Map<String, dynamic> t) {
+    final v = t['variant'];
+    if (v == 'gerbera') return 'shahed';
+    if (v != null) return '$v';
+    return switch (t['type']) { 'uav' => 'shahed', 'missile' => 'cruise', final x => '$x' };
+  }
+  final used = {for (final t in threats) glyph(t)};
+  final all = <(String, String?, String, String)>[
+    ('shahed', 'shahed', 'uav', tr('Shahed / Гербера')),
+    ('jet', 'jet', 'uav', tr('Реактивний Shahed')),
+    ('fpv', 'fpv', 'uav', tr('FPV-дрон')),
+    ('cruise', 'cruise', 'missile', tr('Крилата ракета')),
+    ('banderol', 'banderol', 'uav', tr('Бандероль')),
+    ('unknown', 'unknown', 'uav', tr('Ціль не визначена')),
+    ('ballistic', null, 'ballistic', tr('Балістика')),
+    ('kab', null, 'kab', tr('КАБ')),
+    ('mig', null, 'mig', tr('МіГ-31К')),
+    ('artillery', null, 'artillery', tr('Артилерія')),
+  ];
+  return (
+    types: types.isEmpty ? [AlertTypeCode.clear] : [for (final t in AlertsConfig.ordered) if (types.contains(t)) t],
+    scales: scales.length > 1 ? [for (final sc in AlertScaleCode.values) if (scales.contains(sc)) sc] : const [],
+    glyphs: [for (final (key, variant, type, label) in all) if (used.contains(key)) (variant, type, label)],
+  );
+}
+
+class _AlertsScreenState extends State<AlertsScreen> {
+  Map<String, dynamic>? data;
+  List<Map<String, dynamic>> regionList = [];
+  List<Map<String, dynamic>> sources = [];
+  Object? error;
+  Timer? poll;
+  Timer? tick;
+  late Set<String> layers;
+  bool showSources = false;
+  bool legendOpen = false;
+  int? selected;
+  bool? _wasActive;
+  Set<int> _seenThreats = {};
+
+  Session get session => AppScope.read(context).session;
+
+  @override
+  void initState() {
+    super.initState();
+    final saved = AppScope.read(context).session.prefs.getStringList('alerts.layers');
+    layers = (saved ?? alertLayers).where(alertLayers.contains).toSet();
+    _load(full: true);
+    poll = Timer.periodic(const Duration(seconds: 15), (_) => _load());
+    tick = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    poll?.cancel();
+    tick?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load({bool full = false}) async {
+    try {
+      final d = await session.api.get(Api.site('/alerts/state${full ? '?full=1' : ''}'));
+      if (!mounted) return;
+      _ring(d);
+      setState(() {
+        data = d;
+        error = null;
+        if (full) {
+          regionList = maps(d['region_list']);
+          sources = maps(d['sources']);
+        }
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = e);
+    }
+  }
+
+  /// Звук на екрані: у моїй області щойно почалась тривога чи з’явилась нова ціль.
+  void _ring(Map<String, dynamic> d) {
+    final region = text(mapOf(d['prefs'])['region']);
+    final active = maps(d['regions']).any((r) => r['slug'] == region && r['active'] == true);
+    final ids = {for (final t in maps(d['threats'])) if (t['region'] == region) intOf(t['id'])};
+    final before = _wasActive;
+    final seen = _seenThreats;
+    _wasActive = active;
+    _seenThreats = ids;
+    if (before == null || region == null) return;
+    if ((active && !before) || ids.any((id) => !seen.contains(id))) unawaited(AlertSound.play(session.prefs));
+  }
+
+  Future<void> _save(Map<String, dynamic> patch) async {
+    try {
+      final d = await session.api.put(Api.site('/alerts/preferences'), patch);
+      if (!mounted) return;
+      setState(() => data = {...?data, 'prefs': d['prefs']});
+      if (patch.containsKey('shelter')) {
+        toast(context, patch['shelter'] == true ? tr('Статус «В укритті» видно друзям і родині.') : tr('Статус «В укритті» знято.'));
+      }
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
+  Widget _legend(Widget mark, String label) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [mark, const SizedBox(width: 6), Flexible(child: Text(label, style: body(12, color: muted)))],
+  );
+
+  Future<void> _openThreat(Map<String, dynamic> t, List<Map<String, dynamic>> regions) async {
+    setState(() => selected = intOf(t['id']));
+    final region = regions.where((r) => r['slug'] == t['region']).firstOrNull;
+    await showThreatCard(context, t, text(region?['name']));
+    if (mounted) setState(() => selected = null);
+  }
+
+  void _toggleLayer(String layer) {
+    setState(() => layers.contains(layer) ? layers.remove(layer) : layers.add(layer));
+    unawaited(session.prefs.setStringList('alerts.layers', layers.toList()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = data;
+    if (d == null) {
+      return ScreenScroll(children: [
+        if (error != null)
+          EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити мапу тривог'))
+        else
+          const SizedBox(height: 240, child: Center(child: CircularProgressIndicator())),
+      ]);
+    }
+    final regions = maps(d['regions']);
+    final threats = maps(d['threats']);
+    final visible = threats.where((t) => layers.contains(text(t['type']))).toList();
+    final active = regions.where((r) => r['active'] == true).toList();
+    // «Тривога зараз»: офіційні тривоги й рівні загроз з цілей, важливіші — вище.
+    final alerting = regions.where((r) => r['active'] == true || !{AlertTypeCode.clear, AlertTypeCode.noData}.contains(regionType(r))).toList()
+      ..sort((a, b) => AlertsConfig.types[regionType(b)]!.priority - AlertsConfig.types[regionType(a)]!.priority);
+    final prefs = mapOf(d['prefs']);
+    final mineSlug = text(prefs['region']);
+    final mine = regions.where((r) => r['slug'] == mineSlug).firstOrNull;
+    final counts = <String, int>{};
+    for (final t in threats) {
+      counts[text(t['type']) ?? ''] = (counts[text(t['type']) ?? ''] ?? 0) + 1;
+    }
+    final appPrefs = session.prefs;
+    final customSound = AlertSound.path(appPrefs);
+
+    final regionCard = Glass(
+          gradient: mine?['active'] == true
+              ? LinearGradient(colors: [const Color(0xFFEF4444).withValues(alpha: 0.18), const Color(0xFFEF4444).withValues(alpha: 0.06)])
+              : null,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CardTitle(tr('Мій регіон'), icon: LucideIcons.mapPin),
+            GcSelect<String>(
+              value: mineSlug,
+              expand: true,
+              hint: tr('Оберіть область'),
+              items: [for (final r in regionList) (text(r['slug'])!, text(r['name']) ?? '')],
+              onChanged: (v) => _save({'region': v}),
+            ),
+            if (prefs['units_enabled'] == true) ...[
+              _AlertPlace(region: mineSlug ?? '', prefs: prefs, onSave: _save),
+              _AlertHistory(key: ValueKey('${mapOf(prefs['unit'])['id'] ?? mineSlug}')),
+              _SheltersNearby(key: ValueKey('s-${mapOf(prefs['unit'])['id'] ?? mineSlug}')),
+              _OtherPlaces(prefs: prefs, onSave: _save),
+            ],
+            const SizedBox(height: 12),
+            Text(tr('Налаштування сповіщень тривог'), style: body(14.5, weight: FontWeight.w700)),
+            if (prefs['units_enabled'] != true)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(tr('Офіційне джерело UkraineAlarm ще не підключено — сповіщень про тривоги поки немає.'), style: body(12.5, color: const Color(0xFFF59E0B))),
+              ),
+            for (final f in [
+              ('start', tr('Початок тривоги'), tr('одразу, як API оголосить тривогу'), null),
+              ('end', tr('Відбій тривоги'), tr('з тривалістю тривоги'), null),
+              ('red', tr('Червоні тривоги'), tr('ракетна небезпека, хімічна, радіаційна — в укриття'), const Color(0xFFEF4444)),
+              ('yellow', tr('Жовті тривоги'), tr('лише БпЛА, артобстріл, вуличні бої, інформаційні, локальні в районах'), const Color(0xFFF59E0B)),
+              ('silent', tr('Беззвучний режим'), tr('лише рядок у дзвіночку, без push і звуку'), null),
+              ('hush', tr('Тиша під час тривоги'), tr('поки у вашому місці тривога, лайки, запрошення в гру й інше несрочне — лише в дзвіночку'), null),
+            ])
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                value: f.$1 == 'silent' ? prefs['silent'] == true : prefs[f.$1] != false,
+                title: Row(children: [
+                  if (f.$4 != null) ...[Container(width: 8, height: 8, decoration: BoxDecoration(color: f.$4, shape: BoxShape.circle)), const SizedBox(width: 6)],
+                  Flexible(child: Text(f.$2, style: body(14, weight: FontWeight.w600))),
+                ]),
+                subtitle: Text(f.$3, style: body(12, color: muted)),
+                onChanged: prefs['push'] == false ? null : (v) => _save({f.$1: v}),
+              ),
+            if (mine != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                mine['active'] == true ? tr('Тривога · {d}', {'d': alertDuration(mine['started_at'])}) : tr('Тривоги немає'),
+                style: body(14, weight: FontWeight.w700, color: mine['active'] == true ? const Color(0xFFFCA5A5) : const Color(0xFF6EE7B7)),
+              ),
+            ],
+            const SizedBox(height: 6),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: prefs['push'] != false,
+              title: Text(tr('Отримувати сповіщення про тривоги'), style: body(14.5, weight: FontWeight.w600)),
+              subtitle: Text(tr('Push одразу на початку й на відбій у вашому місці — навіть у тихі години.'), style: body(12.5, color: muted)),
+              onChanged: (v) => _save({'push': v}),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: AlertSound.enabled(appPrefs),
+              title: Text(tr('Звук на екрані мапи'), style: body(14.5, weight: FontWeight.w600)),
+              subtitle: Text(
+                customSound == null ? tr('Системний сигнал. Можна обрати свій файл.') : tr('Свій звук: {f}', {'f': customSound.split('/').last}),
+                style: body(12.5, color: muted),
+              ),
+              onChanged: (v) async {
+                await AlertSound.setEnabled(appPrefs, v);
+                setState(() {});
+              },
+            ),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              GhostButton(
+                label: tr('Обрати звук'),
+                icon: LucideIcons.folderOpen,
+                expand: false,
+                compact: true,
+                onPressed: () async {
+                  final picked = await AlertSound.pick(appPrefs);
+                  if (picked != null && mounted) {
+                    setState(() {});
+                    unawaited(AlertSound.play(appPrefs));
+                  }
+                },
+              ),
+              if (customSound != null)
+                GhostButton(
+                  label: tr('Стандартний'),
+                  icon: LucideIcons.rotateCcw,
+                  expand: false,
+                  compact: true,
+                  onPressed: () async {
+                    await AlertSound.clear(appPrefs);
+                    if (mounted) setState(() {});
+                  },
+                ),
+              if (Platform.isAndroid)
+                GhostButton(
+                  label: tr('Звук push у системі'),
+                  icon: LucideIcons.bellRing,
+                  expand: false,
+                  compact: true,
+                  onPressed: AlertSound.openChannelSettings,
+                ),
+            ]),
+            const SizedBox(height: 12),
+            prefs['shelter'] == true
+                ? GhostButton(label: tr('Я вже не в укритті'), icon: LucideIcons.shieldCheck, iconColor: const Color(0xFF6EE7B7), onPressed: () => _save({'shelter': false}))
+                : PrimaryButton(label: tr('Я в укритті'), icon: LucideIcons.shield, onPressed: () => _save({'shelter': true})),
+          ]),
+        );
+    final legend = _legendOf(regions, maps(d['units']), visible);
+    final compactLegend = MediaQuery.sizeOf(context).width < 600;
+    final mapCard = Glass(
+          padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                for (final layer in alertLayers)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: SelectPill(
+                      label: layer == 'alerts' ? tr('Тривоги') : threatLabel(layer),
+                      selected: layers.contains(layer),
+                      onTap: () => _toggleLayer(layer),
+                    ),
+                  ),
+              ]),
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: InteractiveViewer(
+                maxScale: 5,
+                child: AspectRatio(
+                  aspectRatio: 1000 / 680,
+                  child: AlertMapView(
+                    regions: regions,
+                    units: maps(d['units']),
+                    threats: visible,
+                    mine: mineSlug,
+                    selected: selected,
+                    showAlerts: layers.contains('alerts'),
+                    onSelect: (slug) => _save({'region': slug}),
+                    onThreat: (t) => _openThreat(t, regions),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Легенда — лише те, що зараз є на мапі; на телефоні згорнута за кнопкою.
+            if (compactLegend)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => legendOpen = !legendOpen),
+                  icon: const Icon(LucideIcons.listTree, size: 16),
+                  label: Text(tr('Легенда')),
+                ),
+              ),
+            if (!compactLegend || legendOpen) ...[
+              Wrap(spacing: 6, runSpacing: 6, children: [for (final t in legend.types) AlertBadge(t, full: true)]),
+              if (legend.scales.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(spacing: 12, runSpacing: 6, children: [
+                  for (final sc in legend.scales)
+                    _legend(
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(color: AlertsConfig.airScale[sc]!.fill, border: Border.all(color: AlertsConfig.airScale[sc]!.border), borderRadius: BorderRadius.circular(2)),
+                      ),
+                      AlertsConfig.scaleLabel(sc),
+                    ),
+                ]),
+              ],
+              if (legend.glyphs.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(spacing: 12, runSpacing: 6, children: [
+                  for (final (variant, type, label) in legend.glyphs) _legend(ThreatGlyph({'type': type, 'variant': variant}, size: 14), label),
+                ]),
+              ],
+            ],
+            if (mapOf(d['attribution'])['url'] != null) ...[
+              const SizedBox(height: 10),
+              // Обов’язкове видиме посилання на джерело (умова API NEPTUN).
+              InkWell(
+                onTap: () => launchUrl(Uri.parse('${mapOf(d['attribution'])['url']}'), mode: LaunchMode.externalApplication),
+                child: Text(text(mapOf(d['attribution'])['text']) ?? 'NEPTUN', style: body(12.5, color: accent, weight: FontWeight.w600)),
+              ),
+            ],
+            const SizedBox(height: 10),
+            Text(
+              tr('Мапа — агрегатор відкритих джерел, а не офіційна система оповіщення. Мітки приблизні; прозоріша мітка — менше джерел її підтвердили. Рішення про укриття приймайте за офіційним сигналом тривоги.'),
+              style: body(12, color: faint),
+            ),
+          ]),
+        );
+    final activeCard = Glass(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CardTitle(tr('Тривога зараз'), icon: LucideIcons.siren),
+            if (alerting.isEmpty) Text(tr('Тривог немає.'), style: body(14, color: muted)),
+            for (final r in alerting)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(children: [
+                  // Головна тривога (найвищий пріоритет), решта — вторинні бейджі.
+                  AlertBadge(regionType(r), scale: AlertsConfig.scaleOf(r['scale'])),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FitText(text(r['name']) ?? '', style: body(14, color: AlertsConfig.resolveColors(regionType(r), AlertsConfig.scaleOf(r['scale'])).text)),
+                  ),
+                  for (final c in ((r['alerts'] as List?) ?? const []).skip(1))
+                    if (AlertsConfig.typeOf(c) != null)
+                      Padding(padding: const EdgeInsets.only(left: 4), child: AlertBadge(AlertsConfig.typeOf(c)!, scale: AlertsConfig.scaleOf(r['scale']), iconOnly: true)),
+                  const SizedBox(width: 8),
+                  Text(alertDuration(r['started_at']), style: body(12.5, color: muted)),
+                ]),
+              ),
+          ]),
+        );
+    final threatsCard = Glass(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CardTitle(tr('Цілі в повітрі'), icon: LucideIcons.radar),
+            if (visible.isEmpty) Text(tr('Цілей не зафіксовано.'), style: body(14, color: muted)),
+            for (final t in visible.take(15))
+              InkWell(
+                onTap: () => _openThreat(t, regions),
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(children: [
+                    Transform.rotate(angle: (t['course'] is num ? (t['course'] as num) : 0) * math.pi / 180, child: ThreatGlyph(t, size: 20)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        FitText('${threatTitle(t)}${intOf(t['count'], 1) > 1 ? ' ×${t['count']}' : ''}', style: body(14, weight: FontWeight.w600)),
+                        FitText(text(t['place']) ?? tr('Україна'), style: body(12.5, color: muted)),
+                      ]),
+                    ),
+                    Text('${intOf(t['confidence'])}% · ${clock(t['detected_at'])}', style: body(12.5, color: muted)),
+                  ]),
+                ),
+              ),
+          ]),
+        );
+    final feedCard = maps(d['feed']).isEmpty ? null : Glass(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              CardTitle(tr('Зведення'), icon: LucideIcons.messageSquareText),
+              for (final item in maps(d['feed']).take(12))
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(
+                      [clock(item['at']), if (text(item['channel']) != null) '@${item['channel']}'].join(' · '),
+                      style: body(12, color: faint),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(text(item['text']) ?? '', style: body(14, color: soft)),
+                  ]),
+                ),
+            ]),
+          );
+    final sourcesCard = Glass(
+          onTap: () => setState(() => showSources = !showSources),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              Icon(LucideIcons.listTree, size: 18, color: accent),
+              const SizedBox(width: 8),
+              Expanded(child: Text(tr('Джерела'), style: body(15, weight: FontWeight.w700))),
+              Text('${sources.fold<int>(0, (n, g) => n + maps(g['channels']).length)}', style: body(13, color: muted)),
+              Icon(showSources ? LucideIcons.chevronUp : LucideIcons.chevronDown, size: 18, color: muted),
+            ]),
+            if (showSources)
+              for (final g in sources)
+                Opacity(
+                  opacity: g['enabled'] == false ? 0.5 : 1,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${text(g['title'])} · ${maps(g['channels']).length}${g['enabled'] == false ? ' · ${tr('вимкнено')}' : ''}', style: body(14, weight: FontWeight.w700)),
+                      Text(text(g['about']) ?? '', style: body(12.5, color: muted)),
+                      const SizedBox(height: 6),
+                      for (final c in maps(g['channels']))
+                        InkWell(
+                          onTap: () => launchUrl(Uri.parse('https://t.me/${c['name']}'), mode: LaunchMode.externalApplication),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: Row(children: [
+                              Text('@${c['name']}', style: body(13, color: accent)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: FitText((c['regions'] is List && (c['regions'] as List).isNotEmpty) ? (c['regions'] as List).join(' / ') : tr('Вся Україна'), style: body(12, color: faint)),
+                              ),
+                            ]),
+                          ),
+                        ),
+                    ]),
+                  ),
+                ),
+          ]),
+        );
+    final guestsCard = Glass(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CardTitle(tr('Інформація для гостей України'), icon: LucideIcons.phone),
+            Text(tr('Почули сирену чи сповіщення — пройдіть в найближче укриття або метро.'), style: body(14, color: soft)),
+            const SizedBox(height: 4),
+            Text(tr('Тримайтесь подалі від вікон, не знімайте й не публікуйте роботу ППО та місця влучань.'), style: body(14, color: soft)),
+            const SizedBox(height: 8),
+            for (final (n, label) in [
+              ('112', tr('— єдиний номер екстрених служб')),
+              ('101', tr('— ДСНС (пожежа, порятунок)')),
+              ('102', tr('— поліція')),
+              ('103', tr('— швидка допомога')),
+            ])
+              InkWell(
+                onTap: () => launchUrl(Uri.parse('tel:$n')),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Text.rich(TextSpan(children: [
+                    TextSpan(text: '$n ', style: body(14, weight: FontWeight.w800)),
+                    TextSpan(text: label, style: body(14, color: soft)),
+                  ])),
+                ),
+              ),
+          ]),
+        );
+    const gap = SizedBox(height: 12);
+    // Ширина вмісту (без бічних панелей): від 860 — мапа ліворуч, панель праворуч (як на сайті);
+    // від 600 (планшет) — одна колонка, але мапа першою, щоб її було видно одразу.
+    Widget layout(BuildContext context, BoxConstraints box) {
+      if (box.maxWidth >= 860) {
+        return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [mapCard, gap, sourcesCard, gap, guestsCard])),
+          const SizedBox(width: 16),
+          SizedBox(
+            width: 360,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [regionCard, gap, activeCard, gap, threatsCard, if (feedCard != null) ...[gap, feedCard]]),
+          ),
+        ]);
+      }
+      final tablet = box.maxWidth >= 600;
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (tablet) ...[mapCard, gap, regionCard] else ...[regionCard, gap, mapCard],
+        gap,
+        activeCard,
+        gap,
+        threatsCard,
+        if (feedCard != null) ...[gap, feedCard],
+        gap,
+        sourcesCard,
+        gap,
+        guestsCard,
+      ]);
+    }
+
+    return ScreenScroll(
+      onRefresh: () => _load(full: true),
+      children: [
+        PageTitle(
+          tr('Мапа тривог'),
+          subtitle: [
+            active.isEmpty ? tr('Зараз тривог немає') : tr('Зараз тривога в {n} регіонах', {'n': '${active.length}'}),
+            tr('оновлено о {t}', {'t': clock(d['updated_at'])}),
+          ].join(' · '),
+        ),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final k in ['uav', 'missile', 'kab'])
+            if ((counts[k] ?? 0) > 0) Pill(label: '${threatLabel(k)} · ${counts[k]}', color: threatColors[k]!),
+          if (d['mig_active'] == true) Pill(label: tr('Зліт МіГ-31К'), icon: LucideIcons.radar, color: threatColors['mig']!),
+          if (d['ballistic_threat'] == true) Pill(label: tr('Загроза балістики'), icon: LucideIcons.rocket, color: threatColors['ballistic']!),
+          if (d['stale'] == true) Pill(label: tr('Дані можуть бути неактуальні'), icon: LucideIcons.triangleAlert, color: const Color(0xFFFBBF24)),
+        ]),
+        gap,
+        LayoutBuilder(builder: layout),
+      ],
+    );
+  }
+}
+
+/// Кнопка «Мапа тривог» (як на сайті): контур України в кольорах прапора, області з тривогою
+/// світяться червоним, поверх — гучномовець. Живі дані раз на хвилину.
+class AlertMapButton extends StatefulWidget {
+  const AlertMapButton({this.onTap, super.key});
+  final VoidCallback? onTap;
+
+  @override
+  State<AlertMapButton> createState() => _AlertMapButtonState();
+}
+
+class _AlertMapButtonState extends State<AlertMapButton> {
+  List<Map<String, dynamic>> active = [];
+  Timer? timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+    timer = Timer.periodic(const Duration(minutes: 1), (_) => _load());
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final d = await AppScope.read(context).session.api.get(Api.site('/alerts/state'));
+      if (mounted) setState(() => active = maps(d['regions']).where((r) => r['active'] == true).toList());
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: active.isEmpty ? tr('Мапа тривог') : tr('Мапа тривог: тривога в {n} регіонах', {'n': '${active.length}'}),
+      child: Material(
+        color: const Color(0xCC0B1A33),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: const Color(0xFF7DD3FC).withValues(alpha: 0.3)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: widget.onTap ?? () => context.push('/alerts'),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 14, 10),
+            child: Row(children: [
+              SizedBox(
+                width: 130,
+                height: 78,
+                child: Stack(children: [
+                  Positioned.fill(child: CustomPaint(painter: _FlagMapPainter(active))),
+                  Positioned(
+                    left: 40,
+                    top: 20,
+                    child: Transform.rotate(angle: -0.2, child: const Icon(LucideIcons.megaphone, size: 36, color: Color(0xFFE11D2A))),
+                  ),
+                ]),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                  Text(tr('Мапа тривог'), style: display(19).copyWith(color: Colors.white, fontWeight: FontWeight.w900, height: 1.05)),
+                  const SizedBox(height: 4),
+                  Text(
+                    active.isEmpty ? tr('Тривог немає') : tr('Тривога: {n}', {'n': '${active.length}'}),
+                    style: body(12.5, color: active.isEmpty ? Colors.white54 : const Color(0xFFFCA5A5), weight: FontWeight.w600),
+                  ),
+                ]),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FlagMapPainter extends CustomPainter {
+  _FlagMapPainter(this.active);
+  final List<Map<String, dynamic>> active;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final outline = _outline(size);
+    final split = _project(48.6, 22, size).dy;
+    canvas.save();
+    canvas.clipPath(outline);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, split), Paint()..color = const Color(0xFF1F5FD1));
+    canvas.drawRect(Rect.fromLTWH(0, split, size.width, size.height), Paint()..color = const Color(0xFFF5C518));
+    for (final r in active) {
+      final p = _project(_d(r['lat']), _d(r['lng']), size);
+      canvas.drawCircle(
+        p,
+        (r['slug'] == 'kyiv' ? 7 : 16) * size.width / 200,
+        Paint()
+          ..color = const Color(0xFFFF2D2D)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+      );
+    }
+    canvas.restore();
+    canvas.drawPath(outline, Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8
+      ..color = Colors.white.withValues(alpha: 0.35));
+  }
+
+  @override
+  bool shouldRepaint(_FlagMapPainter old) => old.active != active;
+}
+
+/// Місце для сповіщень, як у застосунку «Тривога»: рядок «Моє місце ›» відкриває екран вибору —
+/// області → райони («Обрати всю область») → громади («Обрати весь район») → міста й села, з пошуком.
+/// Тривога в районі чи області над обраним місцем діє й на нього; сусідні громади — ні.
+class _AlertPlace extends StatelessWidget {
+  const _AlertPlace({required this.region, required this.prefs, required this.onSave});
+  final String region;
+  final Map<String, dynamic> prefs;
+  final Future<void> Function(Map<String, dynamic>) onSave;
+
+  Color _hex(Object? v, Color fallback) {
+    final n = int.tryParse('${v ?? ''}'.replaceFirst('#', ''), radix: 16);
+    return n == null ? fallback : Color(0xFF000000 | n);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final unit = mapOf(prefs['unit']);
+    final status = maps(prefs['status']);
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () async {
+            final id = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const AlertPlacePickerPage()));
+            if (id != null) await onSave({'unit': id});
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(LucideIcons.mapPin, size: 16, color: muted),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(tr('Моє місце'), style: body(12, color: muted)),
+                  Text(text(unit['name']) ?? tr('Уся область'), style: body(14.5, weight: FontWeight.w700)),
+                  if (unit.isNotEmpty) Text('${unit['type_label'] ?? ''} · ${unit['path'] ?? ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                  const SizedBox(height: 6),
+                  Wrap(spacing: 6, runSpacing: 6, children: [
+                    if (status.isEmpty)
+                      _chip(tr('Тривоги немає'), const Color(0xFF10B981))
+                    else
+                      for (final st in status)
+                        _chip(
+                          '${st['name']}${st['level'] == 'yellow' ? ' · ${tr('жовтий рівень')}' : st['level'] == 'red' ? ' · ${tr('червоний рівень')}' : ''}',
+                          _hex(st['accent'], const Color(0xFFEF4444)),
+                        ),
+                  ]),
+                ]),
+              ),
+              Icon(LucideIcons.chevronRight, size: 18, color: muted),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String label, Color color) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(6)),
+        child: Text(label, style: body(12, color: color, weight: FontWeight.w700)),
+      );
+}
+
+/// Екран вибору місця (як у «Тривозі»): один рівень довідника UkraineAlarm, зверху пошук.
+/// Повертає regionId обраного місця (id області — «уся область»).
+class AlertPlacePickerPage extends StatefulWidget {
+  const AlertPlacePickerPage({this.parent, super.key});
+  final Map<String, dynamic>? parent;
+
+  @override
+  State<AlertPlacePickerPage> createState() => _AlertPlacePickerPageState();
+}
+
+class _AlertPlacePickerPageState extends State<AlertPlacePickerPage> {
+  List<Map<String, dynamic>>? places;
+  List<Map<String, dynamic>> hits = [];
+  final query = TextEditingController();
+  Timer? debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    debounce?.cancel();
+    query.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final parent = widget.parent?['id'];
+    try {
+      final d = await AppScope.read(context).session.api.get(Api.site('/alerts/places${parent != null ? '?parent=$parent' : ''}'));
+      if (mounted) setState(() => places = maps(d['places']));
+    } catch (e) {
+      if (mounted) setState(() => places = const []);
+    }
+  }
+
+  void _search(String q) {
+    debounce?.cancel();
+    if (q.trim().length < 2) {
+      setState(() => hits = []);
+      return;
+    }
+    debounce = Timer(const Duration(milliseconds: 250), () async {
+      try {
+        final d = await AppScope.read(context).session.api.get(Api.site('/alerts/search?q=${Uri.encodeQueryComponent(q.trim())}'));
+        if (mounted) setState(() => hits = maps(d['places']));
+      } catch (_) {}
+    });
+  }
+
+  Future<void> _open(Map<String, dynamic> place) async {
+    if (place['has_children'] != true) {
+      Navigator.of(context).pop('${place['id']}');
+      return;
+    }
+    final id = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => AlertPlacePickerPage(parent: place)));
+    if (id != null && mounted) Navigator.of(context).pop(id);
+  }
+
+  String _wholeLabel(Object? type) => switch (type) {
+        'State' => tr('Обрати всю область'),
+        'District' => tr('Обрати весь район'),
+        'Community' => tr('Обрати всю громаду'),
+        _ => tr('Обрати все місто'),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final parent = widget.parent;
+    final searching = query.text.trim().length >= 2;
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(parent == null ? LucideIcons.x : LucideIcons.chevronLeft, color: primary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: parent == null ? null : Text(text(parent['name']) ?? '', style: body(16, weight: FontWeight.w700)),
+      ),
+      body: Column(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: GcField(controller: query, label: tr('Область, місто чи район…'), icon: LucideIcons.search, dense: true, onChanged: _search),
+        ),
+        Expanded(
+          child: searching
+              ? ListView(children: [
+                  for (final hit in hits)
+                    ListTile(
+                      title: Text(text(hit['name']) ?? '', style: body(16)),
+                      subtitle: Text('${hit['type_label'] ?? ''}${(text(hit['path']) ?? '').isNotEmpty ? ' · ${hit['path']}' : ''}', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                      onTap: () => Navigator.of(context).pop('${hit['id']}'),
+                    ),
+                ])
+              : places == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView(children: [
+                      if (parent != null)
+                        ListTile(
+                          title: Text(_wholeLabel(parent['type']), style: body(16.5, weight: FontWeight.w800)),
+                          onTap: () => Navigator.of(context).pop('${parent['id']}'),
+                        ),
+                      for (final place in places!)
+                        ListTile(
+                          title: Text(text(place['name']) ?? '', style: body(16.5)),
+                          trailing: place['has_children'] == true ? Icon(LucideIcons.chevronRight, color: muted) : null,
+                          onTap: () => _open(place),
+                        ),
+                      if (places!.isEmpty && parent == null)
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(tr('Офіційне джерело UkraineAlarm ще не підключено — сповіщень про тривоги поки немає.'), textAlign: TextAlign.center, style: body(13, color: muted)),
+                        ),
+                    ]),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Історія тривог мого місця з API (останні 25) і підсумок за тиждень.
+class _AlertHistory extends StatefulWidget {
+  const _AlertHistory({super.key});
+
+  @override
+  State<_AlertHistory> createState() => _AlertHistoryState();
+}
+
+class _AlertHistoryState extends State<_AlertHistory> {
+  Map<String, dynamic>? data;
+
+  Future<void> _load() async {
+    try {
+      final d = await AppScope.read(context).session.api.get(Api.site('/alerts/history'));
+      if (mounted) setState(() => data = d);
+    } catch (_) {
+      if (mounted) setState(() => data = {'alarms': const [], 'week': {'count': 0, 'minutes': 0}});
+    }
+  }
+
+  static String _minutes(int m) => m >= 60 ? tr('{h} год {m} хв', {'h': m ~/ 60, 'm': m % 60}) : tr('{m} хв', {'m': m});
+
+  @override
+  Widget build(BuildContext context) {
+    final alarms = maps(data?['alarms']);
+    final week = mapOf(data?['week']);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        leading: Icon(LucideIcons.history, size: 18, color: muted),
+        title: Text(tr('Історія тривог'), style: body(14.5, weight: FontWeight.w700)),
+        onExpansionChanged: (open) {
+          if (open && data == null) _load();
+        },
+        children: [
+          if (data == null)
+            const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())
+          else if (alarms.isEmpty)
+            Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(tr('Тривог поки не було.'), style: body(12.5, color: muted)))
+          else ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(tr('За тиждень: {n} тривог, разом {t}', {'n': intOf(week['count']), 't': _minutes(intOf(week['minutes']))}), style: body(12.5, color: muted)),
+            ),
+            const SizedBox(height: 6),
+            for (final a in alarms)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(children: [
+                  Container(width: 8, height: 8, decoration: BoxDecoration(color: Color(0xFF000000 | (int.tryParse('${a['accent'] ?? ''}'.replaceFirst('#', ''), radix: 16) ?? 0xEF4444)), shape: BoxShape.circle)),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(text(a['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5))),
+                  Text(
+                    '${_when(a['start'])} · ${a['ongoing'] == true ? tr('триває') : (a['minutes'] is num ? _minutes((a['minutes'] as num).toInt()) : '')}',
+                    style: body(12, color: muted),
+                  ),
+                ]),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _when(Object? iso) {
+    final t = DateTime.tryParse('${iso ?? ''}')?.toLocal();
+    if (t == null) return '';
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(t.day)}.${two(t.month)} ${two(t.hour)}:${two(t.minute)}';
+  }
+}
+
+/// Інші місця (рідні, робота): окремі сповіщення з підписом, до 5.
+class _OtherPlaces extends StatelessWidget {
+  const _OtherPlaces({required this.prefs, required this.onSave});
+  final Map<String, dynamic> prefs;
+  final Future<void> Function(Map<String, dynamic>) onSave;
+
+  List<Map<String, dynamic>> get _places => maps(prefs['places']);
+
+  List<Map<String, String>> _plain() => [for (final p in _places) {'id': '${p['id']}', 'label': '${p['label'] ?? ''}'}];
+
+  Future<void> _rename(BuildContext context, Map<String, dynamic> place) async {
+    final ctrl = TextEditingController(text: '${place['label'] ?? ''}');
+    final label = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr('Підпис місця')),
+        content: TextField(controller: ctrl, maxLength: 30, autofocus: true, decoration: InputDecoration(hintText: tr('Наприклад, «Мама»'))),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Скасувати'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: Text(tr('Зберегти'))),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (label == null) return;
+    await onSave({'places': [for (final p in _plain()) p['id'] == place['id'] ? {'id': p['id'], 'label': label} : p]});
+  }
+
+  Color _hex(Object? v) => Color(0xFF000000 | (int.tryParse('${v ?? ''}'.replaceFirst('#', ''), radix: 16) ?? 0xEF4444));
+
+  @override
+  Widget build(BuildContext context) {
+    final places = _places;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(tr('Інші місця — сповіщення з підписом, наприклад «Мама»'), style: body(12.5, color: muted)),
+        for (final place in places)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            onTap: () => _rename(context, place),
+            title: Text((text(place['label']) ?? '').isEmpty ? (text(place['name']) ?? '') : '${place['label']} · ${place['name']}', style: body(14, weight: FontWeight.w700)),
+            subtitle: Wrap(spacing: 4, runSpacing: 4, children: [
+              if (maps(place['status']).isEmpty)
+                Text(tr('Тривоги немає'), style: body(12, color: const Color(0xFF10B981), weight: FontWeight.w700))
+              else
+                for (final st in maps(place['status'])) Text('${st['name']}', style: body(12, color: _hex(st['accent']), weight: FontWeight.w700)),
+            ]),
+            trailing: IconButton(
+              icon: const Icon(LucideIcons.trash2, size: 18),
+              tooltip: tr('Прибрати місце'),
+              onPressed: () => onSave({'places': [for (final p in _plain()) if (p['id'] != place['id']) p]}),
+            ),
+          ),
+        if (places.length < 5)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GhostButton(
+              label: tr('Додати місце'),
+              icon: LucideIcons.plus,
+              compact: true,
+              expand: false,
+              onPressed: () async {
+                final id = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const AlertPlacePickerPage()));
+                if (id == null || places.any((p) => p['id'] == id)) return;
+                await onSave({'places': [..._plain(), {'id': id, 'label': ''}]});
+              },
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
+
+/// Укриття й пункти незламності поруч з обраним місцем (OpenStreetMap); натискання — пішохідний маршрут у картах.
+class _SheltersNearby extends StatefulWidget {
+  const _SheltersNearby({super.key});
+
+  @override
+  State<_SheltersNearby> createState() => _SheltersNearbyState();
+}
+
+class _SheltersNearbyState extends State<_SheltersNearby> {
+  Map<String, dynamic>? data;
+
+  Future<void> _load() async {
+    try {
+      final d = await AppScope.read(context).session.api.get(Api.site('/alerts/shelters'));
+      if (mounted) setState(() => data = d);
+    } catch (_) {
+      if (mounted) setState(() => data = {'around': null, 'items': const []});
+    }
+  }
+
+  static String _distance(int m) => m < 1000 ? tr('{n} м', {'n': (m / 10).round() * 10}) : tr('{n} км', {'n': (m / 1000).toStringAsFixed(1)});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = maps(data?['items']).take(12).toList();
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      leading: Icon(LucideIcons.shieldCheck, size: 18, color: muted),
+      title: Text(tr('Укриття поруч'), style: body(14.5, weight: FontWeight.w700)),
+      onExpansionChanged: (open) {
+        if (open && data == null) _load();
+      },
+      children: [
+        if (data == null)
+          const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())
+        else if (items.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              data?['around'] == null
+                  ? tr('Оберіть місце тривог, щоб побачити укриття поруч.')
+                  : tr('На мапі OpenStreetMap поруч укриттів не позначено. Перевірте офіційний застосунок вашої громади.'),
+              style: body(12.5, color: muted),
+            ),
+          )
+        else ...[
+          if (text(data?['around']) != null)
+            Align(alignment: Alignment.centerLeft, child: Text(tr('Навколо: {place}', {'place': text(data?['around'])}), style: body(12.5, color: muted))),
+          for (final item in items)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              leading: Icon(item['kind'] == 'invincibility' ? LucideIcons.zap : LucideIcons.shield, size: 18, color: item['kind'] == 'invincibility' ? const Color(0xFF38BDF8) : const Color(0xFF34D399)),
+              title: Text(text(item['name']) ?? (item['kind'] == 'invincibility' ? tr('Пункт незламності') : tr('Укриття')), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5)),
+              subtitle: text(item['address']) == null ? null : Text(text(item['address'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+              trailing: Text(_distance(intOf(item['distance'])), style: body(12, color: muted)),
+              onTap: () => launchUrl(Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${item['lat']},${item['lng']}&travelmode=walking'), mode: LaunchMode.externalApplication),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(tr('Дані OpenStreetMap можуть бути неповні. Під час тривоги йдіть до найближчого відомого вам укриття.'), style: body(11, color: muted)),
+          ),
+        ],
+      ],
+    );
+  }
+}

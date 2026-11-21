@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Comment;
+use App\Models\FriendMark;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\FriendshipService;
@@ -45,7 +46,7 @@ class SocialCoreTest extends TestCase
         $this->assertMatchesRegularExpression('/^[a-z][a-z0-9_.]*[a-z0-9]$/', $user->username);
     }
 
-    public function test_friend_request_flow_matches_vk_semantics(): void
+    public function test_friend_request_flow_uses_two_way_semantics(): void
     {
         [$anna, $boris] = User::factory()->count(2)->create();
         $service = app(FriendshipService::class);
@@ -126,6 +127,29 @@ class SocialCoreTest extends TestCase
         $this->actingAs($friend)->get(route('posts.show', $post))->assertOk();
         $this->actingAs($stranger)->get(route('posts.show', $post))->assertNotFound();
         $this->actingAs($stranger)->postJson(route('posts.like', $post))->assertNotFound();
+    }
+
+    public function test_post_visible_only_to_chosen_friend_list(): void
+    {
+        [$author, $raider, $friend, $stranger] = User::factory()->count(4)->create();
+        $this->befriend($author, $raider);
+        $this->befriend($author, $friend);
+        FriendMark::query()->create(['user_id' => $author->id, 'friend_id' => $raider->id, 'list' => 'raid']);
+        // Стороння людина в «списку» без дружби запису не бачить.
+        FriendMark::query()->create(['user_id' => $author->id, 'friend_id' => $stranger->id, 'list' => 'raid']);
+
+        $this->actingAs($author)->post(route('posts.store'), ['body' => 'Збір о 21:00', 'visibility' => 'list'])
+            ->assertSessionHasErrors('audience');
+        $this->actingAs($author)->post(route('posts.store'), ['body' => 'Збір о 21:00', 'visibility' => 'list', 'audience' => 'raid'])
+            ->assertRedirect();
+        $post = Post::query()->latest('id')->firstOrFail();
+        $this->assertSame('raid', $post->audience);
+
+        $this->actingAs($raider)->get(route('posts.show', $post))->assertOk();
+        $this->actingAs($friend)->get(route('posts.show', $post))->assertNotFound();
+        $this->actingAs($stranger)->get(route('posts.show', $post))->assertNotFound();
+        $this->actingAs($author)->get(route('posts.show', $post))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('post.audience', 'raid'));
     }
 
     public function test_like_toggles_and_notifies_author(): void

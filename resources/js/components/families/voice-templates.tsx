@@ -40,14 +40,14 @@ function RankPicker({
                     className={cn(
                         'size-7 rounded-lg text-xs font-semibold transition',
                         on.includes(r)
-                            ? 'bg-gradient-brand text-white'
-                            : 'bg-white/[0.05] text-white/40 hover:bg-white/10',
+                            ? 'bg-sky-500 text-white'
+                            : 'gc-solid-2 text-white/40 hover:bg-white/10',
                     )}
                 >
                     {r}
                 </button>
             ))}
-            <span className="ml-1 inline-flex h-7 items-center gap-1 rounded-lg bg-amber-400/10 px-2 text-xs text-amber-200">
+            <span className="ml-1 inline-flex h-7 items-center gap-1 rounded-lg bg-amber-400/10 px-2 text-xs text-amber-400">
                 <Check className="size-3" /> 10
             </span>
         </div>
@@ -84,7 +84,7 @@ function TemplateRow({ template }: { template: VoiceTemplate }) {
     };
 
     return (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.03] p-3">
+        <div className="gc-solid-2 flex flex-wrap items-center gap-3 rounded-2xl p-3">
             <Mic className="size-4 shrink-0 text-white/40" />
             <input
                 value={name}
@@ -109,7 +109,7 @@ function TemplateRow({ template }: { template: VoiceTemplate }) {
                     <button
                         type="button"
                         onClick={save}
-                        className="inline-flex h-9 items-center rounded-xl bg-gradient-brand px-3 text-sm font-medium text-white"
+                        className="inline-flex h-9 items-center rounded-xl bg-sky-500 px-3 text-sm font-medium text-white"
                     >
                         {tr('Зберегти')}
                     </button>
@@ -119,7 +119,7 @@ function TemplateRow({ template }: { template: VoiceTemplate }) {
                 type="button"
                 onClick={remove}
                 aria-label={tr('Прибрати кімнату')}
-                className="inline-flex size-9 items-center justify-center rounded-xl text-rose-300 hover:bg-rose-500/10"
+                className="inline-flex size-9 items-center justify-center rounded-xl text-red-400 hover:bg-red-500/10"
             >
                 <Trash2 className="size-4" />
             </button>
@@ -151,9 +151,9 @@ export function VoiceTemplates({ templates }: { templates: VoiceTemplate[] }) {
     };
 
     return (
-        <section className="glass mb-5 rounded-2xl p-4">
+        <section className="gc-solid mb-5 rounded-2xl p-4">
             <div className="mb-3 flex items-start gap-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06]">
+                <div className="gc-solid-2 flex size-9 shrink-0 items-center justify-center rounded-xl">
                     <Lock className="size-4 text-white/60" />
                 </div>
                 <div>
@@ -173,13 +173,13 @@ export function VoiceTemplates({ templates }: { templates: VoiceTemplate[] }) {
                     <TemplateRow key={`${t.id}-${t.name}`} template={t} />
                 ))}
                 {templates.length === 0 && (
-                    <p className="rounded-2xl bg-white/[0.03] px-4 py-3 text-sm text-white/40">
+                    <p className="gc-solid-2 rounded-2xl px-4 py-3 text-sm text-white/40">
                         {tr(
                             'Поки що кожна сім’я отримує лише кімнату «Загальна».',
                         )}
                     </p>
                 )}
-                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-dashed border-white/10 p-3">
+                <div className="flex flex-wrap items-center gap-3 rounded-2xl p-3">
                     <Plus className="size-4 shrink-0 text-white/40" />
                     <input
                         value={name}
@@ -194,7 +194,7 @@ export function VoiceTemplates({ templates }: { templates: VoiceTemplate[] }) {
                         type="button"
                         onClick={add}
                         disabled={!name.trim()}
-                        className="inline-flex h-9 items-center rounded-xl bg-gradient-brand px-3 text-sm font-medium text-white disabled:opacity-40"
+                        className="inline-flex h-9 items-center rounded-xl bg-sky-500 px-3 text-sm font-medium text-white disabled:opacity-40"
                     >
                         {tr('Додати')}
                     </button>

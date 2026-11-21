@@ -14,6 +14,7 @@ import {
 import { useMemo, useState } from 'react';
 import { DiscordIcon } from '@/components/auth/brand-icons';
 import { FamilyShell } from '@/components/families/family-shell';
+import { FamilyAiHelper } from '@/components/families/ai-helper';
 import {
     Empty,
     Modal,
@@ -43,7 +44,11 @@ type Member = MemberCard & {
     last_seen_at: string | null;
 };
 
-type Application = MemberCard & { note: string | null; applied_at: string };
+type Application = MemberCard & {
+    note: string | null;
+    applied_at: string;
+    answers?: { question: string; answer: string }[];
+};
 
 type Props = FamilyShellProps & {
     tab: 'members' | 'applications';
@@ -147,7 +152,7 @@ export default function FamilyMembers(props: Props) {
                             {applications.map((a) => (
                                 <div
                                     key={a.id}
-                                    className="flex flex-col gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.05] sm:flex-row sm:items-center"
+                                    className="gc-solid-2 flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:items-center"
                                 >
                                     <div className="flex min-w-0 flex-1 gap-3">
                                         <UserAvatar
@@ -178,6 +183,20 @@ export default function FamilyMembers(props: Props) {
                                                     {a.note}
                                                 </p>
                                             )}
+                                            {(a.answers ?? []).length > 0 && (
+                                                <dl className="mt-2 space-y-1.5 rounded-xl bg-white/[0.04] p-2.5">
+                                                    {a.answers!.map((qa) => (
+                                                        <div key={qa.question}>
+                                                            <dt className="text-xs text-white/45">
+                                                                {qa.question}
+                                                            </dt>
+                                                            <dd className="text-sm break-words text-white/80">
+                                                                {qa.answer}
+                                                            </dd>
+                                                        </div>
+                                                    ))}
+                                                </dl>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
@@ -192,10 +211,10 @@ export default function FamilyMembers(props: Props) {
                                             }
                                             className={cn(
                                                 btnSuccess,
-                                                'h-11 w-full sm:w-auto',
+                                                'h-9 w-full sm:w-auto',
                                             )}
                                         >
-                                            <Check className="size-4" />{' '}
+                                            <Check className="size-3.5" />{' '}
                                             {tr('Прийняти')}
                                         </button>
                                         <button
@@ -218,10 +237,10 @@ export default function FamilyMembers(props: Props) {
                                             }}
                                             className={cn(
                                                 btnDanger,
-                                                'h-11 w-full sm:w-auto',
+                                                'h-9 w-full sm:w-auto',
                                             )}
                                         >
-                                            <X className="size-4" />{' '}
+                                            <X className="size-3.5" />{' '}
                                             {tr('Відхилити')}
                                         </button>
                                     </div>
@@ -239,7 +258,7 @@ export default function FamilyMembers(props: Props) {
                             {filtered.map((m) => (
                                 <li
                                     key={m.id}
-                                    className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap"
+                                    className="flex flex-wrap items-center gap-2.5 px-3 py-2.5 sm:flex-nowrap"
                                 >
                                     <UserAvatar
                                         user={{
@@ -256,7 +275,7 @@ export default function FamilyMembers(props: Props) {
                                                 {m.display}
                                             </span>
                                             {m.is_owner && (
-                                                <Crown className="size-4 text-amber-300" />
+                                                <Crown className="size-4 text-amber-400" />
                                             )}
                                             <RankBadge
                                                 rank={m.rank}
@@ -264,7 +283,7 @@ export default function FamilyMembers(props: Props) {
                                             />
                                             {m.warns > 0 && (
                                                 <span
-                                                    className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200"
+                                                    className="inline-flex items-center gap-1 rounded-chip bg-red-500/10 px-2 py-0.5 text-xs text-red-400"
                                                     title={tr('Попередження')}
                                                 >
                                                     <TriangleAlert
@@ -313,7 +332,7 @@ export default function FamilyMembers(props: Props) {
                                                         },
                                                     )
                                                 }
-                                                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-amber-300/10 px-3 text-xs font-medium text-amber-100 hover:bg-amber-300/20"
+                                                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-amber-300/10 px-3 text-xs font-medium text-amber-400 hover:bg-amber-300/20"
                                                 title={tr(
                                                     'Давно не заходив — надіслати нагадування',
                                                 )}
@@ -327,8 +346,8 @@ export default function FamilyMembers(props: Props) {
                                             className={cn(
                                                 'text-sm font-semibold whitespace-nowrap',
                                                 m.balance < 0
-                                                    ? 'text-rose-300'
-                                                    : 'text-emerald-300',
+                                                    ? 'text-red-400'
+                                                    : 'text-emerald-400',
                                             )}
                                         >
                                             {uah(m.balance)}
@@ -342,7 +361,7 @@ export default function FamilyMembers(props: Props) {
                                         <button
                                             type="button"
                                             onClick={() => setEditing(m)}
-                                            className="flex size-9 items-center justify-center rounded-xl text-white/50 hover:bg-white/[0.06] hover:text-white"
+                                            className="flex size-9 items-center justify-center rounded-xl text-white/50 hover:bg-[var(--gc-l3)] hover:text-white"
                                             aria-label={tr('Керувати')}
                                         >
                                             <Settings2 className="size-4" />
@@ -495,7 +514,7 @@ function MemberDialog({
                 )}
 
             {can['members.manage'] && (manage || isSelf) && (
-                <div className="grid grid-cols-1 gap-3 rounded-2xl bg-white/[0.03] p-3 sm:grid-cols-[1fr_140px_auto]">
+                <div className="gc-solid-2 grid grid-cols-1 gap-3 rounded-2xl p-3 sm:grid-cols-[1fr_140px_auto]">
                     <Field
                         label={tr('RP-нікнейм')}
                         error={form.errors.rp_nickname}
@@ -533,8 +552,8 @@ function MemberDialog({
             )}
 
             {manage && !member.is_owner && (
-                <div className="rounded-2xl border border-rose-400/20 bg-rose-500/[0.05] p-3">
-                    <div className="mb-2 text-sm font-semibold text-rose-100">
+                <div className="rounded-2xl bg-red-500/[0.05] p-3">
+                    <div className="mb-2 text-sm font-semibold text-red-400">
                         {tr('Виключити з сім’ї')}
                     </div>
                     <div className="flex gap-2">
@@ -581,7 +600,7 @@ function MemberDialog({
                             { preserveScroll: true, onSuccess: onClose },
                         )
                     }
-                    className={cn(btnGhost, 'w-full text-amber-200')}
+                    className={cn(btnGhost, 'w-full text-amber-400')}
                 >
                     <Crown className="size-4" /> {tr('Передати лідерство')}
                 </button>
@@ -630,8 +649,8 @@ function RanksDialog({
                             className={cn(
                                 'size-6 rounded-md transition disabled:cursor-not-allowed',
                                 on
-                                    ? 'bg-gradient-brand text-white'
-                                    : 'bg-white/[0.05] hover:bg-white/10',
+                                    ? 'bg-sky-500 text-white'
+                                    : 'gc-solid-2 hover:bg-white/10',
                                 locked && 'opacity-30',
                             )}
                             aria-label={tr('{label}: ранг {r}', { label, r })}
@@ -688,6 +707,28 @@ function RanksDialog({
                 </>
             }
         >
+            <div className="mb-3">
+                <FamilyAiHelper<{ ranks: Record<string, string> }>
+                    url={`/f/${action.split('/')[2] ?? ''}/ai/ranks`}
+                    field="style"
+                    label={tr('Назви рангів у вашому стилі')}
+                    placeholder={tr(
+                        'Напр.: італійська мафія 30-х, військова частина, кіберпанк-банда',
+                    )}
+                    button={tr('Придумати')}
+                    onResult={(r) =>
+                        form.setData(
+                            'titles',
+                            Array.from(
+                                { length: 10 },
+                                (_, i) =>
+                                    r.ranks[String(i + 1)] ??
+                                    form.data.titles[i],
+                            ),
+                        )
+                    }
+                />
+            </div>
             <label className="mb-3 flex flex-wrap items-center gap-2 text-sm text-white/60">
                 {tr('Шаблон назв:')}
                 <select
@@ -832,7 +873,7 @@ function RANK_TEMPLATES(): { key: string; label: string; titles: string[] }[] {
                 tr('Бувалий'),
                 tr('Ветеран'),
                 tr('Правиця'),
-                tr('Смотрящий'),
+                tr('Наглядач'),
                 tr('Авторитет'),
                 tr('Права рука'),
                 tr('Бос'),
