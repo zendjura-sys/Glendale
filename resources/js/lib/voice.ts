@@ -504,8 +504,17 @@ export async function leaveVoice() {
         );
 }
 
+/** Камера й демонстрація екрана: дзвінки, LiveCast і голосові кімнати (№235). */
 function canPublishVideo(): boolean {
-    return state.kind === 'call' || state.kind === 'broadcast';
+    return (
+        state.kind === 'call' ||
+        state.kind === 'broadcast' ||
+        state.kind === 'room'
+    );
+}
+
+function canShareScreen(): boolean {
+    return canPublishVideo();
 }
 
 async function setMic(on: boolean) {
@@ -558,7 +567,7 @@ export function toggleCamera() {
         return;
     }
     if (!canPublishVideo()) {
-        toast(tr('Відео доступне в дзвінках і LiveCast'));
+        toast(tr('Відео доступне в дзвінках, кімнатах і LiveCast'));
 
         return;
     }
@@ -566,7 +575,7 @@ export function toggleCamera() {
 }
 
 async function setScreenShare(on: boolean) {
-    if (!room || !canPublishVideo()) return;
+    if (!room || !canShareScreen()) return;
     try {
         await room.localParticipant.setScreenShareEnabled(on, {
             audio: true,
@@ -584,8 +593,10 @@ export function toggleScreenShare() {
 
         return;
     }
-    if (!canPublishVideo()) {
-        toast(tr('Демонстрація екрана доступна в дзвінках і LiveCast'));
+    if (!canShareScreen()) {
+        toast(
+            tr('Демонстрація екрана доступна в дзвінках, кімнатах і LiveCast'),
+        );
 
         return;
     }

@@ -32,6 +32,13 @@ class LiveKit
     public const VOICE_SOURCES = ['microphone'];
 
     /**
+     * Голосові кімнати: голос, відеодзвінок (камера) і демонстрація екрана.
+     *
+     * @var list<string>
+     */
+    public const ROOM_SOURCES = ['microphone', 'camera', 'screen_share', 'screen_share_audio'];
+
+    /**
      * Нативні стріми (окремо від GameCast): голос, камера, екран.
      *
      * @var list<string>
@@ -147,10 +154,10 @@ class LiveKit
     public function setCanPublish(string $room, string $identity, bool $allowed, ?array $sources = null): bool
     {
         $list = $allowed
-            ? array_values(array_map(
+            ? array_map(
                 static fn (string $s) => strtoupper($s),
                 $sources ?? self::VOICE_SOURCES,
-            ))
+            )
             : [];
 
         return $this->call('UpdateParticipant', $room, [

@@ -125,6 +125,8 @@ class VoiceRoomsTest extends TestCase
         $this->assertSame('Tony_Moretti [20002]', $claims['name']);
         $this->assertSame('gc-'.$room->id, $claims['video']['room']);
         $this->assertTrue($claims['video']['canPublish']);
+        // №235: у кімнаті можна говорити, вмикати камеру й показувати екран.
+        $this->assertSame(['microphone', 'camera', 'screen_share', 'screen_share_audio'], $claims['video']['canPublishSources']);
 
         $this->actingAs(User::factory()->create())->postJson(route('voice.join', $room))->assertForbidden();
     }

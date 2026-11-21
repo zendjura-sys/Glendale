@@ -358,7 +358,8 @@ class VoiceRooms
                 $this->identity($user),
                 $name,
                 $room->livekitName(),
-                $muted ? ['canPublish' => false, 'canPublishSources' => []] : [],
+                // Голос, камера й демонстрація екрана (№235); вимкненим — нічого.
+                $muted ? ['canPublish' => false, 'canPublishSources' => []] : ['canPublishSources' => LiveKit::ROOM_SOURCES],
                 (string) json_encode(['user_id' => $user->id, 'avatar_url' => $user->avatar_url]),
             ),
             'room' => $room->livekitName(),
@@ -370,7 +371,7 @@ class VoiceRooms
     public function mute(VoiceRoom $room, User $target, bool $muted): void
     {
         VoiceParticipant::query()->where('voice_room_id', $room->id)->where('user_id', $target->id)->update(['muted' => $muted]);
-        $this->livekit->setCanPublish($room->livekitName(), $this->identity($target), ! $muted);
+        $this->livekit->setCanPublish($room->livekitName(), $this->identity($target), ! $muted, LiveKit::ROOM_SOURCES);
         $this->changed($this->ownerOf($room));
     }
 
@@ -382,7 +383,7 @@ class VoiceRooms
         VoiceParticipant::query()->where('voice_room_id', $room->id)->update(['speaker' => false, 'hand_raised_at' => null]);
         foreach (VoiceParticipant::query()->with('user')->where('voice_room_id', $room->id)->get() as $participant) {
             if ($participant->user && ! $this->canManage($participant->user, $owner)) {
-                $this->livekit->setCanPublish($room->livekitName(), $this->identity($participant->user), ! $stage && ! $participant->muted);
+                $this->livekit->setCanPublish($room->livekitName(), $this->identity($participant->user), ! $stage && ! $participant->muted, LiveKit::ROOM_SOURCES);
             }
         }
         $this->changed($owner);
@@ -409,7 +410,7 @@ class VoiceRooms
         $muted = (bool) VoiceParticipant::query()->where('voice_room_id', $room->id)->where('user_id', $target->id)->value('muted');
         VoiceParticipant::query()->where('voice_room_id', $room->id)->where('user_id', $target->id)
             ->update(['speaker' => $speaker, 'hand_raised_at' => null]);
-        $this->livekit->setCanPublish($room->livekitName(), $this->identity($target), $speaker && ! $muted);
+        $this->livekit->setCanPublish($room->livekitName(), $this->identity($target), $speaker && ! $muted, LiveKit::ROOM_SOURCES);
         $this->changed($owner);
     }
 

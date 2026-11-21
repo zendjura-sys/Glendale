@@ -89,7 +89,10 @@ export function VoiceBar() {
                         <MicOff className="size-4" />
                     )}
                 </button>
-                {(voice.kind === 'call' || voice.kind === 'broadcast') && (
+                {/* Камера й екран — у дзвінках, LiveCast і голосових кімнатах (№235). */}
+                {(voice.kind === 'call' ||
+                    voice.kind === 'broadcast' ||
+                    voice.kind === 'room') && (
                     <>
                         <button
                             type="button"
