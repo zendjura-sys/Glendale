@@ -1,5 +1,5 @@
 import {
-    Contacts,
+    ContactsRow,
     FriendRequests,
     useRail,
 } from '@/components/gc/rail-widgets';
@@ -399,7 +399,7 @@ export default function Feed({
                 ) : null;
             case 'contacts':
                 return rail && rail.contacts.length > 0 ? (
-                    <Contacts data={rail} />
+                    <ContactsRow data={rail} />
                 ) : null;
             case 'voice':
                 return <VoiceCard rail={rail} />;

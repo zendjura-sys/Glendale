@@ -169,6 +169,60 @@ export function FriendRequests({
 }
 
 /** Контакти: друзі (спершу ті, хто був у мережі нещодавно) з лічильником непрочитаних — відкриває чат. */
+/**
+ * Контакти горизонтально (блок лобі): аватар зверху, ім’я під ним в одну лінію (не виходить за межі),
+ * непрочитане — значок на аватарі, «слухає» — нотка. Гортається вбік.
+ */
+export function ContactsRow({ data }: { data: RailData }) {
+    if (data.contacts.length === 0) return null;
+
+    return (
+        <section className="p-4">
+            <h3 className="mb-3 flex items-center gap-2 text-[15px] font-semibold">
+                {tr('Контакти')}
+                <span className="text-sm font-normal text-[var(--gc-text-2)] tabular-nums">
+                    {data.contacts_total}
+                </span>
+            </h3>
+            <ul className="gc-contacts-row">
+                {data.contacts.map((contact) => (
+                    <li key={contact.id}>
+                        <Link
+                            href={
+                                contact.chat_id
+                                    ? `/messages/${contact.chat_id}`
+                                    : `/${contact.username}`
+                            }
+                            className="gc-contacts-row__item"
+                            title={contact.name}
+                        >
+                            <span className="relative">
+                                <UserAvatar user={contact} size="lg" />
+                                {contact.unread > 0 && (
+                                    <span className="gc-contacts-row__unread">
+                                        {contact.unread}
+                                    </span>
+                                )}
+                            </span>
+                            <span className="gc-contacts-row__name">
+                                {contact.first_name || contact.name}
+                            </span>
+                            {contact.listening && (
+                                <span
+                                    className="gc-contacts-row__listen"
+                                    aria-label={tr('Слухає музику')}
+                                >
+                                    ♪
+                                </span>
+                            )}
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+        </section>
+    );
+}
+
 export function Contacts({ data }: { data: RailData }) {
     if (data.contacts.length === 0) return null;
 
