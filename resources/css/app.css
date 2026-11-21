@@ -9550,3 +9550,23 @@ html.gc-simple *::after {
     width: 28px;
     height: 110px;
 }
+
+/* ---------- Кіно: обговорення серії без спойлерів (№271) ---------- */
+.gc-spoiler-gate {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: repeating-linear-gradient(
+        135deg,
+        var(--gc-l2) 0 10px,
+        var(--gc-l1) 10px 20px
+    );
+    color: var(--gc-text-2);
+    font-size: 13px;
+}
+.gc-spoiler-gate:hover {
+    color: var(--gc-text);
+}

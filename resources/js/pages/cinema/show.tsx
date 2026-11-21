@@ -1,3 +1,4 @@
+import { EpisodeTalk } from '@/components/cinema/episode-talk';
 import { Head, Link, router } from '@inertiajs/react';
 import {
     Popcorn,
@@ -137,6 +138,7 @@ export default function CinemaShow({
     });
     const [commentsCount, setCommentsCount] = useState(movie.comments_count);
     const marks = episodeMarks;
+    const talkOn = usePlugin('episode_talk');
     const [sharing, setSharing] = useState(false);
     const [moreText, setMoreText] = useState(false);
     const providers = useMemo(
@@ -558,6 +560,15 @@ export default function CinemaShow({
 
                         <div className="grid grid-cols-1 gap-3.5 @5xl:grid-cols-[1fr_280px]">
                             <div className="min-w-0 space-y-3.5">
+                                {talkOn &&
+                                    pick &&
+                                    episodes &&
+                                    episodes.length > 0 && (
+                                        <EpisodeTalk
+                                            slug={movie.slug}
+                                            pick={pick}
+                                        />
+                                    )}
                                 {movie.description && (
                                     <section className="glass rounded-2xl p-3.5">
                                         <h2 className="mb-2 font-display text-lg font-semibold text-white">

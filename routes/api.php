@@ -45,6 +45,7 @@ use App\Http\Controllers\Developer\EmbedKitController;
 use App\Http\Controllers\Developer\SdkApiController;
 use App\Http\Controllers\Developer\SdkGameController;
 use App\Http\Controllers\Developer\SdkPageController;
+use App\Http\Controllers\EpisodeTalkController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
@@ -1160,6 +1161,11 @@ Route::prefix('v1')->group(function () {
                 // Плеєр застосунку: серії й озвучки, позначки «переглянуто», місце перегляду, прямі потоки.
                 Route::get('{movie}/episodes', [CinemaController::class, 'episodeList'])->middleware('throttle:60,1');
                 Route::post('{movie}/episodes', [CinemaController::class, 'episode'])->middleware('throttle:60,1');
+                // Оцінки й обговорення серій без спойлерів (№271).
+                Route::get('{movie}/episodes/{season}/{episode}/talk', [EpisodeTalkController::class, 'show'])->whereNumber(['season', 'episode'])->middleware('throttle:60,1');
+                Route::post('{movie}/episodes/{season}/{episode}/rate', [EpisodeTalkController::class, 'rate'])->whereNumber(['season', 'episode'])->middleware('throttle:60,1');
+                Route::post('{movie}/episodes/{season}/{episode}/comments', [EpisodeTalkController::class, 'comment'])->whereNumber(['season', 'episode'])->middleware('throttle:20,1');
+                Route::delete('{movie}/episodes/{season}/{episode}/comments/{comment}', [EpisodeTalkController::class, 'destroy'])->whereNumber(['season', 'episode', 'comment']);
                 Route::put('{movie}/progress', [CinemaController::class, 'progress'])->middleware('throttle:60,1');
                 Route::get('{movie}/stream', [CinemaController::class, 'stream'])->middleware('throttle:60,1');
                 Route::get('{movie}/comments', [CinemaController::class, 'comments']);

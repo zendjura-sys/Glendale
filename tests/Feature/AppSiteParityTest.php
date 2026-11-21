@@ -96,6 +96,15 @@ class AppSiteParityTest extends TestCase
         $this->actingAs($reader)->postJson("/games/celeste/guides/{$guide->id}/vote", ['helpful' => null])->assertOk()->assertJsonPath('helpful', 0);
     }
 
+    public function test_app_bridge_has_episode_talk(): void
+    {
+        $routes = collect(Route::getRoutes()->getRoutes())->map(fn ($r) => $r->methods()[0].' '.$r->uri());
+        foreach (['GET cinema/{movie}/episodes/{season}/{episode}/talk', 'POST cinema/{movie}/episodes/{season}/{episode}/rate', 'POST cinema/{movie}/episodes/{season}/{episode}/comments'] as $route) {
+            $this->assertTrue($routes->contains($route));
+            $this->assertTrue($routes->contains(str_replace(' ', ' api/v1/site/', $route)));
+        }
+    }
+
     public function test_app_bridge_has_plus_household(): void
     {
         $user = User::factory()->create();

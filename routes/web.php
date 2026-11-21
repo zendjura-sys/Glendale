@@ -38,6 +38,7 @@ use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\Developer;
 use App\Http\Controllers\EmbedWidgetController;
+use App\Http\Controllers\EpisodeTalkController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedbackController;
@@ -874,6 +875,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('{movie}/stream', [CinemaController::class, 'stream'])->middleware('throttle:60,1')->name('stream');
         Route::get('{movie}/episodes', [CinemaController::class, 'episodeList'])->middleware('throttle:60,1')->name('episodes.index');
         Route::post('{movie}/episodes', [CinemaController::class, 'episode'])->middleware('throttle:60,1')->name('episodes');
+        // Оцінки й обговорення серій без спойлерів (№271).
+        Route::get('{movie}/episodes/{season}/{episode}/talk', [EpisodeTalkController::class, 'show'])->whereNumber(['season', 'episode'])->middleware('throttle:60,1')->name('episodes.talk');
+        Route::post('{movie}/episodes/{season}/{episode}/rate', [EpisodeTalkController::class, 'rate'])->whereNumber(['season', 'episode'])->middleware('throttle:60,1')->name('episodes.rate');
+        Route::post('{movie}/episodes/{season}/{episode}/comments', [EpisodeTalkController::class, 'comment'])->whereNumber(['season', 'episode'])->middleware('throttle:20,1')->name('episodes.comment');
+        Route::delete('{movie}/episodes/{season}/{episode}/comments/{comment}', [EpisodeTalkController::class, 'destroy'])->whereNumber(['season', 'episode', 'comment'])->name('episodes.comment.destroy');
         Route::post('{movie}/soundtrack', [CinemaController::class, 'soundtrack'])->middleware('throttle:30,1')->name('soundtrack.store');
         Route::get('{movie}/comments', [CinemaController::class, 'comments'])->name('comments.index');
         Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1')->name('comments.store');
