@@ -118,7 +118,7 @@ class SiteSearch
                 ->where(fn (Builder $w) => $w->where('subscribers_only', false)->when($viewer, fn ($w) => $w->orWhere('author_id', $viewer?->id)))
                 ->where('body', 'like', $like)->with('author')->latest('id')->limit($per)->get()
                 ->each(function (Post $post) use (&$hits, $q) {
-                    $hits[] = ['kind' => 'post', 'title' => self::excerpt((string) $post->body, $q), 'hint' => $post->author?->name ?? 'Запис', 'href' => '/posts/'.$post->id];
+                    $hits[] = ['kind' => 'post', 'title' => self::excerpt((string) $post->body, $q), 'hint' => $post->author->name ?? 'Запис', 'href' => '/posts/'.$post->id];
                 });
         }
         if ($wants('community')) {

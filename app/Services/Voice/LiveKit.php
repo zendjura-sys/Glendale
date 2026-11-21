@@ -6,6 +6,7 @@ use App\Services\Edge\EdgeNode;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Сервер голосу LiveKit: токени доступу до кімнат, перевірка вебхуків і керування учасниками.
@@ -50,6 +51,28 @@ class LiveKit
         private readonly EdgeNode $edge,
     ) {}
 
+    /**
+     * Ключ і секрет — завжди парою: обидва з Edge-вузла (коли на ньому задано обидва) або обидва
+     * основні («порожньо — як в основного»). Раніше їх брали окремо: заповнений лише ключ вузла
+     * давав токен із ключем вузла й секретом основного сервера — Edge його відхиляв, і GameCast
+     * писав «Не вдалося підключитися до шоу».
+     */
+    private function edgeKeys(bool $probe = false): bool
+    {
+        if (! $probe && ! $this->edge->voice()) {
+            return false;
+        }
+        $key = $this->settings->get('edge_livekit_api_key');
+        $secret = $this->settings->secret('edge_livekit_api_secret');
+        $hasKey = is_string($key) && $key !== '';
+        $hasSecret = is_string($secret) && $secret !== '';
+        if ($hasKey !== $hasSecret) {
+            Log::warning('livekit: edge has only half of the key pair, using main keys', ['key' => $hasKey, 'secret' => $hasSecret]);
+        }
+
+        return $hasKey && $hasSecret;
+    }
+
     public function configured(): bool
     {
         return $this->url() !== null && $this->key() !== null && $this->secret() !== null;
@@ -67,18 +90,27 @@ class LiveKit
 
     public function key(): ?string
     {
-        $value = ($this->edge->voice() ? $this->settings->get('edge_livekit_api_key') : null)
-            ?: $this->settings->get('livekit_api_key') ?: config('services.livekit.key');
-
-        return is_string($value) && $value !== '' ? $value : null;
+        return $this->pair($this->edgeKeys())[0];
     }
 
     public function secret(): ?string
     {
-        $value = ($this->edge->voice() ? $this->settings->secret('edge_livekit_api_secret') : null)
-            ?? $this->settings->secret('livekit_api_secret') ?? config('services.livekit.secret');
+        return $this->pair($this->edgeKeys())[1];
+    }
 
-        return is_string($value) && $value !== '' ? $value : null;
+    /**
+     * Ключ і секрет LiveKit: вузла чи основного сервера.
+     *
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function pair(bool $edge): array
+    {
+        $key = $edge ? $this->settings->get('edge_livekit_api_key')
+            : ($this->settings->get('livekit_api_key') ?: config('services.livekit.key'));
+        $secret = $edge ? $this->settings->secret('edge_livekit_api_secret')
+            : ($this->settings->secret('livekit_api_secret') ?? config('services.livekit.secret'));
+
+        return [is_string($key) && $key !== '' ? $key : null, is_string($secret) && $secret !== '' ? $secret : null];
     }
 
     /** HTTP-адреса API сервера (той самий хост, що й wss). */
@@ -182,6 +214,31 @@ class LiveKit
         return $this->call('DeleteRoom', $room, ['room' => $room]);
     }
 
+    /**
+     * LiveKit на Edge-вузлі живий і приймає наші ключі? Перевіряється напряму, без перемикання
+     * голосу людей: 'ok', 'auth' (ключі не ті — 401/403), 'down' (не відповідає).
+     */
+    public function probeEdge(): string
+    {
+        $url = $this->edge->voiceUrl();
+        [$key, $secret] = $this->pair($this->edgeKeys(true));
+        if ($url === null || $key === null || $secret === null) {
+            return 'auth';
+        }
+        $token = $this->sign(['iss' => $key, 'nbf' => time() - 10, 'exp' => time() + 60, 'video' => ['roomList' => true]], $secret);
+        try {
+            $response = Http::timeout(6)->connectTimeout(3)->withToken($token)->asJson()
+                ->post((string) preg_replace('#\Aws(s?)://#i', 'http$1://', $url).'/twirp/livekit.RoomService/ListRooms', (object) []);
+        } catch (ConnectionException) {
+            return 'down';
+        }
+        if ($response->successful()) {
+            return 'ok';
+        }
+
+        return in_array($response->status(), [401, 403], true) ? 'auth' : 'down';
+    }
+
     /** Перевірка ключів з адмінки: список кімнат має відповісти 200. */
     public function test(): bool
     {
@@ -219,13 +276,13 @@ class LiveKit
     /**
      * @param  array<string, mixed>  $claims
      */
-    private function sign(array $claims): string
+    private function sign(array $claims, ?string $secret = null): string
     {
         $segments = [
             $this->base64url((string) json_encode(['alg' => 'HS256', 'typ' => 'JWT'])),
             $this->base64url((string) json_encode($claims, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)),
         ];
-        $segments[] = $this->base64url(hash_hmac('sha256', implode('.', $segments), (string) $this->secret(), true));
+        $segments[] = $this->base64url(hash_hmac('sha256', implode('.', $segments), (string) ($secret ?? $this->secret()), true));
 
         return implode('.', $segments);
     }

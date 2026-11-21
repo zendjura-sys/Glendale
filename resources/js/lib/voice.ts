@@ -238,6 +238,9 @@ async function roomOptions(): Promise<RoomOptions> {
     };
 }
 
+/** Сервер LiveKit не відповів і з другої спроби (доступ сайт видав — справа в сервері голосу). */
+class VoiceServerDown extends Error {}
+
 async function connect(
     fetchAccess: () => Promise<Access>,
     meta: Partial<VoiceState>,
@@ -333,7 +336,20 @@ async function connect(
             cleanup();
         });
 
-        await next.connect(access.url, access.token);
+        // Мобільна мережа чи перезапуск сервера голосу: одна повторна спроба, перш ніж здатися.
+        try {
+            await next.connect(access.url, access.token);
+        } catch (first) {
+            if (room !== next) throw first;
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            if (room !== next) throw first;
+            try {
+                await next.connect(access.url, access.token);
+            } catch (second) {
+                console.error('voice: connect failed', access.url, second);
+                throw new VoiceServerDown();
+            }
+        }
         if (room !== next) {
             await next.disconnect();
 
@@ -351,7 +367,13 @@ async function connect(
     } catch (e) {
         await room?.disconnect().catch(() => undefined);
         cleanup();
-        toast.error(e instanceof ApiError ? e.message : failure);
+        toast.error(
+            e instanceof ApiError
+                ? e.message
+                : e instanceof VoiceServerDown
+                  ? `${failure}: ${tr('сервер голосу не відповідає. Спробуйте за хвилину')}`
+                  : failure,
+        );
     }
 }
 

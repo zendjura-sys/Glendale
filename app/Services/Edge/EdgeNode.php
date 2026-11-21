@@ -2,11 +2,13 @@
 
 namespace App\Services\Edge;
 
+use App\Services\Voice\LiveKit;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 
 /**
@@ -22,6 +24,9 @@ class EdgeNode
 
     /** Позначка «вузол лежить» (ставить перевірка щохвилини). */
     private const DOWN = 'edge.down';
+
+    /** Вузол живий, але його LiveKit — ні (чи ключі не ті): голос тимчасово через основний сервер. */
+    private const VOICE_DOWN = 'edge.voice_down';
 
     public function __construct(private readonly SiteSettings $settings) {}
 
@@ -47,7 +52,8 @@ class EdgeNode
     /** Голос іде через вузол (обрано в адмінці, адреса є й вузол живий). */
     public function voice(): bool
     {
-        return $this->settings->get('edge_voice') === self::EDGE && $this->host() !== null && $this->healthy();
+        return $this->settings->get('edge_voice') === self::EDGE && $this->host() !== null && $this->healthy()
+            && ! Cache::has(self::VOICE_DOWN);
     }
 
     /** Файли (збірка й /storage) ідуть з кешу вузла. */
@@ -104,7 +110,7 @@ class EdgeNode
             Cache::forget(self::DOWN);
             Cache::forget('edge.fails');
 
-            return 'ok';
+            return $this->settings->get('edge_voice') === self::EDGE ? $this->probeVoice() : 'ok';
         }
         $fails = (int) Cache::increment('edge.fails');
         if ($fails >= 2) {
@@ -112,6 +118,30 @@ class EdgeNode
         }
 
         return 'fail';
+    }
+
+    /**
+     * nginx вузла відповідає — але чи живий там LiveKit і чи приймає наші ключі? Інакше GameCast
+     * і кімнати отримували адресу вузла й падали з «Не вдалося підключитися». Дві невдачі поспіль —
+     * голос іде через основний сервер, доки вузол не оживе (файли CDN — далі з вузла).
+     */
+    private function probeVoice(): string
+    {
+        $state = app(LiveKit::class)->probeEdge();
+        if ($state === 'ok') {
+            Cache::forget(self::VOICE_DOWN);
+            Cache::forget('edge.voice_fails');
+
+            return 'ok';
+        }
+        if ((int) Cache::increment('edge.voice_fails') >= 2 && ! Cache::has(self::VOICE_DOWN)) {
+            Cache::put(self::VOICE_DOWN, $state, now()->addMinutes(10));
+            Log::warning('edge: voice moved to main server', ['reason' => $state === 'auth'
+                ? 'ключі LiveKit вузла не збігаються (впишіть API Key/Secret вузла в Інтеграціях)'
+                : 'LiveKit на вузлі не відповідає']);
+        }
+
+        return 'voice-'.$state;
     }
 
     /** Для адмінки: перевірити вузол зараз. */
