@@ -34,6 +34,7 @@ use App\Services\Cinema\Metadata\OmdbProvider;
 use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
 use App\Services\Cinema\VideoseedClient;
+use App\Services\Developer\DeveloperPro;
 use App\Services\Edge\EdgeNode;
 use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
@@ -582,6 +583,38 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'min:12', 'max:200'], 'message' => 'Пароль — щонайменше 12 символів.'],
                     ['name' => 'keep', 'setting' => 'backup_cloud_keep', 'type' => 'text', 'label' => 'Скільки копій тримати (за замовчуванням 30)', 'placeholder' => '30',
                         'rules' => ['nullable', 'integer', 'min:3', 'max:365'], 'message' => 'Від 3 до 365 копій.'],
+                ],
+            ],
+            'dev_pro' => [
+                'label' => 'Пакет для розробників (GameCon Dev Pro)',
+                'group' => 'developers',
+                'description' => 'Платний пакет на 30 днів з балансу GameCon. Оберіть, що входить: більше застосунків, вищий ліміт API, ШІ-відповіді для форумів і ботів (з місячною квотою) і пріоритет у підтримці. Зміни діють одразу для всіх, хто має пакет.',
+                'docs' => url('/developers'),
+                'steps' => [
+                    'Увімкніть продаж і поставте ціну за 30 днів (в одиницях балансу).',
+                    'Позначте функції, що входять у пакет, і задайте ліміти.',
+                    'ШІ-відповіді працюють, коли підключено «Штучний інтелект» (Інтеграції).',
+                ],
+                'configured' => app(DeveloperPro::class)->offered(),
+                'stat' => (function () {
+                    $active = User::query()->where('preferences->dev_pro_until', '>', now()->toIso8601String())->count();
+
+                    return app(DeveloperPro::class)->offered() ? "Продається · активних пакетів: {$active}" : "Не продається · активних пакетів: {$active}";
+                })(),
+                'fields' => [
+                    ['name' => 'enabled', 'setting' => 'dev_pro_enabled', 'type' => 'bool', 'label' => 'Продавати пакет', 'rules' => ['required', 'boolean']],
+                    ['name' => 'price', 'setting' => 'dev_pro_price', 'type' => 'text', 'label' => 'Ціна за 30 днів, од.', 'placeholder' => '199',
+                        'rules' => ['nullable', 'integer', 'min:1', 'max:100000'], 'message' => 'Ціна — ціле число від 1.'],
+                    ['name' => 'f_apps', 'setting' => 'dev_pro_f_apps', 'type' => 'bool', 'label' => 'Більше застосунків', 'rules' => ['required', 'boolean']],
+                    ['name' => 'apps', 'setting' => 'dev_pro_apps', 'type' => 'text', 'label' => 'Застосунків з пакетом (без — 10)', 'placeholder' => '30',
+                        'rules' => ['nullable', 'integer', 'min:10', 'max:500'], 'message' => 'Від 10 до 500.'],
+                    ['name' => 'f_rate', 'setting' => 'dev_pro_f_rate', 'type' => 'bool', 'label' => 'Вищий ліміт запитів API', 'rules' => ['required', 'boolean']],
+                    ['name' => 'rate', 'setting' => 'dev_pro_rate', 'type' => 'text', 'label' => 'Запитів за хвилину з пакетом (без — 120)', 'placeholder' => '600',
+                        'rules' => ['nullable', 'integer', 'min:120', 'max:10000'], 'message' => 'Від 120 до 10 000.'],
+                    ['name' => 'f_ai', 'setting' => 'dev_pro_f_ai', 'type' => 'bool', 'label' => 'ШІ-відповіді для форуму й ботів', 'rules' => ['required', 'boolean']],
+                    ['name' => 'ai_quota', 'setting' => 'dev_pro_ai_quota', 'type' => 'text', 'label' => 'ШІ-відповідей на місяць', 'placeholder' => '1000',
+                        'rules' => ['nullable', 'integer', 'min:1', 'max:1000000'], 'message' => 'Ціле число від 1.'],
+                    ['name' => 'f_support', 'setting' => 'dev_pro_f_support', 'type' => 'bool', 'label' => 'Пріоритет у підтримці', 'rules' => ['required', 'boolean']],
                 ],
             ],
             'igdb' => [

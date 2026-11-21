@@ -2,10 +2,13 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\DeveloperApp;
+use App\Services\Developer\DeveloperPro;
 use App\Services\Developer\OAuthServer;
 use App\Support\Plugins\Plugins;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -38,7 +41,10 @@ class AuthenticateOAuthToken
             }
         }
         $key = 'oauth-api:'.$token->id;
-        if (RateLimiter::tooManyAttempts($key, self::PER_MINUTE)) {
+        // Dev Pro (№305): у застосунків власника з пакетом — вищий ліміт.
+        $owner = (int) Cache::remember('devapp.owner.'.$token->developer_app_id, 600, fn () => (int) DeveloperApp::query()->whereKey($token->developer_app_id)->value('user_id'));
+        $limit = app(DeveloperPro::class)->rateFor($owner, self::PER_MINUTE);
+        if (RateLimiter::tooManyAttempts($key, $limit)) {
             return response()->json(['error' => 'rate_limited', 'message' => 'Забагато запитів. Спробуйте за хвилину.'], 429)
                 ->header('Retry-After', (string) RateLimiter::availableIn($key));
         }
@@ -50,8 +56,8 @@ class AuthenticateOAuthToken
         $request->attributes->set('oauth_token', $token);
 
         $response = $next($request);
-        $response->headers->set('X-RateLimit-Limit', (string) self::PER_MINUTE);
-        $response->headers->set('X-RateLimit-Remaining', (string) RateLimiter::remaining($key, self::PER_MINUTE));
+        $response->headers->set('X-RateLimit-Limit', (string) $limit);
+        $response->headers->set('X-RateLimit-Remaining', (string) RateLimiter::remaining($key, $limit));
 
         return $response;
     }

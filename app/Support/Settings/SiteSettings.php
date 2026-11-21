@@ -139,6 +139,16 @@ class SiteSettings
         'edge_cdn' => 'main',
         'edge_livekit_api_key' => null,
         'edge_livekit_api_secret' => null,
+        // Пакет для розробників GameCon Dev Pro (№305): що входить, ціна й ліміти.
+        'dev_pro_enabled' => false,
+        'dev_pro_price' => 199,
+        'dev_pro_f_apps' => true,
+        'dev_pro_f_rate' => true,
+        'dev_pro_f_ai' => true,
+        'dev_pro_f_support' => true,
+        'dev_pro_apps' => 30,
+        'dev_pro_rate' => 600,
+        'dev_pro_ai_quota' => 1000,
         // Хмарні копії бази (№268): S3-сумісне сховище й пароль шифрування.
         'backup_s3_endpoint' => null,
         'backup_s3_region' => 'auto',

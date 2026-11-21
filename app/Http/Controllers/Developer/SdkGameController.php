@@ -7,6 +7,8 @@ use App\Models\DeveloperApp;
 use App\Models\DeveloperToken;
 use App\Models\User;
 use App\Notifications\AppNotice;
+use App\Services\Ai\AiClient;
+use App\Services\Developer\DeveloperPro;
 use App\Services\Developer\OAuthServer;
 use App\Services\Developer\OverlayPrefs;
 use App\Services\FriendshipService;
@@ -218,6 +220,33 @@ class SdkGameController extends Controller
     }
 
     // ───────────── Серверні виклики (client_id + client_secret) ─────────────
+
+    /**
+     * ШІ-відповідь для форуму, бота чи сайту розробника (Dev Pro, №305): питання й контекст
+     * (тема, правила, попередні повідомлення) → відповідь українською. Квота — на місяць власника.
+     */
+    public function aiReply(Request $request): JsonResponse
+    {
+        $app = $this->server($request);
+        $pro = app(DeveloperPro::class);
+        $owner = $app->user;
+        abort_unless($owner !== null && $pro->has($owner, 'ai'), 402, 'ШІ-відповіді входять у пакет GameCon Dev Pro.');
+        abort_unless(app(AiClient::class)->configured(), 503, 'ШІ на GameCon зараз недоступний.');
+        $data = $request->validate([
+            'prompt' => ['required', 'string', 'min:2', 'max:2000'],
+            'context' => ['nullable', 'string', 'max:8000'],
+            'persona' => ['nullable', 'string', 'max:300'],
+        ]);
+        abort_unless($pro->takeAi($owner), 429, 'Місячну квоту ШІ-відповідей вичерпано.');
+        $system = 'Ти помічник спільноти «'.Str::limit($app->name, 80).'» (форум, бот чи сайт гри). Відповідай коротко, по суті й дружньо; '
+            .'спирайся на контекст, не вигадуй фактів про гру, правила чи людей; якщо не знаєш — так і скажи.'
+            .(filled($data['persona'] ?? null) ? ' Стиль від власника: '.Str::limit((string) $data['persona'], 300) : '');
+        $content = (filled($data['context'] ?? null) ? "Контекст:\n".$data['context']."\n\n" : '').'Питання: '.$data['prompt'];
+        $reply = app(AiClient::class)->complete($system, [['role' => 'user', 'content' => $content]], 800, [], 'developers');
+        Log::info('developers.sdk.ai', ['app' => $app->id, 'owner' => $owner->id]);
+
+        return response()->json(['reply' => $reply, 'quota' => ['used' => $pro->aiUsed($owner), 'limit' => $pro->aiQuota()]]);
+    }
 
     private function server(Request $request): DeveloperApp
     {

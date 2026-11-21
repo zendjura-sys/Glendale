@@ -1282,6 +1282,8 @@ Route::middleware(['auth', 'verified.site', 'parental'])->group(function () {
     // Розробникам: свої застосунки, ключі, токен бота, особистий токен.
     Route::prefix('developers')->name('developers.')->group(function () {
         Route::post('apps', [Developer\DeveloperPortalController::class, 'store'])->middleware('throttle:10,1')->name('apps.store');
+        // GameCon Dev Pro (№305): купити чи продовжити на 30 днів з балансу.
+        Route::post('pro', [Developer\DeveloperPortalController::class, 'buyPro'])->middleware('throttle:10,1')->name('pro.buy');
         Route::put('apps/{app}', [Developer\DeveloperPortalController::class, 'update'])->whereNumber('app')->name('apps.update');
         Route::post('apps/{app}/overlay/publish', [Developer\DeveloperPortalController::class, 'publishOverlay'])->whereNumber('app')->middleware('throttle:20,1')->name('apps.overlay.publish');
         Route::post('apps/{app}/overlay/rollback', [Developer\DeveloperPortalController::class, 'rollbackOverlay'])->whereNumber('app')->middleware('throttle:20,1')->name('apps.overlay.rollback');

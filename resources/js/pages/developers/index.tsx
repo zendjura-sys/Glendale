@@ -9,6 +9,7 @@ import {
     Plus,
     RotateCw,
     ShieldCheck,
+    Sparkles,
     Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -47,6 +48,7 @@ type Props = {
     scopes: { key: string; label: string }[];
     base: string;
     limits: { user: number; app: number; apps: number };
+    pro?: Pro;
     reveal: {
         app: number;
         client_secret?: string;
@@ -112,6 +114,122 @@ function Code({ children }: { children: string }) {
     );
 }
 
+type Pro = {
+    offered: boolean;
+    price: number;
+    days: number;
+    features: { key: string; label: string }[];
+    apps: number | null;
+    rate: number | null;
+    ai_quota: number | null;
+    active: boolean;
+    until: string | null;
+    ai_used: number;
+};
+
+/** GameCon Dev Pro (№305): що входить (обирає адміністрація), ціна й стан пакета. */
+function ProCard({ pro, signedIn }: { pro: Pro; signedIn: boolean }) {
+    const [busy, setBusy] = useState(false);
+    const detail: Record<string, string | null> = {
+        apps:
+            pro.apps !== null
+                ? tr('до {n} застосунків', { n: pro.apps })
+                : null,
+        rate:
+            pro.rate !== null
+                ? tr('{n} запитів за хвилину', { n: pro.rate })
+                : null,
+        ai:
+            pro.ai_quota !== null
+                ? tr(
+                      '{n} відповідей на місяць · POST /api/developer/v1/server/ai/reply',
+                      {
+                          n: pro.ai_quota,
+                      },
+                  )
+                : null,
+        support: tr('звернення — першими в черзі'),
+    };
+
+    return (
+        <section className="gc-solid space-y-3 rounded-2xl p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
+                        <Sparkles className="size-5 text-primary" />
+                        GameCon Dev Pro
+                    </h2>
+                    <p className="mt-1 text-sm text-white/60">
+                        {pro.active && pro.until
+                            ? tr('Діє до {date}', {
+                                  date: new Date(
+                                      pro.until,
+                                  ).toLocaleDateString(),
+                              })
+                            : tr(
+                                  '{price} од. за {days} днів з балансу GameCon',
+                                  {
+                                      price: pro.price,
+                                      days: pro.days,
+                                  },
+                              )}
+                    </p>
+                </div>
+                {signedIn && pro.offered && (
+                    <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                            router.post(
+                                '/developers/pro',
+                                {},
+                                {
+                                    preserveScroll: true,
+                                    onStart: () => setBusy(true),
+                                    onFinish: () => setBusy(false),
+                                },
+                            )
+                        }
+                        className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                        {pro.active
+                            ? tr('Продовжити · {price} од.', {
+                                  price: pro.price,
+                              })
+                            : tr('Купити · {price} од.', { price: pro.price })}
+                    </button>
+                )}
+            </div>
+            <ul className="grid gap-2 sm:grid-cols-2">
+                {pro.features.map((feature) => (
+                    <li
+                        key={feature.key}
+                        className="flex items-start gap-2 rounded-xl bg-white/[0.04] px-3 py-2"
+                    >
+                        <Check className="mt-0.5 size-4 shrink-0 text-emerald-400" />
+                        <span className="min-w-0 text-sm text-white/85">
+                            {tr(feature.label)}
+                            {detail[feature.key] && (
+                                <span className="block text-xs text-white/50">
+                                    {detail[feature.key]}
+                                </span>
+                            )}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+            {pro.active && pro.ai_quota !== null && (
+                <p className="text-xs text-white/50">
+                    {tr('ШІ-відповідей цього місяця: {used} з {quota}', {
+                        used: pro.ai_used,
+                        quota: pro.ai_quota,
+                    })}
+                </p>
+            )}
+        </section>
+    );
+}
+
 /** /developers: свої застосунки й ключі, документація OAuth 2.1, API й ботів. */
 export default function Developers({
     apps,
@@ -119,6 +237,7 @@ export default function Developers({
     base,
     limits,
     reveal,
+    pro,
 }: Props) {
     const { auth } = usePage().props;
     const [tab, setTab] = useState<(typeof TABS)[number][0]>(
@@ -175,6 +294,10 @@ export default function Developers({
                         {tr('Для серверів GTA')}
                     </Link>
                 </nav>
+
+                {pro && (pro.offered || pro.active) && (
+                    <ProCard pro={pro} signedIn={Boolean(auth.user)} />
+                )}
 
                 {tab === 'apps' &&
                     (auth.user ? (

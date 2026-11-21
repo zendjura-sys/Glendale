@@ -374,6 +374,13 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
+                        'developers',
+                        tr('Розробникам'),
+                        tr(
+                            'Платний пакет GameCon Dev Pro: що входить, ціна й ліміти.',
+                        ),
+                    ],
+                    [
                         'backups',
                         tr('Резервні копії'),
                         tr(

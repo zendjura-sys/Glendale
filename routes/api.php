@@ -213,6 +213,8 @@ Route::prefix('developer/v1')->group(function () {
         Route::post('achievements/{key}/unlock', [SdkGameController::class, 'serverUnlock']);
         Route::post('leaderboards/{board}/scores', [SdkGameController::class, 'serverScore']);
         Route::post('notify', [SdkGameController::class, 'notify']);
+        // Dev Pro (№305): ШІ-відповідь для форуму, бота чи сайту розробника.
+        Route::post('ai/reply', [SdkGameController::class, 'aiReply'])->middleware('throttle:30,1');
     });
     Route::middleware('appkey')->prefix('public')->group(function () {
         Route::get('app', [DeveloperApiController::class, 'app']);

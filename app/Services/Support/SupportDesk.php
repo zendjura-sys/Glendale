@@ -6,6 +6,7 @@ use App\Models\SupportMessage;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Notifications\AccountNotice;
+use App\Services\Developer\DeveloperPro;
 use App\Services\ImageStorage;
 use App\Services\Moderation\ContentFilter;
 use Illuminate\Http\UploadedFile;
@@ -38,8 +39,8 @@ class SupportDesk
                 'category' => $data['category'],
                 'subject' => Str::limit(trim($data['subject']), 120, ''),
                 'url' => isset($data['url']) && str_starts_with((string) $data['url'], '/') ? Str::limit((string) $data['url'], 250, '') : null,
-                // Оплата й безпека акаунта — вище в черзі.
-                'priority' => in_array($data['category'], ['payment', 'account'], true) ? 'high' : 'normal',
+                // Оплата й безпека акаунта, а також GameCon Dev Pro (№305) — вище в черзі.
+                'priority' => in_array($data['category'], ['payment', 'account'], true) || app(DeveloperPro::class)->has($user, 'support') ? 'high' : 'normal',
                 'last_reply_at' => now(),
             ]);
             $this->message($ticket, $user, $data['body'], $files, false, false);

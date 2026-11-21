@@ -7,6 +7,9 @@ use App\Http\Middleware\AuthenticateAppKey;
 use App\Http\Middleware\AuthenticateOAuthToken;
 use App\Models\DeveloperApp;
 use App\Models\DeveloperToken;
+use App\Services\Billing\InsufficientFunds;
+use App\Services\Billing\Wallet;
+use App\Services\Developer\DeveloperPro;
 use App\Services\Developer\OAuthServer;
 use App\Services\Geo\CountryRestrictions;
 use App\Services\Voice\LiveKit;
@@ -39,7 +42,13 @@ class DeveloperPortalController extends Controller
             'apps' => $user ? DeveloperApp::query()->where('user_id', $user->id)->latest('id')->get()->map(fn (DeveloperApp $a) => $this->present($a))->values() : [],
             'scopes' => collect(OAuthServer::SCOPES)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])->values(),
             'base' => url('/'),
-            'limits' => ['user' => AuthenticateOAuthToken::PER_MINUTE, 'app' => AuthenticateAppKey::PER_MINUTE, 'apps' => DeveloperApp::MAX_PER_USER],
+            'limits' => [
+                'user' => $user ? app(DeveloperPro::class)->rateFor($user->id, AuthenticateOAuthToken::PER_MINUTE) : AuthenticateOAuthToken::PER_MINUTE,
+                'app' => AuthenticateAppKey::PER_MINUTE,
+                'apps' => $user ? app(DeveloperPro::class)->appsLimit($user) : DeveloperApp::MAX_PER_USER,
+            ],
+            // Пакет GameCon Dev Pro (№305): що входить, ціна, чи діє.
+            'pro' => app(DeveloperPro::class)->card($user),
             'reveal' => session('developer_reveal'),
             // Мови для SDK: «авто» завжди; конкретна — якщо не заборонено для країни розробника.
             'sdk_locales' => $this->canPickLocale() ? app(Locales::class)->allOptions() : [],
@@ -50,7 +59,8 @@ class DeveloperPortalController extends Controller
     {
         app(Plugins::class)->ensure('developers');
         $user = $request->user();
-        abort_if(DeveloperApp::query()->where('user_id', $user->id)->count() >= DeveloperApp::MAX_PER_USER, 422, 'Можна мати до '.DeveloperApp::MAX_PER_USER.' застосунків.');
+        $max = app(DeveloperPro::class)->appsLimit($user);
+        abort_if(DeveloperApp::query()->where('user_id', $user->id)->count() >= $max, 422, 'Можна мати до '.$max.' застосунків.');
         $data = $this->validated($request);
         $app = DeveloperApp::query()->create([...$data, 'user_id' => $user->id, 'client_id' => $this->oauth->newClientId(), 'public_key' => $this->oauth->newPublicKey()]);
         $reveal = ['app' => $app->id];
@@ -290,5 +300,19 @@ class DeveloperPortalController extends Controller
             'enabled' => array_values(array_filter(['friends', 'messages', 'families', 'clans', 'music', 'servers', 'quests', 'communities'], fn (string $m) => $modules->enabled($m))),
             'voice' => app(LiveKit::class)->configured(),
         ]);
+    }
+
+    /** Купити чи продовжити GameCon Dev Pro на 30 днів з балансу. */
+    public function buyPro(Request $request): RedirectResponse
+    {
+        app(Plugins::class)->ensure('developers');
+        try {
+            $until = app(DeveloperPro::class)->purchase($request->user());
+        } catch (InsufficientFunds $e) {
+            throw ValidationException::withMessages(['pro' => 'На балансі не вистачає '.Wallet::units($e->shortfall).' — поповніть рахунок у «GameCon+ → Рахунок».']);
+        }
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'GameCon Dev Pro діє до '.$until->timezone('Europe/Kyiv')->format('d.m.Y').'.']);
+
+        return back();
     }
 }
