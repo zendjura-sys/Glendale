@@ -8,6 +8,7 @@ use App\Models\CommunityMember;
 use App\Models\Photo;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Analytics\PageAnalytics;
 use App\Services\Billing\CommunityPromotion;
 use App\Services\Billing\Wallet;
 use App\Services\Communities\CommunityExplore;
@@ -130,6 +131,10 @@ class CommunityController extends Controller
         $rawTag = $request->query('tag');
         $tag = is_string($rawTag) && in_array($rawTag, $tags, true) ? $rawTag : null;
         $moderates = (bool) $membership?->isManager() || $viewer->isStaff();
+        // Аналітика сторінки (№288): керівники й команда сайту свої заходи не накручують.
+        if (! $moderates) {
+            app(PageAnalytics::class)->record($request, 'community', $community->id);
+        }
 
         $posts = $community->posts()
             ->visibleTo($viewer, $friendIds)

@@ -27,7 +27,125 @@ export type CommunityStats = {
     comments: number;
     active_share: number;
     weeks: { week: string; joined: number; posts: number }[];
+    /** Аналітика сторінки (№288): перегляди, відвідувачі й джерела за 30 днів. */
+    page?: {
+        views: number;
+        uniques: number;
+        days: { day: string; views: number; uniques: number }[];
+        sources: { inside: number; search: number; outside: number };
+    };
 };
+
+/** Перегляди сторінки по днях і звідки приходять люди. */
+function PageViews({ page }: { page: NonNullable<CommunityStats['page']> }) {
+    const peak = Math.max(1, ...page.days.map((d) => d.views));
+    const sourceTotal = Math.max(
+        1,
+        page.sources.inside + page.sources.search + page.sources.outside,
+    );
+    const sources = [
+        {
+            key: 'inside',
+            label: tr('З GameCon'),
+            n: page.sources.inside,
+            tone: 'bg-[var(--gc-accent)]',
+        },
+        {
+            key: 'search',
+            label: tr('З пошуковиків'),
+            n: page.sources.search,
+            tone: 'bg-emerald-400',
+        },
+        {
+            key: 'outside',
+            label: tr('Інші сайти й напряму'),
+            n: page.sources.outside,
+            tone: 'bg-amber-300',
+        },
+    ];
+    // Відсотки в сумі рівно 100: останнє джерело — залишок після округлення інших.
+    const shares = sources.map((src) =>
+        Math.round((src.n / sourceTotal) * 100),
+    );
+    shares[shares.length - 1] = Math.max(
+        0,
+        100 - shares.slice(0, -1).reduce((a, b) => a + b, 0),
+    );
+
+    return (
+        <div className="space-y-4">
+            <div>
+                <p className="mb-2 text-xs font-medium text-white/45">
+                    {tr('Перегляди сторінки по днях')}
+                </p>
+                <div
+                    className="flex h-24 items-end gap-[3px]"
+                    role="img"
+                    aria-label={tr(
+                        'Переглядів за 30 днів: {views}, відвідувачів: {uniques}',
+                        { views: page.views, uniques: page.uniques },
+                    )}
+                >
+                    {page.days.map((d) => (
+                        <div
+                            key={d.day}
+                            className="h-full flex-1 content-end"
+                            title={tr(
+                                '{date}: {views} переглядів, {uniques} відвідувачів',
+                                {
+                                    date: formatDate(d.day),
+                                    views: d.views,
+                                    uniques: d.uniques,
+                                },
+                            )}
+                        >
+                            <div
+                                className="w-full rounded-t-sm bg-gc-indigo/70"
+                                style={{
+                                    height: `${d.views === 0 ? 2 : Math.max(6, (d.views / peak) * 100)}%`,
+                                }}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            {page.uniques > 0 && (
+                <div>
+                    <p className="mb-2 text-xs font-medium text-white/45">
+                        {tr('Звідки приходять')}
+                    </p>
+                    <div className="flex h-2.5 overflow-hidden rounded-full bg-white/10">
+                        {sources.map((src) => (
+                            <span
+                                key={src.key}
+                                className={src.tone}
+                                style={{
+                                    width: `${(src.n / sourceTotal) * 100}%`,
+                                }}
+                            />
+                        ))}
+                    </div>
+                    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/60">
+                        {sources.map((src, i) => (
+                            <li
+                                key={src.key}
+                                className="flex items-center gap-1.5"
+                            >
+                                <span
+                                    className={cn(
+                                        'size-2 rounded-full',
+                                        src.tone,
+                                    )}
+                                />
+                                {src.label} · {shares[i]}%
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+}
 
 const field =
     'input-glass w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none';
@@ -296,6 +414,15 @@ export function StatsCard({ stats }: { stats?: CommunityStats }) {
     const peak = Math.max(1, ...(stats?.weeks.map((w) => w.joined) ?? [1]));
     const tiles = stats
         ? [
+              ...(stats.page
+                  ? [
+                        { label: tr('Переглядів'), value: stats.page.views },
+                        {
+                            label: tr('Відвідувачів'),
+                            value: stats.page.uniques,
+                        },
+                    ]
+                  : []),
               { label: tr('Прийшло'), value: stats.joined },
               { label: tr('Пишуть'), value: stats.authors },
               { label: tr('Записів'), value: stats.posts },
@@ -312,7 +439,14 @@ export function StatsCard({ stats }: { stats?: CommunityStats }) {
                 <div className="skeleton h-40 rounded-2xl" />
             ) : (
                 <div className="space-y-5">
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div
+                        className={cn(
+                            'grid grid-cols-2 gap-3',
+                            tiles.length > 4
+                                ? 'sm:grid-cols-3'
+                                : 'sm:grid-cols-4',
+                        )}
+                    >
                         {tiles.map((tile) => (
                             <div
                                 key={tile.label}
@@ -327,6 +461,7 @@ export function StatsCard({ stats }: { stats?: CommunityStats }) {
                             </div>
                         ))}
                     </div>
+                    {stats.page && <PageViews page={stats.page} />}
                     <p className="text-sm text-white/60">
                         {tr('Пишуть {percent}% учасників', {
                             percent: stats.active_share,

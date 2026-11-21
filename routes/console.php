@@ -4,6 +4,7 @@ use App\Models\AppLoginRequest;
 use App\Models\SpamBlock;
 use App\Services\Account\DataExporter;
 use App\Services\Analytics\ActivityMetrics;
+use App\Services\Analytics\PageAnalytics;
 use App\Services\Billing\AuthorSubscriptions;
 use App\Services\Edge\EdgeNode;
 use App\Services\Feed\PostArchive;
@@ -124,3 +125,6 @@ Schedule::call(fn () => app(EdgeNode::class)->probe())->name('edge:probe')->ever
 
 // Автоархів старих записів (за налаштуванням автора): нічого не видаляє, лише ховає в архів.
 Schedule::call(fn () => app(PostArchive::class)->run())->name('posts:auto-archive')->dailyAt('04:10')->timezone('Europe/Kyiv')->withoutOverlapping(30);
+
+// Аналітика сторінок (№288): хеші відвідувачів живуть 3 дні, денні підсумки — рік.
+Schedule::call(fn () => app(PageAnalytics::class)->prune())->name('pages:prune-analytics')->dailyAt('04:27')->timezone('Europe/Kyiv')->withoutOverlapping(30);
