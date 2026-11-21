@@ -79,8 +79,9 @@ class _ShakeToReportState extends State<ShakeToReport> {
   Future<void> _report() async {
     final context = widget.router.routerDelegate.navigatorKey.currentContext;
     if (context == null || !context.mounted) return;
-    // Лише для тих, хто увійшов: звернення прив’язане до акаунта.
-    if (AppScope.read(context).session.me == null) return;
+    // Лише для тих, хто увійшов, і коли підтримка (плагін support_tickets) увімкнена.
+    final session = AppScope.read(context).session;
+    if (session.me == null || !session.pluginOn('support_tickets')) return;
     _open = true;
     final shot = await _capture();
     final route = widget.router.routeInformationProvider.value.uri.toString();

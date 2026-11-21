@@ -448,8 +448,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const ListeningSwitch(),
           const DigestSwitch(),
           const _UiSoundsSwitch(),
-          const _ShakeReportSwitch(),
-          const _SpeakAlertsSwitch(),
+          // Вимкнені плагіни — без їхніх перемикачів (підтримка, тривоги).
+          if (session.pluginOn('support_tickets')) const _ShakeReportSwitch(),
+          if (session.pluginOn('air_alerts')) const _SpeakAlertsSwitch(),
           const _DockMenuStyle(),
           const SizedBox(height: 6),
           Text(tr('Хто може писати мені'), style: body(13, color: muted)),

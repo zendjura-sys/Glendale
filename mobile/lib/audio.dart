@@ -227,9 +227,11 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
   Future<List<MediaItem>> getChildren(String parentMediaId, [Map<String, dynamic>? options]) async {
     switch (parentMediaId) {
       case AudioService.browsableRootId:
+        // «Улюблене» — лише коли розділ «Музика» є в режимі людини.
+        final music = player.session?.modules?.contains('music') ?? true;
         return [
           MediaItem(id: _queueFolder, title: tr('Зараз грає'), playable: false, artUri: _defaultArt),
-          MediaItem(id: _favoritesFolder, title: tr('Улюблене'), playable: false, artUri: _defaultArt),
+          if (music) MediaItem(id: _favoritesFolder, title: tr('Улюблене'), playable: false, artUri: _defaultArt),
         ];
       case AudioService.recentRootId:
         return queue.value.take(10).toList();

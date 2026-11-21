@@ -16,6 +16,7 @@ use App\Services\MessengerPresenter;
 use App\Services\Music\MusicConnect;
 use App\Services\MusicService;
 use App\Services\Voice\LiveKit;
+use App\Support\Modules\ModuleManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -65,6 +66,7 @@ class SdkApiController extends Controller
 
     public function conversations(Request $request, Messenger $messenger, MessengerPresenter $presenter): JsonResponse
     {
+        $this->module('messages');
         $keys = array_flip(['id', 'type', 'title', 'avatar_url', 'peer', 'members_count', 'unread', 'is_muted', 'last_message']);
 
         return response()->json(['data' => array_map(fn (array $c) => array_intersect_key($c, $keys), $presenter->inbox($request->user(), $messenger))]);
@@ -72,6 +74,7 @@ class SdkApiController extends Controller
 
     public function messages(Request $request, Conversation $conversation, MessengerPresenter $presenter): JsonResponse
     {
+        $this->module('messages');
         $this->member($conversation, $request->user());
         $data = $request->validate(['before' => ['nullable', 'integer', 'min:1']]);
         $history = $presenter->history($conversation, isset($data['before']) ? (int) $data['before'] : null, $request->user());
@@ -81,6 +84,7 @@ class SdkApiController extends Controller
 
     public function send(Request $request, Conversation $conversation, Messenger $messenger, MessengerPresenter $presenter): JsonResponse
     {
+        $this->module('messages');
         $this->member($conversation, $request->user());
         $data = $request->validate(['body' => ['required', 'string', 'max:4000'], 'reply_to' => ['nullable', 'integer']]);
         $message = $messenger->send($conversation, $request->user(), $data['body'], [], isset($data['reply_to']) ? (int) $data['reply_to'] : null);
@@ -91,6 +95,7 @@ class SdkApiController extends Controller
     /** Особиста бесіда з гравцем за ніком (з урахуванням його налаштувань приватності). */
     public function direct(Request $request, Messenger $messenger, string $username): JsonResponse
     {
+        $this->module('messages');
         $peer = User::query()->where('username', $username)->whereNull('banned_at')->firstOrFail();
         abort_unless($messenger->canMessage($request->user(), $peer), 403, 'Цьому гравцю не можна написати.');
 
@@ -108,14 +113,16 @@ class SdkApiController extends Controller
     public function groups(Request $request): JsonResponse
     {
         $user = $request->user();
-        $families = FamilyMember::query()->with('family')->where('user_id', $user->id)->where('status', FamilyMember::STATUS_ACTIVE)->get()
+        // Вимкнений розділ (сім'ї чи клани) — його груп у відповіді немає.
+        $modules = app(ModuleManager::class);
+        $families = ! $modules->enabled('families') ? collect() : FamilyMember::query()->with('family')->where('user_id', $user->id)->where('status', FamilyMember::STATUS_ACTIVE)->get()
             ->filter(fn (FamilyMember $m) => $m->family !== null)
             ->map(fn (FamilyMember $m) => [
                 'kind' => 'family', 'id' => $m->family->id, 'slug' => $m->family->slug, 'name' => $m->family->name, 'tag' => $m->family->tag,
                 'logo_url' => $m->family->logo_url, 'rank' => $m->rank, 'nickname' => $m->rp_nickname,
                 'conversation_id' => $m->family->conversation_id, 'url' => url('/families/'.$m->family->slug),
             ]);
-        $clans = ClanMember::query()->with('clan')->where('user_id', $user->id)->where('status', ClanMember::STATUS_ACTIVE)->get()
+        $clans = ! $modules->enabled('clans') ? collect() : ClanMember::query()->with('clan')->where('user_id', $user->id)->where('status', ClanMember::STATUS_ACTIVE)->get()
             ->filter(fn (ClanMember $m) => $m->clan !== null)
             ->map(fn (ClanMember $m) => [
                 'kind' => $m->clan->type === 'guild' ? 'guild' : 'clan', 'id' => $m->clan->id, 'slug' => $m->clan->slug, 'name' => $m->clan->name, 'tag' => $m->clan->tag,
@@ -129,6 +136,7 @@ class SdkApiController extends Controller
     /** Склад сім'ї (RP-штаб) для віджета оверлею: учасники з онлайном, казна й свій баланс. */
     public function familyMembers(Request $request, Family $family): JsonResponse
     {
+        $this->module('families');
         $me = FamilyMember::query()->where('family_id', $family->id)->where('user_id', $request->user()->id)->where('status', FamilyMember::STATUS_ACTIVE)->first();
         abort_if($me === null, 404);
         $members = FamilyMember::query()->with('user')->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)
@@ -147,6 +155,7 @@ class SdkApiController extends Controller
 
     public function clanMembers(Request $request, Clan $clan, ClanService $clans): JsonResponse
     {
+        $this->module('clans');
         abort_if($clans->member($clan, $request->user())?->status !== ClanMember::STATUS_ACTIVE, 404);
         $members = ClanMember::query()->with('user')->where('clan_id', $clan->id)->where('status', ClanMember::STATUS_ACTIVE)
             ->orderByDesc('rank')->limit(500)->get()
@@ -161,6 +170,7 @@ class SdkApiController extends Controller
     /** groups:manage — ранг чи виключення (за правами людини в клані «Керувати складом»). */
     public function clanManage(Request $request, Clan $clan, ClanMember $member, ClanService $clans): JsonResponse
     {
+        $this->module('clans');
         abort_unless($member->clan_id === $clan->id, 404);
         $data = $request->validate(['action' => ['required', Rule::in(['rank', 'kick', 'accept', 'decline'])], 'rank' => ['required_if:action,rank', 'integer', 'min:0', 'max:10']]);
         $actor = $clans->member($clan, $request->user());
@@ -179,6 +189,7 @@ class SdkApiController extends Controller
 
     public function nowPlaying(Request $request, MusicService $music, MusicConnect $connect): JsonResponse
     {
+        $this->module('music');
         $user = $request->user();
 
         return response()->json(['data' => ['now' => $music->currentFor($user, $user), ...$connect->devices($user)]]);
@@ -186,6 +197,7 @@ class SdkApiController extends Controller
 
     public function musicCommand(Request $request, MusicConnect $connect): JsonResponse
     {
+        $this->module('music');
         $data = $request->validate([
             'action' => ['required', Rule::in(['play', 'pause', 'toggle', 'next', 'prev', 'seek', 'volume'])],
             'value' => ['nullable', 'numeric', 'min:0', 'max:86400'],
@@ -197,5 +209,11 @@ class SdkApiController extends Controller
         $ok = $connect->command($user, (string) $target, $data['action'], isset($data['value']) ? (float) $data['value'] : null, 'app:'.$this->token($request)->developer_app_id);
 
         return response()->json(['ok' => $ok], $ok ? 200 : 409);
+    }
+
+    /** Розділ вимкнено (модуль чи режим людини) — API його не віддає, як і сайт. */
+    private function module(string $key): void
+    {
+        abort_unless(app(ModuleManager::class)->enabled($key), 404, 'Цей розділ вимкнено на GameCon.');
     }
 }
