@@ -9299,3 +9299,51 @@ html.gc-simple *::after {
         line-height: 1;
     }
 }
+
+/* ---------- Тур по розділах (№278): затемнення з вирізом навколо елемента й картка ---------- */
+.gc-tour {
+    position: fixed;
+    inset: 0;
+    z-index: 95;
+}
+.gc-tour__spot {
+    position: fixed;
+    border-radius: 18px;
+    box-shadow:
+        0 0 0 2px var(--gc-accent),
+        0 0 0 9999px rgb(0 0 0 / 0.62);
+    pointer-events: none;
+    transition:
+        top 0.25s ease,
+        left 0.25s ease,
+        width 0.25s ease,
+        height 0.25s ease;
+}
+.gc-tour__card {
+    position: fixed;
+    padding: 16px;
+    border-radius: 20px;
+    background: var(--gc-l1);
+    box-shadow:
+        inset 0 0 0 1px var(--gc-hairline),
+        0 20px 50px rgb(0 0 0 / 0.4);
+    outline: none;
+}
+.gc-tour__next {
+    height: 38px;
+    padding: 0 18px;
+    border-radius: 9999px;
+    background: var(--gc-accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+}
+.gc-tour__next:focus-visible {
+    outline: 2px solid var(--gc-accent);
+    outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+    .gc-tour__spot {
+        transition: none;
+    }
+}

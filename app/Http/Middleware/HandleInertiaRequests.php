@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Controllers\Fun\MemoriesController;
+use App\Http\Controllers\NewcomerController;
 use App\Http\Controllers\Settings\GameThemeController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\StatusPageController;
@@ -141,6 +142,8 @@ class HandleInertiaRequests extends Middleware
                     // Компактна стрічка (№297).
                     'feed_compact' => (bool) $user->pref('feed_compact'),
                     'simple_ui' => (bool) $user->pref('simple_ui'),
+                    // Тур по розділах (№278): сам — новим акаунтам, поки не пройдуть.
+                    'tour_pending' => NewcomerController::tourPending($user),
                     // Свій акцентний колір (№296), null — колір стилю.
                     'accent' => is_string($user->pref('accent')) ? $user->pref('accent') : null,
                     'background' => Backgrounds::for($user),

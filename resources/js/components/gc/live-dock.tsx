@@ -203,6 +203,7 @@ function CreateButton() {
             aria-label={tr('Новий допис')}
             title={tr('Новий допис')}
             onClick={openComposer}
+            data-tour="create"
             className="gc-dock-create"
         >
             <Plus className="size-6" strokeWidth={2.25} />
@@ -404,6 +405,7 @@ export function LiveDock({
                 </AnimatePresence>
                 <div
                     ref={barRef}
+                    data-tour={header ? 'header-nav' : 'dock'}
                     className={
                         header
                             ? 'gc-header-bar'
@@ -480,6 +482,7 @@ export function LiveDock({
                     <button
                         type="button"
                         data-test={header ? 'header-menu' : 'mobile-menu'}
+                        data-tour="menu"
                         aria-expanded={open}
                         aria-label={header ? tr('Меню') : undefined}
                         title={header ? tr('Меню') : undefined}

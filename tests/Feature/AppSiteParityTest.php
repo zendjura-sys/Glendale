@@ -85,6 +85,22 @@ class AppSiteParityTest extends TestCase
         $this->withToken($this->app_token($user))->getJson('/api/v1/me')->assertJsonPath('user.header_tabs', []);
     }
 
+    public function test_site_tour_offered_to_new_accounts_once(): void
+    {
+        $fresh = User::factory()->create();
+        $old = User::factory()->create(['created_at' => now()->subDays(30)]);
+        $this->actingAs($fresh)->get('/feed')->assertInertia(fn ($page) => $page->where('auth.user.tour_pending', true));
+        $this->actingAs($old)->get('/feed')->assertInertia(fn ($page) => $page->where('auth.user.tour_pending', false));
+
+        $this->actingAs($fresh)->postJson('/tour/done')->assertOk();
+        $this->actingAs($fresh)->get('/feed')->assertInertia(fn ($page) => $page->where('auth.user.tour_pending', false));
+
+        $app = User::factory()->create();
+        $this->withToken($this->app_token($app))->getJson('/api/v1/me')->assertJsonPath('user.tour_pending', true);
+        $this->withToken($this->app_token($app))->postJson('/api/v1/site/tour/done')->assertOk();
+        $this->withToken($this->app_token($app))->getJson('/api/v1/me')->assertJsonPath('user.tour_pending', false);
+    }
+
     public function test_simple_mode_saved_for_site_and_app(): void
     {
         $user = User::factory()->create();

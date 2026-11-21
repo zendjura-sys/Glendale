@@ -532,6 +532,7 @@ Route::prefix('v1')->group(function () {
             });
             Route::get('games/{game}/news', [GameNewsController::class, 'index'])->middleware(['module:games', 'throttle:60,1']);
             Route::post('newcomer/hide', [NewcomerController::class, 'hide']);
+            Route::post('tour/done', [NewcomerController::class, 'tourDone']);
             Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1');
             Route::get('ideas', [IdeaController::class, 'index']);
             Route::get('series/mine', [PostSeriesController::class, 'mine']);

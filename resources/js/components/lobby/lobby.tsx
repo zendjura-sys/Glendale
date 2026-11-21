@@ -1251,6 +1251,7 @@ export function CategoryPicker({
                     type="button"
                     aria-expanded={open}
                     onClick={() => setOpen((v) => !v)}
+                    data-tour="categories"
                     className="gc-ghost-btn"
                 >
                     <LayoutGrid className="size-4" />

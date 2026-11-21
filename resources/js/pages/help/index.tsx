@@ -1,5 +1,5 @@
-import { Head, usePage } from '@inertiajs/react';
-import { Search, X } from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { Compass, Search, X } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { SiteAssistant } from '@/components/ai/site-assistant';
@@ -32,6 +32,7 @@ const norm = (s: string) =>
 
 /** Головна довідки: пошук по статтях (у браузері), популярне й розділи. */
 export default function HelpIndex({ categories, popular }: Props) {
+    const signedIn = !!usePage().props.auth?.user;
     const { site } = usePage().props;
     const [query, setQuery] = useState('');
     const reduce = useReducedMotion();
@@ -66,6 +67,15 @@ export default function HelpIndex({ categories, popular }: Props) {
                         'Як користуватися GameCon: від першого входу до музики, кіно й кланів.',
                     )}
                 </p>
+                {signedIn && (
+                    <Link
+                        href="/feed?tour=1"
+                        className="gc-ghost-btn mt-4 inline-flex"
+                    >
+                        <Compass className="size-4" />
+                        {tr('Пройти тур по розділах')}
+                    </Link>
+                )}
             </header>
 
             <div className="relative mb-8">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Fun\MemoriesController;
+use App\Http\Controllers\NewcomerController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\StatusPageController;
 use App\Models\User;
@@ -98,6 +99,7 @@ class AccountPresenter
             'lobby_categories' => MemoriesController::categories($user),
             'feed_compact' => (bool) $user->pref('feed_compact'),
             'simple_ui' => (bool) $user->pref('simple_ui'),
+            'tour_pending' => NewcomerController::tourPending($user),
             'accent' => is_string($user->pref('accent')) ? $user->pref('accent') : null,
             'lobby_catalog' => MemoriesController::lobbyCatalog($user),
             // Мапа тривог: лише для людей з України (IP, профіль чи обрана область).

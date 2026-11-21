@@ -1,3 +1,4 @@
+import { SiteTour } from '@/components/onboarding/site-tour';
 import {
     ComposeSheet,
     LiveDock,
@@ -479,6 +480,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 <PhonePrompt />
                 {!chatImmersive && <DockHost />}
                 <ComposeSheet />
+                <SiteTour />
                 <FeedbackDialog />
                 <KeyboardShortcuts username={auth.user.username} />
                 {paletteOn && (

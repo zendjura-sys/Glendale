@@ -300,6 +300,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('posts', [PostController::class, 'store'])->middleware('throttle:30,1')->name('posts.store');
     Route::get('posts/drafts', [PostController::class, 'drafts'])->name('posts.drafts');
     Route::post('newcomer/hide', [NewcomerController::class, 'hide'])->name('newcomer.hide');
+    Route::post('tour/done', [NewcomerController::class, 'tourDone'])->name('tour.done');
     Route::put('settings/setup', [SetupController::class, 'update'])->middleware('throttle:30,1')->name('setup.update');
     Route::get('ideas', [IdeaController::class, 'index'])->name('ideas.index');
     // Конфіги й приціли гравців; ігровий вечір із друзями.
