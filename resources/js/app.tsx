@@ -188,6 +188,7 @@ function BootSkeleton({ name }: { name: string }) {
 
 /** Сторінки, які бачать гості (без входу). */
 const PUBLIC_PAGES = new Set([
+    'changelog',
     'profile/show',
     'profile/frozen',
     'games/index',

@@ -192,6 +192,8 @@ Route::get('terms', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('refund-policy', [LegalController::class, 'refund'])->name('legal.refund');
 Route::get('pricing', [LegalController::class, 'pricing'])->name('legal.pricing');
+// Журнал змін (№285) — відкритий усім.
+Route::inertia('changelog', 'changelog')->name('changelog');
 Route::get('sitemap.xml', SitemapController::class)->middleware('throttle:30,1')->name('sitemap');
 Route::get('sitemaps/{part}.xml', [SitemapController::class, 'part'])->where('part', '[a-z]+')->middleware('throttle:60,1')->name('sitemap.part');
 Route::get('contacts', [LegalController::class, 'contacts'])->name('legal.contacts');

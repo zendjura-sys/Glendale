@@ -450,6 +450,7 @@ function NavPanel({
                 <label className="mt-5 flex h-10 items-center gap-2 rounded-xl bg-[var(--vkui--color_field_background)] px-3 ring-1 ring-[var(--vkui--color_field_border_alpha)] focus-within:ring-[var(--vkui--color_stroke_accent)]">
                     <Search className="size-4 shrink-0 text-white/40" />
                     <input
+                        data-admin-search
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={(e) => {
@@ -459,7 +460,7 @@ function NavPanel({
                                 onNavigate?.();
                             }
                         }}
-                        placeholder={tr('Пошук розділу')}
+                        placeholder={tr('Пошук розділу · Ctrl+K')}
                         aria-label={tr('Пошук розділу')}
                         className="min-w-0 flex-1 !border-0 !bg-transparent text-sm text-white placeholder:text-[var(--vkui--color_text_secondary)] focus:outline-none"
                     />
@@ -606,6 +607,31 @@ export default function AdminLayout({ children }: PropsWithChildren) {
 
     // Перейшли в інший розділ — висувне меню закривається.
     useEffect(() => setDrawer(false), [currentUrl]);
+
+    // Ctrl+K / ⌘K — пошук розділу адмінки (№267): розгортає смугу чи меню й ставить курсор у поле.
+    useEffect(() => {
+        const onKey = (event: KeyboardEvent) => {
+            if (
+                !(event.ctrlKey || event.metaKey) ||
+                event.key.toLowerCase() !== 'k'
+            )
+                return;
+            event.preventDefault();
+            const desktop = window.matchMedia('(min-width: 1024px)').matches;
+            if (desktop && rail) toggleRail();
+            if (!desktop) setDrawer(true);
+            window.setTimeout(() => {
+                const input = [
+                    ...document.querySelectorAll<HTMLInputElement>(
+                        'input[data-admin-search]',
+                    ),
+                ].find((el) => el.offsetParent !== null);
+                input?.focus();
+            }, 250);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    });
 
     return (
         <VkProvider>
