@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RefreshMoviePlayers;
 use App\Jobs\SyncCinemaCatalog;
 use App\Models\Movie;
 use App\Models\MovieRequest;
@@ -28,6 +29,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -375,6 +377,38 @@ class CinemaController extends Controller
     {
         $this->save($request, Movie::withTrashed()->findOrFail($movie));
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Зміни збережено.']);
+
+        return back();
+    }
+
+    /**
+     * Масові дії з тайтлами (№266): опублікувати, сховати, оновити плеєри — для позначених у списку.
+     * Видалення тут немає навмисно: лише по одному, через кошик.
+     */
+    public function bulk(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*' => ['integer'],
+            'action' => ['required', Rule::in(['publish', 'hide', 'refresh'])],
+        ]);
+        $action = (string) $data['action'];
+        $ids = array_map('intval', Movie::query()->whereIn('id', $data['ids'])->pluck('id')->all());
+        if ($action === 'refresh') {
+            foreach ($ids as $id) {
+                RefreshMoviePlayers::dispatch($id);
+            }
+        } else {
+            Movie::query()->whereIn('id', $ids)->update(['is_published' => $action === 'publish']);
+        }
+        Cache::forget('cinema.genres');
+        Log::info('admin: cinema bulk '.$action, ['movies' => $ids, 'by' => $request->user()->id]);
+        $count = count($ids);
+        Inertia::flash('toast', ['type' => 'success', 'message' => match ($action) {
+            'publish' => "Опубліковано: {$count}.",
+            'hide' => "Сховано: {$count}.",
+            default => "Оновлення плеєрів запущено: {$count}.",
+        }]);
 
         return back();
     }

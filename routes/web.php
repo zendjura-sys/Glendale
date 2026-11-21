@@ -1400,6 +1400,7 @@ Route::middleware(['auth', 'verified.site', 'parental'])->group(function () {
             Route::put('auto', [Admin\CinemaController::class, 'updateAuto'])->name('auto.update');
             Route::put('players', [Admin\CinemaController::class, 'updatePlayers'])->name('players.update');
             Route::post('players/bulk', [Admin\CinemaController::class, 'bulkPlayers'])->middleware('throttle:10,1')->name('players.bulk');
+            Route::post('bulk', [Admin\CinemaController::class, 'bulk'])->middleware('throttle:30,1')->name('bulk');
             Route::delete('players/bulk', [Admin\CinemaController::class, 'cancelBulkPlayers'])->name('players.bulk.cancel');
             Route::put('tmdb', [Admin\CinemaController::class, 'updateTmdb'])->name('tmdb.update');
             Route::delete('requests', [Admin\CinemaController::class, 'closeRequest'])->name('requests.close');

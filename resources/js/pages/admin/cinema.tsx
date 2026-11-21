@@ -657,6 +657,7 @@ export default function AdminCinema({
     bulk,
 }: Props) {
     const [q, setQ] = useState(filters.q);
+    const [selected, setSelected] = useState<number[]>([]);
 
     const apply = (patch: Partial<Props['filters']>) => {
         const next = { ...filters, q, ...patch };
@@ -817,11 +818,76 @@ export default function AdminCinema({
                 </select>
             </div>
 
+            {/* Масові дії (№266): позначені тайтли — опублікувати, сховати, оновити плеєри. */}
+            {selected.length > 0 && (
+                <div className="gc-solid sticky top-2 z-10 flex flex-wrap items-center gap-2 rounded-2xl px-4 py-2.5 text-sm">
+                    <span className="mr-auto font-medium text-white">
+                        {tr('Позначено: {n}', { n: selected.length })}
+                    </span>
+                    {(
+                        [
+                            ['publish', tr('Опублікувати')],
+                            ['hide', tr('Сховати')],
+                            ['refresh', tr('Оновити плеєри')],
+                        ] as const
+                    ).map(([action, label]) => (
+                        <button
+                            key={action}
+                            type="button"
+                            onClick={() =>
+                                router.post(
+                                    '/admin/cinema/bulk',
+                                    { ids: selected, action },
+                                    {
+                                        preserveScroll: true,
+                                        onSuccess: () => setSelected([]),
+                                    },
+                                )
+                            }
+                            className="gc-ghost-btn"
+                        >
+                            {label}
+                        </button>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={() => setSelected([])}
+                        className="text-xs text-white/50 hover:text-white"
+                    >
+                        {tr('Зняти позначки')}
+                    </button>
+                </div>
+            )}
+
             <div className="gc-solid overflow-hidden rounded-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[900px] text-sm">
                         <thead>
                             <tr className="text-left text-xs text-white/40">
+                                <th className="w-10 pl-4">
+                                    <input
+                                        type="checkbox"
+                                        aria-label={tr(
+                                            'Позначити всі на сторінці',
+                                        )}
+                                        checked={
+                                            movies.data.length > 0 &&
+                                            movies.data.every((m) =>
+                                                selected.includes(m.id),
+                                            )
+                                        }
+                                        onChange={(e) =>
+                                            setSelected(
+                                                e.target.checked
+                                                    ? movies.data.map(
+                                                          (m) => m.id,
+                                                      )
+                                                    : [],
+                                            )
+                                        }
+                                        className="size-4 accent-[var(--gc-accent)]"
+                                    />
+                                </th>
                                 <th className="px-4 py-3 font-medium">
                                     {tr('Тайтл')}
                                 </th>
@@ -849,6 +915,32 @@ export default function AdminCinema({
                                         movie.deleted_at && 'opacity-60',
                                     )}
                                 >
+                                    <td className="w-10 pl-4">
+                                        <input
+                                            type="checkbox"
+                                            aria-label={tr(
+                                                'Позначити «{title}»',
+                                                {
+                                                    title: movie.title,
+                                                },
+                                            )}
+                                            checked={selected.includes(
+                                                movie.id,
+                                            )}
+                                            onChange={(e) =>
+                                                setSelected((list) =>
+                                                    e.target.checked
+                                                        ? [...list, movie.id]
+                                                        : list.filter(
+                                                              (id) =>
+                                                                  id !==
+                                                                  movie.id,
+                                                          ),
+                                                )
+                                            }
+                                            className="size-4 accent-[var(--gc-accent)]"
+                                        />
+                                    </td>
                                     <td className="px-4 py-2.5">
                                         <Link
                                             href={`/admin/cinema/${movie.id}/edit`}
