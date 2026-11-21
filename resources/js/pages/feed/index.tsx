@@ -76,6 +76,7 @@ import { formatDate } from '@/lib/format';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
 import { FriendsLive } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
+import { WeeklyChallenges } from '@/components/quests/quest-list';
 import type { Quest } from '@/components/quests/quest-list';
 import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
@@ -93,6 +94,7 @@ type Props = {
     tomorrow?: TomorrowEvent[];
     streaming?: StreamInfo[];
     quests?: Quest[];
+    weekly?: Quest[];
     country: string | null;
     hasFriends: boolean;
     posts: ScrollData<PostItem>;
@@ -206,6 +208,7 @@ export default function Feed({
     tomorrow,
     streaming,
     quests,
+    weekly,
     hasFriends,
     country,
     posts,
@@ -356,6 +359,7 @@ export default function Feed({
     const continueItems = widgets?.continue ?? [];
     const available = [
         'pulse',
+        'weekly',
         ...(storiesOn ? ['stories'] : []),
         'continue',
         'alerts',
@@ -377,6 +381,8 @@ export default function Feed({
         switch (key) {
             case 'pulse':
                 return <FeedPulse quests={quests ?? []} />;
+            case 'weekly':
+                return <WeeklyChallenges quests={weekly ?? []} />;
             case 'stories':
                 return storiesOn ? <StoriesBar /> : null;
             case 'continue':
@@ -565,6 +571,14 @@ export default function Feed({
             badge: tr('Завдання'),
             tone: 'accent',
             node: () => renderWidget('pulse'),
+        },
+        {
+            key: 'weekly',
+            category: 'quests',
+            sub: 'weekly',
+            badge: tr('Тиждень'),
+            tone: 'accent',
+            node: () => renderWidget('weekly'),
         },
         {
             key: 'stories',

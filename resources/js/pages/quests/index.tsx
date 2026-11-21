@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Clock, Medal, Target, Ticket, Trophy } from 'lucide-react';
+import { Clock, Flame, Medal, Target, Ticket, Trophy } from 'lucide-react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { QuestList } from '@/components/quests/quest-list';
 import type { Quest } from '@/components/quests/quest-list';
@@ -18,6 +18,8 @@ type Props = {
     };
     completed: number;
     resets_at: string;
+    weekly: Quest[];
+    weekly_ends_at: string;
 };
 
 const PLACE_TONE = ['text-amber-300', 'text-slate-200', 'text-orange-300'];
@@ -27,11 +29,19 @@ export default function Quests({
     season,
     completed,
     resets_at,
+    weekly,
+    weekly_ends_at,
 }: Props) {
     const month = new Intl.DateTimeFormat(LOCALE, {
         month: 'long',
         year: 'numeric',
     }).format(new Date(`${season.season}-15`));
+    const weekDaysLeft = Math.max(
+        1,
+        Math.ceil(
+            (new Date(weekly_ends_at).getTime() - Date.now()) / 86_400_000,
+        ),
+    );
     const daysLeft = Math.max(
         0,
         Math.ceil(
@@ -65,6 +75,25 @@ export default function Quests({
                         <QuestList quests={quests} />
                     </div>
                 </section>
+
+                {weekly.length > 0 && (
+                    <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
+                                <Flame className="size-5 text-orange-300" />
+                                {tr('Челенджі тижня')}
+                            </h2>
+                            <span className="text-xs text-white/45">
+                                {tr('Ще {n} дн. · однакові для всіх', {
+                                    n: weekDaysLeft,
+                                })}
+                            </span>
+                        </div>
+                        <div className="mt-3">
+                            <QuestList quests={weekly} weekly />
+                        </div>
+                    </section>
+                )}
 
                 <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -126,7 +155,7 @@ export default function Quests({
                     )}
                     <p className="mt-3 text-xs text-white/40">
                         {tr(
-                            'Очки сезону — досвід за виконані завдання цього місяця. Він же додається до вашого рівня.',
+                            'Очки сезону — досвід за виконані завдання й челенджі цього місяця. Він же додається до вашого рівня.',
                         )}
                     </p>
                     <Link

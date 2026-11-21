@@ -11,6 +11,7 @@ import {
     UserPlus,
     UserRoundSearch,
     Vote,
+    Flame,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -29,6 +30,8 @@ export type Quest = {
     claimed: boolean;
     /** GameCon+: досвід без очок сезону. */
     bonus?: boolean;
+    /** Челендж тижня: скільки людей уже виконали. */
+    finishers?: number;
 };
 
 const ICONS: Record<string, LucideIcon> = {
@@ -44,6 +47,19 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 /** Назви завдань — так само, як DailyQuests::POOL. */
+/** Назви челенджів тижня (№274) — ті самі, що в WeeklyChallenges::POOL. */
+const WEEKLY_TITLES = (): Record<string, string> => ({
+    post: tr('Опублікуйте 5 записів'),
+    comment: tr('Залиште 20 коментарів'),
+    like: tr('Вподобайте 40 записів'),
+    vote: tr('Голосуйте за сервер 5 днів'),
+    moment: tr('Поділіться 3 моментами'),
+    party: tr('Зіграйте в 3 паті'),
+    friend: tr('Додайте 3 друзів'),
+    photo: tr('Завантажте 5 фото'),
+    story: tr('Опублікуйте 4 сторіс'),
+});
+
 const TITLES = (): Record<string, string> => ({
     post: tr('Опублікуйте запис'),
     comment: tr('Залиште 3 коментарі'),
@@ -69,7 +85,14 @@ const LINKS: Record<string, string> = {
     story: '/feed',
 };
 
-export function QuestList({ quests }: { quests: Quest[] }) {
+export function QuestList({
+    quests,
+    weekly = false,
+}: {
+    quests: Quest[];
+    /** Челенджі тижня (№274): свої назви з сервера й свій адрес нагороди. */
+    weekly?: boolean;
+}) {
     const [busy, setBusy] = useState<string | null>(null);
 
     return (
@@ -100,8 +123,18 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                                 href={LINKS[quest.key] ?? '/feed'}
                                 className="block text-sm font-medium break-words text-white hover:underline"
                             >
-                                {TITLES()[quest.key] ?? quest.title}
+                                {weekly
+                                    ? (WEEKLY_TITLES()[quest.key] ??
+                                      quest.title)
+                                    : (TITLES()[quest.key] ?? quest.title)}
                             </Link>
+                            {weekly && (quest.finishers ?? 0) > 0 && (
+                                <span className="mt-0.5 block text-[11px] text-white/45">
+                                    {tr('Уже виконали: {n}', {
+                                        n: quest.finishers ?? 0,
+                                    })}
+                                </span>
+                            )}
                             {quest.bonus && (
                                 <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-indigo-200/80">
                                     <PlusBadge className="size-3 rounded-[4px] [&_svg]:size-2.5" />
@@ -135,7 +168,9 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                                 disabled={busy !== null}
                                 onClick={() =>
                                     router.post(
-                                        `/quests/${quest.key}/claim`,
+                                        weekly
+                                            ? `/quests/week/${quest.key}/claim`
+                                            : `/quests/${quest.key}/claim`,
                                         {},
                                         {
                                             preserveScroll: true,
@@ -179,6 +214,29 @@ export function FeedQuests({ quests }: { quests: Quest[] }) {
                 </Link>
             </div>
             <QuestList quests={quests} />
+        </section>
+    );
+}
+
+/** Живий блок лобі: челенджі тижня (№274). Усе забрано — блоку немає. */
+export function WeeklyChallenges({ quests }: { quests: Quest[] }) {
+    if (quests.length === 0 || quests.every((q) => q.claimed)) return null;
+
+    return (
+        <section className="gc-solid rounded-2xl p-4">
+            <div className="mb-3 flex items-center justify-between gap-2 px-1">
+                <h2 className="flex items-center gap-2 font-display text-[13px] font-semibold text-white/90">
+                    <Flame className="size-4 text-orange-300" />
+                    {tr('Челенджі тижня')}
+                </h2>
+                <Link
+                    href="/quests"
+                    className="text-xs font-medium text-white/45 hover:text-white"
+                >
+                    {tr('Усі завдання')}
+                </Link>
+            </div>
+            <QuestList quests={quests} weekly />
         </section>
     );
 }

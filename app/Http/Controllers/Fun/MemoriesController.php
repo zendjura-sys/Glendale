@@ -126,7 +126,7 @@ class MemoriesController extends Controller
      * й якого розміру («half» — пів ширини на ПК, «full» — на всю). Однаково на сайті й у застосунку.
      */
     public const LAYOUT_WIDGETS = [
-        'pulse', 'stories', 'continue', 'requests', 'contacts', 'voice', 'servers', 'season',
+        'pulse', 'weekly', 'stories', 'continue', 'requests', 'contacts', 'voice', 'servers', 'season',
         'online', 'playing', 'same_game', 'picks', 'suggestions', 'birthdays', 'media', 'alerts', 'player',
     ];
 

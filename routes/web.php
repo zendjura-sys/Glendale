@@ -1074,6 +1074,7 @@ Route::middleware(['auth', 'verified.site', 'parental'])->group(function () {
     Route::prefix('quests')->name('quests.')->middleware('module:quests')->group(function () {
         Route::get('/', [QuestController::class, 'index'])->name('index');
         Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1')->name('claim');
+        Route::post('week/{quest}/claim', [QuestController::class, 'claimWeekly'])->where('quest', '[a-z]{2,20}')->middleware('throttle:30,1')->name('week.claim');
     });
 
     // Сезонний пропуск: рівні з очок сезону, нагороди двох доріжок, інвентар косметики.

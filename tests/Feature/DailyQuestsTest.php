@@ -9,6 +9,7 @@ use App\Services\Achievements;
 use App\Services\Quests\DailyQuests;
 use App\Support\Modules\ModuleManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -38,7 +39,7 @@ class DailyQuestsTest extends TestCase
         // Завдання «виконані» — перевіряємо нагороди, а не підрахунок.
         $this->app->instance(DailyQuests::class, new class(app(ModuleManager::class)) extends DailyQuests
         {
-            public function progress(User $user, string $key): int
+            public function progress(User $user, string $key, ?Carbon $from = null): int
             {
                 return $user->email === 'busy@example.com' ? 0 : 99;
             }

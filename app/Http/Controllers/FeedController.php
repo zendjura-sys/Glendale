@@ -20,6 +20,7 @@ use App\Services\FriendshipService;
 use App\Services\Onboarding\NewcomerWeek;
 use App\Services\PostPresenter;
 use App\Services\Quests\DailyQuests;
+use App\Services\Quests\WeeklyChallenges;
 use App\Services\Streams\LiveStreams;
 use App\Support\I18n\LanguageGuess;
 use App\Support\Modules\ModuleManager;
@@ -119,6 +120,8 @@ class FeedController extends Controller
             'country' => $user->country,
             'tomorrow' => Inertia::defer(fn () => $this->tomorrow($user), 'events'),
             'quests' => Inertia::defer(fn () => app(ModuleManager::class)->enabled('quests') ? app(DailyQuests::class)->board($user) : [], 'events'),
+            // Челенджі тижня (№274) — живий блок лобі «Завдання й сезон».
+            'weekly' => Inertia::defer(fn () => app(ModuleManager::class)->enabled('quests') ? app(WeeklyChallenges::class)->board($user) : [], 'events'),
             'streaming' => Inertia::defer(fn () => app(LiveStreams::class)->friendsLive($user, $request->getHost()), 'events'),
             'hasFriends' => $hasSources,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),

@@ -62,7 +62,7 @@ return [
             'predictions' => ['label' => 'Прогнози на матчі', 'added' => '2026-11-21'],
         ]],
         'quests' => ['label' => 'Завдання й сезон', 'module' => 'quests', 'subs' => [
-            'daily' => 'Завдання дня', 'season' => 'Сезонний пропуск', 'rewards' => 'Нагороди',
+            'daily' => 'Завдання дня', 'weekly' => ['label' => 'Челенджі тижня', 'added' => '2026-11-21'], 'season' => 'Сезонний пропуск', 'rewards' => 'Нагороди',
         ]],
         'moments' => ['label' => 'Моменти', 'module' => 'moments', 'subs' => [
             'stories' => 'Історії друзів', 'clips' => 'Кліпи', 'week' => 'Найкраще за тиждень',

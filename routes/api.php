@@ -1210,6 +1210,7 @@ Route::prefix('v1')->group(function () {
             Route::prefix('quests')->middleware('module:quests')->group(function () {
                 Route::get('/', [QuestController::class, 'index']);
                 Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1');
+                Route::post('week/{quest}/claim', [QuestController::class, 'claimWeekly'])->where('quest', '[a-z]{2,20}')->middleware('throttle:30,1');
             });
 
             Route::get('level', [LevelController::class, 'index'])->middleware('throttle:30,1');
