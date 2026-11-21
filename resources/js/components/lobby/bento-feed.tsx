@@ -113,7 +113,7 @@ export function LiveBlock({
         <div
             className={cn('gc-bento-cell', wide && 'is-wide')}
             // Порожній блок (у категорії зараз нічого не відбувається) не займає місця.
-            style={rows !== null && rows <= 36 ? { display: 'none' } : style}
+            style={rows !== null && rows <= 40 ? { display: 'none' } : style}
         >
             <div ref={ref} className="gc-live-block">
                 {(badge || isNew) && (

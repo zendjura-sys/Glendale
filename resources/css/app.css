@@ -8629,16 +8629,6 @@ html[data-theme='light'] #gc-boot-root {
         grid-template-columns: minmax(0, 1fr) !important;
     }
 }
-/* Вміст блоку з міткою починається під вирізом — текст не обрізається, кнопки не перекриваються. */
-.gc-lobby-bento .gc-live-block:has(> .gc-live-badge) {
-    padding-top: 30px;
-}
-/* Кожен блок лобі — картка: виріз із міткою завжди в межах блоку, навіть якщо вміст без фону. */
-.gc-lobby-bento .gc-live-block {
-    overflow: hidden;
-    border-radius: 8px;
-    background: var(--gc-l1);
-}
 
 .gc-lobby-hero-block {
     padding: 20px 24px 24px;
@@ -8870,4 +8860,65 @@ html[data-theme='light'] .gc-now-tile .gc-glass-input::placeholder {
     .gc-voice-bar > span {
         transition: none;
     }
+}
+
+/* ==========================================================================
+   Картка лобі з вирізом (без «ватерлінії»): один контейнер, один фон, радіус 16.
+   Виріз — float праворуч із фоном сторінки й увігнутими переходами; заголовок і
+   кнопки («Усі», «⋯») починаються на рівні вирізу й самі поступаються йому шириною.
+   ========================================================================== */
+.gc-lobby-bento {
+    --card-r: 16px;
+}
+.gc-lobby-bento .gc-live-block {
+    display: flow-root;
+    overflow: hidden;
+    border-radius: var(--card-r);
+    background: var(--gc-l1);
+}
+.gc-lobby-bento .gc-live-badge {
+    position: relative;
+    top: auto;
+    right: auto;
+    float: right;
+    margin: 0 0 6px 12px;
+    padding: 0 0 8px 8px;
+    border-bottom-left-radius: var(--card-r);
+}
+.gc-lobby-bento .gc-live-badge::before,
+.gc-lobby-bento .gc-live-badge::after {
+    width: var(--card-r);
+    height: var(--card-r);
+    background: radial-gradient(
+        circle at 0 100%,
+        transparent calc(var(--card-r) - 0.5px),
+        var(--gc-page) var(--card-r)
+    );
+}
+/* Фото на всю площу — виріз лежить поверх картинки. */
+.gc-lobby-bento .gc-live-block:has(> .gc-media-block) > .gc-live-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    float: none;
+    margin: 0;
+}
+.gc-lobby-bento .gc-media-block,
+.gc-lobby-bento .gc-live-block > :not(.gc-live-badge) {
+    border-radius: var(--card-r);
+}
+/* Плитки «Зараз» усередині картки — звичайний потік (не flex), щоб обтікати виріз. */
+.gc-lobby-bento .gc-now-tile {
+    display: block;
+    min-height: 0;
+}
+.gc-lobby-bento .gc-now-tile > * + * {
+    margin-top: 8px;
+}
+.gc-lobby-bento .gc-now-tile > .mt-auto {
+    margin-top: 18px;
+}
+.gc-lobby-bento .gc-now-tile__kicker,
+.gc-lobby-bento .gc-now-tile__title {
+    display: block;
 }
