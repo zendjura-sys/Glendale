@@ -374,6 +374,13 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
+                        'backups',
+                        tr('Резервні копії'),
+                        tr(
+                            'Зашифровані копії бази в S3-сумісному сховищі — на випадок, коли сервер утрачено разом із диском.',
+                        ),
+                    ],
+                    [
                         'translate',
                         tr('Переклад і орфографія'),
                         tr(

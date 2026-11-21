@@ -2,6 +2,9 @@
 
 namespace App\Services\System;
 
+use App\Support\Settings\SiteSettings;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -9,12 +12,19 @@ use RuntimeException;
 /**
  * Резервні копії бази: щоденний дамп у приватне сховище (storage/app/private/backups), зберігаються останні KEEP.
  * Пароль бази передається через змінну середовища, не в командному рядку.
+ * Хмара (№268): якщо в Інтеграціях задано S3-сховище й пароль шифрування, кожна копія ще йде
+ * туди зашифрованою — на випадок, коли сервер утрачено разом із диском.
  */
 class Backups
 {
     public const DIR = 'backups';
 
     public const KEEP = 14;
+
+    /** Скільки копій тримати в хмарі за замовчуванням (≈ місяць щоденних). */
+    public const CLOUD_KEEP = 30;
+
+    private const CLOUD_STATUS = 'backups.cloud.last';
 
     /**
      * @return list<array{name: string, size: int, created_at: string}>
@@ -58,8 +68,81 @@ class Backups
             default => throw new RuntimeException('Невідомий драйвер бази для резервної копії.'),
         };
         $this->prune();
+        // Хмара — окремий крок: її збій не скасовує локальну копію, лише пишеться в журнал і в адмінку.
+        if ($this->cloudReady()) {
+            try {
+                $this->upload($name);
+            } catch (\Throwable $e) {
+                Log::warning('backup: cloud upload failed', ['file' => $name, 'error' => $e->getMessage()]);
+                Cache::forever(self::CLOUD_STATUS, ['at' => now()->toIso8601String(), 'ok' => false, 'file' => $name, 'error' => $e->getMessage()]);
+            }
+        }
 
         return $name;
+    }
+
+    /** Сховище й пароль шифрування задано. */
+    public function cloudReady(): bool
+    {
+        return app(S3Storage::class)->configured() && $this->passphrase() !== null;
+    }
+
+    /** Зашифрувати копію, відправити в хмару й прибрати там найстаріші. */
+    public function upload(string $name): void
+    {
+        $path = $this->path($name) ?? throw new RuntimeException('Копію не знайдено.');
+        $passphrase = $this->passphrase() ?? throw new RuntimeException('Не задано пароль шифрування копій.');
+        $encrypted = $path.'.enc';
+        try {
+            BackupCipher::encrypt($path, $encrypted, $passphrase);
+            $s3 = app(S3Storage::class);
+            $s3->put($s3->prefix().$name.'.enc', $encrypted);
+        } finally {
+            @unlink($encrypted);
+        }
+        $this->pruneCloud();
+        Cache::forever(self::CLOUD_STATUS, ['at' => now()->toIso8601String(), 'ok' => true, 'file' => $name.'.enc', 'error' => null]);
+        Log::info('backup: uploaded to cloud', ['file' => $name.'.enc']);
+    }
+
+    /**
+     * Остання спроба відправити копію в хмару (для адмінки).
+     *
+     * @return array{at: string, ok: bool, file: string, error: string|null}|null
+     */
+    public function cloudStatus(): ?array
+    {
+        $status = Cache::get(self::CLOUD_STATUS);
+        if (! is_array($status)) {
+            return null;
+        }
+
+        return [
+            'at' => (string) ($status['at'] ?? ''),
+            'ok' => (bool) ($status['ok'] ?? false),
+            'file' => (string) ($status['file'] ?? ''),
+            'error' => isset($status['error']) ? (string) $status['error'] : null,
+        ];
+    }
+
+    private function pruneCloud(): void
+    {
+        $s3 = app(S3Storage::class);
+        $keep = max(3, (int) (app(SiteSettings::class)->get('backup_cloud_keep') ?: self::CLOUD_KEEP));
+        $ours = array_values(array_filter($s3->list($s3->prefix()),
+            fn (array $o) => preg_match('/gamecon-\d{8}-\d{6}\.sql\.gz\.enc$/', $o['key']) === 1));
+        // Імена з датою — сортуються самі; видаляємо лише свої файли, не чіпаючи іншого в кошику.
+        usort($ours, fn (array $a, array $b) => strcmp($b['key'], $a['key']));
+        foreach (array_slice($ours, $keep) as $old) {
+            $s3->delete($old['key']);
+        }
+    }
+
+    private function passphrase(): ?string
+    {
+        $value = app(SiteSettings::class)->secret('backup_passphrase');
+
+        return is_string($value) && strlen($value) >= 12 ? $value : null;
     }
 
     public function path(string $name): ?string

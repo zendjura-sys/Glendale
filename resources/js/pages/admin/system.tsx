@@ -1,5 +1,5 @@
 import { MasterDetail } from '@/components/admin/master-detail';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     Archive,
     Bug,
@@ -48,6 +48,7 @@ type ErrorRow = {
 export default function AdminSystem({
     backups,
     backup_stale,
+    backup_cloud,
     errors,
     queue,
     show,
@@ -55,6 +56,15 @@ export default function AdminSystem({
 }: {
     backups: Backup[];
     backup_stale: boolean;
+    backup_cloud: {
+        ready: boolean;
+        last: {
+            at: string;
+            ok: boolean;
+            file: string;
+            error: string | null;
+        } | null;
+    };
     errors: ErrorRow[];
     queue: Queue;
     show: 'open' | 'resolved';
@@ -121,6 +131,35 @@ export default function AdminSystem({
                         {tr(
                             'Остання копія старша за дві доби. Перевірте, що на сервері працює планувальник (schedule:run).',
                         )}
+                    </p>
+                )}
+                {/* Хмара (№268): зашифрована копія поза сервером. */}
+                {!backup_cloud.ready ? (
+                    <p className="mb-3 rounded-xl bg-white/[0.04] px-3 py-2 text-sm text-white/60">
+                        {tr('Копії лежать лише на цьому сервері.')}{' '}
+                        <Link
+                            href="/admin/integrations"
+                            className="font-medium text-[var(--gc-accent)] underline underline-offset-2"
+                        >
+                            {tr('Підключити хмару')}
+                        </Link>
+                    </p>
+                ) : backup_cloud.last && !backup_cloud.last.ok ? (
+                    <p className="mb-3 rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                        {tr('Копія не дійшла в хмару: {error}', {
+                            error: backup_cloud.last.error ?? '',
+                        })}
+                    </p>
+                ) : (
+                    <p className="mb-3 rounded-xl bg-emerald-400/10 px-3 py-2 text-sm text-emerald-200">
+                        {backup_cloud.last
+                            ? tr('Хмара: остання копія {file} · {at}', {
+                                  file: backup_cloud.last.file,
+                                  at: timeAgo(backup_cloud.last.at),
+                              })
+                            : tr(
+                                  'Хмару підключено — наступна копія піде туди зашифрованою.',
+                              )}
                     </p>
                 )}
                 {backups.length === 0 ? (

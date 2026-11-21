@@ -52,10 +52,13 @@ use App\Services\Spellcheck\Spellchecker;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Streams\LiveStreams;
 use App\Services\System\AdminAlerts;
+use App\Services\System\Backups;
+use App\Services\System\S3Storage;
 use App\Services\Voice\LiveKit;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -537,6 +540,48 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]{6,64}$/'], 'message' => 'API Key — латинські літери й цифри.'],
                     ['name' => 'api_secret', 'setting' => 'edge_livekit_api_secret', 'type' => 'secret', 'label' => 'API Secret LiveKit на вузлі',
                         'rules' => ['nullable', 'string', 'min:16', 'max:128'], 'message' => 'Секрет LiveKit — щонайменше 16 символів.'],
+                ],
+            ],
+            'backups' => [
+                'label' => 'Копії бази в хмару (S3)',
+                'group' => 'backups',
+                'description' => 'Щоденна копія бази (04:10) ще й іде в S3-сумісне сховище — Cloudflare R2, Backblaze B2, AWS S3 чи Wasabi. Перед відправкою шифрується вашим паролем: без нього копію ніхто не прочитає, навіть сховище.',
+                'docs' => 'https://developers.cloudflare.com/r2/api/s3/tokens/',
+                'steps' => [
+                    'Створіть кошик (bucket) у сховищі. Cloudflare R2: 10 ГБ безкоштовно.',
+                    'Створіть ключ доступу з правами читання й запису лише на цей кошик (R2: Manage R2 API Tokens → Object Read & Write).',
+                    'Вставте адресу сховища (R2: https://<account-id>.r2.cloudflarestorage.com), кошик, Access Key і Secret.',
+                    'Придумайте пароль шифрування (від 12 символів) і збережіть його поза сервером — у менеджері паролів. Без нього копію не відновити.',
+                    'Натисніть «Перевірити», потім «Зробити копію» в «Система». Відновлення: php artisan gc:backup-decrypt файл.enc',
+                ],
+                'configured' => app(Backups::class)->cloudReady(),
+                'stat' => (function () {
+                    $status = app(Backups::class)->cloudStatus();
+                    if ($status === null) {
+                        return 'Копій у хмарі ще не було';
+                    }
+                    $when = Carbon::parse($status['at'])->timezone('Europe/Kyiv')->format('d.m H:i');
+
+                    return $status['ok'] ? "Остання копія в хмарі: {$when} · {$status['file']}" : "Помилка {$when}: {$status['error']}";
+                })(),
+                'test' => fn () => app(S3Storage::class)->test(),
+                'fields' => [
+                    ['name' => 'endpoint', 'setting' => 'backup_s3_endpoint', 'type' => 'text', 'label' => 'Адреса сховища (S3 endpoint)', 'placeholder' => 'https://<account-id>.r2.cloudflarestorage.com',
+                        'rules' => ['nullable', 'string', 'max:255', 'regex:#^https://[A-Za-z0-9.\-]+(:\d+)?/?$#'], 'message' => 'Лише https://адреса, без шляху й кошика.'],
+                    ['name' => 'region', 'setting' => 'backup_s3_region', 'type' => 'text', 'label' => 'Регіон (R2 — auto)', 'placeholder' => 'auto',
+                        'rules' => ['nullable', 'string', 'regex:/^[a-z0-9\-]{2,32}$/'], 'message' => 'Регіон — як «auto» чи «eu-central-1».'],
+                    ['name' => 'bucket', 'setting' => 'backup_s3_bucket', 'type' => 'text', 'label' => 'Кошик (bucket)', 'placeholder' => 'gamecon-backups',
+                        'rules' => ['nullable', 'string', 'regex:/^[a-z0-9][a-z0-9.\-]{1,62}$/'], 'message' => 'Назва кошика — малі латинські літери, цифри, крапки й дефіси.'],
+                    ['name' => 'key', 'setting' => 'backup_s3_key', 'type' => 'text', 'label' => 'Access Key ID', 'placeholder' => 'AKIA… / ключ R2',
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,128}$/'], 'message' => 'Access Key — латинські літери й цифри.'],
+                    ['name' => 'secret', 'setting' => 'backup_s3_secret', 'type' => 'secret', 'label' => 'Secret Access Key',
+                        'rules' => ['nullable', 'string', 'min:20', 'max:128'], 'message' => 'Secret — щонайменше 20 символів.'],
+                    ['name' => 'prefix', 'setting' => 'backup_s3_prefix', 'type' => 'text', 'label' => 'Тека в кошику', 'placeholder' => 'gamecon',
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-\/]{0,64}$/'], 'message' => 'Тека — латинські літери, цифри, «-», «_» і «/».'],
+                    ['name' => 'passphrase', 'setting' => 'backup_passphrase', 'type' => 'secret', 'label' => 'Пароль шифрування копій (збережіть поза сервером!)',
+                        'rules' => ['nullable', 'string', 'min:12', 'max:200'], 'message' => 'Пароль — щонайменше 12 символів.'],
+                    ['name' => 'keep', 'setting' => 'backup_cloud_keep', 'type' => 'text', 'label' => 'Скільки копій тримати (за замовчуванням 30)', 'placeholder' => '30',
+                        'rules' => ['nullable', 'integer', 'min:3', 'max:365'], 'message' => 'Від 3 до 365 копій.'],
                 ],
             ],
             'igdb' => [

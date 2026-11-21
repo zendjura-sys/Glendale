@@ -61,6 +61,8 @@ class SystemController extends Controller
             'backups' => $list,
             // Остання копія старша за дві доби — щось не так з розкладом.
             'backup_stale' => $list === [] || strtotime($list[0]['created_at']) < now()->subDays(2)->getTimestamp(),
+            // Хмарна копія (№268): чи підключено й як пройшла остання відправка.
+            'backup_cloud' => ['ready' => $backups->cloudReady(), 'last' => $backups->cloudStatus()],
             'errors' => $errors,
             'queue' => $queue,
             'show' => $show,

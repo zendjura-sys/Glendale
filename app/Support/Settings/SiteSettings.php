@@ -139,6 +139,15 @@ class SiteSettings
         'edge_cdn' => 'main',
         'edge_livekit_api_key' => null,
         'edge_livekit_api_secret' => null,
+        // Хмарні копії бази (№268): S3-сумісне сховище й пароль шифрування.
+        'backup_s3_endpoint' => null,
+        'backup_s3_region' => 'auto',
+        'backup_s3_bucket' => null,
+        'backup_s3_key' => null,
+        'backup_s3_secret' => null,
+        'backup_s3_prefix' => 'gamecon',
+        'backup_passphrase' => null,
+        'backup_cloud_keep' => null,
         'vapid_public' => null,
         'telegram_bot_token' => null,
         'telegram_bot_username' => null,
@@ -187,7 +196,7 @@ class SiteSettings
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'edge_livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token', 'monobank_acquiring_token', 'google_play_service_account', 'google_play_rtdn_token', 'acoustid_key', 'lastfm_key', 'discogs_token', 'libretranslate_key', 'languagetool_key', 'azure_translator_key', 'ai_key', 'stt_key', 'giphy_key', 'alerts_in_ua_token', 'ukrainealarm_token'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'edge_livekit_api_secret', 'backup_s3_secret', 'backup_passphrase', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token', 'monobank_acquiring_token', 'google_play_service_account', 'google_play_rtdn_token', 'acoustid_key', 'lastfm_key', 'discogs_token', 'libretranslate_key', 'languagetool_key', 'azure_translator_key', 'ai_key', 'stt_key', 'giphy_key', 'alerts_in_ua_token', 'ukrainealarm_token'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;
