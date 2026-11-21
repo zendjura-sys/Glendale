@@ -60,6 +60,8 @@ class FriendshipService
     public function request(User $from, User $to): string
     {
         abort_if($from->is($to), 422, 'Не можна додати себе в друзі.');
+        // Батьківський контроль (№227): підлітку — лише від друзів його друзів.
+        abort_unless(app(ParentalControl::class)->allowsFriendRequest($from, $to), 403, 'Цій людині можна надіслати заявку лише від друзів її друзів.');
 
         return DB::transaction(function () use ($from, $to) {
             $existing = $this->between($from, $to);

@@ -129,6 +129,7 @@ use App\Http\Controllers\Settings\DigestController;
 use App\Http\Controllers\Settings\GameThemeController;
 use App\Http\Controllers\Settings\ListeningController;
 use App\Http\Controllers\Settings\NavigationController;
+use App\Http\Controllers\Settings\ParentalController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\Settings\StreamController;
 use App\Http\Controllers\SetupController;
@@ -256,7 +257,7 @@ Route::prefix('v1')->group(function () {
         Route::post('two-factor', [AuthController::class, 'twoFactor']);
     });
 
-    Route::middleware(['auth.api', 'verified.site'])->group(function () {
+    Route::middleware(['auth.api', 'verified.site', 'parental'])->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         // «Увійти через застосунок GameCon»: застосунок підтверджує або відхиляє вхід браузера.
         Route::prefix('auth/app-login/{id}')->whereUuid('id')->middleware('throttle:app-login-app')->group(function () {
@@ -796,6 +797,11 @@ Route::prefix('v1')->group(function () {
             Route::put('settings/navigation/header', [NavigationController::class, 'header']);
             Route::put('settings/theme', [AppearanceController::class, 'theme']);
             Route::put('settings/density', [AppearanceController::class, 'density'])->middleware('throttle:30,1');
+            Route::get('settings/parental', [ParentalController::class, 'show']);
+            Route::post('settings/parental', [ParentalController::class, 'invite'])->middleware('throttle:10,1');
+            Route::post('settings/parental/{link}/accept', [ParentalController::class, 'accept'])->whereNumber('link');
+            Route::put('settings/parental/{link}', [ParentalController::class, 'update'])->whereNumber('link');
+            Route::delete('settings/parental/{link}', [ParentalController::class, 'destroy'])->whereNumber('link');
             Route::put('settings/simple-ui', [AppearanceController::class, 'simple'])->middleware('throttle:30,1');
             Route::put('settings/accent', [AppearanceController::class, 'accent'])->middleware('throttle:30,1');
             Route::put('settings/mode', [AppearanceController::class, 'mode']);

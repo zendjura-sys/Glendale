@@ -235,7 +235,7 @@ Route::middleware('guest')->prefix('login/app')->name('login.app.')->group(funct
 Route::get('app-login/{id}', [AppLoginController::class, 'open'])->whereUuid('id')->middleware('throttle:60,1')->name('app-login.open');
 Route::get('.well-known/assetlinks.json', AppLinksController::class)->middleware('throttle:60,1')->name('app-links');
 
-Route::middleware(['auth', 'verified.site'])->group(function () {
+Route::middleware(['auth', 'verified.site', 'parental'])->group(function () {
     Route::get('join/{token}', [InviteLinkController::class, 'show'])->name('invites.show');
     Route::post('join/{token}', [InviteLinkController::class, 'accept'])->middleware('throttle:20,1')->name('invites.accept');
 

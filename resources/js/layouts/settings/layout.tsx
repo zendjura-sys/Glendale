@@ -86,6 +86,12 @@ const items = [
         href: editNavigation(),
         icon: PanelBottom,
     },
+    {
+        title: tr('Батьківський контроль'),
+        description: tr('Нічна пауза й заявки в друзі для підлітка'),
+        href: '/settings/parental',
+        icon: ShieldCheck,
+    },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {

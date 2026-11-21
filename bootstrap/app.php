@@ -11,6 +11,7 @@ use App\Http\Middleware\EnsureFamilySection;
 use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\ParentalRestTime;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\ThrottlePerRoute;
 use App\Http\Middleware\TrackUserActivity;
@@ -70,6 +71,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'module' => EnsureModuleEnabled::class,
+            // Нічна пауза батьківського контролю (№227).
+            'parental' => ParentalRestTime::class,
             'family.section' => EnsureFamilySection::class,
             // Окремий лічильник throttle на кожен маршрут (див. ThrottlePerRoute).
             'throttle' => ThrottlePerRoute::class,

@@ -9,6 +9,7 @@ use App\Http\Controllers\Settings\DigestController;
 use App\Http\Controllers\Settings\GameThemeController;
 use App\Http\Controllers\Settings\ListeningController;
 use App\Http\Controllers\Settings\NavigationController;
+use App\Http\Controllers\Settings\ParentalController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\StreamController;
@@ -25,6 +26,12 @@ Route::middleware(['auth'])->group(function () {
     Route::put('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
     Route::put('settings/theme', [AppearanceController::class, 'theme'])->name('appearance.theme');
     Route::put('settings/density', [AppearanceController::class, 'density'])->middleware('throttle:30,1')->name('appearance.density');
+    // Батьківський контроль (№227).
+    Route::get('settings/parental', [ParentalController::class, 'edit'])->name('parental.edit');
+    Route::post('settings/parental', [ParentalController::class, 'invite'])->middleware('throttle:10,1')->name('parental.invite');
+    Route::post('settings/parental/{link}/accept', [ParentalController::class, 'accept'])->whereNumber('link')->name('parental.accept');
+    Route::put('settings/parental/{link}', [ParentalController::class, 'update'])->whereNumber('link')->name('parental.update');
+    Route::delete('settings/parental/{link}', [ParentalController::class, 'destroy'])->whereNumber('link')->name('parental.destroy');
     Route::put('settings/simple-ui', [AppearanceController::class, 'simple'])->middleware('throttle:30,1')->name('appearance.simple');
     Route::put('settings/accent', [AppearanceController::class, 'accent'])->middleware('throttle:30,1')->name('appearance.accent');
     Route::put('settings/mode', [AppearanceController::class, 'mode'])->name('appearance.mode');

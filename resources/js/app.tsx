@@ -223,6 +223,7 @@ void createInertiaApp({
             case name === 'welcome':
             case name === 'error':
             case name === 'wrapped':
+            case name === 'parental/rest':
             case name === 'links/show':
             case name === 'start/mode':
             case name === 'start/phone':

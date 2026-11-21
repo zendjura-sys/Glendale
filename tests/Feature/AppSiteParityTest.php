@@ -96,6 +96,13 @@ class AppSiteParityTest extends TestCase
         $this->actingAs($reader)->postJson("/games/celeste/guides/{$guide->id}/vote", ['helpful' => null])->assertOk()->assertJsonPath('helpful', 0);
     }
 
+    public function test_app_and_site_get_parental_control(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->getJson('/settings/parental')->assertOk()->assertJsonPath('children', []);
+        $this->withToken($this->app_token($user))->getJson('/api/v1/site/settings/parental')->assertOk()->assertJsonPath('parents', []);
+    }
+
     public function test_app_bridge_has_episode_talk(): void
     {
         $routes = collect(Route::getRoutes()->getRoutes())->map(fn ($r) => $r->methods()[0].' '.$r->uri());
