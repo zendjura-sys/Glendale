@@ -9,7 +9,9 @@ use App\Models\DeveloperApp;
 use App\Models\DeveloperToken;
 use App\Services\Developer\OAuthServer;
 use App\Services\Geo\CountryRestrictions;
+use App\Services\Voice\LiveKit;
 use App\Support\I18n\Locales;
+use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -273,5 +275,20 @@ class DeveloperPortalController extends Controller
             'users' => DeveloperToken::query()->where('developer_app_id', $app->id)->whereNull('revoked_at')->distinct()->count('user_id'),
             'created_at' => $app->created_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Ідеї інтеграцій (№304): готові сценарії для ігор, серверів, сайтів і ботів. Ідеї для розділів,
+     * вимкнених на сайті чи в режимі людини, не показуємо.
+     */
+    public function ideas(): Response
+    {
+        app(Plugins::class)->ensure('developers');
+        $modules = app(ModuleManager::class);
+
+        return Inertia::render('developers/ideas', [
+            'enabled' => array_values(array_filter(['friends', 'messages', 'families', 'clans', 'music', 'servers', 'quests', 'communities'], fn (string $m) => $modules->enabled($m))),
+            'voice' => app(LiveKit::class)->configured(),
+        ]);
     }
 }

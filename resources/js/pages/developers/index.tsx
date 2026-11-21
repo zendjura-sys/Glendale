@@ -163,6 +163,12 @@ export default function Developers({
                         {tr('Плагіни й SDK')}
                     </Link>
                     <Link
+                        href="/developers/ideas"
+                        className="rounded-lg px-3 py-1.5 font-medium text-white/60 hover:text-white"
+                    >
+                        {tr('Ідеї інтеграцій')}
+                    </Link>
+                    <Link
                         href="/developers/servers"
                         className="rounded-lg px-3 py-1.5 font-medium text-white/60 hover:text-white"
                     >

@@ -205,6 +205,7 @@ const PUBLIC_PAGES = new Set([
     'developers/plugins',
     'developers/plugin',
     'developers/sdk',
+    'developers/ideas',
 ]);
 
 void createInertiaApp({
