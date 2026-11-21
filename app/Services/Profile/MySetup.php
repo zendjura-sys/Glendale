@@ -3,6 +3,7 @@
 namespace App\Services\Profile;
 
 use App\Models\User;
+use App\Services\Games\PcRating;
 
 /**
  * «Мій сетап» на сторінці людини: ПК (з «Чи потягне мій ПК») і периферія — мишка, клавіатура,
@@ -34,7 +35,7 @@ class MySetup
     /**
      * Для чужих — лише якщо відкрито й щось заповнено.
      *
-     * @return array{public: bool, pc: array{cpu: string|null, gpu: string|null, ram: int|null}, gear: array<string, string|null>}|null
+     * @return array{public: bool, pc: array{cpu: string|null, gpu: string|null, ram: int|null}, gear: array<string, string|null>, rating: array<string, mixed>|null}|null
      */
     public function visibleFor(User $owner, ?User $viewer): ?array
     {
@@ -42,7 +43,12 @@ class MySetup
         $self = $viewer !== null && $viewer->id === $owner->id;
         $filled = array_filter($setup['pc']) !== [] || array_filter($setup['gear']) !== [];
 
-        return $self || ($setup['public'] && $filled) ? $setup : null;
+        if (! $self && ! ($setup['public'] && $filled)) {
+            return null;
+        }
+
+        // Оцінка збірки й поради апгрейду (№224).
+        return [...$setup, 'rating' => PcRating::rate($setup['pc'])];
     }
 
     /**

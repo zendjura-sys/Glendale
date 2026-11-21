@@ -27,6 +27,14 @@ export type SetupData = {
     public: boolean;
     pc: { cpu: string | null; gpu: string | null; ram: number | null };
     gear: Record<string, string | null>;
+    /** Оцінка збірки (№224): бал, клас, частини у %, слабке місце й поради. */
+    rating?: {
+        score: number | null;
+        tier: string | null;
+        parts: { cpu: number | null; gpu: number | null; ram: number | null };
+        weak: 'cpu' | 'gpu' | null;
+        advice: string[];
+    } | null;
 };
 
 const GEAR: [string, LucideIcon, () => string][] = [
@@ -87,6 +95,9 @@ export function MySetup({
                         <Cpu className="mt-0.5 size-4 shrink-0 text-white/40" />
                         <span>{pc.join(' · ')}</span>
                     </div>
+                )}
+                {data.rating && (
+                    <PcScore rating={data.rating} isSelf={isSelf} />
                 )}
                 {gear.map(([key, Icon, label]) => (
                     <div
@@ -203,5 +214,81 @@ export function MySetup({
                 </DialogContent>
             </Dialog>
         </Widget>
+    );
+}
+
+/** Оцінка збірки: бал і клас, смужки частин; власнику — поради, що міняти першим. */
+function PcScore({
+    rating,
+    isSelf,
+}: {
+    rating: NonNullable<SetupData['rating']>;
+    isSelf: boolean;
+}) {
+    const parts: [keyof typeof rating.parts, string][] = [
+        ['gpu', tr('Відео')],
+        ['cpu', tr('Процесор')],
+        ['ram', tr('Пам’ять')],
+    ];
+    const shown = parts.filter(([key]) => rating.parts[key] !== null);
+    if (rating.score === null && shown.length === 0 && !isSelf) return null;
+
+    return (
+        <div className="gc-pc-score">
+            {rating.score !== null && (
+                <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-[var(--gc-text)] tabular-nums">
+                        {rating.score}
+                    </span>
+                    <span className="text-sm text-[var(--gc-text-2)]">
+                        {tr('{tier} збірка', { tier: rating.tier ?? '' })}
+                    </span>
+                </div>
+            )}
+            {shown.length > 0 && (
+                <div className="mt-2 space-y-1.5">
+                    {shown.map(([key, label]) => (
+                        <div
+                            key={key}
+                            className="grid grid-cols-[5.5rem_1fr_2rem] items-center gap-2 text-xs"
+                        >
+                            <span
+                                className={
+                                    rating.weak === key
+                                        ? 'font-semibold text-[var(--gc-alert)]'
+                                        : 'text-[var(--gc-text-2)]'
+                                }
+                            >
+                                {label}
+                            </span>
+                            <span className="gc-pc-score__bar" aria-hidden>
+                                <span
+                                    style={{ width: `${rating.parts[key]}%` }}
+                                    className={
+                                        rating.weak === key ? 'is-weak' : ''
+                                    }
+                                />
+                            </span>
+                            <span className="text-right text-[var(--gc-text-2)] tabular-nums">
+                                {rating.parts[key]}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+            {isSelf && rating.advice.length > 0 && (
+                <ul className="mt-3 space-y-1.5 text-[13px] text-[var(--gc-text-2)]">
+                    {rating.advice.map((line) => (
+                        <li key={line} className="flex gap-2">
+                            <span
+                                className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--gc-accent)]"
+                                aria-hidden
+                            />
+                            <span>{line}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
     );
 }
