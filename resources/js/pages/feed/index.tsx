@@ -57,6 +57,7 @@ import {
 } from '@/components/lobby/lobby';
 import type { LiveBlockData } from '@/components/lobby/lobby';
 import { BentoCell, LiveBlock } from '@/components/lobby/bento-feed';
+import { LiveChips } from '@/components/gc/live-dock';
 import { isMediaPost, MediaPostBlock } from '@/components/lobby/media-blocks';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
@@ -537,7 +538,7 @@ export default function Feed({
             key: 'voice-card',
             category: 'voice',
             sub: 'rooms',
-            badge: tr('Голосові кімнати'),
+            badge: tr('Голос'),
             tone: 'live',
             node: () => renderWidget('voice'),
         },
@@ -553,7 +554,7 @@ export default function Feed({
             key: 'requests',
             category: 'friends',
             sub: 'requests',
-            badge: tr('Заявки в друзі'),
+            badge: tr('Заявки'),
             tone: 'accent',
             node: () => renderWidget('requests'),
         },
@@ -561,7 +562,7 @@ export default function Feed({
             key: 'pulse',
             category: 'quests',
             sub: 'daily',
-            badge: tr('Завдання дня'),
+            badge: tr('Завдання'),
             tone: 'accent',
             node: () => renderWidget('pulse'),
         },
@@ -607,14 +608,14 @@ export default function Feed({
             key: 'music',
             category: 'music',
             sub: 'new',
-            badge: tr('Нова музика'),
+            badge: tr('Музика'),
             node: () => media(['music']),
         },
         {
             key: 'cinema',
             category: 'cinema',
             sub: 'watch',
-            badge: tr('Що подивитися'),
+            badge: tr('Кіно'),
             node: () => media(['cinema']),
         },
         {
@@ -628,7 +629,7 @@ export default function Feed({
             key: 'same',
             category: 'games',
             sub: 'same',
-            badge: tr('Грають у те саме'),
+            badge: tr('Ігри'),
             node: () => renderWidget('same_game'),
         },
         {
@@ -642,14 +643,14 @@ export default function Feed({
             key: 'suggestions',
             category: 'friends',
             sub: 'suggestions',
-            badge: tr('Можливо, знайомі'),
+            badge: tr('Люди'),
             node: () => renderWidget('suggestions'),
         },
         {
             key: 'birthdays',
             category: 'friends',
             sub: 'birthdays',
-            badge: tr('День народження'),
+            badge: tr('Свято'),
             tone: 'accent',
             node: () => renderWidget('birthdays'),
         },
@@ -671,6 +672,7 @@ export default function Feed({
             <LiveBlock wide>
                 <div className="gc-lobby-hero-block">
                     <LobbyHero rail={rail} events={tomorrow ?? []} />
+                    <LiveChips />
                     <CategoryPicker
                         selected={selectedState}
                         onChange={setSelected}

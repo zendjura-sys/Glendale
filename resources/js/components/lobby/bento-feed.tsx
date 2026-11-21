@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { PostItem } from '@/types';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 import { MediaCarouselContext } from '@/components/gc/media-grid';
 
 /**
@@ -118,7 +119,10 @@ export function LiveBlock({
             <div ref={ref} className="gc-live-block">
                 {(badge || isNew) && (
                     <span className="gc-live-badge">
-                        {isNew && <span className="gc-new-tag">New!</span>}
+                        {/* «New!» на широких блоках; на вузьких — компактна червона крапка в мітці. */}
+                        {isNew && (wide || !badge) && (
+                            <span className="gc-new-tag">New!</span>
+                        )}
                         {badge && (
                             <span
                                 className={cn(
@@ -126,6 +130,13 @@ export function LiveBlock({
                                     tone && `gc-live-badge--${tone}`,
                                 )}
                             >
+                                {isNew && !wide && (
+                                    <span
+                                        className="gc-new-dot"
+                                        role="img"
+                                        aria-label={tr('Нове')}
+                                    />
+                                )}
                                 {tone === 'live' || tone === 'alert' ? (
                                     <span
                                         className="gc-live-badge__dot"

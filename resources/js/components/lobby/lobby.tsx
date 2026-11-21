@@ -561,7 +561,7 @@ export function useNowBlocks({
             key: `chat-${chat.id}`,
             category: 'messages',
             sub: 'unread',
-            badge: tr('Нове повідомлення'),
+            badge: tr('Чат'),
             tone: 'accent',
             node: <ChatTile chat={chat} />,
         });

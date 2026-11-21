@@ -8876,23 +8876,28 @@ html[data-theme='light'] .gc-now-tile .gc-glass-input::placeholder {
     border-radius: var(--card-r);
     background: var(--gc-l1);
 }
+.gc-lobby-bento {
+    /* Радіус вирізу = радіус бірки (12) + відступ (5). */
+    --notch-pad: 5px;
+    --notch-r: 17px;
+}
 .gc-lobby-bento .gc-live-badge {
     position: relative;
     top: auto;
     right: auto;
     float: right;
-    margin: 0 0 6px 12px;
-    padding: 0 0 8px 8px;
-    border-bottom-left-radius: var(--card-r);
+    margin: 0 0 4px 10px;
+    padding: 0 0 var(--notch-pad) var(--notch-pad);
+    border-bottom-left-radius: var(--notch-r);
 }
 .gc-lobby-bento .gc-live-badge::before,
 .gc-lobby-bento .gc-live-badge::after {
-    width: var(--card-r);
-    height: var(--card-r);
+    width: var(--notch-r);
+    height: var(--notch-r);
     background: radial-gradient(
         circle at 0 100%,
-        transparent calc(var(--card-r) - 0.5px),
-        var(--gc-page) var(--card-r)
+        transparent calc(var(--notch-r) - 0.5px),
+        var(--gc-page) var(--notch-r)
     );
 }
 /* Фото на всю площу — виріз лежить поверх картинки. */
@@ -8921,4 +8926,81 @@ html[data-theme='light'] .gc-now-tile .gc-glass-input::placeholder {
 .gc-lobby-bento .gc-now-tile__kicker,
 .gc-lobby-bento .gc-now-tile__title {
     display: block;
+}
+
+/* ---------- Доробки лобі: щільний док, «⋯» під вирізом, червона крапка «нове» ---------- */
+/* Шапка й навбар — Liquid Glass Medium: 10% тону (темна — темного, світла — білого), світла кромка
+   зверху, м’яка тінь і сильне розмиття — текст карток під ними не читається. */
+html:root.gc-vk[data-theme] .gc-dock-bar,
+html:root.gc-vk[data-theme] .gc-lobby-top__bar {
+    background: rgb(19 19 19 / 0.1);
+    border: 1px solid rgb(255 255 255 / 0.14);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.22),
+        inset 0 -1px 0 rgb(255 255 255 / 0.05),
+        0 16px 40px -14px rgb(0 0 0 / 0.55);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    backdrop-filter: blur(30px) saturate(180%);
+}
+html:root.gc-vk[data-theme='light'] .gc-dock-bar,
+html:root.gc-vk[data-theme='light'] .gc-lobby-top__bar {
+    background: rgb(255 255 255 / 0.1);
+    border-color: rgb(255 255 255 / 0.55);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.8),
+        0 16px 40px -14px rgb(15 17 25 / 0.25);
+}
+html:root.gc-vk[data-theme] .gc-lobby-top__bar {
+    margin-top: 10px;
+    height: 60px;
+    padding: 0 10px 0 18px;
+    border-radius: 24px;
+}
+html:root.gc-vk[data-theme] .gc-dock-bar {
+    border-radius: 26px;
+}
+/* Шапка лежить на склі — градієнтна підкладка більше не потрібна. */
+.gc-lobby-top::before {
+    display: none;
+}
+/* Поле пошуку — Liquid Glass Large: ще сильніше розмиття, більший радіус і висота. */
+html:root.gc-vk[data-theme] .gc-lobby-search .ios-header-search {
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 22px;
+    background: rgb(19 19 19 / 0.1) !important;
+    border: 1px solid rgb(255 255 255 / 0.16) !important;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.2),
+        0 10px 30px -14px rgb(0 0 0 / 0.5) !important;
+    -webkit-backdrop-filter: blur(44px) saturate(180%) !important;
+    backdrop-filter: blur(44px) saturate(180%) !important;
+}
+html:root.gc-vk[data-theme='light'] .gc-lobby-search .ios-header-search {
+    background: rgb(255 255 255 / 0.1) !important;
+    border-color: rgb(255 255 255 / 0.6) !important;
+}
+/* Поле вводу в блоках — теж Large. */
+.gc-glass-input.gc-glass-m {
+    -webkit-backdrop-filter: blur(44px) saturate(180%);
+    backdrop-filter: blur(44px) saturate(180%);
+    height: 44px;
+    border-radius: 22px;
+}
+/* Меню «⋯» допису — під вирізом біля правого краю картки, не між автором і міткою. */
+.gc-lobby-bento .gc-live-block:has(> .gc-live-badge) .gc-post {
+    position: relative;
+}
+.gc-lobby-bento .gc-live-block:has(> .gc-live-badge) [data-post-menu] {
+    position: absolute;
+    top: 34px;
+    right: 10px;
+}
+.gc-new-dot {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    background: #ef3b4d;
+    box-shadow: 0 0 0 2px var(--gc-l2);
 }

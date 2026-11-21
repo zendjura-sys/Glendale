@@ -49,7 +49,7 @@ type LiveSlot = {
  * Живі кнопки дока: з’являються лише за обставин (друзі в голосі, друзі в грі, догана в сім’ї,
  * нагорода за серію). Немає обставини — немає кнопки. Дані — /me/rail і /ready.
  */
-function useLiveSlots(): LiveSlot[] {
+export function useLiveSlots(): LiveSlot[] {
     const { data } = useRail();
     const readyOn = usePlugin('ready_to_play');
     const [ready, setReady] = useState(0);
@@ -112,6 +112,33 @@ function useLiveSlots(): LiveSlot[] {
     }
 
     return slots;
+}
+
+/** Живі кнопки (голос, готові грати, догана, нагорода) у потоці сторінки — у блоці привітання лобі. */
+export function LiveChips() {
+    const slots = useLiveSlots();
+    if (slots.length === 0) return null;
+
+    return (
+        <div
+            className="mt-4 flex flex-wrap gap-1.5"
+            aria-label={tr('Що відбувається')}
+        >
+            {slots.map((slot) => (
+                <Link
+                    key={slot.key}
+                    href={slot.href}
+                    className={cn(
+                        'gc-dock-chip',
+                        slot.tone && `gc-dock-chip--${slot.tone}`,
+                    )}
+                >
+                    {slot.icon}
+                    <span>{slot.label}</span>
+                </Link>
+            ))}
+        </div>
+    );
 }
 
 /** Відкрити вікно нового допису з будь-якого місця (док «+», картка «Поділитися моментом»). */
@@ -214,8 +241,8 @@ export function LiveDock({
     const [open, setOpen] = useState(false);
     const reduce = useReducedMotion();
     const close = useCallback(() => setOpen(false), []);
-    const live = useLiveSlots();
-    const slots = header ? [] : live;
+    // Живі кнопки — у потоці сторінки (LiveChips у лобі), не плаваючі: нічого не перекривають.
+    const slots: LiveSlot[] = [];
 
     const fallback = ['feed', 'messages', 'friends', 'profile'];
     // Розділ, чий віджет уже стоїть у лобі, з навігації зникає — місце бере наступний.
