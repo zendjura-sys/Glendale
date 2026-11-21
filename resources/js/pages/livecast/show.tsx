@@ -99,7 +99,9 @@ export default function LiveCastShow(initial: State) {
     }, [stream.status, inStream]);
 
     useEffect(() => {
-        chatEnd.current?.scrollIntoView({ behavior: 'smooth' });
+        // Прокручуємо лише список чату — не всю сторінку (інакше відео з’їжджало вгору).
+        const box = chatEnd.current?.parentElement;
+        if (box) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
     }, [state.messages.length]);
 
     const connect = async () => {

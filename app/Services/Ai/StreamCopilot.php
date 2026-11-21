@@ -45,7 +45,7 @@ class StreamCopilot
         $messages = LivecastMessage::query()->with('user')->where('livecast_id', $stream->id)
             ->latest('id')->limit(40)->get()->reverse()->values();
         $lines = $messages->map(function (LivecastMessage $m) {
-            $who = $m->user?->name ?? '…';
+            $who = $m->user->name;
             $kind = $m->kind === LivecastMessage::GIFT ? '[подарунок]' : ($m->kind === LivecastMessage::DONATION ? '[донат]' : '');
 
             return trim($who.': '.$kind.' '.$m->body);
@@ -76,12 +76,12 @@ class StreamCopilot
         $fresh = now()->subSeconds(45);
         $here = $members->filter(fn (LiveShowMember $m) => $m->seen_at !== null && $m->seen_at->gte($fresh));
         $stage = $here->whereIn('role', ['host', 'speaker'])->map(fn (LiveShowMember $m) => $m->user?->name)->filter()->implode(', ');
-        $guests = $members->where('role', 'guest')->filter(fn (LiveShowMember $m) => $m->mic_until?->isFuture())
+        $guests = $members->where('role', 'guest')->filter(fn (LiveShowMember $m) => (bool) $m->mic_until?->isFuture())
             ->map(fn (LiveShowMember $m) => $m->user?->name)->filter()->implode(', ');
         $hands = $here->whereNotNull('hand_at')->map(fn (LiveShowMember $m) => $m->user?->name)->filter()->implode(', ');
         $gifts = LiveShowGift::query()->with(['from', 'to', 'gift'])->where('live_show_id', $show->id)
             ->latest('id')->limit(15)->get()
-            ->map(fn (LiveShowGift $g) => ($g->from?->name ?? '?').' → '.($g->to?->name ?? '?').': '.($g->gift?->emoji ?? '').' '.($g->gift?->name ?? ''))
+            ->map(fn (LiveShowGift $g) => $g->from->name.' → '.$g->to->name.': '.$g->gift->emoji.' '.$g->gift->name)
             ->implode("\n");
         $likes = LiveShowLike::query()->where('live_show_id', $show->id)->count();
 
@@ -102,7 +102,11 @@ class StreamCopilot
         return $this->parseWatch($this->askWatch($facts, 'аудіошоу GameCast'));
     }
 
-    /** Короткий промо-текст для поширення ефіру. */
+    /**
+     * Короткий промо-текст для поширення ефіру.
+     *
+     * @param  array<string, mixed>  $extra
+     */
     public function promo(User $user, string $surface, string $title, array $extra = []): string
     {
         abort_unless($this->available($surface), 404);
@@ -142,8 +146,8 @@ class StreamCopilot
                 $full = $fresh();
 
                 return [
-                    'mood' => $full['mood'],
-                    'tips' => array_slice($full['tips'], 0, 3),
+                    'mood' => (string) $full['mood'],
+                    'tips' => array_values(array_map('strval', array_slice((array) $full['tips'], 0, 3))),
                 ];
             } catch (\Throwable) {
                 return null;

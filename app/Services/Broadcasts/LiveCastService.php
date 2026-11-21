@@ -166,7 +166,8 @@ class LiveCastService
             'id' => $livecast->id,
             'title' => $livecast->title,
             'category' => $livecast->category,
-            'donations' => array_values($livecast->donations ?? []),
+            // Через ту саму очистку: назва сервісу є навіть у старих записах.
+            'donations' => DonationPresets::sanitize($livecast->donations ?? []),
             'status' => $livecast->status,
             'started_at' => $livecast->started_at?->toIso8601String(),
             'ended_at' => $livecast->ended_at?->toIso8601String(),
@@ -226,6 +227,7 @@ class LiveCastService
     /**
      * Підставити лінки Donatik/Donatello з інтеграцій ведучого, якщо в start() їх не передали.
      *
+     * @param  array<int, mixed>|null  $donations
      * @return list<array{provider: string, name: string, url: string}>
      */
     public function donationLinksFor(User $host, ?array $donations = null): array
@@ -250,14 +252,14 @@ class LiveCastService
      */
     public function live(int $limit = 40): array
     {
-        return Livecast::query()
+        return array_values(Livecast::query()
             ->with('host')
             ->where('status', Livecast::LIVE)
             ->latest('started_at')
             ->limit($limit)
             ->get()
             ->map(fn (Livecast $b) => $this->card($b))
-            ->all();
+            ->all());
     }
 
     /** @return array{live: int, viewers: int} */
