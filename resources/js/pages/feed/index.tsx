@@ -294,7 +294,7 @@ export default function Feed({
                                             {tr('Ви вже знайомі з усіма.')}{' '}
                                             <Link
                                                 href="/people"
-                                                className="text-sky-400 hover:underline"
+                                                className="text-sky-400 underline underline-offset-2"
                                             >
                                                 {tr('Шукати людей')}
                                             </Link>

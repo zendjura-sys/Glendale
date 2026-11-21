@@ -305,6 +305,7 @@ export function PostCard({
                 <DropdownMenu>
                     <DropdownMenuTrigger
                         data-post-menu
+                        aria-label={tr('Дії з дописом')}
                         className="rounded-full p-1.5 text-white/40 transition outline-none hover:bg-[var(--gc-l3)] hover:text-white"
                     >
                         <MoreHorizontal className="size-5" />

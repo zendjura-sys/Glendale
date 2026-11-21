@@ -179,7 +179,7 @@ export function NotificationsMenu() {
                 {unread > 0 && (
                     <span
                         aria-hidden
-                        className="absolute top-0.5 right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] leading-none font-bold text-white"
+                        className="absolute top-0.5 right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[11px] leading-none font-bold text-white"
                     >
                         {unread > 99 ? '99+' : unread}
                     </span>

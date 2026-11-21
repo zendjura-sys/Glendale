@@ -143,7 +143,7 @@ export function RankBadge({
             )}
         >
             <span className="tabular-nums">{rank}</span>
-            {title && <span className="font-medium opacity-80">{title}</span>}
+            {title && <span className="font-medium">{title}</span>}
         </span>
     );
 }

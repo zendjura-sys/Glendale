@@ -115,7 +115,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                     {' · '}
                     <Link
                         href="/help"
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                        className="inline-flex items-center gap-1 text-[var(--gc-accent)] underline underline-offset-2"
                     >
                         <LifeBuoy className="size-3.5" />
                         {tr('Довідка')}

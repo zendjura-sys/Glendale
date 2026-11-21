@@ -541,7 +541,8 @@ html[data-palette='copper'] {
     /* Arena Black CTA — solid accent pill (Spotify geometry). */
     .btn-glow {
         position: relative;
-        background-color: var(--primary);
+        /* Затемнена заливка: білий текст на акценті читається (контраст ≥ 4.5:1, WCAG AA). */
+        background-color: color-mix(in oklab, var(--primary) 72%, black);
         color: var(--primary-foreground);
         border-radius: 9999px !important;
         box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
@@ -551,7 +552,7 @@ html[data-palette='copper'] {
             filter 0.2s ease;
     }
     .btn-glow:hover {
-        background-color: color-mix(in oklab, var(--primary) 86%, white);
+        background-color: color-mix(in oklab, var(--primary) 80%, black);
         filter: brightness(1.05);
         transform: scale(1.02);
     }
@@ -6328,11 +6329,16 @@ html:root.gc-vk[data-theme] .gc-player-glass::before {
 }
 
 /* ---------- Кнопки: небесний градієнт без світіння й тіней ---------- */
+/* Заливка трохи темніша за акцент — білий текст читається (контраст ≥ 4.5:1, WCAG AA). */
 html:root.gc-vk[data-theme]
     :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
         .am *
     ):not(:disabled) {
-    background: var(--gc-accent-strong) !important;
+    background: color-mix(
+        in oklab,
+        var(--gc-accent-strong) 72%,
+        black
+    ) !important;
     color: #fff !important;
     box-shadow: none !important;
     border: 0 !important;
@@ -6341,7 +6347,11 @@ html:root.gc-vk[data-theme='light']
     :is(.btn-glow, button.bg-primary, a.bg-primary, .bg-gradient-brand):not(
         .am *
     ):not(:disabled) {
-    background: var(--gc-accent-strong) !important;
+    background: color-mix(
+        in oklab,
+        var(--gc-accent-strong) 80%,
+        black
+    ) !important;
     color: #fff !important;
 }
 html:root.gc-vk[data-theme]
@@ -9343,7 +9353,7 @@ html.gc-simple *::after {
     height: 38px;
     padding: 0 18px;
     border-radius: 9999px;
-    background: var(--gc-accent);
+    background: color-mix(in oklab, var(--gc-accent) 68%, black);
     color: #fff;
     font-size: 14px;
     font-weight: 600;
@@ -9387,7 +9397,7 @@ html.gc-simple *::after {
     height: 38px;
     padding: 0 18px;
     border-radius: 9999px;
-    background: var(--gc-accent);
+    background: color-mix(in oklab, var(--gc-accent) 68%, black);
     color: #fff;
     font-size: 14px;
     font-weight: 600;
@@ -9597,4 +9607,38 @@ html.gc-simple *::after {
     color: var(--gc-text-2);
     font-size: 12px;
     font-weight: 600;
+}
+
+/* Доступність (№228): активна пігулка (лайк тощо) — світліший акцентний текст на тонованому тлі, контраст ≥ 4.5:1. */
+html:root.gc-vk[data-theme='dark']
+    :is(.gc-vk-pill.is-on, .gc-vk-pill[aria-pressed='true']) {
+    color: color-mix(in oklab, var(--gc-accent) 55%, white);
+}
+
+/* ---------- Доступність (№228): світла тема — текстові відтінки темніші, контраст ≥ 4.5:1 ---------- */
+/* У світлій темі -300/-400 і «живий» зелений використовуються як колір тексту на білому —
+   там вони надто бліді. Беремо темніші відтінки тих самих кольорів (заливки кнопок не змінюються). */
+html:root[data-theme='light'][data-theme] {
+    --color-sky-300: #5153d6;
+    --color-sky-400: #4f51d4;
+    --color-blue-300: #5153d6;
+    --color-blue-400: #4f51d4;
+    --color-emerald-300: #047857;
+    --color-emerald-400: #047857;
+    --color-green-400: #15803d;
+    --color-amber-300: #9a4a06;
+    --color-amber-400: #7d4500;
+    --color-yellow-400: #a16207;
+    --color-orange-700: #b13a00;
+    --color-amber-700: #a14300;
+    --gc-accent: #4f51d4;
+    --gc-live: #0b7352;
+    --color-gold: #946200;
+}
+html:root[data-theme='light'] .gc-lobby-hero__muted {
+    color: #6e6e76;
+}
+/* У світлій темі акцент уже темніший (#4f51d4, контраст з білим > 6:1) — заливка кнопок без додаткового затемнення. */
+html:root[data-theme='light'] :is(.gc-pill-primary, .gc-tour__next) {
+    background: var(--gc-accent);
 }

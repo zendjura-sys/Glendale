@@ -1,3 +1,4 @@
+import { tr } from '@/lib/i18n';
 import { useEffect, useId, useRef } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import type { CharacterConfig, VoiceReading } from '@/lib/character';
@@ -177,7 +178,7 @@ export function Character({
                     : 'xMidYMid slice'
             }
             role="img"
-            aria-label={title}
+            aria-label={title ?? tr('Персонаж')}
             className={cn('character-svg', className)}
         >
             {title && <title>{title}</title>}

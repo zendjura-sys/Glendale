@@ -366,13 +366,13 @@ export default function Appearance({
                                 )}
                             </p>
                             <div className="mt-3 flex flex-wrap items-center gap-2">
-                                <span className="inline-flex h-8 items-center rounded-chip bg-primary px-3.5 text-xs font-semibold text-primary-foreground">
+                                <span className="inline-flex h-8 items-center rounded-chip bg-[color-mix(in_oklab,var(--primary)_72%,black)] px-3.5 text-xs font-semibold text-[#fff]">
                                     {tr('Я в ділі')}
                                 </span>
                                 <span className="inline-flex h-8 items-center rounded-chip px-3.5 text-xs font-medium text-white/70">
                                     {tr('Пізніше')}
                                 </span>
-                                <span className="text-xs font-medium text-primary">
+                                <span className="text-xs font-medium text-[var(--gc-accent)]">
                                     {tr('12 відповідей')}
                                 </span>
                             </div>
@@ -1339,7 +1339,7 @@ function VideoPicker({
             {!isPlus && (
                 <a
                     href="/plus"
-                    className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
+                    className="mt-3 inline-flex text-xs font-medium text-[var(--gc-accent)] hover:underline"
                 >
                     {tr('Дізнатися про GameCon+')}
                 </a>

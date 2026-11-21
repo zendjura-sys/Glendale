@@ -390,6 +390,11 @@ function Uploader({
             <button
                 type="button"
                 onClick={() => input.current?.click()}
+                aria-label={
+                    field === 'avatar'
+                        ? tr('Змінити фото профілю')
+                        : tr('Змінити обкладинку')
+                }
                 className={className}
             >
                 {children}

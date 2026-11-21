@@ -118,8 +118,8 @@ export function AchievementsCard({
     return (
         <section className="gc-solid rounded-2xl p-3 sm:p-3.5">
             <div className="flex items-center gap-3">
-                <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-sky-500 text-white">
-                    <span className="text-[11px] leading-none font-semibold uppercase opacity-80">
+                <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-sky-700 text-[#fff]">
+                    <span className="text-[11px] leading-none font-semibold uppercase">
                         {tr('рів.')}
                     </span>
                     <span className="text-lg leading-tight font-bold">
@@ -133,6 +133,7 @@ export function AchievementsCard({
                     <div
                         className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]"
                         role="progressbar"
+                        aria-label={tr('Досвід до наступного рівня')}
                         aria-valuenow={Math.round(percent)}
                         aria-valuemin={0}
                         aria-valuemax={100}

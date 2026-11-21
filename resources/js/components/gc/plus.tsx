@@ -8,6 +8,7 @@ export function PlusBadge({ className }: { className?: string }) {
     return (
         <span
             title="GameCon+"
+            role="img"
             aria-label="GameCon+"
             className={cn(
                 'inline-flex size-4 shrink-0 items-center justify-center rounded-[5px] bg-primary text-white',
