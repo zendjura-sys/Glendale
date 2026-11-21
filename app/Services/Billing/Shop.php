@@ -17,6 +17,7 @@ use App\Notifications\BillingNotice;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Plus\Plus;
 use App\Services\Plus\PlusGifts;
+use App\Services\Plus\PlusHousehold;
 use App\Services\Plus\ServerPromotions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -85,7 +86,7 @@ class Shop
         $kind = (string) (app(Catalog::class)->get($product)['kind'] ?? '');
 
         return match ($kind) {
-            'plus', 'balance' => $payer,
+            'plus', 'balance', 'household' => $payer,
             'gift' => tap($this->recipient($payer, (string) ($input['username'] ?? '')), function (User $to) use ($payer, $product, $input) {
                 if (filled($input['gift_message'] ?? null) || filled($input['gift_theme'] ?? null) || filled($input['gift_at'] ?? null)) {
                     app(PlusGifts::class)->draft($payer, $to, $product, (int) (app(Catalog::class)->get($product)['days'] ?? 0), $input);
@@ -302,6 +303,10 @@ class Shop
             foreach (PlusGrant::query()->where('payment_id', $payment->id)->get() as $grant) {
                 $this->plus->revoke($grant);
             }
+            // Спільна підписка (№215): учасникам — той самий новий кінець, що й власнику.
+            if ((app(Catalog::class)->get($payment->product)['kind'] ?? null) === 'household' && $payment->user !== null) {
+                app(PlusHousehold::class)->sync($payment->user);
+            }
             ServerPromotion::query()->where('payment_id', $payment->id)->update(['ends_at' => now()]);
             app(PhoneNumbers::class)->revoke($payment->id);
 
@@ -377,6 +382,11 @@ class Shop
 
         if ($target instanceof GtaServer) {
             $this->promotions->start($target, (string) ($meta['promo'] ?? 'top'), $days, $payer, $payment->id);
+
+            return;
+        }
+        if (($meta['kind'] ?? null) === 'household' && $target instanceof User) {
+            app(PlusHousehold::class)->purchase($target, $days, $payment->id);
 
             return;
         }

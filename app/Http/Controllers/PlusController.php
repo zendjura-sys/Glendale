@@ -13,9 +13,11 @@ use App\Services\Billing\Shop;
 use App\Services\FriendshipService;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Plus\Plus;
+use App\Services\Plus\PlusHousehold;
 use App\Services\Plus\PlusTrial;
 use App\Services\Plus\PromoCodes;
 use App\Support\PlusStyle;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -32,12 +34,45 @@ class PlusController extends Controller
         private readonly Plus $plus,
     ) {}
 
+    /** Спільна підписка: стан (для застосунку). */
+    public function household(Request $request, PlusHousehold $household): JsonResponse
+    {
+        return response()->json($household->state($request->user()));
+    }
+
+    public function householdInvite(Request $request, PlusHousehold $household): JsonResponse
+    {
+        $data = $request->validate(['username' => ['required', 'string', 'max:40']]);
+        $member = User::query()->where('username', ltrim(trim($data['username']), '@'))->first()
+            ?? throw ValidationException::withMessages(['username' => 'Людину з таким ніком не знайдено.']);
+        $household->invite($request->user(), $member);
+
+        return response()->json($household->state($request->user()));
+    }
+
+    public function householdAccept(Request $request, int $member, PlusHousehold $household): JsonResponse
+    {
+        $household->accept($request->user(), $member);
+
+        return response()->json($household->state($request->user()));
+    }
+
+    /** Вийти, відхилити запрошення чи прибрати людину (власник). */
+    public function householdRemove(Request $request, int $member, PlusHousehold $household): JsonResponse
+    {
+        $household->remove($request->user(), $member);
+
+        return response()->json($household->state($request->user()));
+    }
+
     public function index(Request $request): Response
     {
         $user = $request->user();
 
         return Inertia::render('plus/index', [
             'state' => $this->plus->state($user),
+            // GameCon+ на 5 акаунтів (№215).
+            'household' => app(PlusHousehold::class)->state($user),
             'style' => $user->plus_style ?? (object) [],
             // Власна роль-підпис: текст, колір і коли можна змінити знову.
             'title' => [

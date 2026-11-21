@@ -13,6 +13,7 @@ import {
     Tag,
     Ticket,
     Users,
+    UsersRound,
     Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -28,9 +29,11 @@ import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { buyProduct, PRODUCT_LABELS } from '@/lib/plus';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import { GiftCardArt, GIFT_THEMES } from '@/components/plus/gift-card';
 import type { GiftTheme } from '@/components/plus/gift-card';
-import type { FamilyCard, PlusMark } from '@/types';
+import type { FamilyCard, PlusMark, UserCard } from '@/types';
 
 type State = {
     active: boolean;
@@ -68,6 +71,8 @@ type Props = {
     };
     products: Record<string, { available: boolean }>;
     families: (FamilyCard & { state: State; style: Style })[];
+    /** GameCon+ на 5 акаунтів (№215). */
+    household?: HouseholdState;
     title: {
         name: string | null;
         color: string;
@@ -143,6 +148,7 @@ export default function PlusPage({
     style,
     options,
     families,
+    household,
     payments,
     title,
     friends,
@@ -302,6 +308,8 @@ export default function PlusPage({
                     sent={sent_gifts ?? []}
                 />
                 <RedeemForm />
+
+                {household && <HouseholdPlans initial={household} buy={buy} />}
 
                 <FamilyPlans
                     families={families}
@@ -1017,6 +1025,216 @@ function RedeemForm() {
                 {tr('Активувати')}
             </button>
         </form>
+    );
+}
+
+type HouseholdRow = {
+    id: number;
+    status: 'invited' | 'active';
+    user: UserCard;
+};
+
+type HouseholdState = {
+    max: number;
+    until: string | null;
+    members: HouseholdRow[];
+    member_of: { id: number; owner: UserCard; until: string | null } | null;
+    invites: HouseholdRow[];
+};
+
+/**
+ * GameCon+ на 5 акаунтів (№215): власник платить і запрошує до 4 друзів — кожен отримує
+ * GameCon+ до кінця періоду власника. Учасник бачить, чия це підписка, і може вийти.
+ */
+function HouseholdPlans({
+    initial,
+    buy,
+}: {
+    initial: HouseholdState;
+    buy: (product: string, extra?: Record<string, string | number>) => void;
+}) {
+    const plans = useKind('household');
+    const [state, setState] = useState(initial);
+    const [username, setUsername] = useState('');
+    const [busy, setBusy] = useState(false);
+    const call = (
+        method: 'POST' | 'DELETE',
+        url: string,
+        body?: Record<string, unknown>,
+    ) => {
+        setBusy(true);
+        api<HouseholdState>(method, url, body)
+            .then((next) => {
+                setState(next);
+                setUsername('');
+            })
+            .catch((e: { message?: string }) =>
+                toast.error(e.message ?? tr('Не вдалося.')),
+            )
+            .finally(() => setBusy(false));
+    };
+    if (
+        plans.length === 0 &&
+        !state.until &&
+        !state.member_of &&
+        state.invites.length === 0
+    )
+        return null;
+    const free = state.max - state.members.length;
+
+    return (
+        <section className="gc-solid rounded-2xl p-3.5">
+            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
+                <UsersRound className="size-5 text-indigo-300" />
+                {tr('GameCon+ на 5 акаунтів')}
+            </h2>
+            <p className="mt-1 text-sm text-white/55">
+                {tr(
+                    'Платите ви — GameCon+ отримують ще до 4 друзів, кожен на своєму акаунті. Додати чи прибрати людину можна будь-коли.',
+                )}
+            </p>
+
+            {state.invites.map((invite) => (
+                <div
+                    key={invite.id}
+                    className="gc-solid-2 mt-3 flex flex-wrap items-center gap-3 rounded-xl p-3"
+                >
+                    <UserAvatar user={invite.user} size="sm" />
+                    <p className="min-w-0 flex-1 text-sm text-white/80">
+                        {tr('{name} запрошує вас у свою підписку', {
+                            name: invite.user.name,
+                        })}
+                    </p>
+                    <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                            call('POST', `/plus/household/${invite.id}/accept`)
+                        }
+                        className="gc-pill-primary"
+                    >
+                        {tr('Прийняти')}
+                    </button>
+                    <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                            call('DELETE', `/plus/household/${invite.id}`)
+                        }
+                        className="gc-ghost-btn"
+                    >
+                        {tr('Відхилити')}
+                    </button>
+                </div>
+            ))}
+
+            {state.member_of && (
+                <div className="gc-solid-2 mt-3 flex flex-wrap items-center gap-3 rounded-xl p-3">
+                    <UserAvatar user={state.member_of.owner} size="sm" />
+                    <p className="min-w-0 flex-1 text-sm text-white/80">
+                        {state.member_of.until
+                            ? tr('Ви в підписці {name} до {date}', {
+                                  name: state.member_of.owner.name,
+                                  date: formatDate(state.member_of.until),
+                              })
+                            : tr('Ви в підписці {name}', {
+                                  name: state.member_of.owner.name,
+                              })}
+                    </p>
+                    <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                            call(
+                                'DELETE',
+                                `/plus/household/${state.member_of!.id}`,
+                            )
+                        }
+                        className="gc-ghost-btn"
+                    >
+                        {tr('Вийти')}
+                    </button>
+                </div>
+            )}
+
+            {state.until ? (
+                <div className="mt-3 space-y-2">
+                    <p className="text-sm text-emerald-300">
+                        {tr('Діє до {date} · вільних місць: {n}', {
+                            date: formatDate(state.until),
+                            n: free,
+                        })}
+                    </p>
+                    {state.members.map((row) => (
+                        <div
+                            key={row.id}
+                            className="flex items-center gap-3 text-sm text-white/80"
+                        >
+                            <UserAvatar user={row.user} size="sm" />
+                            <span className="min-w-0 flex-1 truncate">
+                                {row.user.name}
+                                {row.status === 'invited' && (
+                                    <span className="ml-2 text-xs text-white/40">
+                                        {tr('запрошено')}
+                                    </span>
+                                )}
+                            </span>
+                            <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() =>
+                                    call('DELETE', `/plus/household/${row.id}`)
+                                }
+                                className="text-xs text-white/45 hover:text-red-300"
+                            >
+                                {tr('Прибрати')}
+                            </button>
+                        </div>
+                    ))}
+                    {free > 0 && (
+                        <form
+                            className="flex gap-2"
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                call('POST', '/plus/household', { username });
+                            }}
+                        >
+                            <input
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder={tr('Нік друга')}
+                                aria-label={tr('Нік друга')}
+                                className="input-glass h-10 min-w-0 flex-1 rounded-xl px-3 text-sm text-white placeholder:text-white/30"
+                            />
+                            <button
+                                type="submit"
+                                disabled={busy || username.trim() === ''}
+                                className="gc-pill-primary"
+                            >
+                                {tr('Запросити')}
+                            </button>
+                        </form>
+                    )}
+                </div>
+            ) : null}
+
+            {plans.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                    {plans.map(([key, plan]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => buy(key)}
+                            className="gc-ghost-btn"
+                        >
+                            {state.until ? tr('Продовжити') : tr('Оформити')} ·{' '}
+                            {plan.price.toLocaleString('uk-UA')} ₴{' '}
+                            {perPeriod(plan.days)}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </section>
     );
 }
 

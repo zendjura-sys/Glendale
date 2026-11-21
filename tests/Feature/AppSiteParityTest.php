@@ -96,6 +96,13 @@ class AppSiteParityTest extends TestCase
         $this->actingAs($reader)->postJson("/games/celeste/guides/{$guide->id}/vote", ['helpful' => null])->assertOk()->assertJsonPath('helpful', 0);
     }
 
+    public function test_app_bridge_has_plus_household(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->getJson('/plus/household')->assertOk()->assertJsonPath('until', null);
+        $this->withToken($this->app_token($user))->getJson('/api/v1/site/plus/household')->assertOk()->assertJsonPath('max', 4);
+    }
+
     public function test_app_bridge_has_match_predictions(): void
     {
         $routes = collect(Route::getRoutes()->getRoutes())->map(fn ($r) => $r->methods()[0].' '.$r->uri());

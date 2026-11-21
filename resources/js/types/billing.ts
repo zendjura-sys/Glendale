@@ -1,6 +1,13 @@
 /** Тариф з каталогу (ціни — у гривнях; адміністратор змінює їх в Адмінка → Білінг). */
 export type BillingProduct = {
-    kind: 'plus' | 'family' | 'gift' | 'promo' | 'phone' | 'balance';
+    kind:
+        | 'plus'
+        | 'family'
+        | 'household'
+        | 'gift'
+        | 'promo'
+        | 'phone'
+        | 'balance';
     /** Вид просування сервера (для kind = promo). */
     promo: 'top' | 'highlight' | 'banner' | null;
     name: string;

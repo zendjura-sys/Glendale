@@ -700,6 +700,11 @@ Route::prefix('v1')->group(function () {
             Route::get('plus/compare', [PlusController::class, 'compare']);
             Route::put('plus/style', [PlusController::class, 'style'])->middleware('throttle:30,1');
             Route::put('plus/title', [PlusController::class, 'title'])->middleware('throttle:20,1');
+            // GameCon+ на 5 акаунтів (№215).
+            Route::get('plus/household', [PlusController::class, 'household']);
+            Route::post('plus/household', [PlusController::class, 'householdInvite'])->middleware('throttle:20,1');
+            Route::post('plus/household/{member}/accept', [PlusController::class, 'householdAccept'])->whereNumber('member');
+            Route::delete('plus/household/{member}', [PlusController::class, 'householdRemove'])->whereNumber('member');
             // Перші кроки новачка: номер → режим → ігри й сервери.
             Route::get('start', [StartController::class, 'index']);
             Route::post('start', [StartController::class, 'store']);

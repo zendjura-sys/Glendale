@@ -18,6 +18,9 @@ return [
         'plus_year' => ['kind' => 'plus', 'name' => 'GameCon+ · рік', 'price' => 1290, 'days' => 365, 'recurring' => false],
         'gift_month' => ['kind' => 'gift', 'name' => 'Подарунок GameCon+ · місяць', 'price' => 149, 'days' => 30, 'recurring' => false],
         'gift_year' => ['kind' => 'gift', 'name' => 'Подарунок GameCon+ · рік', 'price' => 1290, 'days' => 365, 'recurring' => false],
+        // GameCon+ на 5 акаунтів (№215): власник + до 4 друзів.
+        'household_month' => ['kind' => 'household', 'name' => 'GameCon+ на 5 акаунтів · місяць', 'price' => 299, 'days' => 30, 'recurring' => false],
+        'household_year' => ['kind' => 'household', 'name' => 'GameCon+ на 5 акаунтів · рік', 'price' => 2490, 'days' => 365, 'recurring' => false],
         'family_month' => ['kind' => 'family', 'name' => 'GameCon+ для сім’ї · місяць', 'price' => 399, 'days' => 30, 'recurring' => false],
         'family_year' => ['kind' => 'family', 'name' => 'GameCon+ для сім’ї · рік', 'price' => 3490, 'days' => 365, 'recurring' => false],
         'promo_top_7' => ['kind' => 'promo', 'promo' => 'top', 'name' => 'Місце в топі каталогу · 7 днів', 'price' => 499, 'days' => 7, 'recurring' => false],

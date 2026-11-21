@@ -267,6 +267,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('trial', [PlusController::class, 'trial'])->middleware('throttle:5,10')->name('trial');
         Route::put('style', [PlusController::class, 'style'])->name('style');
         Route::put('title', [PlusController::class, 'title'])->middleware('throttle:20,1')->name('title');
+        // GameCon+ на 5 акаунтів (№215).
+        Route::get('household', [PlusController::class, 'household'])->name('household');
+        Route::post('household', [PlusController::class, 'householdInvite'])->middleware('throttle:20,1')->name('household.invite');
+        Route::post('household/{member}/accept', [PlusController::class, 'householdAccept'])->whereNumber('member')->name('household.accept');
+        Route::delete('household/{member}', [PlusController::class, 'householdRemove'])->whereNumber('member')->name('household.remove');
         Route::put('families/{family:id}/style', [PlusController::class, 'familyStyle'])->whereNumber('family')->name('families.style');
     });
     Route::get('start', [StartController::class, 'index'])->name('start');
