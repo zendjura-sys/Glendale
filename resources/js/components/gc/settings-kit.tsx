@@ -17,7 +17,8 @@ export function SettingsNav({
     return (
         <nav
             aria-label={tr('Розділи налаштувань')}
-            className="gc-solid sticky top-[calc(88px+env(safe-area-inset-top))] z-20 -mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto rounded-2xl p-1.5"
+            // Нерухома смуга (не прилипає — інакше накладалась на вкладки сім’ї); скло Medium.
+            className="gc-glass-m -mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto rounded-2xl p-1.5"
         >
             {items.map(({ id, label, icon: Icon }) => (
                 <a
