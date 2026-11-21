@@ -4,6 +4,7 @@ import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
+import { basename } from 'node:path';
 import { defineConfig, lazyPlugins } from 'vite-plus';
 
 export default defineConfig({
@@ -22,6 +23,30 @@ export default defineConfig({
             formVariants: true,
         }),
     ]),
+    resolve: {
+        // VKUI зі стилями по компонентах: CSS лише тих, що імпортуємо (Group, Header…),
+        // а не весь vkui.css на ~390 КБ.
+        alias: [
+            {
+                find: /^@vkontakte\/vkui$/,
+                replacement: '@vkontakte/vkui/dist/cssm',
+            },
+        ],
+    },
+    css: {
+        modules: {
+            // Ті самі імена класів, що й у vkui.css (vkuiGroup__modeCard): на них спираються
+            // наші перевизначення в app.css.
+            generateScopedName: (local, file) => {
+                const match = /@vkontakte[\\/]vkui[\\/]/.test(file)
+                    ? basename(file).replace(/\.module\.css.*$/, '')
+                    : null;
+                return match
+                    ? `vkui${match}__${local}`
+                    : `${basename(file).replace(/\..*$/, '')}_${local}`;
+            },
+        },
+    },
     server: {
         watch: {
             ignored: [

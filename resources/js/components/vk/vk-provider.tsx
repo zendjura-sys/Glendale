@@ -1,4 +1,4 @@
-import '@vkontakte/vkui/dist/vkui.css';
+import '@vkontakte/vkui/dist/cssm/styles/themes.css';
 import {
     AdaptivityProvider,
     AppRoot,

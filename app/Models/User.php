@@ -148,6 +148,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
 
     protected static function booted(): void
     {
+        // Значки біля ніка збираються одним запитом на всіх, кого щойно завантажили списком.
+        static::retrieved(fn (User $user) => app(Affiliations::class)->remember($user));
         static::saving(function (User $user) {
             $user->name = trim($user->first_name.' '.$user->last_name);
         });

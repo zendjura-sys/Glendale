@@ -28,6 +28,12 @@ class Affiliations
     /** @var array<int, list<GroupedBadge>> значки, уже зібрані в цьому запиті */
     private array $memo = [];
 
+    /** @var array<int, User> щойно завантажені з БД, ще без значків (збираються разом при першому of()) */
+    private array $pending = [];
+
+    /** Скільки щойно завантажених людей пам’ятати: більші вибірки — не картки, а підрахунки. */
+    private const PENDING_MAX = 200;
+
     /**
      * Зібрати значки одним запитом для всіх людей сторінки (стрічка, коментарі, список).
      *
@@ -41,13 +47,26 @@ class Affiliations
         }
     }
 
+    /** Людина щойно прийшла з БД: якщо дійде до картки, значки зберемо разом з іншими зі списку. */
+    public function remember(User $user): void
+    {
+        if (count($this->pending) < self::PENDING_MAX && ! array_key_exists($user->id, $this->memo)) {
+            $this->pending[$user->id] = $user;
+        }
+    }
+
     /** @return list<GroupedBadge> */
     public function of(User $user): array
     {
         if (! $user->exists) {
             return [];
         }
-        $this->prime([$user]);
+        if (! array_key_exists($user->id, $this->memo)) {
+            // Одним запитом — і ця людина, і всі завантажені поруч (список друзів, учасники).
+            $batch = [$user->id => $user] + $this->pending;
+            $this->pending = [];
+            $this->prime($batch);
+        }
 
         return $this->memo[$user->id] ?? [];
     }
@@ -56,6 +75,7 @@ class Affiliations
     public function forget(): void
     {
         $this->memo = [];
+        $this->pending = [];
     }
 
     /**

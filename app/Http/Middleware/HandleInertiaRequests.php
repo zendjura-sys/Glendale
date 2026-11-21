@@ -209,8 +209,11 @@ class HandleInertiaRequests extends Middleware
                 'frame' => MemoriesController::frameState($user),
                 'widgets' => MemoriesController::widgets($user),
                 'layout' => MemoriesController::layout($user),
-                'categories' => MemoriesController::categories($user),
-                'catalog' => MemoriesController::lobbyCatalog($user),
+                // Категорії лобі (~7 КБ) потрібні лише стрічці — іншим сторінкам їх не шлемо.
+                ...($request->routeIs('feed') ? [
+                    'categories' => MemoriesController::categories($user),
+                    'catalog' => MemoriesController::lobbyCatalog($user),
+                ] : []),
             ] : null,
             'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [

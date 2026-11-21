@@ -127,7 +127,7 @@ export function Thread({
                             />
                         ) : (
                             <img
-                                src="/images/brand/logo-mark.png"
+                                src="/images/brand/logo-mark.webp"
                                 alt=""
                                 className="size-9 shrink-0"
                             />

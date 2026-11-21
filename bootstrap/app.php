@@ -47,7 +47,9 @@ return Application::configure(basePath: dirname(__DIR__))
             TrackUserActivity::class,
             ViewAsUser::class,
             HandleInertiaRequests::class,
-            AddLinkHeadersForPreloadedAssets::class,
+            // Лише перші ресурси (CSS і головні чанки): повний список займав >16 КБ заголовків —
+            // nginx із буфером 4–8 КБ віддає на таке 502, а теги modulepreload і так є в HTML.
+            AddLinkHeadersForPreloadedAssets::using(12),
         ]);
 
         $middleware->api(append: ['throttle:api-global', SetLocale::class, BlockCountries::class, BlockBannedIps::class]);
