@@ -84,6 +84,7 @@ import 'support.dart';
 import 'theme_controller.dart';
 import 'widgets.dart';
 import 'wrapped.dart';
+import 'shake_report.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -485,7 +486,8 @@ class GameConApp extends StatelessWidget {
       scrollBehavior: const ArcticScrollBehavior(),
       routerConfig: router,
       builder: (context, child) {
-        final app = BootSplash(child: AppLockGate(child: child ?? const SizedBox.shrink()));
+        // Струснули телефон — баг-репорт зі знімком екрана (№286).
+        final app = BootSplash(child: AppLockGate(child: ShakeToReport(router: router, child: child ?? const SizedBox.shrink())));
         return ListenableBuilder(
           listenable: session,
           builder: (context, _) {

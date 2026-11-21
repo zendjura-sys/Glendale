@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'sound_fx.dart';
 import 'backgrounds.dart';
 import 'chrome.dart' show dockMenuButton, setDockMenuStyle;
@@ -23,6 +24,7 @@ import 'i18n.dart';
 import 'language_picker.dart';
 import 'music.dart' show ListeningSwitch;
 import 'extras.dart';
+import 'shake_report.dart';
 
 // ───────────────────────── Сповіщення ─────────────────────────
 
@@ -445,6 +447,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const ListeningSwitch(),
           const DigestSwitch(),
           const _UiSoundsSwitch(),
+          const _ShakeReportSwitch(),
           const _DockMenuStyle(),
           const SizedBox(height: 6),
           Text(tr('Хто може писати мені'), style: body(13, color: muted)),
@@ -999,6 +1002,39 @@ class _UiSoundsSwitchState extends State<_UiSoundsSwitch> {
           setState(() => on = v);
           GcSoundEngine.instance.setEnabled(v);
           if (v) GcSoundEngine.instance.navTick();
+        },
+      );
+}
+
+/// «Струснути, щоб повідомити про помилку» (№286): локально на пристрої, типово ввімкнено.
+class _ShakeReportSwitch extends StatefulWidget {
+  const _ShakeReportSwitch();
+
+  @override
+  State<_ShakeReportSwitch> createState() => _ShakeReportSwitchState();
+}
+
+class _ShakeReportSwitchState extends State<_ShakeReportSwitch> {
+  bool on = true;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((prefs) {
+      if (mounted) setState(() => on = prefs.getBool(ShakeToReport.prefKey) ?? true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => SwitchListTile(
+        value: on,
+        contentPadding: EdgeInsets.zero,
+        title: Text(tr('Струснути, щоб повідомити про помилку'), style: body(14.5, weight: FontWeight.w600)),
+        subtitle: Text(tr('Знімок екрана й коротка форма для підтримки. Діє після перезапуску застосунку.'), style: body(12.5, color: muted)),
+        onChanged: (v) async {
+          setState(() => on = v);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(ShakeToReport.prefKey, v);
         },
       );
 }

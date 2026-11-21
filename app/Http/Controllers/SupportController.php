@@ -43,7 +43,13 @@ class SupportController extends Controller
             'url' => ['nullable', 'string', 'max:255'],
             'files' => ['nullable', 'array', 'max:'.SupportDesk::MAX_FILES],
             'files.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            // Баг-репорт (№286): пристрій, версія й екран — щоб відтворити помилку.
+            'device' => ['nullable', 'string', 'max:300'],
         ], ['body.min' => 'Опишіть проблему трохи детальніше — хоча б кілька слів.']);
+        if (filled($data['device'] ?? null)) {
+            $data['body'] = rtrim($data['body'])."\n\n— Пристрій: ".str_replace(["\r", "\n"], ' ', (string) $data['device']);
+        }
+        unset($data['device']);
         $ticket = $this->desk->open($request->user(), $data, array_values($request->file('files', [])));
 
         return $request->wantsJson() ? response()->json(['id' => $ticket->id], 201) : to_route('support.show', $ticket);
