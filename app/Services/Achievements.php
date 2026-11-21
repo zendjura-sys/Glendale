@@ -21,6 +21,7 @@ use App\Services\Quests\SeasonPass;
 use App\Services\Servers\ServerVotes;
 use App\Support\Modules\ModuleManager;
 use App\Support\Plugins\Plugins;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -89,7 +90,7 @@ class Achievements
      */
     public function catalog(): array
     {
-        return array_map(fn (array $b) => ['key' => $b['key'], 'title' => $b['title']], self::BADGES);
+        return array_values(array_map(fn (array $b) => ['key' => $b['key'], 'title' => $b['title']], self::BADGES));
     }
 
     /**
@@ -150,6 +151,7 @@ class Achievements
                 'secret' => $badge['secret'] ?? false,
             ];
         }
+        $this->recordUnlocks($user, $badges);
         $title = 'Новачок';
         foreach (self::TITLES as $from => $name) {
             if ($level >= $from) {
@@ -225,6 +227,64 @@ class Achievements
         Cache::forget('achievements.rarity');
 
         return $total;
+    }
+
+    /** Службовий рядок: перший облік людини вже був — далі нові бейджі йдуть у стрічку друзів. */
+    private const SYNCED = '_synced';
+
+    /**
+     * Записати щойно відкриті бейджі (для «Досягнень друзів»). Перший облік — «тихий»: бейджі,
+     * зароблені до появи таблиці, у стрічку не потрапляють.
+     *
+     * @param  list<array<string, mixed>>  $badges
+     */
+    private function recordUnlocks(User $user, array $badges): void
+    {
+        $earned = array_values(array_map(fn (array $b) => (string) $b['key'], array_filter($badges, fn (array $b) => (bool) $b['earned'])));
+        $known = DB::table('achievement_unlocks')->where('user_id', $user->id)->pluck('badge')->all();
+        $first = ! in_array(self::SYNCED, $known, true);
+        $fresh = array_diff($earned, $known);
+        if (! $first && $fresh === []) {
+            return;
+        }
+        $now = now();
+        $rows = array_map(fn (string $key) => ['user_id' => $user->id, 'badge' => $key, 'silent' => $first, 'unlocked_at' => $now], array_values($fresh));
+        if ($first) {
+            $rows[] = ['user_id' => $user->id, 'badge' => self::SYNCED, 'silent' => true, 'unlocked_at' => $now];
+        }
+        DB::table('achievement_unlocks')->insertOrIgnore($rows);
+    }
+
+    /**
+     * Свіжі досягнення друзів за тиждень: хто, що, коли (новіші спершу).
+     *
+     * @param  list<int>  $friendIds
+     * @return list<array{user: array<string, mixed>, key: string, title: string, icon: string, at: string}>
+     */
+    public function friendsFeed(array $friendIds, int $limit = 6): array
+    {
+        if ($friendIds === []) {
+            return [];
+        }
+        $catalog = collect(self::BADGES)->keyBy('key');
+        $modules = app(ModuleManager::class);
+        $rows = DB::table('achievement_unlocks')->whereIn('user_id', $friendIds)->where('silent', false)
+            ->where('unlocked_at', '>=', now()->subDays(7))->orderByDesc('unlocked_at')->limit($limit * 2)->get();
+        $users = User::query()->whereIn('id', $rows->pluck('user_id')->unique()->all())->get()->keyBy('id');
+        $out = [];
+        foreach ($rows as $row) {
+            $badge = $catalog->get($row->badge);
+            $user = $users->get($row->user_id);
+            if ($badge === null || $user === null || (is_string($badge['module'] ?? null) && ! $modules->enabled($badge['module']))) {
+                continue;
+            }
+            $out[] = ['user' => $user->toCard(), 'key' => $badge['key'], 'title' => $badge['title'], 'icon' => $badge['icon'], 'at' => Carbon::parse($row->unlocked_at)->toIso8601String()];
+            if (count($out) === $limit) {
+                break;
+            }
+        }
+
+        return $out;
     }
 
     /** Досвід, потрібний для рівня: 50·(n−1)² — перші рівні швидкі, далі повільніше. */

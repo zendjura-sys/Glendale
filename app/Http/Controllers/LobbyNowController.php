@@ -6,6 +6,8 @@ use App\Models\FamilyMember;
 use App\Models\FamilyShift;
 use App\Models\MessageAttachment;
 use App\Models\User;
+use App\Services\Achievements;
+use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
 use App\Support\Modules\ModuleManager;
@@ -14,17 +16,19 @@ use Illuminate\Http\Request;
 
 /**
  * «Зараз» у лобі: що відбувається в розділах людини просто зараз — зміни сім’ї (йдуть і найближчі),
- * обговорення з непрочитаним (з відповіддю прямо з лобі). Лише читання; розділ вимкнено — його немає.
+ * обговорення з непрочитаним (з відповіддю прямо з лобі), свіжі досягнення друзів. Лише читання; розділ вимкнено — його немає.
  */
 class LobbyNowController extends Controller
 {
-    public function __invoke(Request $request, ModuleManager $modules, MessengerPresenter $presenter, Messenger $messenger): JsonResponse
+    public function __invoke(Request $request, ModuleManager $modules, MessengerPresenter $presenter, Messenger $messenger, FriendshipService $friends, Achievements $achievements): JsonResponse
     {
         $user = $request->user();
 
         return response()->json([
             'shifts' => $modules->enabled('families') ? $this->shifts($user) : [],
             'chats' => $modules->enabled('messages') ? $this->chats($user, $presenter, $messenger) : [],
+            // Досягнення друзів за тиждень (нове з’являється після перерахунку бейджів).
+            'achievements' => $modules->enabled('friends') ? $achievements->friendsFeed($friends->friendIds($user)) : [],
         ]);
     }
 

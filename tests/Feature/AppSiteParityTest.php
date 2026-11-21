@@ -70,7 +70,7 @@ class AppSiteParityTest extends TestCase
     public function test_app_and_site_get_lobby_now(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user)->getJson('/me/now')->assertOk()->assertJsonStructure(['shifts', 'chats']);
+        $this->actingAs($user)->getJson('/me/now')->assertOk()->assertJsonStructure(['shifts', 'chats', 'achievements']);
         $this->withToken($this->app_token($user))->getJson('/api/v1/site/me/now')->assertOk()->assertJsonPath('shifts', [])->assertJsonPath('chats', []);
     }
 

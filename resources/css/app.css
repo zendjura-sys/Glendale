@@ -9244,3 +9244,28 @@ html:root.gc-vk[data-theme] .gc-player-glass::before {
 .gc-streamer-channel.is-kick {
     box-shadow: inset 3px 0 0 #53fc18;
 }
+
+/* ---------- Лобі: досягнення друзів ---------- */
+.gc-achievement-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    margin: 0 -6px;
+    border-radius: 12px;
+    color: var(--gc-text);
+    transition: background-color 0.15s ease;
+}
+.gc-achievement-row:hover {
+    background: var(--gc-l2);
+}
+.gc-achievement-row__icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--gc-accent) 16%, transparent);
+    color: var(--gc-accent);
+}

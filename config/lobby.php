@@ -16,6 +16,7 @@ return [
         'friends' => ['label' => 'Друзі', 'module' => 'friends', 'subs' => [
             'requests' => 'Заявки', 'contacts' => 'Контакти', 'online' => 'Онлайн', 'suggestions' => 'Можливо, знайомі',
             'birthdays' => 'Дні народження', 'activity' => 'Активність друзів',
+            'achievements' => ['label' => 'Досягнення друзів', 'added' => '2026-11-21'],
         ]],
         'feed' => ['label' => 'Новини', 'module' => 'feed', 'subs' => [
             'posts' => 'Стрічка', 'topics' => 'Мої теми', 'while_away' => 'Поки тебе не було',

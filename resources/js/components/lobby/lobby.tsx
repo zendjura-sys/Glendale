@@ -17,6 +17,7 @@ import {
     Send,
     RectangleHorizontal,
     Square,
+    Award,
 } from 'lucide-react';
 import { LayoutGroup, m, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
@@ -31,12 +32,14 @@ import {
 } from '@/components/lobby/media-blocks';
 import { next, prev, toggle, usePlayer } from '@/lib/player';
 import type { RailData } from '@/components/gc/rail-widgets';
+import { BADGE_ICONS } from '@/components/gc/achievements';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import type { StreamInfo } from '@/components/streams/stream';
 import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import { motionOr, SNAP } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import type { UserCard } from '@/types';
 import { usePlugin } from '@/lib/plugins';
 import { left, stopReady } from '@/components/party/ready-to-play';
 import type { ReadyState } from '@/components/party/ready-to-play';
@@ -244,6 +247,14 @@ type NowData = {
             height: number | null;
         } | null;
     }[];
+    /** Свіжі досягнення друзів (тиждень). */
+    achievements?: {
+        user: UserCard;
+        key: string;
+        title: string;
+        icon: string;
+        at: string;
+    }[];
 };
 
 const hm = (iso: string) =>
@@ -265,6 +276,52 @@ function useNow() {
         return () => window.clearInterval(timer);
     }, []);
     return data;
+}
+
+/** Досягнення друзів: хто що відкрив за тиждень — привітати можна зі сторінки друга. */
+function FriendAchievements({
+    items,
+}: {
+    items: NonNullable<NowData['achievements']>;
+}) {
+    return (
+        <div className="gc-now-tile gc-now-tile--list">
+            <span className="gc-now-tile__kicker">{tr('Друзі відкрили')}</span>
+            <ul className="mt-1 space-y-1">
+                {items.slice(0, 4).map((item) => {
+                    const Icon = BADGE_ICONS[item.icon] ?? Award;
+                    return (
+                        <li key={`${item.user.id}-${item.key}`}>
+                            <Link
+                                href={`/${item.user.username}`}
+                                className="gc-achievement-row"
+                            >
+                                <UserAvatar
+                                    user={item.user}
+                                    size="sm"
+                                    showOnline={false}
+                                />
+                                <span className="min-w-0 flex-1">
+                                    <span className="block truncate text-sm font-semibold">
+                                        {item.user.first_name ?? item.user.name}
+                                    </span>
+                                    <span className="block truncate text-xs text-[var(--gc-text-2)]">
+                                        {item.title}
+                                    </span>
+                                </span>
+                                <span
+                                    className="gc-achievement-row__icon"
+                                    aria-hidden
+                                >
+                                    <Icon className="size-4" />
+                                </span>
+                            </Link>
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
 }
 
 /** Плитка обговорення: останнє повідомлення й відповідь просто з лобі. */
@@ -555,6 +612,17 @@ export function useNowBlocks({
                     </span>
                 </Link>
             ),
+        });
+    }
+    const unlocks = now?.achievements ?? [];
+    if (unlocks.length > 0) {
+        tiles.push({
+            key: 'achievements',
+            category: 'friends',
+            sub: 'achievements',
+            badge: tr('Досягнення'),
+            tone: 'accent',
+            node: <FriendAchievements items={unlocks} />,
         });
     }
     for (const chat of now?.chats ?? []) {

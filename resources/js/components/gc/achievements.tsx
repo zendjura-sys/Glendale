@@ -67,7 +67,7 @@ export type AchievementsData = {
     badges: Badge[];
 };
 
-const ICONS: Record<string, LucideIcon> = {
+export const BADGE_ICONS: Record<string, LucideIcon> = {
     'pen-line': PenLine,
     newspaper: Newspaper,
     'users-round': UsersRound,
@@ -173,7 +173,7 @@ export function AchievementsCard({
             ) : (
                 <div className="mt-2 grid grid-cols-4 gap-2">
                     {shown.map((b) => {
-                        const Icon = ICONS[b.icon] ?? Award;
+                        const Icon = BADGE_ICONS[b.icon] ?? Award;
 
                         return (
                             <div
