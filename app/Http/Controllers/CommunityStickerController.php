@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\Sticker;
 use App\Models\StickerPack;
 use App\Support\Plugins\Plugins;
+use App\Support\StickerFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -46,10 +47,9 @@ class CommunityStickerController extends Controller
         $request->validate([
             'name' => ['nullable', 'string', 'min:2', 'max:60'],
             'stickers' => ['required', 'array', 'max:20'],
-            'stickers.*' => ['image', 'mimes:png,webp,gif', 'max:512', 'dimensions:max_width=512,max_height=512'],
+            'stickers.*' => StickerFiles::rules(512, 512),
         ], [
-            'stickers.*.dimensions' => 'Стікер має бути не більше 512×512 px.',
-            'stickers.*.mimes' => 'Підтримуються PNG, WebP і GIF.',
+            'stickers.*.mimetypes' => 'Підтримуються PNG, WebP, GIF і відеостікери WebM.',
         ]);
         $pack = StickerPack::query()->firstOrCreate(
             ['community_id' => $community->id],
@@ -60,7 +60,7 @@ class CommunityStickerController extends Controller
         abort_if($pack->stickers()->count() + count($files) > self::MAX_STICKERS, 422, 'У наборі спільноти може бути до '.self::MAX_STICKERS.' стікерів.');
         $position = (int) $pack->stickers()->max('position');
         foreach ($files as $file) {
-            $extension = $file->getMimeType() === 'image/gif' ? 'gif' : ($file->getMimeType() === 'image/webp' ? 'webp' : 'png');
+            $extension = StickerFiles::extension($file);
             $pack->stickers()->create([
                 'path' => $file->storeAs("stickers/{$pack->slug}", Str::random(24).'.'.$extension, 'public'),
                 'position' => ++$position,

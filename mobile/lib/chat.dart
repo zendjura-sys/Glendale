@@ -2277,7 +2277,7 @@ class _Bubble extends StatelessWidget {
                 if (bot) Pill(label: tr('бот'), color: const Color(0xFF7CC8FF)),
                 if (guest) Pill(label: tr('гість'), color: muted),
               ]),
-            SizedBox(width: 130, height: 130, child: NetImage(text(sticker['url']), fit: BoxFit.contain)),
+            SizedBox(width: 130, height: 130, child: StickerView(text(sticker['url']))),
             meta,
           ])
         : bareNote
@@ -2776,7 +2776,7 @@ class _StickerPickerState extends State<_StickerPicker> {
                   crossAxisSpacing: 8,
                   children: [
                     for (final sticker in maps(pack['stickers']))
-                      InkWell(borderRadius: BorderRadius.circular(12), onTap: () => widget.onSticker(sticker), child: NetImage(text(sticker['url']), fit: BoxFit.contain)),
+                      InkWell(borderRadius: BorderRadius.circular(12), onTap: () => widget.onSticker(sticker), child: StickerView(text(sticker['url']))),
                   ],
                 ),
         ),

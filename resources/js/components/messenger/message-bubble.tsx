@@ -1,3 +1,4 @@
+import { StickerMedia } from '@/components/gc/stickers';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
@@ -442,10 +443,8 @@ export function MessageBubble({
 
                     {isSticker && message.sticker && (
                         <div className="relative">
-                            <img
-                                loading="lazy"
-                                decoding="async"
-                                src={message.sticker.url}
+                            <StickerMedia
+                                url={message.sticker.url}
                                 alt={message.sticker.emoji ?? tr('Стікер')}
                                 onLoad={actions.onMediaLoad}
                                 className="size-[148px] object-contain drop-shadow-[0_10px_24px_rgb(0_0_0/0.35)] sm:size-[164px]"

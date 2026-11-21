@@ -1,3 +1,4 @@
+import { StickerMedia } from '@/components/gc/stickers';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
     ArrowDown,
@@ -119,7 +120,7 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
                 {packs.length === 0 && (
                     <div className="gc-solid rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         {tr(
-                            'Наборів ще немає. Створіть перший і завантажте PNG, WebP або GIF до 1 МБ.',
+                            'Наборів ще немає. Створіть перший і завантажте PNG, WebP, GIF або відеостікери WebM до 1 МБ.',
                         )}
                     </div>
                 )}
@@ -185,10 +186,8 @@ function PackCard({
             <header className="mb-4 flex flex-wrap items-center gap-3">
                 <span className="gc-solid-2 flex size-12 items-center justify-center rounded-2xl p-1.5">
                     {pack.stickers[0] ? (
-                        <img
-                            loading="lazy"
-                            decoding="async"
-                            src={pack.stickers[0].url}
+                        <StickerMedia
+                            url={pack.stickers[0].url}
                             alt=""
                             className="size-full object-contain"
                         />
@@ -277,10 +276,9 @@ function PackCard({
                         key={sticker.id}
                         className="group gc-solid-2 relative aspect-square rounded-2xl p-1.5"
                     >
-                        <img
-                            src={sticker.url}
+                        <StickerMedia
+                            url={sticker.url}
                             alt={sticker.emoji ?? ''}
-                            loading="lazy"
                             className="size-full object-contain"
                         />
                         {sticker.emoji && (
@@ -323,7 +321,7 @@ function PackCard({
                     className="input-glass h-8 w-16 rounded-lg px-2 text-center text-sm text-white"
                 />
                 <span>
-                    {tr('PNG, WebP або GIF · до 1 МБ · до 1024×1024 px')}
+                    {tr('PNG, WebP, GIF або WebM · до 1 МБ · до 1024×1024 px')}
                 </span>
             </div>
             {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
@@ -331,7 +329,7 @@ function PackCard({
             <input
                 ref={fileRef}
                 type="file"
-                accept="image/png,image/webp,image/gif"
+                accept="image/png,image/webp,image/gif,video/webm"
                 multiple
                 hidden
                 onChange={(e) => {

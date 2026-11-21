@@ -212,4 +212,25 @@ class RichMessagesTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user)->get(route('admin.stickers.index'))->assertForbidden();
     }
+
+    public function test_admin_uploads_video_stickers(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $pack = StickerPack::query()->create(['slug' => 'zhyvi', 'name' => 'Живі', 'is_active' => true]);
+
+        $this->actingAs($admin)->post(route('admin.stickers.upload', $pack), [
+            'stickers' => [UploadedFile::fake()->create('dance.webm', 120, 'video/webm'), UploadedFile::fake()->image('wave.gif', 256, 256)],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $paths = $pack->stickers()->orderBy('position')->pluck('path')->all();
+        $this->assertStringEndsWith('.webm', $paths[0]);
+        $this->assertStringEndsWith('.gif', $paths[1]);
+
+        $this->actingAs($admin)->post(route('admin.stickers.upload', $pack), [
+            'stickers' => [UploadedFile::fake()->create('clip.mp4', 120, 'video/mp4')],
+        ])->assertSessionHasErrors('stickers.0');
+        $this->actingAs($admin)->post(route('admin.stickers.upload', $pack), [
+            'stickers' => [UploadedFile::fake()->create('big.webm', 2048, 'video/webm')],
+        ])->assertSessionHasErrors('stickers.0');
+    }
 }

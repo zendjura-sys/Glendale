@@ -1,3 +1,4 @@
+import { StickerMedia } from '@/components/gc/stickers';
 import { Head, Link, router } from '@inertiajs/react';
 import { ChevronLeft, Sticker, Trash2, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -66,7 +67,7 @@ export default function CommunityStickers({
                             <input
                                 ref={input}
                                 type="file"
-                                accept="image/png,image/webp,image/gif"
+                                accept="image/png,image/webp,image/gif,video/webm"
                                 multiple
                                 hidden
                                 onChange={(e) => upload(e.target.files)}
@@ -86,7 +87,7 @@ export default function CommunityStickers({
                 {can_manage && (
                     <p className="text-xs text-white/40">
                         {tr(
-                            'PNG, WebP чи GIF до 512×512 px, до {limit} стікерів у наборі. Зараз: {count}.',
+                            'PNG, WebP, GIF чи відео WebM до 512×512 px, до {limit} стікерів у наборі. Зараз: {count}.',
                             { limit, count: stickers.length },
                         )}
                     </p>
@@ -109,11 +110,10 @@ export default function CommunityStickers({
                     <div className="gc-solid grid grid-cols-4 gap-3 rounded-2xl p-4 sm:grid-cols-6">
                         {stickers.map((sticker) => (
                             <div key={sticker.id} className="group relative">
-                                <img
-                                    src={sticker.url}
+                                <StickerMedia
+                                    url={sticker.url}
                                     alt={sticker.emoji ?? ''}
                                     className="aspect-square w-full object-contain"
-                                    loading="lazy"
                                 />
                                 {can_manage && (
                                     <button

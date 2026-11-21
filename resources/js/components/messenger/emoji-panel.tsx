@@ -1,3 +1,4 @@
+import { StickerMedia } from '@/components/gc/stickers';
 import { Link } from '@inertiajs/react';
 import { Clock3, Lock, Smile, Sticker as StickerIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -245,10 +246,8 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
                                 : 'opacity-60 hover:opacity-100',
                         )}
                     >
-                        <img
-                            loading="lazy"
-                            decoding="async"
-                            src={pack.stickers[0]?.url}
+                        <StickerMedia
+                            url={pack.stickers[0]?.url ?? ''}
                             alt={pack.name}
                             className="size-full object-contain"
                         />
@@ -300,10 +299,9 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
                                 title={sticker.emoji ?? undefined}
                                 className="aspect-square rounded-xl p-1 transition hover:scale-105 hover:bg-[var(--gc-l3)] disabled:opacity-40 disabled:hover:scale-100 disabled:hover:bg-transparent"
                             >
-                                <img
-                                    src={sticker.url}
+                                <StickerMedia
+                                    url={sticker.url}
                                     alt={sticker.emoji ?? ''}
-                                    loading="lazy"
                                     className="size-full object-contain"
                                 />
                             </button>

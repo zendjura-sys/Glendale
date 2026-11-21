@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:video_player/video_player.dart';
 
 import 'api.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
@@ -1054,6 +1055,57 @@ class NetImage extends StatelessWidget {
             errorWidget: (_, _, _) => Container(color: raised, child: Icon(LucideIcons.imageOff, color: faint)),
           );
     return radius == 0 ? image : ClipRRect(borderRadius: BorderRadius.circular(radius), child: image);
+  }
+}
+
+/// Стікер із набору: картинка (PNG, GIF, WebP) або відеостікер WebM — беззвучно й по колу.
+/// Коли в системі вимкнено анімації, відео стоїть на першому кадрі.
+class StickerView extends StatefulWidget {
+  const StickerView(this.url, {super.key});
+  final String? url;
+
+  static bool isVideo(String? url) => url != null && RegExp(r'\.webm(\?|$)', caseSensitive: false).hasMatch(url);
+
+  @override
+  State<StickerView> createState() => _StickerViewState();
+}
+
+class _StickerViewState extends State<StickerView> {
+  VideoPlayerController? _video;
+
+  @override
+  void initState() {
+    super.initState();
+    final src = absolute(widget.url);
+    if (src != null && StickerView.isVideo(src)) {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(src), videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true));
+      _video = controller;
+      controller.initialize().then((_) {
+        if (!mounted) return;
+        controller
+          ..setVolume(0)
+          ..setLooping(true);
+        if (!MediaQuery.of(context).disableAnimations) controller.play();
+        setState(() {});
+      }).catchError((_) {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _video?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final video = _video;
+    if (video == null) return NetImage(widget.url, fit: BoxFit.contain);
+    if (!video.value.isInitialized) return const SizedBox.shrink();
+    return FittedBox(
+      fit: BoxFit.contain,
+      child: SizedBox(width: video.value.size.width, height: video.value.size.height, child: VideoPlayer(video)),
+    );
   }
 }
 
