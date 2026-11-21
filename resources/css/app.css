@@ -9570,3 +9570,21 @@ html.gc-simple *::after {
 .gc-spoiler-gate:hover {
     color: var(--gc-text);
 }
+
+/* ---------- Профіль: статистика кіно (№272) ---------- */
+.gc-stat-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 4px;
+    border-radius: 12px;
+    background: var(--gc-l2);
+}
+.gc-genre-chip {
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background: var(--gc-l2);
+    color: var(--gc-text-2);
+    font-size: 12px;
+    font-weight: 600;
+}

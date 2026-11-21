@@ -81,6 +81,7 @@ const BLOCK_LABELS: Record<string, string> = {
     stream_schedule: 'Розклад стрімів',
     cards: 'Колекційні картки',
     games: 'Ігри: граю зараз',
+    cinema_stats: 'Статистика кіно',
     about: 'Про себе',
     achievements: 'Досягнення',
     characters: 'Персонажі RP',

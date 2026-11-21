@@ -22,6 +22,8 @@ import type { ShowcaseData } from '@/components/cards/game-card';
 import type { TrackCard } from '@/types/music';
 import type { SetupData } from '@/components/profile/my-setup';
 import { StreamSchedule } from '@/components/profile/stream-schedule';
+import { CinemaStats } from '@/components/profile/cinema-stats';
+import type { CinemaStatsData } from '@/components/profile/cinema-stats';
 import type { StreamSlot } from '@/components/profile/stream-schedule';
 import { SteamAchievements } from '@/components/profile/steam-achievements';
 import {
@@ -125,6 +127,7 @@ const PROFILE_BLOCKS = [
     'stream_schedule',
     'cards',
     'games',
+    'cinema_stats',
     'about',
     'achievements',
     'audio',
@@ -190,6 +193,7 @@ type Props = {
     compatibility?: Compatibility | null;
     setup?: SetupData | null;
     cardShowcase?: ShowcaseData | null;
+    cinemaStats?: CinemaStatsData | null;
     profileTrack?: TrackCard | null;
     streamSchedule?: StreamSlot[] | null;
     account?: AccountCardData | null;
@@ -398,6 +402,7 @@ export default function ProfileShow({
     compatibility = null,
     setup = null,
     cardShowcase = null,
+    cinemaStats = null,
     profileTrack = null,
     streamSchedule = null,
     account = null,
@@ -1366,6 +1371,18 @@ export default function ProfileShow({
                                                 <StreamSchedule
                                                     slots={streamSchedule}
                                                     isSelf={isSelf}
+                                                />
+                                            ) : null}
+                                        </Deferred>
+                                    ),
+                                    cinema_stats: (
+                                        <Deferred
+                                            data="cinemaStats"
+                                            fallback={<span hidden />}
+                                        >
+                                            {cinemaStats ? (
+                                                <CinemaStats
+                                                    data={cinemaStats}
                                                 />
                                             ) : null}
                                         </Deferred>

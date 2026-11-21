@@ -17,6 +17,7 @@ use App\Models\UserStream;
 use App\Services\Accounts\AccountTypes;
 use App\Services\Achievements;
 use App\Services\Cards\CardCollection;
+use App\Services\Cinema\WatchStats;
 use App\Services\FriendshipService;
 use App\Services\GameCard;
 use App\Services\Games\Backlog;
@@ -169,6 +170,11 @@ class ProfileController extends Controller
             'profileTrack' => $deferIf(
                 app(Plugins::class)->on('profile_track') && $canSeeContent,
                 fn () => ProfileTrack::of($user),
+            ),
+            // Статистика перегляду (№272) — лише якщо «Кіно» є в режимі глядача.
+            'cinemaStats' => $deferIf(
+                $canSeeContent && app(ModuleManager::class)->enabled('cinema') && app(Plugins::class)->on('watch_stats'),
+                fn () => app(WatchStats::class)->of($user),
             ),
             'account' => app(Plugins::class)->on('account_types') ? $this->accountCard($user) : null,
             'streamSchedule' => $deferList(
