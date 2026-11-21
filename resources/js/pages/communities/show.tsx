@@ -45,6 +45,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { compactNumber, formatDate, plural } from '@/lib/format';
+import { LiveBlock } from '@/components/lobby/bento-feed';
 import { cn } from '@/lib/utils';
 import type {
     CommunityDetails,
@@ -399,184 +400,224 @@ export default function CommunityShow({
                     />
                 </div>
             ) : (
-                <div className="mt-3.5 flex flex-col gap-3.5 xl:flex-row">
-                    <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:order-last xl:h-fit xl:w-[320px]">
+                <div className="mt-3.5 space-y-3.5">
+                    {/* Лобі-формат: віджети спільноти — мозаїка живих блоків (мітка у вирізі, порожні не показуються), стіна — під ними. */}
+                    <div className="gc-bento gc-lobby-bento">
                         {membership?.status === 'active' && (
-                            <VoiceRooms
-                                owner={{ type: 'community', id: community.id }}
-                                label={community.name}
-                                href={`/c/${community.slug}`}
-                            />
+                            <LiveBlock badge={tr('Голос')} tone="live">
+                                <VoiceRooms
+                                    owner={{
+                                        type: 'community',
+                                        id: community.id,
+                                    }}
+                                    label={community.name}
+                                    href={`/c/${community.slug}`}
+                                />
+                            </LiveBlock>
                         )}
                         {membership?.status === 'active' && (
-                            <ListenRoomButton
-                                group="community"
-                                id={community.id}
-                            />
+                            <LiveBlock badge={tr('Музика')}>
+                                <ListenRoomButton
+                                    group="community"
+                                    id={community.id}
+                                />
+                            </LiveBlock>
                         )}
-                        <DonationJarCard
-                            jar={donation}
-                            title={tr('Підтримати спільноту')}
-                        />
-                        {can.view && <CommunityHub slug={community.slug} />}
+                        {donation && (
+                            <LiveBlock badge={tr('Збір')} tone="accent">
+                                <DonationJarCard
+                                    jar={donation}
+                                    title={tr('Підтримати спільноту')}
+                                />
+                            </LiveBlock>
+                        )}
+                        {can.view && (
+                            <LiveBlock wide badge={tr('Зараз')} tone="live">
+                                <CommunityHub slug={community.slug} />
+                            </LiveBlock>
+                        )}
                         {(community.description ||
                             rules.rules ||
                             rules.handbook) && (
-                            <Widget title={tr('Інформація')} icon={Info}>
-                                {community.description && (
-                                    <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
-                                        {community.description}
-                                    </p>
-                                )}
-                                {(rules.rules || rules.handbook) && (
-                                    <div
-                                        className={cn(
-                                            'flex flex-wrap gap-2 px-1',
-                                            community.description && 'mt-3',
-                                        )}
-                                    >
-                                        {rules.rules && (
-                                            <Link
-                                                href={`/c/${community.slug}/rules`}
-                                                className="gc-solid-2 inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
-                                            >
-                                                <ScrollText className="size-4" />
-                                                {tr('Правила')}
-                                            </Link>
-                                        )}
-                                        {rules.handbook && (
-                                            <Link
-                                                href={`/c/${community.slug}/handbook`}
-                                                className="gc-solid-2 inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
-                                            >
-                                                <BookOpen className="size-4" />
-                                                {tr('Довідник')}
-                                            </Link>
-                                        )}
-                                    </div>
-                                )}
-                            </Widget>
+                            <LiveBlock badge={tr('Про спільноту')}>
+                                <Widget title={tr('Інформація')} icon={Info}>
+                                    {community.description && (
+                                        <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
+                                            {community.description}
+                                        </p>
+                                    )}
+                                    {(rules.rules || rules.handbook) && (
+                                        <div
+                                            className={cn(
+                                                'flex flex-wrap gap-2 px-1',
+                                                community.description && 'mt-3',
+                                            )}
+                                        >
+                                            {rules.rules && (
+                                                <Link
+                                                    href={`/c/${community.slug}/rules`}
+                                                    className="gc-solid-2 inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
+                                                >
+                                                    <ScrollText className="size-4" />
+                                                    {tr('Правила')}
+                                                </Link>
+                                            )}
+                                            {rules.handbook && (
+                                                <Link
+                                                    href={`/c/${community.slug}/handbook`}
+                                                    className="gc-solid-2 inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
+                                                >
+                                                    <BookOpen className="size-4" />
+                                                    {tr('Довідник')}
+                                                </Link>
+                                            )}
+                                        </div>
+                                    )}
+                                </Widget>
+                            </LiveBlock>
                         )}
 
                         {photos && (photos.count > 0 || photos.can_create) && (
+                            <LiveBlock badge={tr('Фото')}>
+                                <Widget
+                                    title={tr('Фотографії')}
+                                    icon={ImageIcon}
+                                    action={
+                                        <Link
+                                            href={`/c/${community.slug}/photos`}
+                                            className="text-xs text-sky-400 hover:text-white"
+                                        >
+                                            {photos.count > 0
+                                                ? tr('Усі {count}', {
+                                                      count: photos.count,
+                                                  })
+                                                : tr('Створити альбом')}
+                                        </Link>
+                                    }
+                                >
+                                    {photos.items.length > 0 ? (
+                                        <div className="grid grid-cols-3 gap-1.5 overflow-hidden rounded-2xl">
+                                            {photos.items.map((photo) => (
+                                                <Link
+                                                    key={photo.id}
+                                                    href={photo.href}
+                                                    className="group aspect-square overflow-hidden bg-white/5"
+                                                >
+                                                    <img
+                                                        src={photo.url}
+                                                        alt={photo.alt ?? ''}
+                                                        loading="lazy"
+                                                        className={cn(
+                                                            'size-full object-cover transition duration-500',
+                                                            photo.is_sensitive
+                                                                ? 'scale-110 blur-2xl'
+                                                                : 'group-hover:scale-110',
+                                                        )}
+                                                    />
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="px-1 text-sm text-white/45">
+                                            {tr(
+                                                'Додайте перший альбом спільноти.',
+                                            )}
+                                        </p>
+                                    )}
+                                </Widget>
+                            </LiveBlock>
+                        )}
+
+                        <LiveBlock
+                            badge={isPublic ? tr('Підписники') : tr('Учасники')}
+                        >
                             <Widget
-                                title={tr('Фотографії')}
-                                icon={ImageIcon}
+                                title={
+                                    isPublic ? tr('Підписники') : tr('Учасники')
+                                }
+                                icon={UsersRound}
                                 action={
                                     <Link
-                                        href={`/c/${community.slug}/photos`}
+                                        href={`/c/${community.slug}/members`}
                                         className="text-xs text-sky-400 hover:text-white"
                                     >
-                                        {photos.count > 0
-                                            ? tr('Усі {count}', {
-                                                  count: photos.count,
-                                              })
-                                            : tr('Створити альбом')}
+                                        {membersLabel(stats.members, isPublic)}
                                     </Link>
                                 }
                             >
-                                {photos.items.length > 0 ? (
-                                    <div className="grid grid-cols-3 gap-1.5 overflow-hidden rounded-2xl">
-                                        {photos.items.map((photo) => (
-                                            <Link
-                                                key={photo.id}
-                                                href={photo.href}
-                                                className="group aspect-square overflow-hidden bg-white/5"
-                                            >
-                                                <img
-                                                    src={photo.url}
-                                                    alt={photo.alt ?? ''}
-                                                    loading="lazy"
-                                                    className={cn(
-                                                        'size-full object-cover transition duration-500',
-                                                        photo.is_sensitive
-                                                            ? 'scale-110 blur-2xl'
-                                                            : 'group-hover:scale-110',
-                                                    )}
-                                                />
-                                            </Link>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="px-1 text-sm text-white/45">
-                                        {tr('Додайте перший альбом спільноти.')}
+                                {stats.friends > 0 && (
+                                    <p className="mb-2 px-1 text-xs text-white/50">
+                                        {stats.friends}{' '}
+                                        {plural(stats.friends, [
+                                            'ваш друг',
+                                            'ваші друзі',
+                                            'ваших друзів',
+                                        ])}{' '}
+                                        {tr('тут')}
                                     </p>
                                 )}
-                            </Widget>
-                        )}
-
-                        <Widget
-                            title={isPublic ? tr('Підписники') : tr('Учасники')}
-                            icon={UsersRound}
-                            action={
-                                <Link
-                                    href={`/c/${community.slug}/members`}
-                                    className="text-xs text-sky-400 hover:text-white"
-                                >
-                                    {membersLabel(stats.members, isPublic)}
-                                </Link>
-                            }
-                        >
-                            {stats.friends > 0 && (
-                                <p className="mb-2 px-1 text-xs text-white/50">
-                                    {stats.friends}{' '}
-                                    {plural(stats.friends, [
-                                        'ваш друг',
-                                        'ваші друзі',
-                                        'ваших друзів',
-                                    ])}{' '}
-                                    {tr('тут')}
-                                </p>
-                            )}
-                            <div className="grid grid-cols-3 gap-2">
-                                {members.map((member) => (
-                                    <Link
-                                        key={member.id}
-                                        href={`/${member.username}`}
-                                        className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-[var(--gc-l3)]"
-                                    >
-                                        <UserAvatar user={member} size="lg" />
-                                        <span className="w-full truncate text-xs text-white/75">
-                                            {member.first_name}
-                                        </span>
-                                    </Link>
-                                ))}
-                            </div>
-                        </Widget>
-
-                        {managers.length > 0 && (
-                            <Widget title={tr('Керівники')} icon={ShieldCheck}>
-                                <div className="space-y-1">
-                                    {managers.map((manager) => (
+                                <div className="grid grid-cols-3 gap-2">
+                                    {members.map((member) => (
                                         <Link
-                                            key={manager.id}
-                                            href={`/${manager.username}`}
-                                            className="flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-[var(--gc-l3)]"
+                                            key={member.id}
+                                            href={`/${member.username}`}
+                                            className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-[var(--gc-l3)]"
                                         >
                                             <UserAvatar
-                                                user={manager}
-                                                size="sm"
+                                                user={member}
+                                                size="lg"
                                             />
-                                            <span className="min-w-0 flex-1">
-                                                <span className="block truncate text-sm font-medium text-white">
-                                                    {manager.name}
-                                                </span>
-                                                <span className="flex items-center gap-1 text-xs text-white/45">
-                                                    {manager.role ===
-                                                        'owner' && (
-                                                        <Crown className="size-3 text-gc-gold" />
-                                                    )}
-                                                    {roleLabels[manager.role]}
-                                                </span>
+                                            <span className="w-full truncate text-xs text-white/75">
+                                                {member.first_name}
                                             </span>
                                         </Link>
                                     ))}
                                 </div>
                             </Widget>
-                        )}
-                    </aside>
+                        </LiveBlock>
 
-                    <div className="min-w-0 flex-1 space-y-4">
+                        {managers.length > 0 && (
+                            <LiveBlock badge={tr('Команда')}>
+                                <Widget
+                                    title={tr('Керівники')}
+                                    icon={ShieldCheck}
+                                >
+                                    <div className="space-y-1">
+                                        {managers.map((manager) => (
+                                            <Link
+                                                key={manager.id}
+                                                href={`/${manager.username}`}
+                                                className="flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-[var(--gc-l3)]"
+                                            >
+                                                <UserAvatar
+                                                    user={manager}
+                                                    size="sm"
+                                                />
+                                                <span className="min-w-0 flex-1">
+                                                    <span className="block truncate text-sm font-medium text-white">
+                                                        {manager.name}
+                                                    </span>
+                                                    <span className="flex items-center gap-1 text-xs text-white/45">
+                                                        {manager.role ===
+                                                            'owner' && (
+                                                            <Crown className="size-3 text-gc-gold" />
+                                                        )}
+                                                        {
+                                                            roleLabels[
+                                                                manager.role
+                                                            ]
+                                                        }
+                                                    </span>
+                                                </span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </Widget>
+                            </LiveBlock>
+                        )}
+                    </div>
+
+                    <div className="mx-auto w-full max-w-3xl min-w-0 space-y-4">
                         {can.moderate && queue.length > 0 && (
                             <section
                                 id="queue"
