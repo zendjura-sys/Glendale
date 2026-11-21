@@ -798,6 +798,77 @@ class Sdk {
         });
     }
 
+    // ── SDK для застосунків (№306): власний інтерфейс чату, сімей/кланів/гільдій і музики ──
+    // Ті самі дані, що в оверлеї й на сайті; права — chat, groups, groups:manage, music.
+
+    /** Чат: бесіди людини, повідомлення, надсилання, особиста бесіда за ніком. */
+    readonly chat = {
+        conversations: () =>
+            this.api<{ data: Record<string, unknown>[] }>('chat/conversations'),
+        messages: (conversation: number, before?: number) =>
+            this.api<{ data: Record<string, unknown>[] }>(
+                `chat/conversations/${conversation}/messages${before ? `?before=${before}` : ''}`,
+            ),
+        send: (conversation: number, body: string, replyTo?: number) =>
+            this.api<{ data: Record<string, unknown> }>(
+                `chat/conversations/${conversation}/messages`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ body, reply_to: replyTo }),
+                },
+            ),
+        /** Відкрити (чи створити) особисту бесіду — повертає { data: { id } }. */
+        direct: (username: string) =>
+            this.api<{ data: { id: number } }>(
+                `chat/direct/${encodeURIComponent(username)}`,
+                { method: 'POST' },
+            ),
+    };
+
+    /** Сім’я, клани й гільдії людини, склад і керування (ранг, вигнати, прийняти заявку). */
+    readonly groups = {
+        list: () => this.api<Record<string, unknown>>('groups'),
+        clanMembers: (clan: number) =>
+            this.api<{ data: Record<string, unknown>[] }>(
+                `groups/clans/${clan}/members`,
+            ),
+        familyMembers: (family: number) =>
+            this.api<{ data: Record<string, unknown>[] }>(
+                `groups/families/${family}/members`,
+            ),
+        manageClanMember: (
+            clan: number,
+            member: number,
+            action: 'rank' | 'kick' | 'accept' | 'decline',
+            rank?: number,
+        ) =>
+            this.api(`groups/clans/${clan}/members/${member}`, {
+                method: 'POST',
+                body: JSON.stringify({ action, rank }),
+            }),
+    };
+
+    /** Музика GameCon: що грає зараз і пульт (на будь-якому пристрої людини). */
+    readonly music = {
+        now: () => this.api<Record<string, unknown>>('music/now'),
+        command: (
+            action:
+                | 'play'
+                | 'pause'
+                | 'toggle'
+                | 'next'
+                | 'prev'
+                | 'seek'
+                | 'volume',
+            value?: number,
+            deviceId?: string,
+        ) =>
+            this.api('music/command', {
+                method: 'POST',
+                body: JSON.stringify({ action, value, device_id: deviceId }),
+            }),
+    };
+
     // ── Вхід (OAuth 2.1) ──
     private key(k: string) {
         return `gc_sdk_${this.o.clientId ?? 'demo'}_${k}`;
