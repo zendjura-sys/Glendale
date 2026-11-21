@@ -67,6 +67,8 @@ export default defineConfig({
             'node_modules/**',
             'public/**',
             'mobile/**',
+            // Застосунок для Windows (Electron) — окремий проєкт зі своєю перевіркою (desktop: npm run check).
+            'desktop/**',
             'bootstrap/ssr/**',
             'tailwind.config.js',
             'resources/js/actions/**',
@@ -94,6 +96,7 @@ export default defineConfig({
             'composer.json',
             // Flutter-застосунок форматує `dart format`, не vp.
             'mobile/**',
+            'desktop/**',
             'resources/js/components/ui/*',
             'resources/views/mail/*',
             // Каталог перекладів генерує scripts/i18n/extract.mjs.
