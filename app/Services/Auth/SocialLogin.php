@@ -3,6 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
+use App\Services\Antispam\FraudGuard;
 use App\Services\CommunityService;
 use App\Services\ImageStorage;
 use App\Support\Settings\SiteSettings;
@@ -126,6 +127,8 @@ class SocialLogin
         });
 
         $this->importAvatar($user, $profile->avatarUrl);
+        // Антифрод (№229): позначка, якщо з цієї адреси нещодавно входив заблокований.
+        app(FraudGuard::class)->flagEvasion($user, request()->ip());
 
         return $user;
     }

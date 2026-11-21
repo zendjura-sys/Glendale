@@ -5,6 +5,7 @@ namespace App\Actions\Fortify;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\User;
+use App\Services\Antispam\FraudGuard;
 use App\Services\CommunityService;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Support\Facades\RateLimiter;
@@ -43,6 +44,9 @@ class CreateNewUser implements CreatesNewUsers
             throw ValidationException::withMessages(['email' => 'Забагато реєстрацій з вашої мережі. Спробуйте за годину.']);
         }
 
+        // Антифрод (№229): одноразова пошта й миттєве заповнення форми.
+        app(FraudGuard::class)->checkSignup((string) ($input['email'] ?? ''), isset($input['form_ts']) ? (int) $input['form_ts'] : null, request()->ip());
+
         Validator::make($input, [
             ...$this->profileRules(),
             'last_name' => ['required', 'string', 'max:64'],
@@ -66,6 +70,7 @@ class CreateNewUser implements CreatesNewUsers
         $user->mergePref(['onboarded' => false]);
         app(CommunityService::class)->autoJoin($user);
         RateLimiter::hit($key, 3600);
+        app(FraudGuard::class)->flagEvasion($user, request()->ip());
 
         return $user;
     }

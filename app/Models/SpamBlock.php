@@ -33,6 +33,9 @@ class SpamBlock extends Model
         'guest_ban' => 'Бан гостя',
         'group_rule' => 'Правила групи',
         'profanity' => 'Мат',
+        'signup_disposable' => 'Одноразова пошта',
+        'signup_fast' => 'Реєстрація ботом',
+        'ban_evasion' => 'Можливий обхід бану',
     ];
 
     protected $fillable = ['kind', 'user_id', 'conversation_id', 'ip_hash', 'detail', 'created_at'];

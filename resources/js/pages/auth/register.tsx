@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import { useState } from 'react';
 import { Mail, User } from 'lucide-react';
 import {
     AuthField,
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export default function Register({ passwordRules }: Props) {
+    const [startedAt] = useState(() => Date.now());
     return (
         <>
             <Head title={tr('Реєстрація')} />
@@ -41,6 +43,8 @@ export default function Register({ passwordRules }: Props) {
                             aria-hidden
                             className="pointer-events-none absolute -left-[9999px] size-px opacity-0"
                         />
+                        {/* Коли відкрили форму: надто швидке надсилання — ознака бота (№229). */}
+                        <input type="hidden" name="form_ts" value={startedAt} />
                         <div className="grid gap-4">
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="grid gap-1.5">
