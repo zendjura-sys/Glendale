@@ -59,6 +59,7 @@ return [
         ]],
         'events' => ['label' => 'Події', 'module' => 'events', 'subs' => [
             'soon' => 'Найближчі', 'mine' => 'Мої події', 'tournaments' => 'Турніри',
+            'predictions' => ['label' => 'Прогнози на матчі', 'added' => '2026-11-21'],
         ]],
         'quests' => ['label' => 'Завдання й сезон', 'module' => 'quests', 'subs' => [
             'daily' => 'Завдання дня', 'season' => 'Сезонний пропуск', 'rewards' => 'Нагороди',

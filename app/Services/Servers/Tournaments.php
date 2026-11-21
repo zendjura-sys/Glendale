@@ -12,6 +12,7 @@ use App\Models\TournamentSubmission;
 use App\Models\User;
 use App\Notifications\TournamentNotice;
 use App\Services\ImageStorage;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -354,6 +355,8 @@ class Tournaments
         $winner = null;
         if ($tournament->kind === Tournament::BRACKET) {
             $matches = $tournament->matches()->orderBy('round')->orderBy('slot')->get();
+            $predictionsOn = app(Plugins::class)->on('tournament_predictions');
+            $picks = $predictionsOn ? app(TournamentPredictions::class)->forMatches($tournament, $viewer) : [];
             foreach ($matches->groupBy('round') as $round => $list) {
                 $rounds[] = array_values($list->map(fn (TournamentMatch $m) => [
                     'id' => $m->id,
@@ -363,6 +366,8 @@ class Tournaments
                     'b' => $m->b_entry_id ? $cards->get($m->b_entry_id) : null,
                     'winner_id' => $m->winner_entry_id,
                     'score' => $m->score,
+                    // Прогнози (№260): скільки за кожного й мій вибір; null — прогнози вимкнено.
+                    'prediction' => $predictionsOn ? ($picks[$m->id] ?? ['a' => 0, 'b' => 0, 'mine' => null]) : null,
                 ])->all());
             }
             $final = $matches->sortByDesc('round')->first();
@@ -394,6 +399,8 @@ class Tournaments
             'entries' => array_values($cards->all()),
             'rounds' => $rounds,
             'leaderboard' => $leaderboard,
+            'predictors' => $tournament->kind === Tournament::BRACKET && app(Plugins::class)->on('tournament_predictions')
+                ? app(TournamentPredictions::class)->leaders($tournament) : [],
             'winner' => $winner,
             'me' => [
                 'entry_id' => $mine?->id,

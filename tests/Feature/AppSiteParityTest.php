@@ -46,6 +46,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -93,6 +94,13 @@ class AppSiteParityTest extends TestCase
         $guide = GameGuide::query()->create(['game_id' => $game->id, 'user_id' => $author->id, 'title' => 'Гід', 'body' => 'Текст гіда для гри.']);
         $this->withToken($this->app_token($reader))->postJson("/api/v1/site/games/celeste/guides/{$guide->id}/vote", ['helpful' => true])->assertOk()->assertJsonPath('helpful', 1);
         $this->actingAs($reader)->postJson("/games/celeste/guides/{$guide->id}/vote", ['helpful' => null])->assertOk()->assertJsonPath('helpful', 0);
+    }
+
+    public function test_app_bridge_has_match_predictions(): void
+    {
+        $routes = collect(Route::getRoutes()->getRoutes())->map(fn ($r) => $r->methods()[0].' '.$r->uri());
+        $this->assertTrue($routes->contains('POST tournaments/{tournament}/matches/{match}/predict'));
+        $this->assertTrue($routes->contains('POST api/v1/site/tournaments/{tournament}/matches/{match}/predict'));
     }
 
     public function test_app_and_site_get_community_quiz(): void

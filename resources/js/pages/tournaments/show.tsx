@@ -21,6 +21,8 @@ import {
 import { clockTime, formatDate, initials } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import type { UserCard } from '@/types';
 
 type Match = {
@@ -31,6 +33,8 @@ type Match = {
     b: EntryCard | null;
     winner_id: number | null;
     score: string | null;
+    /** Прогнози (№260): скільки за кожного й мій вибір; null — вимкнено. */
+    prediction?: { a: number; b: number; mine: number | null } | null;
 };
 
 type Submission = {
@@ -52,6 +56,12 @@ type Props = {
     entries: EntryCard[];
     rounds: Match[][];
     leaderboard: { place: number; entry: EntryCard; value: number }[];
+    predictors?: {
+        user: UserCard;
+        points: number;
+        hits: number;
+        made: number;
+    }[];
     winner: EntryCard | null;
     me: {
         entry_id: number | null;
@@ -112,10 +122,16 @@ function Bracket({
     rounds,
     canManage,
     onPick,
+    tournamentId,
+    running,
+    myEntry,
 }: {
     rounds: Match[][];
     canManage: boolean;
     onPick: (match: Match) => void;
+    tournamentId: number;
+    running: boolean;
+    myEntry: number | null;
 }) {
     return (
         <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
@@ -176,29 +192,172 @@ function Bracket({
                                 );
 
                                 return (
-                                    <button
-                                        key={match.id}
-                                        type="button"
-                                        disabled={!clickable}
-                                        onClick={() => onPick(match)}
-                                        className={cn(
-                                            'gc-solid-2 divide-y divide-white/[0.06] overflow-hidden rounded-control text-left transition',
-                                            clickable &&
-                                                'hover:bg-[var(--gc-l3)] hover:ring-primary/40',
-                                            ready &&
-                                                match.winner_id === null &&
-                                                'ring-primary/30',
+                                    <div key={match.id} className="space-y-1">
+                                        <button
+                                            type="button"
+                                            disabled={!clickable}
+                                            onClick={() => onPick(match)}
+                                            className={cn(
+                                                'gc-solid-2 w-full divide-y divide-white/[0.06] overflow-hidden rounded-control text-left transition',
+                                                clickable &&
+                                                    'hover:bg-[var(--gc-l3)] hover:ring-primary/40',
+                                                ready &&
+                                                    match.winner_id === null &&
+                                                    'ring-primary/30',
+                                            )}
+                                        >
+                                            {side(match.a)}
+                                            {side(match.b)}
+                                        </button>
+                                        {/* Місце під прогноз — у всіх матчах однакове, щоб сітка лишалась рівною. */}
+                                        {match.prediction && !ready && (
+                                            <div
+                                                className="gc-prediction"
+                                                aria-hidden
+                                            />
                                         )}
-                                    >
-                                        {side(match.a)}
-                                        {side(match.b)}
-                                    </button>
+                                        {match.prediction && ready && (
+                                            <Prediction
+                                                tournamentId={tournamentId}
+                                                match={match}
+                                                open={
+                                                    running &&
+                                                    match.winner_id === null &&
+                                                    myEntry !== match.a?.id &&
+                                                    myEntry !== match.b?.id
+                                                }
+                                            />
+                                        )}
+                                    </div>
                                 );
                             })}
                         </div>
                     </div>
                 ))}
             </div>
+        </div>
+    );
+}
+
+/**
+ * Прогноз на матч (№260): до результату — обрати, хто переможе (змінити можна до кінця
+ * матчу); після — частки прогнозів і чи влучили ви. Лише очки, без грошей.
+ */
+function Prediction({
+    tournamentId,
+    match,
+    open,
+}: {
+    tournamentId: number;
+    match: Match;
+    open: boolean;
+}) {
+    const [state, setState] = useState(
+        match.prediction ?? { a: 0, b: 0, mine: null },
+    );
+    const total = state.a + state.b;
+    const pick = (entryId: number) =>
+        api<{ prediction: { a: number; b: number; mine: number | null } }>(
+            'POST',
+            `/tournaments/${tournamentId}/matches/${match.id}/predict`,
+            { entry_id: entryId },
+        )
+            .then((r) => setState(r.prediction))
+            .catch((e: { message?: string }) =>
+                toast.error(e.message ?? tr('Прогноз не прийнято.')),
+            );
+    if (!open && total === 0)
+        return <div className="gc-prediction" aria-hidden />;
+    const hit =
+        match.winner_id !== null && state.mine !== null
+            ? state.mine === match.winner_id
+            : null;
+
+    return (
+        <div className="gc-prediction">
+            <div className="flex gap-1">
+                {[match.a!, match.b!].map((entry, i) => {
+                    const count = i === 0 ? state.a : state.b;
+                    const pct = total ? Math.round((count / total) * 100) : 0;
+                    return (
+                        <button
+                            key={entry.id}
+                            type="button"
+                            disabled={!open}
+                            aria-pressed={state.mine === entry.id}
+                            onClick={() => pick(entry.id)}
+                            title={entry.name}
+                            className={cn(
+                                'gc-prediction__pick',
+                                state.mine === entry.id && 'is-mine',
+                            )}
+                        >
+                            <span
+                                className="gc-prediction__fill"
+                                style={{ width: `${pct}%` }}
+                                aria-hidden
+                            />
+                            <span className="relative min-w-0 truncate">
+                                {entry.name}
+                            </span>
+                            <span className="relative ml-auto tabular-nums">
+                                {pct}%
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+            <p className="mt-1 text-[11px] text-white/45">
+                {hit === true
+                    ? tr('Ваш прогноз влучив: +10 очок')
+                    : hit === false
+                      ? tr('Прогноз не влучив')
+                      : open
+                        ? state.mine === null
+                            ? tr('Хто переможе? Прогнозів: {n}', { n: total })
+                            : tr('Прогноз прийнято · прогнозів: {n}', {
+                                  n: total,
+                              })
+                        : tr('Прогнозів: {n}', { n: total })}
+            </p>
+        </div>
+    );
+}
+
+/** Таблиця прогнозистів турніру: 10 очок за влучний прогноз. */
+function Predictors({ list }: { list: NonNullable<Props['predictors']> }) {
+    return (
+        <div className="mt-4">
+            <h3 className="mb-2 text-xs font-medium text-white/50">
+                {tr('Найкращі прогнозисти')}
+            </h3>
+            <ol className="space-y-1">
+                {list.map((row, i) => (
+                    <li
+                        key={row.user.id}
+                        className="flex items-center gap-2 text-sm text-white/80"
+                    >
+                        <span className="w-5 text-center text-xs text-white/45 tabular-nums">
+                            {i + 1}
+                        </span>
+                        <Link
+                            href={`/${row.user.username}`}
+                            className="min-w-0 flex-1 truncate hover:text-white"
+                        >
+                            {row.user.name}
+                        </Link>
+                        <span className="text-xs text-white/45 tabular-nums">
+                            {tr('{hits} з {made}', {
+                                hits: row.hits,
+                                made: row.made,
+                            })}
+                        </span>
+                        <span className="w-12 text-right font-semibold text-white tabular-nums">
+                            {row.points}
+                        </span>
+                    </li>
+                ))}
+            </ol>
         </div>
     );
 }
@@ -354,6 +513,7 @@ export default function TournamentShow({
     entries,
     rounds,
     leaderboard,
+    predictors = [],
     winner,
     me,
     pending,
@@ -573,7 +733,13 @@ export default function TournamentShow({
                             rounds={rounds}
                             canManage={me.can_manage}
                             onPick={setPicked}
+                            tournamentId={tournament.id}
+                            running={running}
+                            myEntry={me.entry_id}
                         />
+                        {predictors.length > 0 && (
+                            <Predictors list={predictors} />
+                        )}
                     </section>
                 )}
 

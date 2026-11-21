@@ -1042,6 +1042,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('{tournament}/join', [TournamentController::class, 'leave'])->name('leave');
         Route::post('{tournament}/start', [TournamentController::class, 'start'])->name('start');
         Route::post('{tournament}/matches/{match}', [TournamentController::class, 'report'])->middleware('throttle:60,1')->name('report');
+        Route::post('{tournament}/matches/{match}/predict', [TournamentController::class, 'predict'])->middleware('throttle:60,1')->name('predict');
         Route::post('{tournament}/submissions', [TournamentController::class, 'submit'])->middleware('throttle:10,1')->name('submit');
         Route::post('{tournament}/submissions/{submission}', [TournamentController::class, 'review'])->middleware('throttle:120,1')->name('review');
         Route::post('{tournament}/finish', [TournamentController::class, 'finish'])->name('finish');

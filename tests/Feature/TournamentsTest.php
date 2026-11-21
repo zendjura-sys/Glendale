@@ -5,10 +5,12 @@ namespace Tests\Feature;
 use App\Models\Family;
 use App\Models\GtaServer;
 use App\Models\Tournament;
+use App\Models\TournamentEntry;
 use App\Models\TournamentMatch;
 use App\Models\TournamentSubmission;
 use App\Models\User;
 use App\Notifications\TournamentNotice;
+use App\Services\Auth\ApiTokens;
 use App\Services\Families\FamilyService;
 use App\Services\Servers\Tournaments;
 use App\Support\Plugins\Plugins;
@@ -87,6 +89,39 @@ class TournamentsTest extends TestCase
         // Результат зіграного раунду не змінити, коли наступний уже зіграно.
         $first = TournamentMatch::query()->where('tournament_id', $tournament->id)->where('round', 1)->whereNotNull('b_entry_id')->whereNotNull('a_entry_id')->firstOrFail();
         $this->actingAs($owner)->post("/tournaments/{$tournament->id}/matches/{$first->id}", ['winner_id' => $first->b_entry_id])->assertStatus(422);
+    }
+
+    public function test_match_predictions_score_points(): void
+    {
+        Notification::fake();
+        $owner = User::factory()->create();
+        $tournament = $this->bracket($this->server($owner), $owner, 4);
+        $players = User::factory()->count(4)->create();
+        foreach ($players as $player) {
+            $this->actingAs($player)->post("/tournaments/{$tournament->id}/join")->assertRedirect();
+        }
+        [$fan, $doubter] = User::factory()->count(2)->create();
+        $this->actingAs($owner)->post("/tournaments/{$tournament->id}/start")->assertRedirect();
+        $match = TournamentMatch::query()->where('tournament_id', $tournament->id)->where('round', 1)->orderBy('slot')->firstOrFail();
+        $url = "/tournaments/{$tournament->id}/matches/{$match->id}/predict";
+
+        $this->actingAs($fan)->postJson($url, ['entry_id' => 999999])->assertStatus(422);
+        $this->actingAs($fan)->postJson($url, ['entry_id' => $match->a_entry_id])->assertOk()->assertJsonPath('prediction.a', 1)->assertJsonPath('prediction.mine', $match->a_entry_id);
+        $this->actingAs($doubter)->postJson($url, ['entry_id' => $match->b_entry_id])->assertOk()->assertJsonPath('prediction.b', 1);
+        // Гравець матчу на себе не прогнозує.
+        $self = $match->a_entry_id ? TournamentEntry::query()->findOrFail($match->a_entry_id)->user : null;
+        $this->actingAs($self)->postJson($url, ['entry_id' => $match->a_entry_id])->assertStatus(422);
+
+        $this->actingAs($owner)->post("/tournaments/{$tournament->id}/matches/{$match->id}", ['winner_id' => $match->a_entry_id])->assertRedirect();
+        // Після результату прогноз не змінити.
+        $this->actingAs($doubter)->postJson($url, ['entry_id' => $match->a_entry_id])->assertStatus(422);
+
+        $this->actingAs($doubter)->get("/tournaments/{$tournament->id}")->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('predictors.0.user.id', $fan->id)->where('predictors.0.points', 10)->count('predictors', 1)
+                ->where('rounds.0.0.prediction.mine', $match->b_entry_id));
+        $this->withToken(app(ApiTokens::class)->issue($fan, 'android'))
+            ->postJson("/api/v1/site{$url}", ['entry_id' => $match->a_entry_id])->assertStatus(422);
     }
 
     public function test_family_entry_is_for_family_leaders_of_this_server(): void

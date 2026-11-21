@@ -9464,3 +9464,37 @@ html.gc-simple *::after {
     background: color-mix(in srgb, var(--gc-accent) 22%, var(--gc-l3));
     color: var(--gc-accent);
 }
+
+/* ---------- Турніри: прогнози на матчі (№260) ---------- */
+.gc-prediction__pick {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 8px;
+    overflow: hidden;
+    border-radius: 9px;
+    background: var(--gc-l2);
+    color: var(--gc-text-2);
+    font-size: 11px;
+    font-weight: 600;
+}
+.gc-prediction__pick:not(:disabled):hover {
+    color: var(--gc-text);
+}
+.gc-prediction__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: color-mix(in srgb, var(--gc-accent) 18%, transparent);
+}
+.gc-prediction__pick.is-mine {
+    color: var(--gc-accent);
+    box-shadow: inset 0 0 0 1.5px var(--gc-accent);
+}
+/* Однакова висота рядка прогнозу (і порожнього місця під нього) — сітка не з’їжджає. */
+.gc-prediction {
+    height: 48px;
+}

@@ -6,9 +6,11 @@ use App\Models\GtaServer;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Models\TournamentSubmission;
+use App\Services\Servers\TournamentPredictions;
 use App\Services\Servers\Tournaments;
 use App\Support\Plugins\Plugins;
 use Closure;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -46,6 +48,17 @@ class TournamentController extends Controller implements HasMiddleware
             'status' => $status,
             'tournaments' => array_values($list->map(fn (Tournament $t) => $this->tournaments->card($t))->all()),
         ]);
+    }
+
+    /** Прогноз «хто переможе» на матч (№260). */
+    public function predict(Request $request, Tournament $tournament, TournamentMatch $match, TournamentPredictions $predictions): JsonResponse
+    {
+        app(Plugins::class)->ensure('tournament_predictions');
+        $data = $request->validate(['entry_id' => ['required', 'integer']]);
+        $predictions->predict($tournament, $match, $request->user(), (int) $data['entry_id']);
+        $picks = $predictions->forMatches($tournament, $request->user());
+
+        return response()->json(['prediction' => $picks[$match->id] ?? ['a' => 0, 'b' => 0, 'mine' => null]]);
     }
 
     public function show(Request $request, Tournament $tournament): Response
