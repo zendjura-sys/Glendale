@@ -246,6 +246,8 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/cinema/schedule')->assertOk()->assertJsonPath('days.0.movies.0.slug', 'bleach');
         $this->withToken($token)->getJson('/api/v1/site/cinema/random')->assertOk()->assertJsonPath('redirect', '/cinema/bleach');
         $this->withToken($token)->getJson('/api/v1/site/search/quick?q='.urlencode('Бліч'))->assertOk()->assertJsonPath('hits.0.kind', 'movie');
+        // Магазин оформлення (№255) — у застосунку той самий каталог.
+        $this->withToken($token)->getJson('/api/v1/site/shop')->assertOk()->assertJsonStructure(['items', 'balance']);
         // Імпорт друзів зі Steam (№279): без прив’язаного Steam — підказка, а не помилка.
         $this->withToken($token)->getJson('/api/v1/site/friends/import/steam')->assertOk()->assertJsonStructure(['status', 'people']);
         // Челенджі тижня (№274): ті самі дані, що на сторінці завдань.

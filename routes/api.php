@@ -37,6 +37,7 @@ use App\Http\Controllers\CommunityHubController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CommunityQuizController;
 use App\Http\Controllers\CommunityStickerController;
+use App\Http\Controllers\CosmeticsShopController;
 use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\Developer\ConnectedAppsController;
@@ -711,6 +712,10 @@ Route::prefix('v1')->group(function () {
             Route::put('plus/style', [PlusController::class, 'style'])->middleware('throttle:30,1');
             Route::put('plus/title', [PlusController::class, 'title'])->middleware('throttle:20,1');
             // GameCon+ на 5 акаунтів (№215).
+            // Магазин оформлення (№255): рамки, кольори ніку, значки, ефекти шапки за баланс.
+            Route::get('shop', [CosmeticsShopController::class, 'index']);
+            Route::post('shop/buy', [CosmeticsShopController::class, 'buy'])->middleware('throttle:20,1');
+            Route::post('shop/equip', [CosmeticsShopController::class, 'equip'])->middleware('throttle:60,1');
             Route::get('plus/household', [PlusController::class, 'household']);
             Route::post('plus/household', [PlusController::class, 'householdInvite'])->middleware('throttle:20,1');
             Route::post('plus/household/{member}/accept', [PlusController::class, 'householdAccept'])->whereNumber('member');

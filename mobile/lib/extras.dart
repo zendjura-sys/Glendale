@@ -411,6 +411,11 @@ class _QuestsScreenState extends State<QuestsScreen> with _SitePage {
     if (await attempt(context, () => api.post(Api.site('/quests/$key/claim')))) await load();
   }
 
+  /// Челендж тижня (№274): свій адрес нагороди.
+  Future<void> _claimWeekly(String key) async {
+    if (await attempt(context, () => api.post(Api.site('/quests/week/$key/claim')))) await load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final d = data;
@@ -440,6 +445,29 @@ class _QuestsScreenState extends State<QuestsScreen> with _SitePage {
             onGo: _questLinks[text(q['key'])] == null ? null : () => context.go(_questLinks[text(q['key'])]!),
           ),
           const SizedBox(height: 8),
+        ],
+        // Челенджі тижня (№274): однакові для всіх, досвід — у сезон.
+        if (maps(d['weekly']).isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            const Icon(LucideIcons.flame, size: 18, color: Color(0xFFFDBA74)),
+            const SizedBox(width: 8),
+            Expanded(child: Text(tr('Челенджі тижня'), style: body(16, weight: FontWeight.w700))),
+            Text(tr('однакові для всіх'), style: body(12, color: muted)),
+          ]),
+          const SizedBox(height: 8),
+          for (final q in maps(d['weekly'])) ...[
+            _QuestTile(
+              quest: q,
+              title: text(q['title']) ?? '',
+              icon: _questIcons[text(q['icon'])] ?? LucideIcons.flame,
+              onClaim: () => _claimWeekly(text(q['key'])!),
+              onGo: _questLinks[text(q['key'])] == null ? null : () => context.go(_questLinks[text(q['key'])]!),
+            ),
+            if (intOf(q['finishers']) > 0)
+              Padding(padding: const EdgeInsets.only(left: 6, top: 4), child: Text(tr('Уже виконали: {n}', {'n': intOf(q['finishers'])}), style: body(11.5, color: muted))),
+            const SizedBox(height: 8),
+          ],
         ],
         const SizedBox(height: 10),
         Glass(
