@@ -1,0 +1,6 @@
+{
+  "name": "GameCon.Sdk",
+  "rootNamespace": "GameCon",
+  "references": [],
+  "autoReferenced": true
+}

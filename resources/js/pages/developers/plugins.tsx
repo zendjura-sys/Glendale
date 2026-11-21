@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 export type CmsPluginCard = {
     key: string;
     name: string;
-    kind: 'cms' | 'forum' | 'framework' | 'app';
+    kind: 'cms' | 'forum' | 'framework' | 'app' | 'engine';
     color: string;
     mark: string;
     logo: string | null;
@@ -115,6 +115,7 @@ const FILTERS = [
     ['forum', 'Форуми'],
     ['framework', 'Фреймворки'],
     ['app', 'Застосунки'],
+    ['engine', 'Ігрові рушії'],
 ] as const;
 
 export default function DeveloperPlugins({ plugins, version }: Props) {
@@ -143,7 +144,7 @@ export default function DeveloperPlugins({ plugins, version }: Props) {
                     </h1>
                     <p className="max-w-2xl text-white/60">
                         {tr(
-                            '«Увійти через GameCon» на вашому сайті, форумі чи в застосунку: готові плагіни для CMS, пакети для фреймворків і SDK для Android, iOS, Windows, Linux і Flutter.',
+                            '«Увійти через GameCon» на вашому сайті, форумі, у застосунку чи грі: готові плагіни для CMS, пакети для фреймворків, SDK для Android, iOS, Windows, Linux і Flutter та для рушіїв Unity, Unreal і Godot.',
                         )}
                     </p>
                 </header>

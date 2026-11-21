@@ -70,7 +70,9 @@ export default function DeveloperPlugin({
             ? clean
             : `https://${clean}`
         : 'https://ваш-сайт';
-    const native = plugin.kind === 'app';
+    // Ігрові рушії (№309): вхід кодом пристрою — адреса повернення не потрібна.
+    const engine = plugin.kind === 'engine';
+    const native = plugin.kind === 'app' || engine;
     const redirect = native ? plugin.redirect : host + plugin.redirect;
 
     return (
@@ -196,39 +198,55 @@ export default function DeveloperPlugin({
                             </ol>
                         </section>
 
-                        <section className="gc-solid space-y-3 rounded-2xl p-3.5">
-                            <h2 className="flex items-center gap-2 font-semibold text-white">
-                                <Link2 className="size-4 text-primary" />
-                                {tr('Адреса повернення')}
-                            </h2>
-                            {!native && (
-                                <label className="grid gap-1">
-                                    <span className="text-xs text-white/50">
-                                        {tr('Адреса вашого сайту')}
-                                    </span>
-                                    <input
-                                        value={site}
-                                        onChange={(e) =>
-                                            setSite(e.target.value)
-                                        }
-                                        placeholder="forum.example.com"
-                                        inputMode="url"
-                                        className="min-h-11 rounded-xl bg-white/[0.04] px-3 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-primary/50"
-                                    />
-                                </label>
-                            )}
-                            <Line
-                                label={tr('Вставте в налаштування застосунку')}
-                                value={redirect}
-                            />
-                            {native && (
-                                <p className="text-xs text-white/45">
+                        {engine ? (
+                            <section className="gc-solid space-y-2 rounded-2xl p-3.5">
+                                <h2 className="flex items-center gap-2 font-semibold text-white">
+                                    <Link2 className="size-4 text-primary" />
+                                    {tr('Вхід кодом пристрою')}
+                                </h2>
+                                <p className="text-sm leading-relaxed text-white/70">
                                     {tr(
-                                        'Нативні застосунки — публічні клієнти: створіть застосунок без секрету. Схему com.example.game замініть своєю; для loopback порт підставляється сам.',
+                                        'Адреса повернення не потрібна: гра показує код, гравець вводить його на gamecon.online/link з телефона (RFC 8628). Створіть застосунок без секрету (публічний).',
                                     )}
                                 </p>
-                            )}
-                        </section>
+                            </section>
+                        ) : (
+                            <section className="gc-solid space-y-3 rounded-2xl p-3.5">
+                                <h2 className="flex items-center gap-2 font-semibold text-white">
+                                    <Link2 className="size-4 text-primary" />
+                                    {tr('Адреса повернення')}
+                                </h2>
+                                {!native && (
+                                    <label className="grid gap-1">
+                                        <span className="text-xs text-white/50">
+                                            {tr('Адреса вашого сайту')}
+                                        </span>
+                                        <input
+                                            value={site}
+                                            onChange={(e) =>
+                                                setSite(e.target.value)
+                                            }
+                                            placeholder="forum.example.com"
+                                            inputMode="url"
+                                            className="min-h-11 rounded-xl bg-white/[0.04] px-3 text-sm text-white outline-none placeholder:text-white/30 focus:ring-2 focus:ring-primary/50"
+                                        />
+                                    </label>
+                                )}
+                                <Line
+                                    label={tr(
+                                        'Вставте в налаштування застосунку',
+                                    )}
+                                    value={redirect}
+                                />
+                                {native && (
+                                    <p className="text-xs text-white/45">
+                                        {tr(
+                                            'Нативні застосунки — публічні клієнти: створіть застосунок без секрету. Схему com.example.game замініть своєю; для loopback порт підставляється сам.',
+                                        )}
+                                    </p>
+                                )}
+                            </section>
+                        )}
 
                         {!native && (
                             <section className="gc-solid space-y-3 rounded-2xl p-3.5">

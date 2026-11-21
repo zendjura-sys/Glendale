@@ -80,4 +80,6 @@ Android, iOS/macOS, Windows (.NET). Сторінка `/developers/sdk` з піс
 - [ ] Гравець у налаштуваннях гри — готовий перемикач для нативних SDK (у вебі: sdk.disable()/enable()).
 - [ ] Редактор розкладки drag-n-drop за поверхнями в порталі (зараз — кути й перетягування в прев'ю).
 - [ ] Телефон-компаньйон у застосунку GameCon.
-- [ ] Нативні SDK: Unity, Unreal, Godot, Flutter, Android, iOS/macOS, Windows.
+- [x] Нативні SDK (№309): Unity (UPM + HUD), Unreal (плагін, Blueprint, оверлей у Web Browser), Godot (аддон + HUD),
+      Flutter (gamecon_sdk.dart + GameConOverlay) — вхід кодом пристрою; Android, iOS/macOS, Windows, Linux — PKCE.
+      Каталог «Плагіни й SDK» → фільтр «Ігрові рушії».
