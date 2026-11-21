@@ -45,6 +45,7 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\FriendImportController;
 use App\Http\Controllers\Fun\GameAwardsController;
 use App\Http\Controllers\Fun\GameJournalController;
 use App\Http\Controllers\Fun\GameReviewController;
@@ -549,6 +550,9 @@ Route::middleware(['auth', 'verified.site', 'parental'])->group(function () {
 
     Route::middleware('module:friends')->group(function () {
         Route::get('friends', [FriendController::class, 'index'])->name('friends.index');
+        // Імпорт друзів зі Steam (№279).
+        Route::get('friends/import/steam', [FriendImportController::class, 'steam'])->middleware('throttle:20,1')->name('friends.import.steam');
+        Route::post('friends/import/steam', [FriendImportController::class, 'add'])->middleware('throttle:10,1')->name('friends.import.add');
         Route::post('friends/{user}', [FriendController::class, 'store'])->middleware('throttle:60,1')->name('friends.store');
         Route::post('friends/{user}/accept', [FriendController::class, 'accept'])->name('friends.accept');
         Route::put('friends/{user}/mark', [FriendController::class, 'mark'])->name('friends.mark');

@@ -50,6 +50,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\FriendImportController;
 use App\Http\Controllers\Fun\GameAwardsController;
 use App\Http\Controllers\Fun\GameJournalController;
 use App\Http\Controllers\Fun\GameReviewController;
@@ -507,6 +508,9 @@ Route::prefix('v1')->group(function () {
             // Один пошук на весь сайт: люди, кіно, музика, ігри, сервери, спільноти, клани, сім'ї.
             Route::get('search', [SearchController::class, 'index'])->middleware('throttle:120,1');
             Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1');
+            // Імпорт друзів зі Steam (№279).
+            Route::get('friends/import/steam', [FriendImportController::class, 'steam'])->middleware(['module:friends', 'throttle:20,1']);
+            Route::post('friends/import/steam', [FriendImportController::class, 'add'])->middleware(['module:friends', 'throttle:10,1']);
             // GameCon SDK: документація й пісочниця оверлею (той самий контролер, що на сайті).
             Route::get('developers/sdk', [SdkPageController::class, 'index']);
             Route::post('search/recent', [PeopleController::class, 'remember'])->middleware('throttle:60,1');

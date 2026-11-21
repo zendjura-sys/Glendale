@@ -21,6 +21,7 @@ import {
     UsersRound,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { SteamImport } from '@/components/friends/steam-import';
 import { FriendListRow } from '@/components/gc/friend-list-row';
 import { GcSegmented } from '@/components/gc/gc-segmented';
 import { PersonCard } from '@/components/gc/person-card';
@@ -48,6 +49,7 @@ type Props = {
     users: ScrollData<Person>;
     counts: Record<Tab, number>;
     suggestions?: Person[];
+    steam_import?: boolean;
 };
 
 const primaryTabs: { key: Tab; label: string }[] = [
@@ -105,7 +107,14 @@ function tabHref(key: Tab) {
     return key === 'all' ? '/friends' : `/friends?tab=${key}`;
 }
 
-export default function Friends({ tab, q, users, counts, suggestions }: Props) {
+export default function Friends({
+    tab,
+    q,
+    users,
+    counts,
+    suggestions,
+    steam_import,
+}: Props) {
     const [search, setSearch] = useState(q);
     /** Плитка лише на md+; на телефоні завжди список. */
     const [view, setView] = useState<'list' | 'grid'>('list');
@@ -277,6 +286,8 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
                         )}
                     </m.div>
                 </AnimatePresence>
+
+                {steam_import && <SteamImport />}
 
                 <Widget title={tr('Можливо, ви знайомі')} icon={Sparkles}>
                     <Deferred
