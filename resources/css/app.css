@@ -9542,3 +9542,11 @@ html.gc-simple *::after {
 .gc-shop-header.is-rim {
     box-shadow: inset 0 0 0 2px var(--gc-accent);
 }
+
+/* ---------- Еквалайзер (№269): вертикальні повзунки ---------- */
+.gc-eq-slider {
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 28px;
+    height: 110px;
+}

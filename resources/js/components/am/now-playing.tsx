@@ -25,6 +25,7 @@ import {
     Volume1,
     Volume2,
     X,
+    SlidersHorizontal,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import type { PanInfo } from 'motion/react';
@@ -39,7 +40,14 @@ import { DevicesButton, RemoteLine } from '@/components/music/connect-ui';
 import { TrackCover } from '@/components/music/track-cover';
 import { api } from '@/lib/api';
 import { usePlayback } from '@/lib/connect';
-import { setSing as setSingLevel } from '@/lib/audio-graph';
+import {
+    EQ_BANDS,
+    EQ_PRESETS,
+    eqGainsNow,
+    setEq,
+    setSing as setSingLevel,
+} from '@/lib/audio-graph';
+import type { EqPreset } from '@/lib/audio-graph';
 import { useCoverColor } from '@/lib/cover-color';
 import { formatDuration } from '@/lib/format';
 import { tr } from '@/lib/i18n';
@@ -149,6 +157,92 @@ function useLyrics(track: TrackCard | null): Lyrics | null | undefined {
 const setSing = (level: number) => setSingLevel(audioElement(), level);
 
 // ───────────────────────── Частини екрана ─────────────────────────
+
+const eqChip = (on: boolean) =>
+    cn(
+        'h-8 shrink-0 rounded-full px-3 text-[13px] font-semibold transition',
+        on
+            ? 'bg-white text-black'
+            : 'bg-white/12 text-white/85 hover:bg-white/20',
+    );
+
+const EQ_LABELS: Record<EqPreset, () => string> = {
+    flat: () => tr('Рівно'),
+    bass: () => tr('Баси'),
+    vocal: () => tr('Голос'),
+    rock: () => tr('Рок'),
+    gaming: () => tr('Кроки в іграх'),
+    night: () => tr('Нічний'),
+};
+
+/** Еквалайзер (№269): пресети й 5 смуг; лише для треків, що грають через сайт. */
+function Equalizer() {
+    const [gains, setGains] = useState<number[]>(() => eqGainsNow());
+    const update = (next: number[]) => {
+        setGains(next);
+        setEq(audioElement(), next);
+    };
+    const preset = (Object.keys(EQ_PRESETS) as EqPreset[]).find((key) =>
+        EQ_PRESETS[key].every((v, i) => v === gains[i]),
+    );
+
+    return (
+        <div>
+            <span className="flex items-center gap-2 text-[15px] text-white">
+                <SlidersHorizontal className="size-4" />
+                {tr('Еквалайзер')}
+            </span>
+            <span className="block text-[12px] text-white/50">
+                {tr(
+                    'Для треків, що грають на GameCon; зберігається на цьому пристрої',
+                )}
+            </span>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+                {(Object.keys(EQ_PRESETS) as EqPreset[]).map((key) => (
+                    <button
+                        key={key}
+                        type="button"
+                        onClick={() => update([...EQ_PRESETS[key]])}
+                        aria-pressed={preset === key}
+                        className={eqChip(preset === key)}
+                    >
+                        {EQ_LABELS[key]()}
+                    </button>
+                ))}
+            </div>
+            <div className="mt-3 grid grid-cols-5 gap-2">
+                {EQ_BANDS.map((freq, i) => (
+                    <label
+                        key={freq}
+                        className="flex flex-col items-center gap-1"
+                    >
+                        <input
+                            type="range"
+                            min={-12}
+                            max={12}
+                            step={1}
+                            value={gains[i] ?? 0}
+                            onChange={(e) => {
+                                const next = [...gains];
+                                next[i] = Number(e.target.value);
+                                update(next);
+                            }}
+                            aria-label={tr('{f} Гц', { f: freq })}
+                            className="gc-eq-slider accent-[var(--am-accent)]"
+                        />
+                        <span className="text-[11px] text-white/50 tabular-nums">
+                            {freq >= 1000 ? `${freq / 1000}k` : freq}
+                        </span>
+                        <span className="text-[11px] text-white/80 tabular-nums">
+                            {(gains[i] ?? 0) > 0 ? '+' : ''}
+                            {gains[i] ?? 0}
+                        </span>
+                    </label>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 function Progress({ live }: { live: boolean }) {
     const player = usePlayback();
@@ -1015,13 +1109,7 @@ function PlaybackSettings() {
         return () => clearInterval(id);
     }, [player.sleep]);
 
-    const chip = (on: boolean) =>
-        cn(
-            'h-8 shrink-0 rounded-full px-3 text-[13px] font-semibold transition',
-            on
-                ? 'bg-white text-black'
-                : 'bg-white/12 text-white/85 hover:bg-white/20',
-        );
+    const chip = eqChip;
 
     return (
         <div className="mt-6 space-y-4 border-t border-white/10 pt-4 pb-2">
@@ -1062,6 +1150,7 @@ function PlaybackSettings() {
                     className="size-5 shrink-0 accent-[var(--am-accent)]"
                 />
             </label>
+            <Equalizer />
             {site.translate && (
                 <label className="flex cursor-pointer items-center justify-between gap-3">
                     <span className="min-w-0">

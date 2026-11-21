@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import type { SpotifyTrack, TrackCard } from '@/types';
-import { resumeAudioGraph, setNormalize } from '@/lib/audio-graph';
+import { restoreEq, resumeAudioGraph, setNormalize } from '@/lib/audio-graph';
 import { tr } from '@/lib/i18n';
 
 /**
@@ -618,6 +618,7 @@ async function start(index: number) {
             set({ engine: 'audio' });
             el.src = track.url;
             if (state.normalize) setNormalize(el, true);
+            restoreEq(el);
             resumeAudioGraph();
             fadeIn(el, fadeInNext && state.crossfade > 0);
             fadeInNext = false;
