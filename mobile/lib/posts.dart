@@ -294,7 +294,8 @@ class _PostCardState extends State<PostCard> {
     final tag = post['tag'] is Map ? mapOf(post['tag']) : null;
     final lang = text(post['lang']);
     final long = bodyText.length > 420 && !fullText && !widget.expanded;
-    final vis = _visibility[text(post['visibility']) ?? 'public'] ?? _visibility['public']!;
+    // «Списку друзів» показуємо лише значком: обрати список у застосунку можна після оновлення.
+    final vis = text(post['visibility']) == 'list' ? (LucideIcons.listChecks, tr('Списку друзів')) : _visibility[text(post['visibility']) ?? 'public'] ?? _visibility['public']!;
     final images = maps(post['attachments']).where((a) => absolute(a['url']) != null).toList();
     final music = post['music'] is Map ? mapOf(post['music']) : null;
     final movie = post['movie'] is Map ? mapOf(post['movie']) : null;

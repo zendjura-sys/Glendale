@@ -50,7 +50,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'archived_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang', 'subscribers_only', 'series_id', 'series_position', 'slow_mode_seconds', 'slow_mode_until', 'slow_mode_auto'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'audience', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'archived_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang', 'subscribers_only', 'series_id', 'series_position', 'slow_mode_seconds', 'slow_mode_until', 'slow_mode_auto'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
@@ -72,7 +72,10 @@ class Post extends Model
 
     public const VISIBILITY_PRIVATE = 'private';
 
-    public const VISIBILITIES = [self::VISIBILITY_PUBLIC, self::VISIBILITY_FRIENDS, self::VISIBILITY_PRIVATE];
+    /** Лише друзям з одного списку автора (FriendMark::LISTS) — поле audience. */
+    public const VISIBILITY_LIST = 'list';
+
+    public const VISIBILITIES = [self::VISIBILITY_PUBLIC, self::VISIBILITY_FRIENDS, self::VISIBILITY_PRIVATE, self::VISIBILITY_LIST];
 
     /** Скільки хвилин після публікації автор ще може змінити текст. */
     public const EDIT_MINUTES = 15;
@@ -206,7 +209,14 @@ class Post extends Model
                         ->where('wall_id', $viewer->id))
                     ->orWhere(fn (Builder $query) => $query
                         ->where('visibility', self::VISIBILITY_FRIENDS)
-                        ->whereIn('author_id', $friendIds));
+                        ->whereIn('author_id', $friendIds))
+                    ->orWhere(fn (Builder $query) => $query
+                        ->where('visibility', self::VISIBILITY_LIST)
+                        ->whereIn('author_id', $friendIds)
+                        ->whereExists(fn ($q) => $q->selectRaw('1')->from('friend_marks')
+                            ->whereColumn('friend_marks.user_id', 'posts.author_id')
+                            ->whereColumn('friend_marks.list', 'posts.audience')
+                            ->where('friend_marks.friend_id', $viewer->id)));
             }
         });
 

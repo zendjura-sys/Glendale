@@ -24,6 +24,8 @@ import {
     X,
     SlidersHorizontal,
     Send,
+    Swords,
+    Briefcase,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -49,14 +51,36 @@ import { UserAvatar } from './user-avatar';
 import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 
+type FriendList = 'raid' | 'cinema' | 'work';
+
 const visibilityOptions: {
     value: Visibility;
+    /** Для «list» — який список друзів бачить запис. */
+    audience: FriendList | null;
     label: string;
     icon: typeof Earth;
 }[] = [
-    { value: 'public', label: tr('Усім'), icon: Earth },
-    { value: 'friends', label: tr('Друзям'), icon: UsersRound },
-    { value: 'private', label: tr('Тільки мені'), icon: Lock },
+    { value: 'public', audience: null, label: tr('Усім'), icon: Earth },
+    { value: 'friends', audience: null, label: tr('Друзям'), icon: UsersRound },
+    { value: 'private', audience: null, label: tr('Тільки мені'), icon: Lock },
+    {
+        value: 'list',
+        audience: 'raid',
+        label: tr('Списку «Рейд»'),
+        icon: Swords,
+    },
+    {
+        value: 'list',
+        audience: 'cinema',
+        label: tr('Списку «Кіно»'),
+        icon: Clapperboard,
+    },
+    {
+        value: 'list',
+        audience: 'work',
+        label: tr('Списку «Робота»'),
+        icon: Briefcase,
+    },
 ];
 
 type Props = {
@@ -126,6 +150,7 @@ export function PostComposer({
     const form = useForm<{
         body: string;
         visibility: Visibility;
+        audience: FriendList | null;
         wall: string | null;
         community: string | null;
         as_community: boolean;
@@ -146,6 +171,7 @@ export function PostComposer({
         subscribers_only: false,
         sticker: null,
         visibility: 'public',
+        audience: null,
         wall: wall?.username ?? null,
         community: community?.slug ?? null,
         as_community:
@@ -413,7 +439,9 @@ export function PostComposer({
 
     const currentVisibility =
         visibilityOptions.find(
-            (option) => option.value === form.data.visibility,
+            (option) =>
+                option.value === form.data.visibility &&
+                option.audience === form.data.audience,
         ) ?? visibilityOptions[0];
 
     const placeholder = community
@@ -1077,12 +1105,13 @@ export function PostComposer({
                             >
                                 {visibilityOptions.map((option) => (
                                     <DropdownMenuItem
-                                        key={option.value}
+                                        key={`${option.value}:${option.audience ?? ''}`}
                                         onSelect={() =>
-                                            form.setData(
-                                                'visibility',
-                                                option.value,
-                                            )
+                                            form.setData((data) => ({
+                                                ...data,
+                                                visibility: option.value,
+                                                audience: option.audience,
+                                            }))
                                         }
                                         className="arctic-row h-11 gap-3 rounded-2xl px-3.5 text-sm"
                                     >
@@ -1090,8 +1119,7 @@ export function PostComposer({
                                         <span className="flex-1">
                                             {option.label}
                                         </span>
-                                        {form.data.visibility ===
-                                            option.value && (
+                                        {option === currentVisibility && (
                                             <Check className="size-4 text-sky-400" />
                                         )}
                                     </DropdownMenuItem>

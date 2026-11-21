@@ -102,7 +102,7 @@ export type CommentItem = {
     can_moderate?: boolean;
 };
 
-export type Visibility = 'public' | 'friends' | 'private';
+export type Visibility = 'public' | 'friends' | 'private' | 'list';
 
 /** #тег гри в тексті запису. */
 export type GameTag = { tag: string; slug: string; name: string };
@@ -115,6 +115,8 @@ export type PostItem = {
     spoiler?: boolean;
     sticker?: string | null;
     visibility: Visibility;
+    /** Для «list»: список друзів (бачить лише автор). */
+    audience?: 'raid' | 'cinema' | 'work' | null;
     is_pinned: boolean;
     comments_enabled: boolean;
     /** Повільний режим коментарів (гарячий запис). */

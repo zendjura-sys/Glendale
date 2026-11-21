@@ -24,6 +24,7 @@ import {
     Volume2,
     VolumeX,
     ListOrdered,
+    ListChecks,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -69,6 +70,7 @@ const visibilityMeta = {
     public: { icon: Earth, label: tr('Усім') },
     friends: { icon: UsersRound, label: tr('Лише друзям') },
     private: { icon: Lock, label: tr('Тільки мені') },
+    list: { icon: ListChecks, label: tr('Списку друзів') },
 } as const;
 
 const LONG_TEXT = 420;
@@ -102,7 +104,16 @@ export function PostCard({
     const [seriesOpen, setSeriesOpen] = useState(false);
     const [quoteBody, setQuoteBody] = useState('');
 
-    const Visibility = visibilityMeta[post.visibility].icon;
+    const visibility = visibilityMeta[post.visibility] ?? visibilityMeta.public;
+    const Visibility = visibility.icon;
+    const audienceLabel =
+        post.audience === 'raid'
+            ? tr('Списку «Рейд»')
+            : post.audience === 'cinema'
+              ? tr('Списку «Кіно»')
+              : post.audience === 'work'
+                ? tr('Списку «Робота»')
+                : visibility.label;
     const publisherHref = post.publisher?.href ?? `/${post.author.username}`;
     const translation = useContentTranslation('post', post.id);
     const { locale } = usePage().props;
@@ -243,8 +254,11 @@ export function PostCard({
                         <span>·</span>
                         <Visibility
                             className="size-3.5"
-                            aria-label={visibilityMeta[post.visibility].label}
-                        />
+                            role="img"
+                            aria-label={audienceLabel}
+                        >
+                            <title>{audienceLabel}</title>
+                        </Visibility>
                         {post.tag && (
                             <Link
                                 href={post.tag.href}

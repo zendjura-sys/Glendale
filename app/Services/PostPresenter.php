@@ -252,6 +252,8 @@ class PostPresenter
             'spoiler' => $post->spoiler,
             'sticker' => Stickers::emoji($post->sticker),
             'visibility' => $post->visibility,
+            // Список видимості бачить лише автор — іншим назва списку ні до чого.
+            'audience' => $post->visibility === Post::VISIBILITY_LIST && $viewer?->id === $post->author_id ? $post->audience : null,
             'is_pinned' => $post->is_pinned,
             'comments_enabled' => $post->comments_enabled,
             'slow_mode' => app(SlowMode::class)->card($post),

@@ -9,6 +9,7 @@ import {
     Search,
     Trash2,
     UsersRound,
+    ListChecks,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -46,6 +47,7 @@ const VISIBILITY = {
     public: { label: tr('Усім'), icon: Globe },
     friends: { label: tr('Друзям'), icon: UsersRound },
     private: { label: tr('Лише автор'), icon: Lock },
+    list: { label: tr('Списку друзів'), icon: ListChecks },
 } as const;
 
 export default function AdminPosts({ posts, filters }: Props) {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Community;
+use App\Models\FriendMark;
 use App\Models\Like;
 use App\Models\Movie;
 use App\Models\Poll;
@@ -147,6 +148,7 @@ class PostController extends Controller
             'poll.anonymous' => ['nullable', 'boolean'],
             'subscribers_only' => ['nullable', 'boolean'],
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
+            'audience' => ['nullable', 'required_if:visibility,'.Post::VISIBILITY_LIST, Rule::in(FriendMark::LISTS)],
             'spoiler' => ['sometimes', 'boolean'],
             'draft' => ['sometimes', 'boolean'],
             'publish_at' => ['nullable', 'date'],
@@ -234,6 +236,7 @@ class PostController extends Controller
                 'link' => $this->linkCard($data['body'] ?? null),
                 'card' => $card,
                 'visibility' => $data['visibility'],
+                'audience' => $data['visibility'] === Post::VISIBILITY_LIST ? $data['audience'] : null,
                 'spoiler' => (bool) ($data['spoiler'] ?? false),
                 'is_draft' => $request->boolean('draft'),
                 'publish_at' => $publishAt,
