@@ -20,6 +20,8 @@ type Broadcast = {
     audience: Audience;
     filters: Partial<Segment> | null;
     sent_count: number;
+    email?: boolean;
+    emailed_count?: number;
     finished: boolean;
     by: string | null;
     created_at: string;
@@ -136,9 +138,19 @@ export default function AdminBroadcasts({
             body: string;
             url: string;
             audience: Audience;
+            email: boolean;
         } & Segment
-    >({ title: '', body: '', url: '', audience: 'all', ...EMPTY });
+    >({
+        title: '',
+        body: '',
+        url: '',
+        audience: 'all',
+        email: false,
+        ...EMPTY,
+    });
     const [count, setCount] = useState<number | null>(null);
+    // Скільки з них погодилися на новини поштою (№284).
+    const [readers, setReaders] = useState<number | null>(null);
     const seg = (key: keyof Segment, value: string) =>
         form.setData(key, value as never);
     const segmentKey = JSON.stringify([
@@ -165,8 +177,14 @@ export default function AdminBroadcasts({
             }).filter(([, v]) => v !== ''),
         );
         const timer = window.setTimeout(() => {
-            api<{ count: number }>('GET', `/admin/broadcasts/count?${params}`)
-                .then((d) => setCount(d.count))
+            api<{ count: number; readers?: number }>(
+                'GET',
+                `/admin/broadcasts/count?${params}`,
+            )
+                .then((d) => {
+                    setCount(d.count);
+                    setReaders(d.readers ?? null);
+                })
                 .catch(() => setCount(null));
         }, 250);
 
@@ -348,6 +366,29 @@ export default function AdminBroadcasts({
                     />
                     <InputError message={form.errors.url} className="mt-1" />
                 </div>
+                <label className="flex items-start gap-2.5 text-sm text-white/80">
+                    <input
+                        type="checkbox"
+                        checked={form.data.email}
+                        onChange={(e) =>
+                            form.setData('email', e.target.checked)
+                        }
+                        className="mt-0.5 size-4 accent-[var(--gc-accent)]"
+                    />
+                    <span>
+                        {tr('Також листом на пошту')}
+                        <span className="block text-xs text-white/50">
+                            {readers === null
+                                ? tr(
+                                      'Лише тим, хто погодився на новини й підтвердив пошту.',
+                                  )
+                                : tr(
+                                      'Отримають лист: {n} — ті, хто погодився на новини й підтвердив пошту.',
+                                      { n: readers },
+                                  )}
+                        </span>
+                    </span>
+                </label>
                 <button
                     type="submit"
                     disabled={
@@ -379,6 +420,9 @@ export default function AdminBroadcasts({
                                           count: b.sent_count,
                                       })
                                     : tr('надсилається…')}
+                                {b.email &&
+                                    b.finished &&
+                                    ` · ${tr('листів: {n}', { n: b.emailed_count ?? 0 })}`}
                             </span>
                         </div>
                         <p className="mt-1 text-sm whitespace-pre-line text-white/75">

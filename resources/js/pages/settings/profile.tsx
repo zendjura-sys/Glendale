@@ -4,6 +4,7 @@ import {
     Globe,
     Lock,
     Mail,
+    Newspaper,
     MapPin,
     MessageCircle,
     Phone,
@@ -52,6 +53,7 @@ type ProfileForm = {
     call_privacy?: string;
     group_add?: string;
     email_social: boolean;
+    news_email?: boolean;
 };
 
 type Props = {
@@ -94,6 +96,7 @@ export default function Profile({
         call_privacy: profile.call_privacy ?? 'everyone',
         group_add: profile.group_add ?? 'friends',
         email_social: profile.email_social !== false,
+        news_email: profile.news_email === true,
     });
     const { data, setData, errors, processing } = form;
 
@@ -390,6 +393,15 @@ export default function Profile({
                         )}
                         checked={data.email_social}
                         onChange={(on) => setData('email_social', on)}
+                    />
+                    <SettingsSwitch
+                        icon={<Newspaper />}
+                        label={tr('Новини GameCon на пошту')}
+                        hint={tr(
+                            'Великі оновлення й події — кілька листів на місяць. Відписатися можна в кожному листі.',
+                        )}
+                        checked={data.news_email === true}
+                        onChange={(on) => setData('news_email', on)}
                     />
                     <SettingsRow
                         icon={<MessageCircle />}

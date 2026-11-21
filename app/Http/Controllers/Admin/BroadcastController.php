@@ -31,6 +31,8 @@ class BroadcastController extends Controller
                 'audience' => $b->audience,
                 'filters' => $b->filters,
                 'sent_count' => $b->sent_count,
+                'email' => $b->email,
+                'emailed_count' => $b->emailed_count,
                 'finished' => $b->finished_at !== null,
                 'by' => $b->user?->name,
                 'created_at' => $b->created_at->toIso8601String(),
@@ -50,7 +52,11 @@ class BroadcastController extends Controller
     {
         $data = $request->validate(['audience' => ['required', Rule::in(Broadcast::AUDIENCES)], ...$this->filterRules()]);
 
-        return response()->json(['count' => SendBroadcast::audience($data['audience'], $this->filters($data))->count()]);
+        return response()->json([
+            'count' => SendBroadcast::audience($data['audience'], $this->filters($data))->count(),
+            // Скільки з них отримає лист (погодилися на новини й підтвердили пошту).
+            'readers' => SendBroadcast::newsReaders($data['audience'], $this->filters($data))->count(),
+        ]);
     }
 
     /**
@@ -84,13 +90,14 @@ class BroadcastController extends Controller
             'body' => ['required', 'string', 'min:3', 'max:500'],
             'url' => ['nullable', 'string', 'max:300', 'regex:#^(/[^\s]*|https://[^\s]+)$#'],
             'audience' => ['required', Rule::in(Broadcast::AUDIENCES)],
+            'email' => ['sometimes', 'boolean'],
             ...$this->filterRules(),
         ]);
         $filters = $this->filters($data);
         abort_if(SendBroadcast::audience($data['audience'], $filters)->count() === 0, 422, 'У сегменті нікого немає.');
-        $broadcast = Broadcast::query()->create([...array_diff_key($data, $filters), 'filters' => $filters ?: null, 'user_id' => $request->user()?->id]);
+        $broadcast = Broadcast::query()->create([...array_diff_key($data, $filters), 'email' => $request->boolean('email'), 'filters' => $filters ?: null, 'user_id' => $request->user()?->id]);
         SendBroadcast::dispatch($broadcast->id);
-        Log::info('broadcast: queued', ['broadcast' => $broadcast->id, 'audience' => $broadcast->audience, 'filters' => $filters, 'by' => $request->user()?->id]);
+        Log::info('broadcast: queued', ['broadcast' => $broadcast->id, 'audience' => $broadcast->audience, 'filters' => $filters, 'email' => $broadcast->email, 'by' => $request->user()?->id]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Розсилку поставлено в чергу — сповіщення підуть за кілька хвилин.']);
 
         return back();

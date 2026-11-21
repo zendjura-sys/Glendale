@@ -16,7 +16,12 @@ class UnsubscribeController extends Controller
 {
     public function __invoke(Request $request, User $user): Response
     {
-        if ($user->email_social) {
+        // Розсилка новин (№284) — окрема згода: відписка лише від неї.
+        if ($request->query('list') === 'news') {
+            if ($user->pref('news_email', false) === true) {
+                $user->mergePref(['news_email' => false]);
+            }
+        } elseif ($user->email_social) {
             $user->forceFill(['email_social' => false])->save();
         }
 
@@ -27,8 +32,8 @@ class UnsubscribeController extends Controller
         return response()->view('mail.unsubscribed', ['settingsUrl' => URL::to('/settings/profile')]);
     }
 
-    public static function url(User $user): string
+    public static function url(User $user, ?string $list = null): string
     {
-        return URL::signedRoute('mail.unsubscribe', ['user' => $user->id]);
+        return URL::signedRoute('mail.unsubscribe', array_filter(['user' => $user->id, 'list' => $list]));
     }
 }

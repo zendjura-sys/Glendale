@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Http\Controllers\Mail\UnsubscribeController;
+use App\Mail\NewsletterMail;
 use App\Models\ApiToken;
 use App\Models\Broadcast;
 use App\Models\CommunityMember;
@@ -13,6 +15,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 
 /** Розсилає сповіщення адміністрації пачками по 500 — без заблокованих і заморожених акаунтів. */
@@ -69,6 +72,33 @@ class SendBroadcast implements ShouldQueue
             Notification::send($users, new BroadcastNotice($broadcast));
             $sent += $users->count();
         });
-        $broadcast->update(['sent_count' => $sent, 'finished_at' => now()]);
+        $emailed = $broadcast->email ? $this->email($broadcast) : 0;
+        $broadcast->update(['sent_count' => $sent, 'emailed_count' => $emailed, 'finished_at' => now()]);
+    }
+
+    /**
+     * Тим, хто погодився на новини й підтвердив пошту (№284): та сама аудиторія й сегмент.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return Builder<User>
+     */
+    public static function newsReaders(string $audience, array $filters = []): Builder
+    {
+        return self::audience($audience, $filters)->whereNotNull('email_verified_at')->where('preferences->news_email', true);
+    }
+
+    private function email(Broadcast $broadcast): int
+    {
+        $count = 0;
+        $url = $broadcast->url ?: '/feed';
+        $url = str_starts_with($url, '/') ? url($url) : $url;
+        self::newsReaders($broadcast->audience, $broadcast->filters ?? [])->chunkById(200, function (Collection $users) use ($broadcast, $url, &$count) {
+            foreach ($users as $user) {
+                Mail::to($user)->queue(new NewsletterMail($broadcast->title, $broadcast->body, $url, UnsubscribeController::url($user, 'news')));
+                $count++;
+            }
+        });
+
+        return $count;
     }
 }
