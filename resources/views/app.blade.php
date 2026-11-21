@@ -126,6 +126,11 @@
         <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <link rel="manifest" href="/site.webmanifest">
+        {{-- iPhone: сайт з головного екрана відкривається як застосунок (потрібно для веб-сповіщень, №230). --}}
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-title" content="GameCon">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 
         {{-- Розмір тексту пристрою (lib/device-prefs.ts) — до першого кадру, щоб сторінка не «стрибала». --}}

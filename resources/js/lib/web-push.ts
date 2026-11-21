@@ -12,6 +12,22 @@ export type WebPushState = {
     disable: () => Promise<void>;
 };
 
+/**
+ * iPhone/iPad у звичайному Safari: Web Push з’являється лише після «На початковий екран»
+ * (iOS 16.4+), тож замість кнопки показуємо, як це зробити.
+ */
+export function needsHomeScreen(): boolean {
+    if (typeof window === 'undefined') return false;
+    const ios =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const standalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+    return ios && !standalone;
+}
+
 function isSupported(): boolean {
     return (
         typeof window !== 'undefined' &&
