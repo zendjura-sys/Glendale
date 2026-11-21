@@ -9498,3 +9498,47 @@ html.gc-simple *::after {
 .gc-prediction {
     height: 48px;
 }
+
+/* ---------- Магазин оформлення (№255) ---------- */
+.gc-shop-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+    background: var(--gc-l2);
+}
+.gc-shop-item.is-on {
+    box-shadow: inset 0 0 0 2px var(--gc-accent);
+}
+.gc-shop-item__preview {
+    display: grid;
+    place-items: center;
+    height: 84px;
+    border-radius: 12px;
+    background: var(--gc-l1);
+}
+.gc-shop-frame {
+    display: inline-grid;
+    place-items: center;
+    padding: 3px;
+    border-radius: 9999px;
+}
+.gc-shop-header {
+    width: 80%;
+    height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--gc-l3), var(--gc-l2));
+}
+.gc-shop-header.is-aurora {
+    background:
+        radial-gradient(
+            120% 80% at 50% 120%,
+            color-mix(in srgb, var(--gc-accent) 55%, transparent),
+            transparent
+        ),
+        var(--gc-l3);
+}
+.gc-shop-header.is-rim {
+    box-shadow: inset 0 0 0 2px var(--gc-accent);
+}

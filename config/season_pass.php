@@ -44,6 +44,12 @@ return [
             'lvl_bronze' => ['name' => 'Бронза рівня', 'colors' => ['#b45309', '#fbbf24']],
             'lvl_veteran' => ['name' => 'Ветеран', 'colors' => ['#64748b', '#e2e8f0', '#64748b']],
             'lvl_legend' => ['name' => 'Легенда', 'colors' => ['#f59e0b', '#a855f7', '#22d3ee']],
+            // Магазин оформлення (№255) — лише за покупку, окремо від нагород.
+            'shop_neon' => ['name' => 'Неонова', 'colors' => ['#22d3ee', '#a855f7']],
+            'shop_lava' => ['name' => 'Лава', 'colors' => ['#ef4444', '#f59e0b', '#ef4444']],
+            'shop_galaxy' => ['name' => 'Галактика', 'colors' => ['#312e81', '#a855f7', '#f472b6']],
+            'shop_jade' => ['name' => 'Нефрит', 'colors' => ['#065f46', '#34d399']],
+            'shop_mono' => ['name' => 'Графіт', 'colors' => ['#e5e7eb', '#4b5563']],
         ],
         // Колір ніку.
         'name' => [
@@ -52,6 +58,9 @@ return [
             'pass_coral' => ['name' => 'Корал', 'colors' => ['#fb7185']],
             'pass_aurora' => ['name' => 'Сяйво', 'colors' => ['#4f8bff', '#a855f7']],
             'pass_sunset' => ['name' => 'Захід', 'colors' => ['#f97316', '#ec4899']],
+            'shop_mint' => ['name' => 'М’ятний', 'colors' => ['#5eead4']],
+            'shop_peach' => ['name' => 'Персик', 'colors' => ['#fdba74']],
+            'shop_berry' => ['name' => 'Ягідний', 'colors' => ['#e879f9', '#f472b6']],
         ],
         // Значок біля імені: іконка Lucide і колір.
         'badge' => [
@@ -65,6 +74,9 @@ return [
             'ev_ghost' => ['name' => 'Привид', 'icon' => 'ghost', 'color' => '#c084fc'],
             'ev_swords' => ['name' => 'Учасник рейду', 'icon' => 'swords', 'color' => '#f59e0b'],
             'lvl_myth' => ['name' => 'Міф GameCon', 'icon' => 'crown', 'color' => '#f472b6'],
+            'shop_star' => ['name' => 'Бірюзова зірка', 'icon' => 'star', 'color' => '#2dd4bf'],
+            'shop_bolt' => ['name' => 'Рожева блискавка', 'icon' => 'zap', 'color' => '#f472b6'],
+            'shop_gem' => ['name' => 'Смарагд', 'icon' => 'gem', 'color' => '#34d399'],
         ],
         // Ефект шапки профілю (ті самі, що в GameCon+).
         'header' => [

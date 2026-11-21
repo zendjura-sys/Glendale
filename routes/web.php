@@ -33,6 +33,7 @@ use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CommunityQuizController;
 use App\Http\Controllers\CommunityStickerController;
 use App\Http\Controllers\CommunityWidgetController;
+use App\Http\Controllers\CosmeticsShopController;
 use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\Developer;
@@ -259,6 +260,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('cards/{card}', 'forgetCard')->whereNumber('card')->middleware('throttle:20,1')->name('cards.destroy');
         Route::post('renewals', 'renewal')->middleware('throttle:20,1')->name('renewals');
     });
+    // Магазин оформлення (№255): лише сайт — у застосунку оплата тільки через Google Play.
+    Route::get('shop', [CosmeticsShopController::class, 'index'])->name('shop.index');
+    Route::post('shop/buy', [CosmeticsShopController::class, 'buy'])->middleware('throttle:20,1')->name('shop.buy');
+    Route::post('shop/equip', [CosmeticsShopController::class, 'equip'])->middleware('throttle:60,1')->name('shop.equip');
     Route::prefix('plus')->name('plus.')->group(function () {
         Route::get('/', [PlusController::class, 'index'])->name('index');
         Route::post('redeem', [PlusController::class, 'redeem'])->middleware('throttle:10,1')->name('redeem');

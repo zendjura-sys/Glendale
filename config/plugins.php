@@ -115,6 +115,7 @@ return [
     ['key' => 'topic_follows', 'group' => 'Стрічка', 'name' => 'Теми', 'description' => 'Підписка на хештеги: вкладка «Теми» в стрічці й сторінка теми.'],
     ['key' => 'community_calendar', 'group' => 'Спільноти', 'name' => 'Календар спільноти', 'description' => 'Події спільноти з «Буду / Можливо» в календарі на місяць.', 'module' => 'communities'],
     ['key' => 'event_stories', 'group' => 'Спільноти', 'name' => 'Спільні історії події', 'description' => 'Учасники додають історії до події — усі разом в одній стрічці події.', 'module' => 'communities'],
+    ['key' => 'cosmetics_shop', 'group' => 'GameCon+', 'name' => 'Магазин оформлення', 'description' => 'Рамки, кольори ніку, значки й ефекти шапки назавжди — за баланс GameCon (лише на сайті).'],
     ['key' => 'community_quiz', 'group' => 'Спільноти', 'name' => 'Живі вікторини', 'description' => 'Ведучий запускає питання, учасники відповідають на час; бали за швидкість і таблиця лідерів.', 'module' => 'communities'],
     ['key' => 'community_wiki', 'group' => 'Спільноти', 'name' => 'Вікі спільноти', 'description' => 'Сторінки знань з історією правок і поверненням версії.', 'module' => 'communities'],
     ['key' => 'community_points', 'group' => 'Спільноти', 'name' => 'Бали спільноти', 'description' => 'Бали за записи, коментарі й події; найактивніші — на сторінці спільноти.', 'module' => 'communities'],
