@@ -404,6 +404,20 @@ class FamiliesTest extends TestCase
         $this->assertSame(2, FamilyReport::query()->count());
     }
 
+    public function test_old_cashouts_are_returned_to_treasury_once(): void
+    {
+        $soldier = $this->member();
+        // Як було до виправлення: виплата 145 000 ₴ із заробленого зменшила казну до мінуса.
+        app(FamilyBank::class)->post($this->family, $soldier, 'cashout_paid', 0, -14_500_000, $this->leader, 'Виплата в грі');
+        $this->assertSame(-14_500_000, $this->family->fresh()->treasury);
+
+        (require database_path('migrations/2026_11_21_000266_fix_treasury_after_cashouts.php'))->up();
+
+        $this->assertSame(0, $this->family->fresh()->treasury);
+        $this->assertSame(1, FamilyTransaction::query()->where('type', 'treasury_fix')->count());
+        $this->assertSame(1, FamilyTransaction::query()->where('type', 'cashout_paid')->count());
+    }
+
     public function test_cashout_holds_funds_and_officer_pays_in_game(): void
     {
         $soldier = $this->member();
@@ -422,7 +436,8 @@ class FamiliesTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertSame(FamilyCashout::STATUS_PAID, $cashout->fresh()->status);
-        $this->assertSame(10_000_000 - 300000, $this->family->fresh()->treasury);
+        // Виплата заробленого — з балансу учасника, казна не змінюється.
+        $this->assertSame(10_000_000, $this->family->fresh()->treasury);
         $this->assertTrue(FamilyAuditLog::query()->where('action', 'MONEY_CASHOUT')->exists());
 
         $this->actingAs($soldier->user)->post(route('families.cashouts.store', $this->family), ['amount' => 1000]);

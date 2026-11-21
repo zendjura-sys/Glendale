@@ -6897,6 +6897,10 @@ html:root.gc-vk[data-theme] .ios-header-search {
         inset 0 1px 0 rgb(255 255 255 / 0.1),
         0 8px 20px rgb(0 0 0 / 0.25) !important;
 }
+/* Багаторядкове поле — не пігулка: звичайне скруглення, інакше текст ховається в заокругленнях. */
+textarea.input-glass {
+    border-radius: 16px !important;
+}
 .input-glass:focus,
 .input-glass:focus-within,
 .auth-form [data-slot='input']:focus,

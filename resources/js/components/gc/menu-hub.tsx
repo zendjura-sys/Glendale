@@ -1,3 +1,4 @@
+import { uahShort } from '@/lib/money';
 import { RpDossier } from '@/components/gc/rp-dossier';
 import { GameCastTile } from '@/components/gc/gamecast-button';
 import { LiveCastTile } from '@/components/gc/livecast-button';
@@ -376,7 +377,7 @@ export function MenuHub({ onClose }: { onClose: () => void }) {
                                 <span className="rounded-lg bg-[var(--gc-l3)] p-2">
                                     <Coins className="mx-auto size-4 text-amber-400" />
                                     <span className="mt-1 block text-sm font-bold text-white tabular-nums">
-                                        {family.treasury.toLocaleString('uk')}
+                                        {uahShort(family.treasury)}
                                     </span>
                                     <span className="block text-[10px] text-white/60">
                                         {tr('Казна')}
