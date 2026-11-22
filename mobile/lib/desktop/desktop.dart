@@ -7,6 +7,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../i18n.dart';
 import '../platform.dart';
+import 'hotkeys.dart';
 
 /// ПК-версія GameCon: власне вікно (мінімальний розмір, назва), значок у треї й робота у фоні —
 /// хрестик ховає вікно в трей, як у месенджерах, тож дзвінки, чати й тривоги працюють далі.
@@ -31,6 +32,7 @@ class Desktop with WindowListener, TrayListener {
     windowManager.addListener(instance);
     trayManager.addListener(instance);
     await instance._tray();
+    await DesktopHotkeys.init(show: instance.show);
   }
 
   void Function(String route)? _open;

@@ -374,6 +374,12 @@ class VoiceCall extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// «Натисни й говори» на ПК: мікрофон лише поки затиснуто клавішу (якщо його не вимкнув модератор).
+  Future<void> pushToTalk(bool down) async {
+    if (!active || micBlocked || micOn == down) return;
+    await _setMic(down);
+  }
+
   /// Повертає текст підказки, якщо мікрофон зараз недоступний.
   String? toggleMic() {
     if (micBlocked) {

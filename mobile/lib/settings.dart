@@ -30,6 +30,8 @@ import 'shake_report.dart';
 import 'push.dart';
 import 'game_overlay.dart';
 import 'site_parity.dart';
+import 'platform.dart';
+import 'desktop/hotkeys.dart';
 
 // ───────────────────────── Сповіщення ─────────────────────────
 
@@ -467,6 +469,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Вимкнені плагіни — без їхніх перемикачів (підтримка, тривоги).
           if (session.pluginOn('support_tickets')) const _ShakeReportSwitch(),
           if (session.pluginOn('air_alerts')) const _SpeakAlertsSwitch(),
+          // ПК: «натисни й говори» (F9) для голосових кімнат і GameCast.
+          if (isDesktop) const _PushToTalkSwitch(),
           const _GameOverlaySettings(),
           const _DockMenuStyle(),
           const SizedBox(height: 6),
@@ -1088,6 +1092,37 @@ class _SpeakAlertsSwitchState extends State<_SpeakAlertsSwitch> {
           setState(() => on = v);
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool(AlertNotifications.speakPref, v);
+        },
+      );
+}
+
+class _PushToTalkSwitch extends StatefulWidget {
+  const _PushToTalkSwitch();
+
+  @override
+  State<_PushToTalkSwitch> createState() => _PushToTalkSwitchState();
+}
+
+class _PushToTalkSwitchState extends State<_PushToTalkSwitch> {
+  bool on = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((prefs) {
+      if (mounted) setState(() => on = prefs.getBool(DesktopHotkeys.pttKey) ?? false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => SwitchListTile(
+        value: on,
+        contentPadding: EdgeInsets.zero,
+        title: Text(tr('Натисни й говори (F9)'), style: body(14.5, weight: FontWeight.w600)),
+        subtitle: Text(tr('У голосовій кімнаті мікрофон увімкнений, лише поки затиснуто F9 — працює й у грі. Ctrl+Shift+M — вимкнути мікрофон, Ctrl+Shift+G — відкрити GameCon.'), style: body(12.5, color: muted)),
+        onChanged: (v) async {
+          setState(() => on = v);
+          await DesktopHotkeys.setPushToTalk(v);
         },
       );
 }
