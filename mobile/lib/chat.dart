@@ -1319,19 +1319,22 @@ class _ChatScreenState extends State<ChatScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          FitText(text(chat['title']) ?? tr('Бесіда'), style: body(15, weight: FontWeight.w700)),
-                          if (subtitle.isNotEmpty) Text(subtitle, style: body(12, color: peer?['is_online'] == true ? green : muted)),
+                          // Один рядок і «…»: назва не ламається по літерах, коли праворуч кілька кнопок.
+                          Text(text(chat['title']) ?? tr('Бесіда'), maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false, style: body(15, weight: FontWeight.w700)),
+                          if (subtitle.isNotEmpty) Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false, style: body(12, color: peer?['is_online'] == true ? green : muted)),
                         ]),
                       ),
                     ]),
                   ),
                 ),
                 IconButton(
+                  visualDensity: VisualDensity.compact,
                   tooltip: chat['is_muted'] == true ? tr('Увімкнути сповіщення') : tr('Вимкнути сповіщення'),
                   onPressed: _toggleMute,
                   icon: Icon(chat['is_muted'] == true ? LucideIcons.bellOff : LucideIcons.bell, color: muted),
                 ),
                 IconButton(
+                  visualDensity: VisualDensity.compact,
                   tooltip: tr('Слухати музику разом'),
                   onPressed: () => startListening(context, trackId: AppScope.read(context).player.current?.id, conversationId: widget.id),
                   icon: Icon(LucideIcons.headphones, color: muted),
