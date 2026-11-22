@@ -27,6 +27,9 @@ class PlayingStatus
 
     public const SOURCE_MOBILE = 'mobile';
 
+    /** Програма GameCon для ПК: гра на весь екран на передньому плані (назва вікна). */
+    public const SOURCE_PC = 'pc';
+
     /** Скільки годин можна поставити вручну. */
     public const MANUAL_HOURS = [1, 3, 6, 12, 24];
 

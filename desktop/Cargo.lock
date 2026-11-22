@@ -1236,6 +1236,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "gamecon-native"
+version = "1.2611.0"
+dependencies = [
+ "gamecon-core",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "gdk"
 version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

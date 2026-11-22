@@ -31,6 +31,7 @@ import 'extras.dart';
 import 'site_parity.dart';
 import 'platform.dart';
 import 'desktop/desktop.dart';
+import 'desktop/native.dart';
 import 'community_quiz.dart';
 import 'family_widget.dart';
 import 'game_card.dart';
@@ -464,6 +465,8 @@ Future<void> main() async {
   });
   // ПК: вікно, трей і робота у фоні (lib/desktop/).
   await Desktop.init(open: router.go);
+  // Нативне ядро (Rust): гра на весь екран → статус «Граю» для друзів.
+  NativeCore.load()?.watch(() => session.api, () => session.token != null);
   await GcSoundEngine.instance.init();
   await loadDockMenuStyle();
   // Зміна мови перебудовує весь застосунок.

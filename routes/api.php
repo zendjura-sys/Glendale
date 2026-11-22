@@ -478,6 +478,7 @@ Route::prefix('v1')->group(function () {
             Route::get('me/pulse-widget', [WidgetApiController::class, 'pulse'])->middleware('throttle:30,1');
             // Застосунок на Android: гра на екрані → «Граю в…».
             Route::post('me/playing/mobile', [PlayingController::class, 'mobile'])->middleware('throttle:30,1');
+            Route::post('me/playing/pc', [PlayingController::class, 'pc'])->middleware('throttle:30,1');
             Route::get('me/playing/packages', [PlayingController::class, 'packages']);
             Route::get('families', [GroupsApiController::class, 'families']);
             Route::get('families/{family}', [GroupsApiController::class, 'family']);

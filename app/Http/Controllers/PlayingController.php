@@ -204,6 +204,17 @@ class PlayingController extends Controller
         return response()->json(['playing' => $user->fresh()?->playing()]);
     }
 
+    /** Програма для ПК: гра на весь екран (назва вікна) — гра чи сервер з каталогу, інакше назва як є; null — не граю. */
+    public function pc(Request $request): JsonResponse
+    {
+        $data = $request->validate(['title' => ['nullable', 'string', 'max:160']]);
+        $user = $this->user($request);
+        $title = trim((string) ($data['title'] ?? ''));
+        $this->status->apply($user, $title !== '' ? $this->status->fromActivity($title) : null, PlayingStatus::SOURCE_PC, 10);
+
+        return response()->json(['playing' => $user->fresh()?->playing()]);
+    }
+
     /** Пакети ігор каталогу, які застосунок може розпізнати (крім категорії «Ігри» самого Android). */
     public function packages(): JsonResponse
     {

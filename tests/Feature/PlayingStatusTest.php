@@ -134,5 +134,10 @@ class PlayingStatusTest extends TestCase
             ->assertOk()->assertJsonPath('playing.url', '/servers/black-russia');
 
         $this->withToken($token)->postJson('/api/v1/me/playing/mobile', ['package' => null])->assertOk()->assertJsonPath('playing', null);
+
+        // Програма для ПК: назва вікна гри на весь екран → гра з каталогу; порожньо — статус знято.
+        $this->withToken($token)->postJson('/api/v1/me/playing/pc', ['title' => 'Brawl Stars'])
+            ->assertOk()->assertJsonPath('playing.url', '/games/brawl-stars');
+        $this->withToken($token)->postJson('/api/v1/me/playing/pc', ['title' => null])->assertOk()->assertJsonPath('playing', null);
     }
 }

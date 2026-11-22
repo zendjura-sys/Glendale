@@ -1,6 +1,6 @@
 # GameCon для Windows (№261) на Rust: ядро логіки (core) і застосунок Tauri (src-tauri).
 [workspace]
-members = ["core", "src-tauri"]
+members = ["core", "src-tauri", "native"]
 resolver = "2"
 
 [workspace.package]
