@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+
+import 'platform.dart';
 import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -53,7 +55,8 @@ class _ShakeToReportState extends State<ShakeToReport> {
 
   Future<void> _listen() async {
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(ShakeToReport.prefKey) == false || !mounted) return;
+    // Датчика струсу на ПК немає.
+    if (!isMobile || prefs.getBool(ShakeToReport.prefKey) == false || !mounted) return;
     try {
       _sub = userAccelerometerEventStream(samplingPeriod: SensorInterval.gameInterval).listen(_onEvent, onError: (_) {});
     } catch (_) {

@@ -29,6 +29,7 @@ import 'i18n.dart';
 import 'events.dart';
 import 'extras.dart';
 import 'site_parity.dart';
+import 'platform.dart';
 import 'community_quiz.dart';
 import 'family_widget.dart';
 import 'game_card.dart';
@@ -102,7 +103,7 @@ void overlayMain() {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  if (isMobile) await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   final prefs = await SharedPreferences.getInstance();
   // Тема до першого кадру (збережена на телефоні); з акаунта — після входу (Session).
   ThemeController.instance.init(prefs);
@@ -121,7 +122,8 @@ Future<void> main() async {
   player.onStart = (track) => repairTrackMeta(session, track.toCard()).then((fixed) {
         if (fixed != null) player.updateMeta(fixed);
       }).catchError((_) {});
-  await GcAudioHandler.attach(player);
+  // Шторка/екран блокування й Android Auto — лише на телефоні; на ПК плеєр грає напряму.
+  if (isMobile) await GcAudioHandler.attach(player);
   // Лише для перевірки фонової музики на емуляторі в CI (.github/workflows/app-audio-check.yml):
   // збірка з --dart-define=GC_AUDIO_TEST_URL=… одразу вмикає трек. У звичайних збірках порожньо.
   const audioTestUrl = String.fromEnvironment('GC_AUDIO_TEST_URL');
@@ -135,16 +137,19 @@ Future<void> main() async {
   // GameCon Connect: що грає на сайті й інших пристроях, керування й передача музики.
   GameConnect.instance = GameConnect(session, player)..start();
   // Віджет «Моя сім'я»: фонове оновлення й свіжі дані при кожному запуску.
-  await HomeWidget.registerInteractivityCallback(familyWidgetBackground);
-  unawaited(FamilyWidget.refresh(session.token == null ? null : session.api, prefs).then((_) => null, onError: (_) => null));
-  // Віджет «Пульс GameCon»: непрочитане, друзі онлайн, завдання дня.
-  unawaited(PulseWidget.refresh(session.token == null ? null : session.api).then((_) => null, onError: (_) => null));
-  unawaited(AlertWidget.refresh(session.token == null ? null : session.api).then((_) => null, onError: (_) => null));
-  // Ігровий оверлей (#17): GameCon у фоні (у грі) — крапля; повернулися — ховаємо. Оверлею —
-  // модулі людини, щоб він не показував вимкнені розділи.
-  _overlayLifecycle = AppLifecycleListener(onStateChange: (state) => unawaited(GameOverlay.onLifecycle(state)));
-  unawaited(GameOverlay.saveModules(session.modules));
-  session.addListener(() => unawaited(GameOverlay.saveModules(session.modules)));
+  // Віджети робочого столу й оверлей Android — лише на телефоні (на ПК свої вікна й оверлей).
+  if (isAndroid) {
+    await HomeWidget.registerInteractivityCallback(familyWidgetBackground);
+    unawaited(FamilyWidget.refresh(session.token == null ? null : session.api, prefs).then((_) => null, onError: (_) => null));
+    // Віджет «Пульс GameCon»: непрочитане, друзі онлайн, завдання дня.
+    unawaited(PulseWidget.refresh(session.token == null ? null : session.api).then((_) => null, onError: (_) => null));
+    unawaited(AlertWidget.refresh(session.token == null ? null : session.api).then((_) => null, onError: (_) => null));
+    // Ігровий оверлей (#17): GameCon у фоні (у грі) — крапля; повернулися — ховаємо. Оверлею —
+    // модулі людини, щоб він не показував вимкнені розділи.
+    _overlayLifecycle = AppLifecycleListener(onStateChange: (state) => unawaited(GameOverlay.onLifecycle(state)));
+    unawaited(GameOverlay.saveModules(session.modules));
+    session.addListener(() => unawaited(GameOverlay.saveModules(session.modules)));
+  }
   final links = AppLinks();
   links.uriLinkStream.listen(session.takeLink);
   final initial = await links.getInitialLink();
@@ -464,7 +469,7 @@ Future<void> main() async {
     builder: (_, revision, _) => KeyedSubtree(key: ValueKey(revision), child: GameConApp(router: router, session: session)),
   ));
   // Після першого кадру: дозвіл на сповіщення й реєстрація пристрою для push.
-  unawaited(Push(session, router).start());
+  if (isMobile) unawaited(Push(session, router).start());
 }
 
 class _Lost extends StatelessWidget {
