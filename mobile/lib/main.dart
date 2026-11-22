@@ -30,6 +30,7 @@ import 'events.dart';
 import 'extras.dart';
 import 'site_parity.dart';
 import 'platform.dart';
+import 'desktop/desktop.dart';
 import 'community_quiz.dart';
 import 'family_widget.dart';
 import 'game_card.dart';
@@ -461,6 +462,8 @@ Future<void> main() async {
     if (!clicked || context == null || player.current == null || fullPlayerOpen) return;
     unawaited(showFullPlayer(context, player, session: session));
   });
+  // ПК: вікно, трей і робота у фоні (lib/desktop/).
+  await Desktop.init(open: router.go);
   await GcSoundEngine.instance.init();
   await loadDockMenuStyle();
   // Зміна мови перебудовує весь застосунок.
