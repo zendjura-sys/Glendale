@@ -36,6 +36,7 @@ use App\Http\Controllers\CommunityWidgetController;
 use App\Http\Controllers\CosmeticsShopController;
 use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
+use App\Http\Controllers\DesktopWidgetController;
 use App\Http\Controllers\Developer;
 use App\Http\Controllers\EmbedWidgetController;
 use App\Http\Controllers\EpisodeTalkController;
@@ -171,6 +172,8 @@ Route::get('embed/overlay', [Developer\SdkAssetsController::class, 'overlay'])->
 // Застосунок для Windows (№261): оверлей тривог у вікні «завжди згори». Без входу — порожній
 // (перечитується раз на хвилину, поки людина не увійде в головному вікні).
 Route::get('desktop/overlay', [AirAlertController::class, 'desktopOverlay'])->middleware('throttle:60,1')->name('desktop.overlay');
+// Міні-вікна (віджети) застосунку для Windows — поза auth: гостю порожній віджет, а не редірект на вхід.
+Route::get('desktop/widget/{kind}', [DesktopWidgetController::class, 'show'])->whereIn('kind', array_keys(DesktopWidgetController::KINDS))->middleware('throttle:60,1')->name('desktop.widget');
 Route::get('embed/launcher', [Developer\SdkAssetsController::class, 'launcher'])->name('sdk.launcher');
 Route::get('embed/widget', [Developer\SdkAssetsController::class, 'widget'])->name('sdk.widget');
 Route::get('link/qr.svg', [Developer\SdkAssetsController::class, 'qr'])->middleware('throttle:60,1')->name('oauth.link.qr');

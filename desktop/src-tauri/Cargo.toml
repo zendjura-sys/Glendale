@@ -3,7 +3,7 @@ name = "gamecon-desktop"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "GameCon для Windows: сайт у вікні, трей і оверлей тривог поверх ігор."
+description = "GameCon для Windows: сайт у вікні, міні-вікна-віджети, трей і оверлей тривог поверх ігор."
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -15,3 +15,7 @@ tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-notification = "2"
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
+
+# Визначення гри на передньому плані (лише Windows).
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging"] }

@@ -54,17 +54,64 @@ pub fn notification(change: Transition, state: &AlertState) -> Option<(String, S
     }
 }
 
-/// Налаштування застосунку (трей): оверлей, звук. Зберігаються в settings.json.
+/// Вигляд застосунку (вибір у треї):
+/// - `Widgets` — нативні міні-вікна «завжди згори», що самі є оверлеєм (головне вікно — на вимогу);
+/// - `Window` — одне суцільне вікно, без віджетів;
+/// - `Auto` — граєте (гра на весь екран) — віджети поверх гри; не граєте — одне вікно.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum Layout {
+    Widgets,
+    Window,
+    #[default]
+    Auto,
+}
+
+impl Layout {
+    pub fn key(self) -> &'static str {
+        match self {
+            Layout::Widgets => "widgets",
+            Layout::Window => "window",
+            Layout::Auto => "auto",
+        }
+    }
+
+    pub fn from_key(key: &str) -> Option<Self> {
+        match key {
+            "widgets" => Some(Layout::Widgets),
+            "window" => Some(Layout::Window),
+            "auto" => Some(Layout::Auto),
+            _ => None,
+        }
+    }
+
+    /// Чи показувати міні-вікна зараз.
+    pub fn widgets_visible(self, playing: bool) -> bool {
+        match self {
+            Layout::Widgets => true,
+            Layout::Window => false,
+            Layout::Auto => playing,
+        }
+    }
+
+    /// Чи відкривати головне вікно на старті (у режимі віджетів воно — на вимогу з трею).
+    pub fn main_on_start(self) -> bool {
+        self != Layout::Widgets
+    }
+}
+
+/// Налаштування застосунку (трей): оверлей тривог, звук, вигляд. Зберігаються в settings.json.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub overlay: bool,
     pub sound: bool,
+    pub layout: Layout,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { overlay: true, sound: true }
+        Self { overlay: true, sound: true, layout: Layout::Auto }
     }
 }
 
@@ -91,14 +138,31 @@ fn serde_json_lite(json: &str) -> Option<Settings> {
             None
         }
     };
+    let layout = compact
+        .find("\"layout\":\"")
+        .and_then(|at| {
+            let rest = &compact[at + 10..];
+            rest.find('"').map(|end| &rest[..end])
+        })
+        .and_then(Layout::from_key);
     let defaults = Settings::default();
-    Some(Settings { overlay: field("overlay").unwrap_or(defaults.overlay), sound: field("sound").unwrap_or(defaults.sound) })
+    Some(Settings {
+        overlay: field("overlay").unwrap_or(defaults.overlay),
+        sound: field("sound").unwrap_or(defaults.sound),
+        layout: layout.unwrap_or(defaults.layout),
+    })
 }
 
 impl Settings {
     pub fn to_json(&self) -> String {
-        format!("{{\"overlay\":{},\"sound\":{}}}", self.overlay, self.sound)
+        format!("{{\"overlay\":{},\"sound\":{},\"layout\":\"{}\"}}", self.overlay, self.sound, self.layout.key())
     }
+}
+
+/// Чи схоже вікно на переднім плані на гру: займає весь монітор і не належить ні робочому столу,
+/// ні самому GameCon. Прямокутники — (ліво, верх, право, низ) у фізичних пікселях.
+pub fn looks_like_game(window: (i32, i32, i32, i32), monitor: (i32, i32, i32, i32), shell: bool, own: bool) -> bool {
+    !shell && !own && window.0 <= monitor.0 && window.1 <= monitor.1 && window.2 >= monitor.2 && window.3 >= monitor.3
 }
 
 /// Версія у форматі GameCon Г.ГГММ.X.Y (як сайт і Android) із semver Tauri:
@@ -144,10 +208,32 @@ mod tests {
 
     #[test]
     fn settings_round_trip_and_fallback() {
-        let s = Settings { overlay: false, sound: true };
+        let s = Settings { overlay: false, sound: true, layout: Layout::Widgets };
         assert_eq!(Settings::parse(&s.to_json()), s);
         assert_eq!(Settings::parse(""), Settings::default());
         assert_eq!(Settings::parse("not json"), Settings::default());
-        assert_eq!(Settings::parse("{ \"sound\": false }"), Settings { overlay: true, sound: false });
+        // Старий файл без «layout» — типово «Авто».
+        assert_eq!(Settings::parse("{ \"sound\": false }"), Settings { overlay: true, sound: false, layout: Layout::Auto });
+        assert_eq!(Settings::parse("{\"layout\":\"window\"}").layout, Layout::Window);
+        assert_eq!(Settings::parse("{\"layout\":\"???\"}").layout, Layout::Auto);
+    }
+
+    #[test]
+    fn layouts() {
+        assert!(Layout::Widgets.widgets_visible(false));
+        assert!(!Layout::Window.widgets_visible(true));
+        assert!(Layout::Auto.widgets_visible(true));
+        assert!(!Layout::Auto.widgets_visible(false));
+        assert!(!Layout::Widgets.main_on_start());
+        assert!(Layout::Auto.main_on_start());
+    }
+
+    #[test]
+    fn game_detection() {
+        let screen = (0, 0, 1920, 1080);
+        assert!(looks_like_game((0, 0, 1920, 1080), screen, false, false));
+        assert!(!looks_like_game((0, 0, 1920, 1040), screen, false, false), "звичайне розгорнуте вікно з панеллю задач");
+        assert!(!looks_like_game((0, 0, 1920, 1080), screen, true, false), "робочий стіл");
+        assert!(!looks_like_game((0, 0, 1920, 1080), screen, false, true), "сам GameCon");
     }
 }
