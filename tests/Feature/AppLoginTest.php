@@ -345,4 +345,19 @@ class AppLoginTest extends TestCase
             ->assertJsonPath('0.target.sha256_cert_fingerprints', [$first, strtoupper($second)]);
         $this->assertStringContainsString('max-age=3600', (string) $this->get('/.well-known/assetlinks.json')->headers->get('Cache-Control'));
     }
+
+    public function test_pc_program_signs_in_through_the_phone_and_gets_a_token_once(): void
+    {
+        $user = User::factory()->create();
+        $start = $this->postJson('/api/v1/auth/phone')->assertCreated()->json();
+        $this->getJson('/api/v1/auth/phone/'.$start['id'].'?secret=wrong')->assertNotFound();
+        $this->getJson('/api/v1/auth/phone/'.$start['id'].'?secret='.$start['secret'])->assertJsonPath('status', 'pending');
+
+        $this->withToken($this->appToken($user))->postJson('/api/v1/auth/app-login/'.$start['id'].'/approve', ['code' => $start['code']])->assertOk();
+        $this->app['auth']->forgetGuards();
+        $this->withoutToken()->getJson('/api/v1/auth/phone/'.$start['id'].'?secret='.$start['secret'].'&device=windows')
+            ->assertOk()->assertJsonPath('user.id', $user->id)->assertJsonStructure(['token']);
+        // Вдруге тим самим запитом не увійти.
+        $this->getJson('/api/v1/auth/phone/'.$start['id'].'?secret='.$start['secret'])->assertJsonPath('status', 'expired');
+    }
 }

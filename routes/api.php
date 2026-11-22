@@ -260,6 +260,9 @@ Route::prefix('v1')->group(function () {
         Route::post('discord', [AuthController::class, 'discordStart']);
         Route::post('exchange', [AuthController::class, 'exchange']);
         Route::post('two-factor', [AuthController::class, 'twoFactor']);
+        // Програма для ПК: вхід через смартфон (QR + код, підтвердження в застосунку).
+        Route::post('phone', [AuthController::class, 'phoneStart'])->middleware('throttle:app-login');
+        Route::get('phone/{id}', [AuthController::class, 'phoneStatus'])->whereUuid('id')->withoutMiddleware('throttle:20,1')->middleware('throttle:app-login-poll');
     });
 
     Route::middleware(['auth.api', 'verified.site', 'parental'])->group(function () {

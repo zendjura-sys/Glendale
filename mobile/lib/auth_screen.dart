@@ -10,6 +10,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'account_store.dart';
 import 'accounts.dart';
 import 'api.dart';
+import 'desktop/phone_login.dart';
+import 'platform.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -347,7 +349,11 @@ class _AuthScreenState extends State<AuthScreen> {
       if (ticket == null) ...[
         const SizedBox(height: 24),
         Row(children: [
-          Expanded(child: _SocialPill(label: 'Google', icon: Icons.g_mobiledata_rounded, onTap: busy ? null : _google)),
+          // ПК: Google-вхід Android тут недоступний — вхід через смартфон (QR + код), як на сайті.
+          if (isDesktop)
+            Expanded(child: _SocialPill(label: tr('Смартфон'), icon: LucideIcons.smartphone, onTap: busy ? null : () => showPhoneLogin(context, widget.session)))
+          else
+            Expanded(child: _SocialPill(label: 'Google', icon: Icons.g_mobiledata_rounded, onTap: busy ? null : _google)),
           const SizedBox(width: 12),
           Expanded(child: _SocialPill(label: 'Discord', icon: LucideIcons.messagesSquare, onTap: busy ? null : _discord)),
         ]),

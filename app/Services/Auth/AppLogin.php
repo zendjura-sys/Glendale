@@ -72,7 +72,8 @@ class AppLogin
      */
     private function purpose(Request $request): ?string
     {
-        $intended = (string) $request->session()->get('url.intended', '');
+        // Запит без сесії (програма для ПК через API) — не з екрана згоди OAuth.
+        $intended = $request->hasSession() ? (string) $request->session()->get('url.intended', '') : '';
         $parts = parse_url($intended);
         if (($parts['path'] ?? '') !== '/oauth/authorize') {
             return null;
@@ -114,6 +115,24 @@ class AppLogin
      */
     public function consume(Request $request, AppLoginRequest $entry): ?User
     {
+        $user = $this->claim($request, $entry);
+        if ($user === null) {
+            return null;
+        }
+
+        // Подія Login сама запише вхід у журнал (метод «app» — за назвою маршруту login.app.*).
+        Auth::guard('web')->login($user, false);
+        $request->session()->regenerate();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Вхід підтверджено в застосунку']);
+
+        return $user;
+    }
+
+    /**
+     * Забрати підтверджений запит один раз (браузер сайту чи програма для ПК). Null — увійти не можна.
+     */
+    public function claim(Request $request, AppLoginRequest $entry): ?User
+    {
         $user = $entry->user;
         if ($user === null || $this->status($entry) !== 'approved') {
             return null;
@@ -134,11 +153,6 @@ class AppLogin
         if ($taken !== 1) {
             return null;
         }
-
-        // Подія Login сама запише вхід у журнал (метод «app» — за назвою маршруту login.app.*).
-        Auth::guard('web')->login($user, false);
-        $request->session()->regenerate();
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Вхід підтверджено в застосунку']);
         $this->audit('consumed', $entry, $user);
 
         return $user;
