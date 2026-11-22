@@ -52,7 +52,7 @@ class OAuthController extends Controller
             return Inertia::render('developers/link', ['code' => null, 'error' => null, 'done' => null]);
         }
         $entry = $this->oauth->deviceFind($code);
-        $app = $entry ? DeveloperApp::query()->with('user')->find($entry['app']) : null;
+        $app = $entry ? DeveloperApp::query()->with('user')->find((int) $entry['app']) : null;
         if ($entry === null || $app === null || $app->blocked()) {
             return Inertia::render('developers/link', ['code' => $code, 'error' => 'Код не знайдено або він прострочений. Перевірте літери чи почніть вхід у грі заново.', 'done' => null]);
         }

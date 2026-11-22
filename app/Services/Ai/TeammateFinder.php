@@ -82,7 +82,7 @@ class TeammateFinder
         $why = [];
         $order = $scored->keys()->all();
         if ($ai && $scored->isNotEmpty()) {
-            [$order, $why] = $this->pick($query, $scored->all(), $names);
+            [$order, $why] = $this->pick($query, array_values($scored->all()), $names);
         }
 
         $matches = [];
@@ -137,7 +137,7 @@ class TeammateFinder
         $list = fn ($value, array $allowed) => array_values(array_intersect(array_filter((array) $value, 'is_string'), $allowed));
 
         return [
-            'game_ids' => $this->gameIds(array_filter((array) ($json['games'] ?? []), 'is_string'), $query),
+            'game_ids' => $this->gameIds(array_values(array_filter((array) ($json['games'] ?? []), 'is_string')), $query),
             'times' => $list($json['times'] ?? [], array_keys(TeammateProfile::TIMES)),
             'skill' => $pick($json['skill'] ?? null, array_keys(TeammateProfile::SKILLS)),
             'platform' => $pick($json['platform'] ?? null, array_keys(PartyPost::PLATFORMS)),

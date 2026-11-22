@@ -64,7 +64,7 @@ class Recommendations
     private function compute(User $user): array
     {
         $mine = DB::table('movie_user')->where('user_id', $user->id)->get(['movie_id', 'status', 'rating', 'updated_at']);
-        $seen = $mine->pluck('movie_id')->map(fn ($id) => (int) $id)->all();
+        $seen = array_values($mine->pluck('movie_id')->map(fn ($id) => (int) $id)->all());
         $liked = $mine->filter(fn ($r) => $r->rating !== null ? $r->rating >= self::LIKED_RATING : in_array($r->status, ['watched', 'watching'], true))
             ->sortByDesc('updated_at')->take(60);
         $dropped = $mine->filter(fn ($r) => $r->status === 'dropped' || ($r->rating !== null && $r->rating <= 4))->pluck('movie_id')->all();

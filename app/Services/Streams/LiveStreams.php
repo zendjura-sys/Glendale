@@ -126,8 +126,8 @@ class LiveStreams
             ->where(fn ($q) => $q->where('is_live', true)->orWhere('manual_until', '>', now()))
             ->whereHas('user', fn ($q) => $q->whereNull('banned_at'))
             ->orderByDesc('viewers')->limit(200)->get();
-        $games = $all->filter(fn (UserStream $s) => filled($s->game))->countBy('game')->sortDesc()->take(12)
-            ->map(fn ($n, $name) => ['name' => (string) $name, 'count' => (int) $n])->values()->all();
+        $games = array_values($all->filter(fn (UserStream $s) => filled($s->game))->countBy('game')->sortDesc()->take(12)
+            ->map(fn ($n, $name) => ['name' => (string) $name, 'count' => (int) $n])->all());
         $list = $game ? $all->where('game', $game) : $all;
 
         return ['streams' => array_values($list->take(60)->map(fn (UserStream $s) => $this->card($s, $host))->all()), 'games' => $games];

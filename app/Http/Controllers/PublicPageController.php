@@ -8,7 +8,6 @@ use App\Models\Movie;
 use App\Support\PageSeo;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -115,7 +114,7 @@ class PublicPageController extends Controller
      * @param  array<string, mixed>  $entity
      * @param  array<string, mixed>  $seo
      */
-    private function guest(Request $request, array $entity, array $seo): Response|RedirectResponse
+    private function guest(Request $request, array $entity, array $seo): Response
     {
         // Після входу — назад на цю сторінку.
         $request->session()->put('url.intended', $request->url());

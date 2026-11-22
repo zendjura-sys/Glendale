@@ -41,7 +41,11 @@ class LeaderWeeklyReport
         ];
     }
 
-    /** Надіслати раз на тиждень; повертає зведення або null, якщо вже надсилали. */
+    /**
+     * Надіслати раз на тиждень; повертає зведення або null, якщо вже надсилали.
+     *
+     * @return array<string, mixed>|null
+     */
     public function send(Family $family, bool $force = false): ?array
     {
         ['start' => $start] = WeeklyDigest::week();

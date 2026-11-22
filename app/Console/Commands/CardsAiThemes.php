@@ -30,10 +30,10 @@ class CardsAiThemes extends Command
             if ($batch->isEmpty()) {
                 break;
             }
-            $result = $ai->cardThemes($batch->map(fn ($c) => [
+            $result = $ai->cardThemes(array_values($batch->map(fn ($c) => [
                 'key' => $c['key'], 'name' => $c['name'],
                 'about' => $c['kind'] === 'game' ? 'гра, жанр: '.$c['set'] : 'персонаж «'.$c['set'].'»',
-            ])->all(), CardCollection::THEMES);
+            ])->all()), CardCollection::THEMES);
             if ($result === []) {
                 break;
             }

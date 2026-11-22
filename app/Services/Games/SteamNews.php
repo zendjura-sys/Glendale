@@ -39,7 +39,7 @@ class SteamNews
     /**
      * Стрічка новин моєї бібліотеки й підписок (нові першими).
      *
-     * @return array{items: list<array<string, mixed>>, next: int|null}
+     * @return array{items: list<array<string, mixed>>, next: int|null, games: int}
      */
     public function feed(User $user, bool $patchesOnly = false, ?int $before = null, int $limit = 30): array
     {
@@ -54,7 +54,7 @@ class SteamNews
         $rows = $rows->take($limit);
 
         return [
-            'items' => $rows->map(fn (GameNews $n) => [
+            'items' => array_values($rows->map(fn (GameNews $n) => [
                 'id' => $n->id,
                 'title' => $n->title,
                 'url' => $n->url,
@@ -62,7 +62,7 @@ class SteamNews
                 'is_patch' => $n->is_patch,
                 'published_at' => $n->published_at->toIso8601String(),
                 'game' => ['id' => $n->game->id, 'slug' => $n->game->slug, 'name' => $n->game->name, 'cover' => $n->game->cover],
-            ])->values()->all(),
+            ])->all()),
             'next' => $more ? $rows->last()?->id : null,
             'games' => $games->count(),
         ];

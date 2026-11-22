@@ -53,7 +53,9 @@ class ReviewCriteria
     /**
      * Середня оцінка за кожним критерієм (null — ще ніхто не оцінив).
      *
-     * @param  Builder<Model>  $query
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
      * @param  list<string>  $keys
      * @return array<string, float|null>
      */

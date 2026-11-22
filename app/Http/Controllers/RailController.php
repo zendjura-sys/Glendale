@@ -42,7 +42,7 @@ class RailController extends Controller
         $contacts = User::query()->whereIn('id', $friendIds === [] ? [0] : $friendIds)
             ->orderByDesc('last_seen_at')->limit(10)->get();
         $listening = $modules->enabled('music')
-            ? app(MusicCatalog::class)->listeningMap($user, $contacts->pluck('id')->map(fn ($id) => (int) $id)->all())
+            ? app(MusicCatalog::class)->listeningMap($user, array_values($contacts->pluck('id')->map(fn ($id) => (int) $id)->all()))
             : [];
 
         return response()->json([

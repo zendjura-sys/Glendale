@@ -28,7 +28,7 @@ class CardsAiRank extends Command
             if ($batch->isEmpty()) {
                 break;
             }
-            $ranks = $ai->cardRanks($batch->map(fn (CardCharacter $c) => ['id' => $c->id, 'name' => $c->name, 'title' => (string) $c->movie?->title, 'role' => $c->role])->all());
+            $ranks = $ai->cardRanks(array_values($batch->map(fn (CardCharacter $c) => ['id' => $c->id, 'name' => $c->name, 'title' => (string) $c->movie?->title, 'role' => $c->role])->all()));
             if ($ranks === []) {
                 break;
             }

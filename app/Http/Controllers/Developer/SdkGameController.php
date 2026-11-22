@@ -325,7 +325,7 @@ class SdkGameController extends Controller
     // ───────────── Спільне ─────────────
 
     /** @return array<string, mixed> */
-    private function grant(object $achievement, int $userId, bool $verified): array
+    private function grant(\stdClass $achievement, int $userId, bool $verified): array
     {
         $existing = DB::table('developer_user_achievements')->where('developer_achievement_id', $achievement->id)->where('user_id', $userId)->first();
         if ($existing === null) {
@@ -337,7 +337,11 @@ class SdkGameController extends Controller
         return ['key' => $achievement->key, 'title' => $achievement->title, 'new' => $existing === null, 'verified' => $verified || (bool) ($existing->verified ?? false)];
     }
 
-    /** Найкращий результат гравця (desc — більше краще, asc — менше, напр. час проходження). @return array<string, mixed> */
+    /**
+     * Найкращий результат гравця (desc — більше краще, asc — менше, напр. час проходження).
+     *
+     * @return array<string, mixed>
+     */
     private function score(DeveloperApp $app, string $board, int $userId, int $score, string $order, bool $verified): array
     {
         abort_unless(preg_match('/^[a-z0-9_\-.]{1,64}$/i', $board) === 1, 422, 'Назва таблиці: до 64 символів a-z, 0-9, _-.');

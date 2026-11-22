@@ -126,10 +126,10 @@ class ActivityMetrics
         $since = now('Europe/Kyiv')->subDays(6)->toDateString();
         $active = max(1, (int) DB::table('user_active_days')->where('day', '>=', $since)->where('platform', 'web')->distinct()->count('user_id'));
 
-        return DB::table('section_visits')->where('day', '>=', $since)
+        return array_values(DB::table('section_visits')->where('day', '>=', $since)
             ->select('section', DB::raw('count(distinct user_id) as n'))->groupBy('section')->orderByDesc('n')->limit(15)->get()
             ->map(fn ($r) => ['key' => (string) $r->section, 'label' => self::SECTIONS[$r->section] ?? (string) $r->section, 'users' => (int) $r->n, 'share' => min(100, (int) round($r->n * 100 / $active))])
-            ->values()->all();
+            ->values()->all());
     }
 
     public function prune(): int

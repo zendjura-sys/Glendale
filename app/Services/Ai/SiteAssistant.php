@@ -151,7 +151,7 @@ class SiteAssistant
     /** @throws AiException */
     private function limit(?User $user): void
     {
-        $key = 'ai-help:'.($user?->id ?? request()->ip());
+        $key = 'ai-help:'.($user->id ?? request()->ip());
         if (RateLimiter::tooManyAttempts($key, self::PER_HOUR)) {
             throw new AiException('Забагато питань помічнику. Спробуйте за '.ceil(RateLimiter::availableIn($key) / 60).' хв.');
         }

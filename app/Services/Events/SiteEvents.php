@@ -48,7 +48,7 @@ class SiteEvents
         $id = Cache::remember('site_event.active', 60, fn () => SiteEvent::query()
             ->where('starts_at', '<=', now())->where('ends_at', '>', now())->orderBy('ends_at')->value('id'));
 
-        return $id ? SiteEvent::query()->find($id) : null;
+        return $id ? SiteEvent::query()->find((int) $id) : null;
     }
 
     public function count(SiteEvent $event, string $metric, ?int $userId): int

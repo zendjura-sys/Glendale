@@ -50,9 +50,9 @@ class ServerFamilyRanking
         Cache::add("server.families.snap.{$server->id}.{$period}.{$today}", $places, now()->addDays(3));
         $yesterday = (array) Cache::get("server.families.snap.{$server->id}.{$period}.".now()->subDay()->toDateString(), []);
 
-        return array_map(fn (array $row) => [
+        return array_values(array_map(fn (array $row) => [
             ...$row,
             'change' => isset($yesterday[$row['id']]) ? (int) $yesterday[$row['id']] - (int) $row['place'] : null,
-        ], $rows);
+        ], $rows));
     }
 }

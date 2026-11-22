@@ -137,24 +137,24 @@ class Catalog
     }
 
     /**
-     * @return array{renew_before_hours: int, retry_hours: int, retry_max: int, order_hours: int, card_renewals: bool, offer_save_card: bool, badges: list<string>}
+     * @return array{renew_before_hours: int, retry_hours: int, retry_max: int, order_hours: int, card_renewals: bool, offer_save_card: bool, trial_days: int, badges: list<string>}
      */
     public function rules(): array
     {
         $saved = (array) $this->settings->get('billing_rules', []);
-        $rules = self::RULES;
-        foreach ($rules as $key => $default) {
-            if (! array_key_exists($key, $saved)) {
-                continue;
-            }
-            if (is_array($default)) {
-                $rules[$key] = array_values(array_intersect(self::BADGES, (array) $saved[$key]));
-            } else {
-                $rules[$key] = is_bool($default) ? (bool) $saved[$key] : max(0, (int) $saved[$key]);
-            }
-        }
+        $int = fn (string $key, int $default): int => array_key_exists($key, $saved) ? max(0, (int) $saved[$key]) : $default;
+        $bool = fn (string $key, bool $default): bool => array_key_exists($key, $saved) ? (bool) $saved[$key] : $default;
 
-        return $rules;
+        return [
+            'renew_before_hours' => $int('renew_before_hours', self::RULES['renew_before_hours']),
+            'retry_hours' => $int('retry_hours', self::RULES['retry_hours']),
+            'retry_max' => $int('retry_max', self::RULES['retry_max']),
+            'order_hours' => $int('order_hours', self::RULES['order_hours']),
+            'card_renewals' => $bool('card_renewals', self::RULES['card_renewals']),
+            'offer_save_card' => $bool('offer_save_card', self::RULES['offer_save_card']),
+            'trial_days' => $int('trial_days', self::RULES['trial_days']),
+            'badges' => array_key_exists('badges', $saved) ? array_values(array_intersect(self::BADGES, (array) $saved['badges'])) : self::RULES['badges'],
+        ];
     }
 
     /**

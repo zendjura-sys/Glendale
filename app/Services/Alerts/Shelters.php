@@ -39,7 +39,11 @@ class Shelters
         return array_slice($items, 0, 40);
     }
 
-    /** Центр місця з довідника UkraineAlarm (місто, громада, район чи область). @return array{lat: float, lng: float}|null */
+    /**
+     * Центр місця з довідника UkraineAlarm (місто, громада, район чи область).
+     *
+     * @return array{lat: float, lng: float}|null
+     */
     public function centerOf(string $id): ?array
     {
         $node = $this->api->regions()[$id] ?? null;
@@ -47,8 +51,8 @@ class Shelters
             return null;
         }
         $cached = Cache::get('alerts:center:'.$id);
-        if (is_array($cached)) {
-            return $cached;
+        if (is_array($cached) && is_numeric($cached['lat'] ?? null) && is_numeric($cached['lng'] ?? null)) {
+            return ['lat' => (float) $cached['lat'], 'lng' => (float) $cached['lng']];
         }
         // «м. Житомир, Житомирська область» — без «громада/район», Nominatim так шукає надійніше.
         $name = preg_replace('/^(м\.|с\.|смт|сел\.)\s*/u', '', $node['name']) ?? $node['name'];

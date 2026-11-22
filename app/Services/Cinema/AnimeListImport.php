@@ -82,6 +82,9 @@ class AnimeListImport
         $contents = preg_replace('/^\xEF\xBB\xBF/', '', $contents) ?? $contents;
         // fgetcsv коректно читає назви з переносами рядків у лапках.
         $stream = fopen('php://temp', 'r+');
+        if ($stream === false) {
+            throw ValidationException::withMessages(['file' => 'Не вдалося прочитати файл.']);
+        }
         fwrite($stream, $contents);
         rewind($stream);
         $header = fgetcsv($stream, escape: '') ?: [];
@@ -124,7 +127,7 @@ class AnimeListImport
     /**
      * Збіги з каталогом.
      *
-     * @param  list<array{id: string, status: string, score: int, episodes: int, title: string}>  $rows
+     * @param  list<array{id: string|null, status: string, score: int, episodes: int, title: string, titles?: list<string>}>  $rows
      * @return array{matched: list<array<string, mixed>>, unmatched: int, total: int}
      */
     public function preview(User $user, array $rows): array
@@ -172,7 +175,11 @@ class AnimeListImport
         return ['matched' => $matched, 'unmatched' => count($rows) - count($matched), 'total' => count($rows), 'missing' => $missing];
     }
 
-    /** Зберегти попередній перегляд на 30 хвилин (щоб імпорт не завантажував список удруге). */
+    /**
+     * Зберегти попередній перегляд на 30 хвилин (щоб імпорт не завантажував список удруге).
+     *
+     * @param  array{matched: list<array<string, mixed>>}  $preview
+     */
     public function remember(User $user, array $preview): void
     {
         Cache::put('anime_import.'.$user->id, $preview['matched'], now()->addMinutes(30));

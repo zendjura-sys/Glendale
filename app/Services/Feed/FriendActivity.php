@@ -116,11 +116,11 @@ class FriendActivity
                 ])));
         }
 
-        return $items->sortByDesc('at')->take(self::LIMIT)->values()
+        return array_values($items->sortByDesc('at')->take(self::LIMIT)->values()
             ->map(fn (array $i) => [...$i, 'user' => $people->get($i['user_id'])?->toCard()])
             ->filter(fn (array $i) => $i['user'] !== null)
             ->map(fn (array $i) => array_diff_key($i, ['user_id' => true]))
-            ->values()->all();
+            ->values()->all());
     }
 
     /**

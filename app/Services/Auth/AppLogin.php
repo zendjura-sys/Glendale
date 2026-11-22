@@ -78,11 +78,11 @@ class AppLogin
             return null;
         }
         parse_str($parts['query'] ?? '', $query);
-        $app = DeveloperApp::query()->where('client_id', (string) ($query['client_id'] ?? ''))->first();
+        $app = DeveloperApp::query()->where('client_id', is_string($query['client_id'] ?? null) ? $query['client_id'] : '')->first();
         if ($app === null) {
             return null;
         }
-        $host = parse_url((string) ($query['redirect_uri'] ?? ''), PHP_URL_HOST);
+        $host = parse_url(is_string($query['redirect_uri'] ?? null) ? $query['redirect_uri'] : '', PHP_URL_HOST);
 
         return Str::limit($app->name.(is_string($host) && $host !== '' ? ' · '.$host : ''), 160, '');
     }

@@ -100,7 +100,7 @@ class DailyBrief
                 $excerpt = Str::limit(trim((string) preg_replace('/\s+/u', ' ', (string) $post->body)), 90);
                 $facts[] = [
                     'icon' => 'post',
-                    'text' => ($post->author?->name ?? 'Друг').($excerpt !== '' ? ': «'.$excerpt.'»' : ' поділився записом')
+                    'text' => ($post->author->name ?? 'Друг').($excerpt !== '' ? ': «'.$excerpt.'»' : ' поділився записом')
                         .($post->likes_count > 0 ? ' · ♥ '.$post->likes_count : ''),
                     'href' => '/posts/'.$post->id,
                 ];

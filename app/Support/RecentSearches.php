@@ -67,10 +67,10 @@ class RecentSearches
     {
         $prefix = $prefix !== null ? mb_strtolower(trim($prefix)) : null;
 
-        return DB::table('search_queries')->where('day', '>=', now()->subDays(7)->toDateString())
+        return array_values(DB::table('search_queries')->where('day', '>=', now()->subDays(7)->toDateString())
             ->when($prefix, fn ($q, string $p) => $q->where('q', 'like', str_replace(['%', '_'], ['\\%', '\\_'], $p).'%')->where('q', '!=', $p))
             ->select('q', DB::raw('sum(people) as n'))->groupBy('q')->having('n', '>=', 3)
-            ->orderByDesc('n')->limit($limit)->pluck('q')->map(fn ($q) => (string) $q)->all();
+            ->orderByDesc('n')->limit($limit)->pluck('q')->map(fn ($q) => (string) $q)->all());
     }
 
     /** Один запит — одна людина на день (кеш відсікає повтори). */

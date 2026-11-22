@@ -51,7 +51,7 @@ class Handoff
         if (! is_array($state) || ($state['device'] ?? null) === $this->device($request)) {
             return null;
         }
-        $movie = Movie::query()->published()->find($state['movie_id'] ?? 0);
+        $movie = Movie::query()->published()->find((int) ($state['movie_id'] ?? 0));
         if ($movie === null) {
             return null;
         }

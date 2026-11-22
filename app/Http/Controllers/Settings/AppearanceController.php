@@ -159,7 +159,7 @@ class AppearanceController extends Controller
             $patch['notify'] = $notify;
         }
         if ($plugins->on('notify_switches') && array_key_exists('notify_sections', $data)) {
-            $patch['notify_sections'] = collect($data['notify_sections'])->only(array_keys(NotifyPrefs::SECTIONS))->map(fn ($on) => (bool) $on)->all();
+            $patch['notify_sections'] = collect((array) $data['notify_sections'])->only(array_keys(NotifyPrefs::SECTIONS))->map(fn ($on) => (bool) $on)->all();
         }
         if (array_key_exists('seasonal', $data)) {
             $patch['seasonal'] = (bool) $data['seasonal'];

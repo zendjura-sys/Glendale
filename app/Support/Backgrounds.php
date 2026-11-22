@@ -78,8 +78,8 @@ class Backgrounds
      */
     public static function videos(): array
     {
-        return Cache::remember('backgrounds.videos', 600, fn () => VideoBackground::query()->where('is_active', true)
-            ->orderBy('position')->orderBy('id')->get()->map->card()->values()->all());
+        return array_values(Cache::remember('backgrounds.videos', 600, fn () => VideoBackground::query()->where('is_active', true)
+            ->orderBy('position')->orderBy('id')->get()->map->card()->values()->all()));
     }
 
     public static function forgetVideos(): void

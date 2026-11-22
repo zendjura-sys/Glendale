@@ -99,7 +99,7 @@ class LinkChecker
 
         $checked = 0;
         foreach ($due->chunk(20) as $batch) {
-            $results = $this->probe($batch->all());
+            $results = $this->probe(array_values($batch->all()));
             foreach ($batch as $row) {
                 [$status, $error] = $results[$row->id] ?? [null, 'Немає відповіді'];
                 if ($error === self::SKIP) {
@@ -158,7 +158,7 @@ class LinkChecker
     }
 
     /**
-     * @param  list<object>  $rows
+     * @param  list<\stdClass>  $rows
      * @return array<int, array{0: int|null, 1: string|null}>
      */
     private function probe(array $rows): array

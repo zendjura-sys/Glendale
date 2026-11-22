@@ -79,7 +79,7 @@ class BannerTests
     {
         $base = $banner->variants->first();
 
-        return $banner->variants->map(function (PromoBannerVariant $v) use ($base) {
+        return array_values($banner->variants->map(function (PromoBannerVariant $v) use ($base) {
             $lift = null;
             $confidence = null;
             if ($base && $v->id !== $base->id && $base->impressions > 0 && $v->impressions > 0) {
@@ -106,7 +106,7 @@ class BannerTests
                 'lift' => $lift,
                 'confidence' => $confidence,
             ];
-        })->values()->all();
+        })->values()->all());
     }
 
     public function forget(string $placement): void

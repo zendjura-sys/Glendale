@@ -84,9 +84,9 @@ class CardDrops
      */
     public function pending(User $user): array
     {
-        return DB::table('card_drops')->where('user_id', $user->id)->whereNull('opened_at')->latest('id')->limit(50)
+        return array_values(DB::table('card_drops')->where('user_id', $user->id)->whereNull('opened_at')->latest('id')->limit(50)
             ->get(['id', 'source', 'title', 'created_at'])
-            ->map(fn ($d) => ['id' => $d->id, 'source' => $d->source, 'title' => $d->title, 'created_at' => (string) $d->created_at])->all();
+            ->map(fn ($d) => ['id' => $d->id, 'source' => $d->source, 'title' => $d->title, 'created_at' => (string) $d->created_at])->all());
     }
 
     /**

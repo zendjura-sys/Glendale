@@ -85,7 +85,7 @@ class MovieOfWeek
         return Cache::remember("movie-week.winner.{$week}", now()->addHours(6), function () use ($week) {
             $row = DB::table('movie_week_votes')->where('week', $week)->selectRaw('movie_id, count(*) as total')
                 ->groupBy('movie_id')->orderByDesc('total')->first();
-            $movie = $row ? Movie::query()->find($row->movie_id) : null;
+            $movie = $row ? Movie::query()->find((int) $row->movie_id) : null;
 
             return $movie ? [...$movie->toCard(), 'votes' => (int) $row->total, 'week' => $week] : null;
         });

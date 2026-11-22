@@ -94,7 +94,7 @@ class AlertsController extends Controller
         $ok = match ($action) {
             'register' => $api->registerWebhook(),
             'update' => $api->registerWebhook(update: true),
-            'delete' => $api->deleteWebhook(),
+            default => $api->deleteWebhook(),
         };
         Log::info('admin.alerts.webhook', ['by' => $request->user()->id, 'action' => $action, 'ok' => $ok]);
 
@@ -134,10 +134,14 @@ class AlertsController extends Controller
         });
     }
 
-    /** Останні тривоги й відбої: одна подія (alert_key + статус) — скільки людей отримали. */
+    /**
+     * Останні тривоги й відбої: одна подія (alert_key + статус) — скільки людей отримали.
+     *
+     * @return list<array<string, mixed>>
+     */
     private function recent(): array
     {
-        return DB::table('notifications')->where('type', AirAlertNotice::class)
+        return array_values(DB::table('notifications')->where('type', AirAlertNotice::class)
             ->where('created_at', '>=', now()->subDays(2))
             ->orderByDesc('created_at')->limit(400)->get(['data', 'created_at'])
             ->map(fn (object $row) => [...(json_decode((string) $row->data, true) ?: []), 'at' => $row->created_at])
@@ -150,9 +154,10 @@ class AlertsController extends Controller
                 'at' => $rows[0]['at'],
                 'users' => $rows->count(),
             ])
-            ->values()->take(20)->all();
+            ->values()->take(20)->all());
     }
 
+    /** @return array{at: string, reason: mixed}|null */
     private function stamp(mixed $value): ?array
     {
         return is_array($value) && is_int($value['at'] ?? null) ? ['at' => date(DATE_ATOM, $value['at']), 'reason' => $value['reason'] ?? null] : null;

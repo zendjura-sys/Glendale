@@ -181,7 +181,7 @@ class OAuthServer
                 if (array_diff($asked, $scopes) !== []) {
                     return 'invalid_scope';
                 }
-                $scopes = array_values($asked);
+                $scopes = $asked;
             }
             $token->forceFill(['revoked_at' => now()])->save();
 
@@ -244,7 +244,11 @@ class OAuthServer
         ];
     }
 
-    /** Запит за кодом, який ввела людина («ABCD-EFGH», регістр і дефіс не важливі). @return array<string, mixed>|null */
+    /**
+     * Запит за кодом, який ввела людина («ABCD-EFGH», регістр і дефіс не важливі).
+     *
+     * @return array<string, mixed>|null
+     */
     public function deviceFind(string $userCode): ?array
     {
         $code = strtoupper(preg_replace('/[^A-Za-z]/', '', $userCode) ?? '');
@@ -263,10 +267,14 @@ class OAuthServer
         Cache::put('oauth_device:'.$entry['hash'], ['status' => $approve ? 'approved' : 'denied', 'user_id' => $user->id] + $entry, self::DEVICE_TTL);
         Cache::forget('oauth_device_code:'.$entry['user_code']);
 
-        return DeveloperApp::query()->find($entry['app']);
+        return DeveloperApp::query()->find((int) $entry['app']);
     }
 
-    /** Опитування з гри. Повертає токени або код помилки RFC 8628. @return array<string, mixed>|string */
+    /**
+     * Опитування з гри. Повертає токени або код помилки RFC 8628.
+     *
+     * @return array<string, mixed>|string
+     */
     public function devicePoll(DeveloperApp $app, string $deviceCode): array|string
     {
         $key = 'oauth_device:'.hash('sha256', $deviceCode);
@@ -351,10 +359,14 @@ class OAuthServer
         return false;
     }
 
-    /** Що людина дозволила застосункам: для «Підключених застосунків». @return list<array<string, mixed>> */
+    /**
+     * Що людина дозволила застосункам: для «Підключених застосунків».
+     *
+     * @return list<array<string, mixed>>
+     */
     public function connected(User $user): array
     {
-        return DeveloperToken::query()->with('app')->where('user_id', $user->id)->whereNull('revoked_at')
+        return array_values(DeveloperToken::query()->with('app')->where('user_id', $user->id)->whereNull('revoked_at')
             ->where(fn ($q) => $q->where('expires_at', '>', now())->orWhere('refresh_expires_at', '>', now()))
             ->get()->groupBy('developer_app_id')
             ->map(function ($tokens) {
@@ -368,7 +380,7 @@ class OAuthServer
                     'since' => $tokens->min('created_at')?->toIso8601String(),
                     'last_used_at' => $tokens->max('last_used_at')?->toIso8601String(),
                 ];
-            })->values()->all();
+            })->values()->all());
     }
 
     /** Людина відкликає доступ застосунку повністю. */

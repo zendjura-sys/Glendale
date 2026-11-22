@@ -131,7 +131,7 @@ class MusicCatalog
     private function position(MusicStatus $status): int
     {
         $elapsed = (int) max(0, $status->updated_at?->diffInSeconds(now(), true) ?? 0);
-        $duration = (int) ($status->track?->duration ?? 0);
+        $duration = (int) ($status->track->duration ?? 0);
 
         return $duration > 0 ? min($elapsed, max(0, $duration - 5)) : $elapsed;
     }

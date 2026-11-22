@@ -48,7 +48,11 @@ class ShiftGoals
         ];
     }
 
-    /** Підпис цілі: «5 контрактів (Важкий)», «3 перемоги в бізварах». */
+    /**
+     * Підпис цілі: «5 контрактів (Важкий)», «3 перемоги в бізварах».
+     *
+     * @param  array<string, mixed>  $goal
+     */
     public static function label(array $goal): string
     {
         $count = (int) ($goal['count'] ?? 0);

@@ -61,7 +61,7 @@ class SideWidgets
                 ->orderByDesc('movie_user.updated_at')->limit(3)
                 ->get(['movies.id', 'movie_user.season', 'movie_user.episode', 'movie_user.updated_at'])
                 ->each(function ($row) use (&$items) {
-                    $movie = Movie::query()->find($row->id);
+                    $movie = Movie::query()->find((int) $row->id);
                     if (! $movie) {
                         return;
                     }
@@ -71,7 +71,7 @@ class SideWidgets
         }
         if ($modules->enabled('music')) {
             $last = DB::table('music_plays')->where('user_id', $user->id)->whereNotNull('track_id')->latest('played_at')->first(['track_id', 'played_at']);
-            $track = $last ? Track::query()->find($last->track_id) : null;
+            $track = $last ? Track::query()->find((int) $last->track_id) : null;
             if ($track) {
                 $items[] = ['kind' => 'track', 'title' => $track->title, 'hint' => $track->artist, 'href' => '/music', 'image' => $track->cover_url, 'at' => (string) $last->played_at, 'track' => app(MusicCatalog::class)->recentlyPlayed($user, 1)[0] ?? null];
             }
@@ -105,7 +105,7 @@ class SideWidgets
             return ['mode' => 'recent', 'tracks' => $recent];
         }
 
-        return ['mode' => 'new', 'tracks' => array_slice($catalog->newest($user)['latest_songs'] ?? [], 0, 4)];
+        return ['mode' => 'new', 'tracks' => array_values(array_slice((array) ($catalog->newest($user)['latest_songs'] ?? []), 0, 4))];
     }
 
     /**
@@ -117,8 +117,8 @@ class SideWidgets
 
         return [
             ...$shows->pulse(),
-            'shows' => Cache::remember('widgets:gamecast', 30, fn () => LiveShow::query()->where('status', LiveShow::LIVE)
-                ->latest('id')->limit(3)->get()->map(fn (LiveShow $s) => $shows->card($s))->values()->all()),
+            'shows' => array_values((array) Cache::remember('widgets:gamecast', 30, fn () => LiveShow::query()->where('status', LiveShow::LIVE)
+                ->latest('id')->limit(3)->get()->map(fn (LiveShow $s) => $shows->card($s))->values()->all())),
         ];
     }
 
@@ -133,8 +133,8 @@ class SideWidgets
 
         return [
             ...$casts->pulse(),
-            'streams' => Cache::remember('widgets:livecast', 30, fn () => Livecast::query()->where('status', Livecast::LIVE)
-                ->latest('started_at')->limit(3)->get()->map(fn (Livecast $s) => $casts->card($s))->values()->all()),
+            'streams' => array_values((array) Cache::remember('widgets:livecast', 30, fn () => Livecast::query()->where('status', Livecast::LIVE)
+                ->latest('started_at')->limit(3)->get()->map(fn (Livecast $s) => $casts->card($s))->values()->all())),
         ];
     }
 }

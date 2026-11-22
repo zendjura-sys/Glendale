@@ -49,7 +49,7 @@ class NearbyJam
             return [];
         }
 
-        return app(FriendshipService::class)->friendsQuery($user)->whereIn('users.id', $ids)->pluck('users.id')->map(fn ($id) => (int) $id)->all();
+        return array_values(app(FriendshipService::class)->friendsQuery($user)->whereIn('users.id', $ids)->pluck('users.id')->map(fn ($id) => (int) $id)->all());
     }
 
     /** Після старту джему: запросити друзів поблизу, якщо людина це ввімкнула. */

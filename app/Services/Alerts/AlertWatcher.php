@@ -45,7 +45,7 @@ class AlertWatcher
     /**
      * Налаштування сповіщень людини.
      *
-     * @return array{push: bool, start: bool, end: bool, red: bool, yellow: bool, silent: bool}
+     * @return array{push: bool, start: bool, end: bool, red: bool, yellow: bool, silent: bool, hush: bool}
      */
     public static function prefsOf(User $user): array
     {
@@ -246,7 +246,7 @@ class AlertWatcher
     /**
      * Скінченний автомат одного ключа: сповіщення лише на зміну стану.
      *
-     * @param  callable(bool, ?string): int  $notify
+     * @param  callable(bool, ?string, bool=): int  $notify
      */
     private function transition(string $key, string $lock, bool $on, ?string $since, bool $quiet, CarbonImmutable $now, callable $notify, ?string $level = null): int
     {
@@ -289,6 +289,7 @@ class AlertWatcher
      * Початок — новий рядок у дзвіночку; відбій — оновлює рядок початку (тривалість), щоб пара не засмічувала стрічку.
      *
      * @param  list<int>  $ids
+     * @param  list<int>  $families
      */
     private function notify(array $ids, bool $started, string $type, string $name, string $place, bool $local, ?string $since, CarbonImmutable $now, bool $raised = false, array $families = []): int
     {

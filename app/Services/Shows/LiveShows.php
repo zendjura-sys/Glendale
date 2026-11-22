@@ -363,7 +363,7 @@ class LiveShows
         return [
             'show' => [...$this->card($show), 'stage_seats' => $show->stage_seats, 'guest_seats' => $show->guest_seats, 'question_seconds' => $show->question_seconds, 'peak_listeners' => $show->peak_listeners],
             'stage' => $members->whereIn('role', ['host', 'speaker'])->sortBy(fn (LiveShowMember $m) => [$m->role === 'host' ? 0 : 1, $m->id])->map($person)->map($withLikes)->values(),
-            'guests' => $members->where('role', 'guest')->filter(fn (LiveShowMember $m) => $m->mic_until?->isFuture())
+            'guests' => $members->where('role', 'guest')->filter(fn (LiveShowMember $m) => (bool) $m->mic_until?->isFuture())
                 ->map(fn (LiveShowMember $m) => $withLikes([...$person($m), 'seconds_left' => max(0, (int) now()->diffInSeconds($m->mic_until, true))]))->values(),
             // Черга рук — лише сцені; слухачі бачать тільки свою.
             'hands' => $stageView ? $here->whereNotNull('hand_at')->sortBy('hand_at')->map($person)->values() : [],

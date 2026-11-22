@@ -29,7 +29,7 @@ class LinkCheckController extends Controller
             ->when($filters['source'] ?? null, fn ($q, string $s) => $q->where('source', $s))
             ->orderBy('failing_since')->orderByDesc('id')
             ->paginate(30)->withQueryString()
-            ->through(fn (object $r) => [
+            ->through(fn (\stdClass $r) => [
                 'id' => $r->id,
                 'source' => $r->source,
                 'field' => $r->field,

@@ -89,7 +89,7 @@ class CmsIcons
             }
             $url = self::absolute(html_entity_decode($href[1]), $site);
             $size = preg_match('/sizes=["\'](\d+)/i', $tag, $m) ? (int) $m[1] : (str_contains(strtolower($rel[1]), 'apple') ? 180 : 32);
-            $score = (str_ends_with(strtolower(parse_url($url, PHP_URL_PATH) ?? ''), '.svg') ? 1000 : 0) + min($size, 512);
+            $score = (str_ends_with(strtolower((string) parse_url($url, PHP_URL_PATH)), '.svg') ? 1000 : 0) + min($size, 512);
             $found[$url] = max($found[$url] ?? 0, $score);
         }
         arsort($found);

@@ -132,7 +132,7 @@ class Referrals
             ->whereIn('invited_by', User::query()->select('id')->whereNull('banned_at'))
             ->select('invited_by', DB::raw('count(*) as n'))->groupBy('invited_by')
             ->orderByDesc('n')->orderBy('invited_by')->get()
-            ->map(fn ($r) => ['id' => (int) $r->invited_by, 'n' => (int) $r->n])->values()->all());
+            ->map(fn (User $r) => ['id' => (int) $r->invited_by, 'n' => (int) $r->getAttribute('n')])->values()->all());
 
         $top = array_slice($rows, 0, 20);
         $people = User::query()->whereIn('id', array_column($top, 'id'))->get()->keyBy('id');

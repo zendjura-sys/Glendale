@@ -23,7 +23,8 @@ class GamePrices
         $points = DB::table('game_price_points')->where('game_id', $game->id)
             ->where('day', '>=', now()->subDays(self::HISTORY_DAYS)->toDateString())
             ->orderBy('day')->get(['day', 'price'])
-            ->map(fn ($r) => ['day' => (string) $r->day, 'price' => (float) $r->price])->values()->all();
+            ->map(fn ($r) => ['day' => (string) $r->day, 'price' => (float) $r->price])->all();
+        $points = array_values($points);
 
         return ['points' => $points, 'low' => $points === [] ? null : min(array_column($points, 'price'))];
     }

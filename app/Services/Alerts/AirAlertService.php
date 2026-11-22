@@ -280,7 +280,7 @@ class AirAlertService
     /**
      * Останні вдалі рядки з кешу (перевіряємо форму — кеш міг лишитися від старішої версії).
      *
-     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>
+     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null, air?: string|null}>
      */
     private function cachedRows(): array
     {
@@ -318,7 +318,7 @@ class AirAlertService
      * Рядки «одиниця під тривогою» → стан областей (повна чи часткова тривога) і стан районів/громад для заливки.
      * Тривога на всю область заливає всі її райони; на район — район; на громаду — громаду.
      *
-     * @param  list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>  $rows
+     * @param  list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null, air?: string|null}>  $rows
      * @return array{regions: array<string, array{type: string, kind: string, started_at: string|null, codes?: array<string, bool>}>, units: array<string, array{kind: string, started_at: string|null, scale?: string, codes?: array<string, bool>}>}
      */
     private function aggregate(array $rows): array
@@ -365,7 +365,7 @@ class AirAlertService
      * (Community). Тож рівень і місце беремо з самої тривоги, а не з об’єкта області. Область і район —
      * з довідника /api/v3/regions.
      *
-     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null}>|null
+     * @return list<array{oblast: string, level: int, code: string|null, kind: string, started_at: string|null, air?: string|null}>|null
      */
     private function fromUkraineAlarm(string $key): ?array
     {

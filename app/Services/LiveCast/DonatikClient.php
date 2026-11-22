@@ -19,7 +19,11 @@ class DonatikClient
         $this->baseUrl = $baseUrl ?: (string) config('services.donatik.url', 'https://api.donatik.ua');
     }
 
-    /** Перевірка токена: успішна відповідь на /donations (не 401). */
+    /**
+     * Перевірка токена: успішна відповідь на /donations (не 401).
+     *
+     * @return array<string, mixed>
+     */
     public function ping(): array
     {
         $res = $this->http()->get($this->baseUrl.'/donations');
@@ -32,7 +36,7 @@ class DonatikClient
         }
 
         return [
-            'ok' => $res->status() !== 401,
+            'ok' => true,
             'message' => (string) ($res->json('message') ?? 'Donatik не відповів'),
             'status' => $res->status(),
             'raw' => $res->json() ?? [],

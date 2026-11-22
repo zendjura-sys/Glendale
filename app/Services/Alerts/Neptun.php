@@ -184,26 +184,6 @@ class Neptun
         return null;
     }
 
-    /** Код району за ключем «odeskyi» чи назвою «Одеський район». */
-    private function raionCode(string $oblast, string $key, string $name): ?string
-    {
-        if ($name !== '' && ($code = AlertUnits::find($oblast, 2, $name)) !== null) {
-            return $code;
-        }
-        $key = strtolower((string) preg_replace('/[^a-z]/i', '', $key));
-        if ($key === '') {
-            return null;
-        }
-        foreach (AlertUnits::raionsOf($oblast) as $code) {
-            $latin = (string) preg_replace('/[^a-z]/', '', self::latin(str_replace(' район', '', AlertUnits::all()[$code][0])));
-            if ($latin === $key) {
-                return $code;
-            }
-        }
-
-        return null;
-    }
-
     /** Транслітерація (постанова КМУ 2010, спрощено): «Одеський» → «odeskyi». */
     public static function latin(string $text): string
     {

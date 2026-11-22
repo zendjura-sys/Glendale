@@ -195,7 +195,7 @@ class TmdbProvider extends MetadataProvider
                 'name' => mb_substr($character, 0, 120),
                 'image_url' => $profile ? 'https://image.tmdb.org/t/p/w342'.$profile : null,
                 'role' => $i < 3 ? 'main' : 'supporting',
-                'popularity' => max(1, 100 - $i * 8),
+                'popularity' => max(1, 100 - (int) $i * 8),
             ];
             if (count($out) >= $limit) {
                 break;

@@ -188,9 +188,7 @@ class Clan extends Model
         return $titles;
     }
 
-    /**
-     * @return array<string, list<int>>
-     */
+    /** Значення налаштування клану (або типове). */
     public function setting(string $key): mixed
     {
         return ($this->settings ?? [])[$key] ?? self::DEFAULT_SETTINGS[$key] ?? null;
@@ -207,6 +205,7 @@ class Clan extends Model
         return $out;
     }
 
+    /** @return array<string, list<int>> */
     public function permissionMatrix(): array
     {
         $matrix = [];

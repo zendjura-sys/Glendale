@@ -230,7 +230,11 @@ class UkraineAlarm
         return $out;
     }
 
-    /** Регіон і всі його «предки»: тривога на область чи район діє й на громаду в ньому. */
+    /**
+     * Регіон і всі його «предки»: тривога на область чи район діє й на громаду в ньому.
+     *
+     * @return list<string>
+     */
     public function lineage(string $id): array
     {
         $tree = $this->regions();
@@ -339,7 +343,7 @@ class UkraineAlarm
             }
         }
         $collator = class_exists(\Collator::class) ? new \Collator('uk_UA') : null;
-        usort($out, fn ($a, $b) => $collator?->compare($a['name'], $b['name']) ?? strcmp($a['name'], $b['name']));
+        usort($out, fn ($a, $b) => $collator !== null ? (int) $collator->compare($a['name'], $b['name']) : strcmp($a['name'], $b['name']));
 
         return $out;
     }
@@ -426,10 +430,14 @@ class UkraineAlarm
         return implode(' · ', array_reverse(array_filter($names)));
     }
 
-    /** ID від області вниз до місця (для каскаду виборів). @return list<string> */
+    /**
+     * ID від області вниз до місця (для каскаду виборів).
+     *
+     * @return list<string>
+     */
     public function pathIds(string $id): array
     {
-        return array_reverse($this->lineage($id));
+        return array_values(array_reverse($this->lineage($id)));
     }
 
     /**

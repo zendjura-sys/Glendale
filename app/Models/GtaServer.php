@@ -48,6 +48,8 @@ use Illuminate\Support\Facades\Storage;
  * @property Carbon|null $discord_events_at
  * @property Carbon $created_at
  * @property-read string|null $icon
+ * @property Carbon|null $verified_at
+ * @property Carbon|null $verify_requested_at
  */
 #[Fillable([
     'slug', 'name', 'platform', 'multiplayer', 'tagline', 'description', 'website', 'discord_invite', 'telegram',

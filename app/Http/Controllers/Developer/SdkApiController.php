@@ -178,7 +178,7 @@ class SdkApiController extends Controller
             'rank' => $clans->setRank($clan, $actor, $member, (int) $data['rank']),
             'kick' => $clans->kick($clan, $actor, $member),
             'accept' => $clans->accept($clan, $actor, $member),
-            'decline' => $clans->decline($clan, $actor, $member),
+            default => $clans->decline($clan, $actor, $member),
         };
         Log::info('developers.sdk.clan_manage', ['app' => $this->token($request)->developer_app_id, 'user' => $request->user()->id, 'clan' => $clan->id, 'member' => $member->id, 'action' => $data['action']]);
 

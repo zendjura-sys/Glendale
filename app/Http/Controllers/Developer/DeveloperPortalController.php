@@ -202,7 +202,7 @@ class DeveloperPortalController extends Controller
         match ($what) {
             'secret' => $reveal['client_secret'] = $this->oauth->newSecret($app),
             'bot' => $reveal['bot_token'] = $this->oauth->newBotToken($app),
-            'public' => $app->forceFill(['public_key' => $this->oauth->newPublicKey()])->save(),
+            default => $app->forceFill(['public_key' => $this->oauth->newPublicKey()])->save(),
         };
         Log::info('developer.app.rotate', ['by' => $request->user()->id, 'app' => $app->id, 'what' => $what]);
 

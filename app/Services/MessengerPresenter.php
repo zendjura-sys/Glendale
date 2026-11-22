@@ -203,8 +203,8 @@ class MessengerPresenter
         $voters = $anonymous ? collect() : User::query()->whereIn('id', $votes->pluck('user_id')->unique()->take(60))->get()->keyBy('id');
 
         return [
-            'options' => array_values(array_map(fn (string $text, int $i) => [
-                'text' => $text,
+            'options' => array_values(array_map(fn (mixed $text, int|string $i) => [
+                'text' => (string) $text,
                 'count' => $votes->where('option', $i)->count(),
                 'voters' => $anonymous ? [] : $votes->where('option', $i)->take(5)
                     ->map(fn ($v) => $voters->get((int) $v->user_id)?->toCard())->filter()->values()->all(),

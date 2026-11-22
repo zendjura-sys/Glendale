@@ -27,8 +27,8 @@ class GiftPacks
      */
     public function shop(): array
     {
-        return GcGiftPack::query()->active()->orderBy('position')->orderBy('id')
-            ->get()->map(fn (GcGiftPack $p) => $p->toCard())->all();
+        return array_values(GcGiftPack::query()->active()->orderBy('position')->orderBy('id')
+            ->get()->map(fn (GcGiftPack $p) => $p->toCard())->all());
     }
 
     /**
@@ -36,8 +36,8 @@ class GiftPacks
      */
     public function inventory(User $user): array
     {
-        return UserGcGift::query()->with('gift')->where('user_id', $user->id)->where('status', UserGcGift::READY)
-            ->latest('id')->limit(100)->get()->map(fn (UserGcGift $g) => $g->toCard())->all();
+        return array_values(UserGcGift::query()->with('gift')->where('user_id', $user->id)->where('status', UserGcGift::READY)
+            ->latest('id')->limit(100)->get()->map(fn (UserGcGift $g) => $g->toCard())->all());
     }
 
     /**
@@ -182,7 +182,11 @@ class GiftPacks
         return $pool->random();
     }
 
-    /** Лайк ведучому / співведучому / гостю в ефірі (перемикач). */
+    /**
+     * Лайк ведучому / співведучому / гостю в ефірі (перемикач).
+     *
+     * @return array<string, mixed>
+     */
     public function toggleLike(LiveShow $show, User $from, User $to): array
     {
         abort_unless($show->status === LiveShow::LIVE, 422, 'Лайкати можна лише під час ефіру.');
@@ -261,7 +265,12 @@ class GiftPacks
                 ->pluck('to_user_id')->all();
         }
 
-        return ['counts' => array_map('intval', $counts), 'mine' => array_map('intval', $mine)];
+        $byUser = [];
+        foreach ($counts as $id => $count) {
+            $byUser[(int) $id] = (int) $count;
+        }
+
+        return ['counts' => $byUser, 'mine' => array_values(array_map('intval', $mine))];
     }
 
     /**
@@ -269,11 +278,15 @@ class GiftPacks
      */
     public function recentGifts(LiveShow $show, int $limit = 20): array
     {
-        return LiveShowGift::query()->with(['from', 'to', 'gift'])->where('live_show_id', $show->id)
-            ->latest('id')->limit($limit)->get()->map(fn (LiveShowGift $g) => $g->toCard())->all();
+        return array_values(LiveShowGift::query()->with(['from', 'to', 'gift'])->where('live_show_id', $show->id)
+            ->latest('id')->limit($limit)->get()->map(fn (LiveShowGift $g) => $g->toCard())->all());
     }
 
-    /** Підсвітка останнього божественного / унікального дару. */
+    /**
+     * Підсвітка останнього божественного / унікального дару.
+     *
+     * @return array<string, mixed>|null
+     */
     public function spotlight(LiveShow $show): ?array
     {
         $gift = LiveShowGift::query()->with(['from', 'to', 'gift'])->where('live_show_id', $show->id)

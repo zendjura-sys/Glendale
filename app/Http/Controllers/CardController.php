@@ -64,7 +64,7 @@ class CardController extends Controller
         $user = $request->user();
         $data = $request->validate(['user_id' => ['required', 'integer']]);
         abort_unless(in_array((int) $data['user_id'], app(FriendshipService::class)->friendIds($user), true), 403, 'Дарувати можна лише друзям.');
-        $this->cards->gift($user, $card, User::query()->findOrFail($data['user_id']));
+        $this->cards->gift($user, $card, User::query()->findOrFail((int) $data['user_id']));
 
         return back()->with('success', 'Картку подаровано.');
     }

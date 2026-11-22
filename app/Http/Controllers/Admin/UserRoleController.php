@@ -31,7 +31,7 @@ class UserRoleController extends Controller
         return Inertia::render('admin/roles', [
             'roles' => $roles->map(fn (UserRole $r) => [...$r->toCard(), 'priority' => $r->priority, 'active_from' => $r->active_from?->toDateString(), 'active_until' => $r->active_until?->toDateString(), 'active' => $r->activeNow(), 'rule' => $r->rule, 'rule_value' => $r->rule_value, 'members' => $r->users_count])->values(),
             'members' => $selected ? UserRole::query()->find($selected)?->users()->orderByPivot('created_at', 'desc')->limit(100)->get()
-                ->map(fn (User $u) => [...$u->toCard(), 'auto' => (bool) $u->pivot->auto])->values() : [],
+                ->map(fn (User $u) => [...$u->toCard(), 'auto' => (bool) $u->getRelation('pivot')->getAttribute('auto')])->values() : [],
             'selected' => $selected,
             'kinds' => UserRole::KINDS,
             'rules' => UserRole::RULES,

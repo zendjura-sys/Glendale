@@ -42,7 +42,11 @@ class FamilyCharter
         return array_slice($quiz, 0, self::MAX_QUESTIONS);
     }
 
-    /** Питання без правильних відповідей — для кандидата. */
+    /**
+     * Питання без правильних відповідей — для кандидата.
+     *
+     * @return list<array<string, mixed>>
+     */
     public function publicQuiz(Family $family): array
     {
         return array_map(fn (array $item) => ['q' => $item['q'], 'options' => $item['options']], $this->quiz($family));

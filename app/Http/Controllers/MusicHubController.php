@@ -213,7 +213,7 @@ class MusicHubController extends Controller
     /** @return list<string> */
     private function trackMoods(Track $track, int $userId): array
     {
-        return DB::table('track_moods')->where('track_id', $track->id)->where('user_id', $userId)->pluck('mood')->map(fn ($m) => (string) $m)->all();
+        return array_values(DB::table('track_moods')->where('track_id', $track->id)->where('user_id', $userId)->pluck('mood')->map(fn ($m) => (string) $m)->values()->all());
     }
 
     public function genre(Request $request): Response

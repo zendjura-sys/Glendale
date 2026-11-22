@@ -267,7 +267,7 @@ class ProfileController extends Controller
             'canPost' => $viewer !== null && in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true),
             // Лічильники — з кешу 2 хв, щоб не ганяти COUNT на кожен відкритий профіль.
             'stats' => Cache::remember(
-                "user_profile_stats:{$user->id}:".($viewer?->id ?? 0),
+                "user_profile_stats:{$user->id}:".($viewer->id ?? 0),
                 now()->addMinutes(2),
                 fn () => [
                     'friends' => count($friendIds),

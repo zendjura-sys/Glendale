@@ -130,6 +130,6 @@ class ConnectedAppsController extends Controller
 
         $user = $request->user()->id;
 
-        return array_map(fn (array $a) => [...$a, 'overlay' => $overlay[$a['id']] ?? true, 'playing' => Cache::get("sdk_presence:{$a['id']}:{$user}"), 'scope_labels' => array_map(fn (string $s) => OAuthServer::SCOPES[$s] ?? $s, $a['scopes'])], $this->oauth->connected($request->user()));
+        return array_values(array_map(fn (array $a) => [...$a, 'overlay' => $overlay[$a['id']] ?? true, 'playing' => Cache::get("sdk_presence:{$a['id']}:{$user}"), 'scope_labels' => array_map(fn (string $s) => OAuthServer::SCOPES[$s] ?? $s, $a['scopes'])], $this->oauth->connected($request->user())));
     }
 }

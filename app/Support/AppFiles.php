@@ -89,7 +89,7 @@ class AppFiles
         }
 
         try {
-            return self::assemble($platform, $name, $parts->all());
+            return self::assemble($platform, $name, array_values($parts->all()));
         } finally {
             $disk->deleteDirectory($dir);
         }
@@ -193,7 +193,7 @@ class AppFiles
     {
         $disk = Storage::disk('local');
         foreach ($disk->directories(self::PARTS) as $dir) {
-            if (now()->timestamp - (int) @filemtime($disk->path($dir)) > 86400) {
+            if (now()->getTimestamp() - (int) @filemtime($disk->path($dir)) > 86400) {
                 $disk->deleteDirectory($dir);
             }
         }

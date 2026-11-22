@@ -107,6 +107,9 @@ class LoginRewards
                     $cards->grantPack($user);
                     break;
                 case 'frame':
+                    if (! isset($reward['value'])) {
+                        break;
+                    }
                     $cosmetic = UserCosmetic::query()->firstOrCreate(
                         ['user_id' => $user->id, 'type' => 'frame', 'value' => $reward['value']],
                         ['source' => 'login:'.$month],

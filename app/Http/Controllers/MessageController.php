@@ -401,7 +401,7 @@ class MessageController extends Controller
             'anonymous' => ['boolean'],
         ]);
         $question = (string) $this->filter->guardMessage($user, $conversation, trim($data['question']));
-        $message = $this->messenger->sendPoll($conversation, $user, $question, array_map(fn ($o) => trim((string) $o), $data['options']), (bool) ($data['multiple'] ?? false), (bool) ($data['anonymous'] ?? false));
+        $message = $this->messenger->sendPoll($conversation, $user, $question, array_values(array_map(fn ($o) => trim((string) $o), $data['options'])), (bool) ($data['multiple'] ?? false), (bool) ($data['anonymous'] ?? false));
 
         return response()->json(['message' => $this->presenter->message($this->presenter->load($message))], 201);
     }
@@ -412,7 +412,7 @@ class MessageController extends Controller
         abort_if($conversation->participantFor($user) === null, 404);
         abort_unless($message->conversation_id === $conversation->id && $message->type === Message::TYPE_POLL && ! $message->trashed(), 404);
         $data = $request->validate(['options' => ['present', 'array', 'max:10'], 'options.*' => ['integer', 'min:0', 'max:9']]);
-        $this->messenger->votePoll($message, $user, array_map('intval', $data['options']));
+        $this->messenger->votePoll($message, $user, array_values(array_map('intval', $data['options'])));
 
         return response()->json(['message' => $this->presenter->message($this->presenter->load($message->refresh()))]);
     }

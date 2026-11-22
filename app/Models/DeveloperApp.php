@@ -87,13 +87,22 @@ class DeveloperApp extends Model
         'locale' => 'auto',
     ];
 
-    /** Налаштування оверлею з підставленими типовими значеннями. @return array<string, mixed> */
+    /**
+     * Налаштування оверлею з підставленими типовими значеннями.
+     *
+     * @param  array<string, mixed>|null  $source
+     * @return array<string, mixed>
+     */
     public function overlayConfig(?array $source = null): array
     {
         return array_replace(self::OVERLAY_DEFAULTS, array_intersect_key($source ?? $this->overlay ?? [], self::OVERLAY_DEFAULTS));
     }
 
-    /** Чернетка в порталі (або опублікований вигляд, якщо чернетки немає). @return array<string, mixed> */
+    /**
+     * Чернетка в порталі (або опублікований вигляд, якщо чернетки немає).
+     *
+     * @return array<string, mixed>
+     */
     public function overlayDraft(): array
     {
         return $this->overlayConfig($this->overlay_draft ?? $this->overlay ?? []);

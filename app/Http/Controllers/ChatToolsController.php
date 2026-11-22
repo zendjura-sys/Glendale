@@ -116,7 +116,7 @@ class ChatToolsController extends Controller
 
         return response()->json([
             'ok' => true,
-            'background' => $backgrounds->resolve($me?->background ?? $conversation->background),
+            'background' => $backgrounds->resolve($me->background ?? $conversation->background),
             'my_background' => $me?->background,
             'shared_background' => $conversation->background,
         ]);

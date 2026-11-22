@@ -51,7 +51,11 @@ class SdkAssetsController extends Controller
         ]);
     }
 
-    /** Рядки tr('…') із вихідника SDK. @return list<string> */
+    /**
+     * Рядки tr('…') із вихідника SDK.
+     *
+     * @return list<string>
+     */
     private function keys(): array
     {
         preg_match_all("/\\btr\\(\\s*'((?:[^'\\\\]|\\\\.)*)'/u", (string) file_get_contents(resource_path('js/sdk/gamecon-sdk.ts')), $m);

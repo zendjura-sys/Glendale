@@ -59,7 +59,7 @@ class SitemapController extends Controller
     }
 
     /**
-     * @return list<array{loc: string, lastmod?: string|null, changefreq: string, priority: string}>
+     * @return list<array<string, string|null>>
      */
     private function urls(string $part): array
     {
@@ -71,6 +71,7 @@ class SitemapController extends Controller
             'clans' => $this->clans(),
             'communities' => $this->communities(),
             'profiles' => $this->profiles(),
+            default => [],
         });
     }
 
@@ -130,9 +131,9 @@ class SitemapController extends Controller
             return [];
         }
 
-        return Movie::query()->published()->orderByDesc('updated_at')->limit(self::TITLES)->get(['slug', 'updated_at'])
+        return array_values(Movie::query()->published()->orderByDesc('updated_at')->limit(self::TITLES)->get(['slug', 'updated_at'])
             ->map(fn (Movie $movie) => ['loc' => url('/cinema/'.$movie->slug), 'lastmod' => $movie->updated_at?->toAtomString(), 'changefreq' => 'weekly', 'priority' => '0.6'])
-            ->values()->all();
+            ->values()->all());
     }
 
     /** @return list<array<string, string|null>> */
@@ -142,9 +143,9 @@ class SitemapController extends Controller
             return [];
         }
 
-        return GtaServer::query()->published()->orderBy('position')->limit(self::TITLES)->get(['slug', 'updated_at'])
+        return array_values(GtaServer::query()->published()->orderBy('position')->limit(self::TITLES)->get(['slug', 'updated_at'])
             ->map(fn (GtaServer $server) => ['loc' => url('/servers/'.$server->slug), 'lastmod' => $server->updated_at?->toAtomString(), 'changefreq' => 'daily', 'priority' => '0.7'])
-            ->values()->all();
+            ->values()->all());
     }
 
     /**
@@ -158,9 +159,9 @@ class SitemapController extends Controller
             return [];
         }
 
-        return Clan::query()->where('members_count', '>', 0)->orderByDesc('members_count')->limit(self::TITLES)->get(['slug', 'updated_at'])
+        return array_values(Clan::query()->where('members_count', '>', 0)->orderByDesc('members_count')->limit(self::TITLES)->get(['slug', 'updated_at'])
             ->map(fn (Clan $clan) => ['loc' => url('/clans/'.$clan->slug), 'lastmod' => $clan->updated_at?->toAtomString(), 'changefreq' => 'weekly', 'priority' => '0.5'])
-            ->values()->all();
+            ->values()->all());
     }
 
     /**
@@ -192,7 +193,7 @@ class SitemapController extends Controller
      */
     private function profiles(): array
     {
-        return User::query()
+        return array_values(User::query()
             ->where('is_private', false)
             ->whereNull('banned_at')
             ->whereNull('frozen_at')
@@ -202,6 +203,6 @@ class SitemapController extends Controller
             ->limit(self::PROFILES)
             ->get(['username', 'updated_at'])
             ->map(fn (User $user) => ['loc' => url('/'.$user->username), 'lastmod' => $user->updated_at?->toAtomString(), 'changefreq' => 'weekly', 'priority' => '0.5'])
-            ->values()->all();
+            ->values()->all());
     }
 }
