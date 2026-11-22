@@ -233,7 +233,7 @@ class SteamPresence
             return null;
         }
         try {
-            $response = Http::timeout(15)->acceptJson()->get(rtrim((string) config('services.steam.url', 'https://api.steampowered.com'), '/').'/'.$path, [...$query, 'key' => $key]);
+            $response = Http::timeout(6)->connectTimeout(3)->acceptJson()->get(rtrim((string) config('services.steam.url', 'https://api.steampowered.com'), '/').'/'.$path, [...$query, 'key' => $key]);
         } catch (ConnectionException) {
             return null;
         }

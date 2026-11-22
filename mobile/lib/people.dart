@@ -563,10 +563,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _load() async {
     final api = AppScope.read(context).session.api;
     try {
-      final results = await Future.wait([api.get(Api.site('/u/$name')), pager.reset()]);
+      // Записи вантажаться окремо: повільна стрічка не тримає й не ламає сам профіль.
+      unawaited(pager.reset().then((_) {
+        if (mounted) setState(() {});
+      }, onError: (_) {}));
+      final profile = await api.get(Api.site('/u/$name'));
       if (!mounted) return;
       setState(() {
-        page = results[0] as Map<String, dynamic>;
+        page = profile;
         error = null;
       });
     } catch (e) {
