@@ -28,6 +28,7 @@ import 'families.dart';
 import 'i18n.dart';
 import 'events.dart';
 import 'extras.dart';
+import 'site_parity.dart';
 import 'family_widget.dart';
 import 'game_card.dart';
 import 'engagement.dart';
@@ -323,6 +324,9 @@ Future<void> main() async {
           GoRoute(path: '/tierlists/new', builder: (_, _) => const TierListCreateScreen()),
           GoRoute(path: '/tierlists/:id/edit', builder: (_, state) => TierListCreateScreen(key: ValueKey('edit-${state.pathParameters['id']}'), id: int.tryParse(state.pathParameters['id']!))),
           GoRoute(path: '/settings/connections', builder: (_, _) => const ConnectionsScreen()),
+          GoRoute(path: '/settings/my-look', builder: (_, _) => const MyLookScreen()),
+          GoRoute(path: '/settings/household', builder: (_, _) => const HouseholdScreen()),
+          GoRoute(path: '/settings/parental', builder: (_, _) => const ParentalScreen()),
           GoRoute(path: '/settings/profile-look', builder: (_, _) => const ProfileLookScreen()),
           GoRoute(path: '/settings/notifications', builder: (_, _) => const NotifyPrefsScreen()),
           GoRoute(path: '/start', builder: (_, _) => const StartScreen()),

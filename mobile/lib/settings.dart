@@ -29,6 +29,7 @@ import 'extras.dart';
 import 'shake_report.dart';
 import 'push.dart';
 import 'game_overlay.dart';
+import 'site_parity.dart';
 
 // ───────────────────────── Сповіщення ─────────────────────────
 
@@ -404,6 +405,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
         ),
       ],
+      // Як на сайті: куплене оформлення (лише вдягнути — без покупок у застосунку), сімейний план, батьківський контроль.
+      const SizedBox(height: 12),
+      Glass(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+        child: Column(children: [
+          if (AppScope.read(context).session.pluginOn('cosmetics_shop'))
+            ListTile(leading: Icon(LucideIcons.sparkles, color: accent), title: Text(tr('Моє оформлення'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/my-look')),
+          ListTile(leading: Icon(LucideIcons.usersRound, color: accent), title: Text(tr('Сімейний план GameCon+'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/household')),
+          ListTile(leading: Icon(LucideIcons.shieldCheck, color: accent), title: Text(tr('Батьківський контроль'), style: body(14.5, weight: FontWeight.w600)), trailing: Icon(LucideIcons.chevronRight, color: faint), onTap: () => context.push('/settings/parental')),
+        ]),
+      ),
       if (AppScope.read(context).session case final session when session.pluginOn('stream_schedule') || session.pluginOn('crossposting') || session.pluginOn('author_subscriptions')) ...[
         const SizedBox(height: 12),
         Glass(
@@ -450,6 +462,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Зберігається одразу, без «Зберегти» — те саме налаштування, що й на сайті.
           const ListeningSwitch(),
           const DigestSwitch(),
+          const NewsEmailSwitch(),
           const _UiSoundsSwitch(),
           // Вимкнені плагіни — без їхніх перемикачів (підтримка, тривоги).
           if (session.pluginOn('support_tickets')) const _ShakeReportSwitch(),
@@ -1129,7 +1142,14 @@ class _GameOverlaySettingsState extends State<_GameOverlaySettings> with Widgets
     try {
       access = await _channel.invokeMethod<bool>('usageAccess') ?? false;
     } catch (_) {}
-    if (mounted) setState(() => (on, mode, chosen, usage) = (enabled, m, c, access));
+    if (mounted) {
+      setState(() {
+        on = enabled;
+        mode = m;
+        chosen = c;
+        usage = access;
+      });
+    }
   }
 
   Future<void> _save(String key, Object value) async {
@@ -1191,7 +1211,7 @@ class _GameOverlaySettingsState extends State<_GameOverlaySettings> with Widgets
               label: _labels[key] ?? key,
               selected: chosen.contains(key),
               onTap: () async {
-                final next = chosen.contains(key) ? [...chosen]..remove(key) : [...chosen, key];
+                final next = chosen.contains(key) ? (List<String>.of(chosen)..remove(key)) : [...chosen, key];
                 await _save(GameOverlay.sectionsKey, next);
                 setState(() => chosen = next);
               },

@@ -65,7 +65,13 @@ class _LobbyBlocksState extends State<LobbyBlocks> {
       try {
         r = (await session.api.get(Api.site('/ready')))['mine'] is Map;
       } catch (_) {}
-      if (mounted) setState(() => (pulse, weekly, ready) = (p, w, r));
+      if (mounted) {
+        setState(() {
+          pulse = p;
+          weekly = w;
+          ready = r;
+        });
+      }
     } catch (_) {
       // Немає мережі — оновимо за хвилину.
     }

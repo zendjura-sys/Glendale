@@ -25,6 +25,7 @@ import 'feed.dart';
 import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'site_parity.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 import 'extras.dart';
@@ -337,6 +338,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
           ),
         ),
         const SizedBox(height: 12),
+        // Друзі зі Steam (№279) — у «Усі друзі», коли пошук порожній.
+        if (tab == 'all' && query.text.isEmpty) ...[const SteamImportCard(), const SizedBox(height: 12)],
         if (loading && users.isEmpty)
           const ListSkeleton(rows: 5)
         else if (users.isEmpty)

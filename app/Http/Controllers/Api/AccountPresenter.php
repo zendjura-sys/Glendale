@@ -107,6 +107,7 @@ class AccountPresenter
             // «Показувати, що я слухаю»: одне налаштування для сайту й застосунку.
             'show_listening' => $user->showsListening(),
             'morning_digest' => $user->wantsDigest(),
+            'news_email' => $user->pref('news_email', false) === true,
             // Фон (Налаштування → Вигляд) і фірмовий фон з Адмінка → Дизайн — застосунок малює їх так само, як сайт.
             'background' => [
                 ...Backgrounds::for($user),

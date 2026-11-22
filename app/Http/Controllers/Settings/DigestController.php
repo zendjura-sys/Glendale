@@ -17,6 +17,8 @@ class DigestController extends Controller
         $data = $request->validate([
             'morning_digest' => ['sometimes', 'boolean'],
             'weekly_digest' => ['sometimes', 'boolean'],
+            // Новини GameCon на пошту (№284) — згода з застосунку.
+            'news_email' => ['sometimes', 'boolean'],
         ]);
         $user = $request->user();
         abort_unless($user instanceof User, 401);
