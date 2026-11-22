@@ -99,6 +99,7 @@ class GameGuideScreen extends StatelessWidget {
                       child: Text(tr('Видалити'), style: body(13, color: dangerSoft, weight: FontWeight.w600)),
                     ),
                 ]),
+                GuideVotes(slug: slug, guide: guide),
               ]),
             ),
           ],
@@ -150,6 +151,7 @@ class GuideCard extends StatelessWidget {
               child: Text(tr('Видалити'), style: body(12.5, color: dangerSoft, weight: FontWeight.w600)),
             ),
         ]),
+        GuideVotes(key: ValueKey('votes-${guide['id']}'), slug: slug, guide: guide),
       ]),
     );
   }
@@ -200,4 +202,53 @@ Future<bool> deleteGuide(BuildContext context, String slug, Map<String, dynamic>
   if (!await confirm(context, tr('Видалити гід?'), action: tr('Видалити'), danger: true)) return false;
   if (!context.mounted) return false;
   return attempt(context, () => AppScope.read(context).session.api.delete(Api.site('/games/$slug/guides/${guide['id']}')));
+}
+
+/// «Корисно / Не дуже» під гідом (№259), як на сайті: частка корисних і свій голос (повторний натиск — зняти).
+class GuideVotes extends StatefulWidget {
+  const GuideVotes({required this.slug, required this.guide, super.key});
+  final String slug;
+  final Map<String, dynamic> guide;
+
+  @override
+  State<GuideVotes> createState() => _GuideVotesState();
+}
+
+class _GuideVotesState extends State<GuideVotes> {
+  late int helpful = intOf(widget.guide['helpful']);
+  late int unhelpful = intOf(widget.guide['unhelpful']);
+  late bool? mine = widget.guide['my_vote'] is bool ? widget.guide['my_vote'] as bool : null;
+
+  Future<void> _vote(bool value) async {
+    final next = mine == value ? null : value;
+    try {
+      final r = await AppScope.read(context).session.api.post(Api.site('/games/${widget.slug}/guides/${widget.guide['id']}/vote'), {'helpful': next});
+      if (!mounted) return;
+      setState(() {
+        helpful = intOf(r['helpful']);
+        unhelpful = intOf(r['unhelpful']);
+        mine = r['my_vote'] is bool ? r['my_vote'] as bool : null;
+      });
+    } catch (_) {
+      if (mounted) toast(context, tr('Не вдалося зберегти оцінку.'), kind: ToastKind.error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = helpful + unhelpful;
+    final canVote = widget.guide['can_vote'] == true;
+    if (!canVote && total == 0) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        if (total > 0)
+          Text(tr('Корисно для {pct} % · {n} оцінок', {'pct': (helpful * 100 / total).round(), 'n': total}), style: body(12.5, color: muted)),
+        if (canVote) ...[
+          SelectPill(label: tr('Корисно'), icon: LucideIcons.thumbsUp, selected: mine == true, onTap: () => _vote(true)),
+          SelectPill(label: tr('Не дуже'), icon: LucideIcons.thumbsDown, selected: mine == false, onTap: () => _vote(false)),
+        ],
+      ]),
+    );
+  }
 }

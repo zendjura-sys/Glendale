@@ -13,6 +13,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'api.dart';
+import 'episode_talk.dart';
 import 'cinema_ui.dart';
 import 'movie_extras.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
@@ -1238,6 +1239,18 @@ class _EpisodeListScreenState extends State<EpisodeListScreen> {
                           if (at > 0) Text(tr('Переглянуто до {t}', {'t': clock(at.toDouble())}), style: body(13, color: muted)),
                         ]),
                       ),
+                      if (context.getInheritedWidgetOfExactType<AppScope>()?.session.pluginOn('episode_talk') ?? false)
+                        IconButton(
+                          tooltip: tr('Обговорення серії'),
+                          onPressed: () => showEpisodeTalk(
+                            context,
+                            slug: widget.memory.slug,
+                            season: pick.season,
+                            episode: pick.episode,
+                            title: widget.seasons.length > 1 ? tr('{s} сезон · {e} серія', {'s': pick.season, 'e': pick.episode}) : tr('{n} серія', {'n': pick.episode}),
+                          ),
+                          icon: Icon(LucideIcons.messagesSquare, color: faint),
+                        ),
                       IconButton(
                         tooltip: seen ? tr('Переглянуто') : tr('Позначити переглянутою'),
                         onPressed: () async {

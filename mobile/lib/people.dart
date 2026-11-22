@@ -843,6 +843,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 12),
           ProfileTrackPanel(track: data['profileTrack'] is Map ? mapOf(data['profileTrack']) : null, isSelf: data['relation'] == 'self' && AppScope.of(context).session.pluginOn('profile_track'), onSaved: _load),
         ],
+        if (data['setup'] is Map) ...[
+          const SizedBox(height: 12),
+          MySetupCard(data: mapOf(data['setup']), isSelf: data['relation'] == 'self', onSaved: _load),
+        ],
+        if (open && data['cinemaStats'] is Map) ...[
+          const SizedBox(height: 12),
+          CinemaStatsCard(stats: mapOf(data['cinemaStats'])),
+        ],
+        if (open && data['steamAchievements'] == true) SteamShowcaseCard(username: name),
         if (open && profile['platforms'] is Map) ...[
           const SizedBox(height: 12),
           GamerIdsPanel(platforms: mapOf(profile['platforms']), isSelf: data['relation'] == 'self' && AppScope.of(context).session.pluginOn('gamer_ids'), onSaved: _load),

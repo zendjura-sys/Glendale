@@ -850,6 +850,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
               ],
             ]),
           ],
+          // Жива вікторина — лише для учасників (як на сайті).
+          if (membership?['status'] == 'active' && AppScope.read(context).session.pluginOn('community_quiz')) ...[
+            const SizedBox(height: 8),
+            GhostButton(label: tr('Вікторина'), icon: LucideIcons.circleHelp, compact: true, onPressed: () => context.push('/communities/${widget.slug}/quiz')),
+          ],
           if (members.isNotEmpty) ...[
             const SizedBox(height: 12),
             Glass(

@@ -281,7 +281,22 @@ class TournamentView extends StatelessWidget {
       if (bracket && rounds.isNotEmpty) ...[
         SectionLabel(tr('Сітка')),
         if (manage && running) Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(tr('Торкніться матчу, щоб внести переможця.'), style: body(12, color: muted))),
-        TournamentBracket(rounds: rounds, onPick: manage ? (match) => _report(context, id, match) : null),
+        // Прогнози (№260): глядач торкається матчу — хто переможе; лише очки, без грошей.
+        if (!manage && rounds.any((r) => r.any((m) => m['prediction'] is Map)))
+          Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(tr('Торкніться матчу, щоб дати прогноз.'), style: body(12, color: muted))),
+        TournamentBracket(
+          rounds: rounds,
+          onPick: manage
+              ? (match) => _report(context, id, match)
+              : (match) async {
+                  if (match['prediction'] is! Map) return;
+                  final mine = me['entry_id'];
+                  final a = mapOf(match['a']), b = mapOf(match['b']);
+                  final open = running && match['winner_id'] == null && mine != a['id'] && mine != b['id'];
+                  await showGcSheet<void>(context, title: tr('Прогноз на матч'), builder: (_) => MatchPrediction(tournamentId: id, match: match, open: open));
+                  await reload();
+                },
+        ),
       ],
       if (bracket && rounds.isEmpty) ...[
         SectionLabel(tr('Учасники')),
@@ -587,6 +602,97 @@ class _MatchBox extends StatelessWidget {
           border: Border.all(color: ready && winner == null ? primary.withValues(alpha: 0.35) : fg.withValues(alpha: 0.07)),
         ),
         child: Column(children: [side(a), Divider(height: 1, color: fg.withValues(alpha: 0.06)), Expanded(child: side(b))]),
+      ),
+    );
+  }
+}
+
+
+/// Прогноз на матч (№260), як на сайті: до результату — обрати переможця (змінити можна до кінця
+/// матчу); після — частки прогнозів і чи влучили ви. Лише очки, без грошей.
+class MatchPrediction extends StatefulWidget {
+  const MatchPrediction({required this.tournamentId, required this.match, required this.open, super.key});
+  final dynamic tournamentId;
+  final Map<String, dynamic> match;
+  final bool open;
+
+  @override
+  State<MatchPrediction> createState() => _MatchPredictionState();
+}
+
+class _MatchPredictionState extends State<MatchPrediction> {
+  late Map<String, dynamic> state = mapOf(widget.match['prediction']);
+
+  Future<void> _pick(dynamic entryId) async {
+    try {
+      final r = await AppScope.read(context).session.api.post(Api.site('/tournaments/${widget.tournamentId}/matches/${widget.match['id']}/predict'), {'entry_id': entryId});
+      if (mounted) setState(() => state = mapOf(r['prediction']));
+    } catch (e) {
+      if (mounted) toast(context, e, kind: ToastKind.error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = [mapOf(widget.match['a']), mapOf(widget.match['b'])];
+    final counts = [intOf(state['a']), intOf(state['b'])];
+    final total = counts[0] + counts[1];
+    final mine = state['mine'];
+    final winner = widget.match['winner_id'];
+    final bool? hit = winner != null && mine != null ? mine == winner : null;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+      for (var i = 0; i < 2; i++) ...[
+        _PredictionBar(
+          name: text(entries[i]['name']) ?? '?',
+          pct: total == 0 ? 0 : (counts[i] * 100 / total).round(),
+          mine: mine != null && mine == entries[i]['id'],
+          onTap: widget.open ? () => _pick(entries[i]['id']) : null,
+        ),
+        const SizedBox(height: 8),
+      ],
+      Text(
+        switch (hit) {
+          true => tr('Ваш прогноз влучив: +10 очок'),
+          false => tr('Прогноз не влучив'),
+          null => widget.open
+              ? (mine == null ? tr('Хто переможе? Прогнозів: {n}', {'n': total}) : tr('Прогноз прийнято · прогнозів: {n}', {'n': total}))
+              : tr('Прогнозів: {n}', {'n': total}),
+        },
+        style: body(12.5, color: hit == true ? primary : muted),
+      ),
+    ]);
+  }
+}
+
+class _PredictionBar extends StatelessWidget {
+  const _PredictionBar({required this.name, required this.pct, required this.mine, this.onTap});
+  final String name;
+  final int pct;
+  final bool mine;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: fg.withValues(alpha: 0.05),
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 46,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: mine ? primary : Colors.transparent, width: 1.5)),
+          child: Stack(children: [
+            FractionallySizedBox(widthFactor: pct / 100, child: Container(color: primary.withValues(alpha: mine ? 0.28 : 0.14))),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(children: [
+                Expanded(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: mine ? FontWeight.w700 : FontWeight.w500))),
+                Text('$pct%', style: body(13, color: muted, weight: FontWeight.w600)),
+              ]),
+            ),
+          ]),
+        ),
       ),
     );
   }

@@ -29,6 +29,7 @@ import 'i18n.dart';
 import 'events.dart';
 import 'extras.dart';
 import 'site_parity.dart';
+import 'community_quiz.dart';
 import 'family_widget.dart';
 import 'game_card.dart';
 import 'engagement.dart';
@@ -207,6 +208,7 @@ Future<void> main() async {
                   GoRoute(path: 'photos', builder: (_, state) => PhotosScreen(community: state.pathParameters['slug'])),
                   GoRoute(path: 'channels', builder: (_, state) => CommunityChannelsScreen(slug: state.pathParameters['slug']!)),
                   GoRoute(path: 'calendar', builder: (_, state) => CommunityCalendarScreen(slug: state.pathParameters['slug']!)),
+                  GoRoute(path: 'quiz', builder: (_, state) => CommunityQuizScreen(slug: state.pathParameters['slug']!)),
                   GoRoute(path: 'wiki', builder: (_, state) => CommunityWikiScreen(slug: state.pathParameters['slug']!), routes: [
                     GoRoute(path: ':page', builder: (_, state) => CommunityWikiScreen(key: ValueKey(state.pathParameters['page']), slug: state.pathParameters['slug']!, page: state.pathParameters['page'])),
                   ]),

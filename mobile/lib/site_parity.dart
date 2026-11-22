@@ -352,3 +352,254 @@ class _NewsEmailSwitchState extends State<NewsEmailSwitch> {
     );
   }
 }
+
+/// Статистика перегляду в профілі (№272): години, тайтли, серії, улюблені жанри.
+class CinemaStatsCard extends StatelessWidget {
+  const CinemaStatsCard({required this.stats, super.key});
+  final Map<String, dynamic> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final genres = maps(stats['genres']);
+    Widget cell(Object? value, String label) => Expanded(
+          child: Column(children: [
+            Text('${value ?? 0}', style: body(20, weight: FontWeight.w800)),
+            Text(label, style: body(11.5, color: muted), textAlign: TextAlign.center),
+          ]),
+        );
+    return Glass(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        CardTitle(tr('Кіно в цифрах'), icon: LucideIcons.clapperboard),
+        Row(children: [
+          cell(stats['hours'], tr('годин')),
+          cell(stats['watched'], tr('переглянуто')),
+          cell(stats['episodes'], tr('серій')),
+          cell(stats['this_year'], tr('цього року')),
+        ]),
+        if (genres.isNotEmpty || stats['avg_rating'] != null) ...[
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, runSpacing: 6, children: [
+            for (final g in genres) Pill(label: '${g['name']} · ${g['count']}', color: soft),
+            if (stats['avg_rating'] != null) Pill(label: tr('Середня оцінка {r}', {'r': stats['avg_rating']}), color: primary),
+          ]),
+        ],
+      ]),
+    );
+  }
+}
+
+/// Досягнення Steam у профілі: найрідкісніші з ігор, у які людина грає найбільше.
+class SteamShowcaseCard extends StatefulWidget {
+  const SteamShowcaseCard({required this.username, super.key});
+  final String username;
+
+  @override
+  State<SteamShowcaseCard> createState() => _SteamShowcaseCardState();
+}
+
+class _SteamShowcaseCardState extends State<SteamShowcaseCard> {
+  // Один запит на екран профілю, а не на кожну перебудову.
+  late final Future<Map<String, dynamic>> future = AppScope.read(context).session.api.get(Api.site('/u/${widget.username}/achievements'));
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: future,
+      builder: (context, snap) {
+        final games = maps(snap.data?['games']);
+        if (games.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Glass(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              CardTitle(tr('Досягнення Steam'), icon: LucideIcons.award),
+              for (final g in games) ...[
+                Text('${text(g['game']) ?? ''} · ${g['unlocked']}/${g['total']}', style: body(14, weight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Wrap(spacing: 8, runSpacing: 8, children: [
+                  for (final a in maps(g['rarest']))
+                    Tooltip(
+                      message: '${text(a['name']) ?? ''} · ${a['percent']}%',
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: text(a['icon']) == null
+                            ? Container(width: 40, height: 40, color: raised, child: Icon(LucideIcons.award, size: 18, color: soft))
+                            : Image.network(text(a['icon'])!, width: 40, height: 40, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox(width: 40, height: 40)),
+                      ),
+                    ),
+                ]),
+                const SizedBox(height: 10),
+              ],
+            ]),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// «Мій сетап» у профілі (як на сайті): ПК, оцінка збірки (№224) і периферія; власник редагує.
+class MySetupCard extends StatelessWidget {
+  const MySetupCard({required this.data, required this.isSelf, required this.onSaved, super.key});
+  final Map<String, dynamic> data;
+  final bool isSelf;
+  final Future<void> Function() onSaved;
+
+  static List<(String, IconData, String)> get gearFields => [
+        ('monitor', LucideIcons.monitor, tr('Монітор')),
+        ('mouse', LucideIcons.mouse, tr('Мишка')),
+        ('keyboard', LucideIcons.keyboard, tr('Клавіатура')),
+        ('headset', LucideIcons.headphones, tr('Навушники')),
+        ('mic', LucideIcons.mic, tr('Мікрофон')),
+        ('controller', LucideIcons.gamepad2, tr('Геймпад')),
+        ('chair', LucideIcons.armchair, tr('Крісло')),
+        ('other', LucideIcons.package, tr('Ще')),
+      ];
+
+  @override
+  Widget build(BuildContext context) {
+    final pcData = mapOf(data['pc']);
+    final gear = mapOf(data['gear']);
+    final pc = [text(pcData['cpu']), text(pcData['gpu']), if (pcData['ram'] != null) '${pcData['ram']} ГБ RAM'].whereType<String>().toList();
+    final filled = [for (final g in gearFields) if (text(gear[g.$1]) != null) g];
+    final empty = pc.isEmpty && filled.isEmpty;
+    if (empty && !isSelf) return const SizedBox.shrink();
+    final rating = data['rating'] is Map ? mapOf(data['rating']) : null;
+    return Glass(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        CardTitle(tr('Мій сетап'), icon: LucideIcons.cpu, trailing: isSelf ? (empty ? tr('Заповнити') : tr('Змінити')) : null, onTrailing: isSelf ? () => _edit(context) : null),
+        if (pc.isNotEmpty) _line(LucideIcons.cpu, pc.join(' · ')),
+        if (rating != null) _PcScore(rating: rating, isSelf: isSelf),
+        for (final g in filled) _line(g.$2, text(gear[g.$1])!),
+        if (empty) Text(tr('Розкажіть, на чому граєте: ПК, мишка, навушники…'), style: body(13.5, color: muted)),
+      ]),
+    );
+  }
+
+  Widget _line(IconData icon, String value) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, size: 16, color: faint),
+          const SizedBox(width: 10),
+          Expanded(child: Text(value, style: body(14, color: soft))),
+        ]),
+      );
+
+  Future<void> _edit(BuildContext context) async {
+    final pcData = mapOf(data['pc']);
+    final gear = mapOf(data['gear']);
+    final cpu = TextEditingController(text: text(pcData['cpu']) ?? '');
+    final gpu = TextEditingController(text: text(pcData['gpu']) ?? '');
+    final ram = TextEditingController(text: pcData['ram'] == null ? '' : '${pcData['ram']}');
+    final fields = {for (final g in gearFields) g.$1: TextEditingController(text: text(gear[g.$1]) ?? '')};
+    var public = data['public'] != false;
+    final api = AppScope.read(context).session.api;
+    final saved = await showGcSheet<bool>(
+      context,
+      title: tr('Мій сетап'),
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+          GcField(controller: cpu, label: tr('Процесор'), dense: true),
+          const SizedBox(height: 8),
+          GcField(controller: gpu, label: tr('Відеокарта'), dense: true),
+          const SizedBox(height: 8),
+          GcField(controller: ram, label: tr('Оперативна пам’ять, ГБ'), keyboard: TextInputType.number, dense: true),
+          for (final g in gearFields) ...[
+            const SizedBox(height: 8),
+            GcField(controller: fields[g.$1]!, label: g.$3, icon: g.$2, dense: true),
+          ],
+          SwitchListTile(
+            value: public,
+            contentPadding: EdgeInsets.zero,
+            title: Text(tr('Показувати в профілі'), style: body(14, weight: FontWeight.w600)),
+            onChanged: (v) => setSheet(() => public = v),
+          ),
+          PrimaryButton(
+            label: tr('Зберегти'),
+            onPressed: () async {
+              final ok = await attempt(
+                sheet,
+                () => api.put(Api.site('/settings/setup'), {
+                  'public': public,
+                  'cpu': cpu.text.trim(),
+                  'gpu': gpu.text.trim(),
+                  'ram': int.tryParse(ram.text.trim()),
+                  for (final e in fields.entries) e.key: e.value.text.trim(),
+                }),
+                success: tr('Сетап збережено.'),
+              );
+              if (ok && sheet.mounted) Navigator.of(sheet).pop(true);
+            },
+          ),
+        ]),
+      ),
+    );
+    for (final c in [cpu, gpu, ram, ...fields.values]) {
+      c.dispose();
+    }
+    if (saved == true) await onSaved();
+  }
+}
+
+/// Оцінка збірки: бал і клас, смужки частин (слабке місце підсвічено); власнику — поради.
+class _PcScore extends StatelessWidget {
+  const _PcScore({required this.rating, required this.isSelf});
+  final Map<String, dynamic> rating;
+  final bool isSelf;
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = mapOf(rating['parts']);
+    final shown = [for (final p in [('gpu', tr('Відео')), ('cpu', tr('Процесор')), ('ram', tr('Пам’ять'))]) if (parts[p.$1] != null) p];
+    final advice = (rating['advice'] as List? ?? const []).map((a) => '$a').toList();
+    if (rating['score'] == null && shown.isEmpty && !isSelf) return const SizedBox.shrink();
+    const alert = Color(0xFFFF7A55);
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (rating['score'] != null)
+          Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+            Text('${rating['score']}', style: body(24, weight: FontWeight.w800)),
+            const SizedBox(width: 8),
+            Text(tr('{tier} збірка', {'tier': text(rating['tier']) ?? ''}), style: body(13, color: muted)),
+          ]),
+        for (final p in shown)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(children: [
+              SizedBox(width: 82, child: Text(p.$2, style: body(12, color: rating['weak'] == p.$1 ? alert : muted, weight: rating['weak'] == p.$1 ? FontWeight.w700 : FontWeight.w400))),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: intOf(parts[p.$1]) / 100,
+                    minHeight: 6,
+                    backgroundColor: fg.withValues(alpha: 0.08),
+                    color: rating['weak'] == p.$1 ? alert : primary,
+                  ),
+                ),
+              ),
+              SizedBox(width: 32, child: Text('${parts[p.$1]}', textAlign: TextAlign.right, style: body(12, color: muted))),
+            ]),
+          ),
+        if (isSelf && advice.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          for (final line in advice)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Padding(padding: const EdgeInsets.only(top: 6), child: Container(width: 5, height: 5, decoration: BoxDecoration(color: primary, shape: BoxShape.circle))),
+                const SizedBox(width: 8),
+                Expanded(child: Text(line, style: body(13, color: soft))),
+              ]),
+            ),
+        ],
+      ]),
+    );
+  }
+}
