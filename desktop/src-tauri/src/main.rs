@@ -11,7 +11,7 @@
 
 use std::sync::Mutex;
 
-use gamecon_core::{notification, transition, AlertState, Settings};
+use gamecon_core::{display_version, notification, transition, AlertState, Settings};
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Manager, PhysicalPosition, WindowEvent};
@@ -106,7 +106,9 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let sound = CheckMenuItem::with_id(app, "sound", "Звук на початку тривоги", true, settings.sound, None::<&str>)?;
     let start = CheckMenuItem::with_id(app, "autostart", "Запускати разом з Windows", true, autostart, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Вийти", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&open, &alerts, &PredefinedMenuItem::separator(app)?, &overlay, &sound, &start, &PredefinedMenuItem::separator(app)?, &quit])?;
+    // Версія у форматі GameCon (як сайт і Android) · випуск GCDev Software.
+    let about = MenuItem::with_id(app, "about", format!("GameCon {} · GCDev Software", display_version(&app.package_info().version.to_string())), false, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&open, &alerts, &PredefinedMenuItem::separator(app)?, &overlay, &sound, &start, &PredefinedMenuItem::separator(app)?, &about, &quit])?;
 
     TrayIconBuilder::with_id("gamecon")
         .icon(app.default_window_icon().cloned().expect("іконка застосунку"))

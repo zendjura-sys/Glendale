@@ -101,6 +101,14 @@ impl Settings {
     }
 }
 
+/// Версія у форматі GameCon Г.ГГММ.X.Y (як сайт і Android) із semver Tauri:
+/// «1.2611.0» → «1.2611.0.0», «1.2611.0+3» → «1.2611.0.3» (номер збірки — після «+»).
+pub fn display_version(semver: &str) -> String {
+    let (core, build) = semver.split_once('+').unwrap_or((semver, "0"));
+    let build = if build.chars().all(|c| c.is_ascii_digit()) && !build.is_empty() { build } else { "0" };
+    format!("{core}.{build}")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,6 +133,13 @@ mod tests {
         assert_eq!(notification(Transition::None, &state), None);
         let bare = AlertState { key: Some("a".into()), ..Default::default() };
         assert_eq!(notification(Transition::Started, &bare), Some(("Повітряна тривога".into(), String::new())));
+    }
+
+    #[test]
+    fn versions() {
+        assert_eq!(display_version("1.2611.0"), "1.2611.0.0");
+        assert_eq!(display_version("1.2611.0+3"), "1.2611.0.3");
+        assert_eq!(display_version("1.2611.1+x"), "1.2611.1.0");
     }
 
     #[test]
