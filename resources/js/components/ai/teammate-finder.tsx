@@ -82,7 +82,7 @@ export function TeammateFinder({
             <form
                 onSubmit={(e) => {
                     e.preventDefault();
-                    find();
+                    void find();
                 }}
                 className="mt-3 flex gap-2"
             >

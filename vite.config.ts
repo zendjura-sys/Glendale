@@ -67,8 +67,12 @@ export default defineConfig({
             'node_modules/**',
             'public/**',
             'mobile/**',
-            // Застосунок для Windows (Electron) — окремий проєкт зі своєю перевіркою (desktop: npm run check).
+            // Застосунок для Windows (Rust + Tauri) — окремий проєкт зі своєю перевіркою (cargo test).
             'desktop/**',
+            // Зібраний веб-SDK (npm run sdk:build) — лінтер перевіряє його джерело resources/js/sdk/gamecon-sdk.ts.
+            'resources/sdk/gamecon-sdk.js',
+            // Шаблон для сторонніх Next.js-проєктів: next-auth ставиться там, не тут.
+            'resources/cms-plugins/nextjs/**',
             'bootstrap/ssr/**',
             'tailwind.config.js',
             'resources/js/actions/**',

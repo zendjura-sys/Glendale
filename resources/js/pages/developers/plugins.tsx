@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
-import type { SyntheticEvent } from 'react';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -61,7 +60,7 @@ export function EngineMark({
                     src={plugin.favicon}
                     alt=""
                     loading="lazy"
-                    onError={(_: SyntheticEvent) => setBroken(true)}
+                    onError={() => setBroken(true)}
                     className={
                         size === 'lg'
                             ? 'size-10'

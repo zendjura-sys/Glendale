@@ -220,7 +220,7 @@ export function FeedQuests({ quests }: { quests: Quest[] }) {
 
 /** Живий блок лобі: челенджі тижня (№274). Усе забрано — блоку немає. */
 export function WeeklyChallenges({ quests }: { quests: Quest[] }) {
-    if (quests.length === 0 || quests.every((q) => q.claimed)) return null;
+    if (quests.every((q) => q.claimed)) return null;
 
     return (
         <section className="gc-solid rounded-2xl p-4">

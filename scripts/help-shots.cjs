@@ -85,7 +85,6 @@ const C = (name) => (p) =>
         .first();
 const L = (name) => (p) =>
     p.locator('main').getByRole('link', { name }).first();
-const F = (label) => (p) => p.locator('main').getByLabel(label).first();
 /** Блок-картка навколо заголовка. */
 const CARD = (name) => (p) =>
     H(name)(p).locator(
@@ -1725,11 +1724,12 @@ async function login(browser) {
     return state;
 }
 
-(async () => {
+void (async () => {
     const only = process.argv.slice(2);
     fs.mkdirSync(OUT, { recursive: true });
     const manifest = fs.existsSync(MANIFEST)
         ? // Файл міг пройти форматер (одинарні лапки) — читаємо як вираз JS, а не JSON.
+          // oxlint-disable-next-line typescript/no-implied-eval -- маніфест наш, не з мережі
           new Function(
               'return ' +
                   fs

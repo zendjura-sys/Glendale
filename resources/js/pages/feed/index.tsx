@@ -10,26 +10,8 @@ import {
     Link,
     usePage,
 } from '@inertiajs/react';
-import { NewcomerWeek } from '@/components/onboarding/newcomer-week';
 import type { NewcomerData } from '@/components/onboarding/newcomer-week';
-import {
-    Activity,
-    Cake,
-    Globe,
-    Compass,
-    Flame,
-    Newspaper,
-    Radio,
-    Sparkles,
-    UserPlus,
-    UsersRound,
-    Hash,
-} from 'lucide-react';
-import {
-    ChronoSwitch,
-    LanguageFilter,
-    TomorrowCard,
-} from '@/components/gc/feed-extras';
+import { Cake, Globe, Compass, Newspaper, Radio, UserPlus } from 'lucide-react';
 import type { TomorrowEvent } from '@/components/gc/feed-extras';
 import { FriendButton } from '@/components/gc/friend-button';
 import { PersonRow } from '@/components/gc/person-card';
@@ -62,7 +44,6 @@ import { isMediaPost, MediaPostBlock } from '@/components/lobby/media-blocks';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { FriendActivity } from '@/components/feed/friend-activity';
-import { PromoBanner } from '@/components/feed/promo-banner';
 import {
     ContinueList,
     FeedColumnWidgets,
@@ -74,13 +55,10 @@ import type { WhileAwayData } from '@/components/feed/while-away';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { formatDate } from '@/lib/format';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
-import { FriendsLive } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
 import { WeeklyChallenges } from '@/components/quests/quest-list';
 import type { Quest } from '@/components/quests/quest-list';
 import { tr } from '@/lib/i18n';
-import { usePlugin } from '@/lib/plugins';
-import { cn } from '@/lib/utils';
 import { useFeature } from '@/lib/plugins';
 
 type Props = {
@@ -111,106 +89,13 @@ type Props = {
     birthdays?: (UserCard & { birthday: string })[];
 };
 
-function FeedTabs({
-    tab,
-    hasFriends,
-}: {
-    tab: Props['tab'];
-    hasFriends: boolean;
-}) {
-    const topicsOn = usePlugin('topic_follows');
-    const tabs = [
-        {
-            key: 'friends',
-            label: tr('Друзі'),
-            icon: UsersRound,
-            href: '/feed',
-            disabled: !hasFriends,
-        },
-        ...(hasFriends
-            ? [
-                  {
-                      key: 'activity',
-                      label: tr('Активність'),
-                      icon: Activity,
-                      href: '/feed?tab=activity',
-                      disabled: false,
-                  },
-              ]
-            : []),
-        {
-            key: 'discover',
-            label: tr('Рекомендації'),
-            icon: Flame,
-            href: '/feed?tab=discover',
-            disabled: false,
-        },
-        {
-            key: 'country',
-            label: tr('Країна'),
-            icon: Globe,
-            href: '/feed?tab=country',
-            disabled: false,
-        },
-        ...(topicsOn
-            ? [
-                  {
-                      key: 'topics',
-                      label: tr('Теми'),
-                      icon: Hash,
-                      href: '/feed?tab=topics',
-                      disabled: false,
-                  },
-              ]
-            : []),
-    ];
-
-    // Пігулки: активна — суцільна небесна; прокручуються вбік, активна — завжди в полі зору.
-    return (
-        <nav
-            ref={(el) => {
-                el?.querySelector<HTMLElement>(
-                    '[aria-current="page"]',
-                )?.scrollIntoView({ block: 'nearest', inline: 'center' });
-            }}
-            aria-label={tr('Стрічка')}
-            className="flex [scrollbar-width:none] gap-2 overflow-x-auto"
-        >
-            {tabs.map((item) => (
-                <Link
-                    key={item.key}
-                    href={item.href}
-                    preserveScroll
-                    aria-current={tab === item.key ? 'page' : undefined}
-                    className={cn(
-                        'flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition',
-                        tab === item.key
-                            ? 'bg-sky-500 text-white'
-                            : 'gc-solid text-white/70 hover:text-white',
-                    )}
-                >
-                    <item.icon aria-hidden className="size-4" />
-                    {item.label}
-                </Link>
-            ))}
-        </nav>
-    );
-}
-
 export default function Feed({
     whileAway = null,
-    newcomer = null,
     tab,
-    topics = null,
-    lang,
-    onlyFriends,
-    languages,
     tomorrow,
     streaming,
     quests,
     weekly,
-    hasFriends,
-    country,
     posts,
     suggestions,
     onlineFriends,
@@ -219,10 +104,9 @@ export default function Feed({
     sameGame,
     birthdays,
 }: Props) {
-    const { auth, modules } = usePage().props;
+    const { modules } = usePage().props;
     // Режим соцмережі може ховати історії й трансляції друзів.
     const storiesOn = useFeature('stories');
-    const widgetsOn = usePlugin('home_widgets');
     const engagement = usePage().props.engagement;
     const liveOn = useFeature('live');
     // Spacepark: праворуч заявки в друзі й контакти (дані /me/rail).
@@ -357,26 +241,6 @@ export default function Feed({
 
     // Кожен блок лобі — віджет: розклад (порядок, розмір, видимість) людина задає сама.
     const continueItems = widgets?.continue ?? [];
-    const available = [
-        'pulse',
-        'weekly',
-        ...(storiesOn ? ['stories'] : []),
-        'continue',
-        'alerts',
-        'requests',
-        'contacts',
-        'voice',
-        'servers',
-        'season',
-        'online',
-        'playing',
-        'same_game',
-        'picks',
-        'suggestions',
-        'birthdays',
-        'media',
-        ...(modules.includes('music') ? ['player'] : []),
-    ];
     const renderWidget = (key: string): ReactNode => {
         switch (key) {
             case 'pulse':

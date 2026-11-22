@@ -153,7 +153,7 @@ export function SiteAssistant() {
             <form
                 onSubmit={(e) => {
                     e.preventDefault();
-                    ask();
+                    void ask();
                 }}
                 className="flex gap-2"
             >

@@ -697,8 +697,6 @@ const SHORTCUT_GROUPS = (): ShortcutGroup[] => [
     },
 ];
 
-const SHORTCUTS = (): Shortcut[] => SHORTCUT_GROUPS().flatMap((g) => g.items);
-
 const GO: Record<string, (username: string) => string> = {
     f: () => '/feed',
     m: () => '/messages',

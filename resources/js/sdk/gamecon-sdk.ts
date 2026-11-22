@@ -163,7 +163,7 @@ const ICONS: Record<string, string> = {
 const icon = (name: string) =>
     `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] ?? ''}</svg>`;
 const esc = (s: unknown) =>
-    String(s ?? '').replace(
+    String((s as string | number | null | undefined) ?? '').replace(
         /[&<>"']/g,
         (c) =>
             ({
@@ -747,7 +747,7 @@ class Sdk {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${this.token}`,
-                    ...init.headers,
+                    ...(init.headers as Record<string, string> | undefined),
                 },
             },
         );
@@ -1098,9 +1098,9 @@ class Sdk {
                     (this.o as Record<string, unknown>)[to] = c[from];
             }
             if (c.hotkey && !this.given.hotkeys)
-                this.o.hotkeys.toggle = String(c.hotkey);
+                this.o.hotkeys.toggle = String(c.hotkey as string);
             if (c.chat_hotkey && !this.given.hotkeys)
-                this.o.hotkeys.chat = String(c.chat_hotkey);
+                this.o.hotkeys.chat = String(c.chat_hotkey as string);
             if (Array.isArray(c.modules) && !this.given.modules)
                 this.o.modules = c.modules as ModuleKey[];
             if (c.positions && !this.given.position)
@@ -2064,10 +2064,9 @@ ${this.chatBody(false)}</aside>`;
                     this.emit('move', { widget: key, corner });
                     this.savePrefs({
                         positions: {
-                            ...((this.prefs.positions as Record<
-                                string,
-                                Corner
-                            >) ?? {}),
+                            ...(this.prefs.positions as
+                                | Record<string, Corner>
+                                | undefined),
                             [key]: corner,
                         },
                     });

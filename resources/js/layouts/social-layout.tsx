@@ -9,7 +9,6 @@ import { AlertBanner } from '@/components/alerts/alert-banner';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bookmark,
-    ChevronDown,
     Keyboard,
     LayoutDashboard,
     LifeBuoy,
@@ -22,7 +21,7 @@ import {
     UserRound,
     Headset,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Seasonal } from '@/components/gc/seasonal';

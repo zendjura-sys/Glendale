@@ -7,7 +7,6 @@ import {
     DialogDescription,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { GcSegmented } from '@/components/gc/gc-segmented';
 import { cn } from '@/lib/utils';
 import { LOCALE } from '@/lib/i18n';
 
