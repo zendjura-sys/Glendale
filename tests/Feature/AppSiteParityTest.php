@@ -445,6 +445,17 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/games/dota/news')->assertOk()->assertJsonPath('items', [])->assertJsonPath('steam', false);
     }
 
+    public function test_app_bumps_party_and_gets_invite_link(): void
+    {
+        $user = User::factory()->create();
+        $party = PartyPost::query()->create(['user_id' => $user->id, 'title' => 'Рейд', 'slots' => 4, 'expires_at' => now()->addDays(2)]);
+        $token = $this->app_token($user);
+
+        $this->withToken($token)->postJson("/api/v1/site/party/{$party->id}/invite-link")->assertOk()->assertJsonStructure(['url']);
+        // Піднімати можна лише з GameCon+ — маршрут є, а без підписки сервер відмовляє.
+        $this->withToken($token)->postJson("/api/v1/site/party/{$party->id}/bump")->assertForbidden();
+    }
+
     public function test_app_votes_for_party_time(): void
     {
         $user = User::factory()->create();

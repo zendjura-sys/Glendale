@@ -90,7 +90,7 @@ export const MODULES: ModuleDef[] = [
     { id: 'quests', title: 'Завдання', icon: Target, section: 'quests', render: (h) => <QuestsModule header={h} /> },
     section('moments', 'Моменти', Camera, '/api/v1/site/moments', '/moments'),
     section('articles', 'Статті', BookOpen, '/api/v1/site/articles', '/articles'),
-    section('party', 'Пошук паті', Swords, '/api/v1/site/party', '/party'),
+    { ...section('party', 'Пошук паті', Swords, '/api/v1/site/party', '/party'), page: '/party' },
     { ...section('gamecast', 'GameCast', Mic, '/api/v1/site/shows', '/shows', 'Подкасти наживо'), section: null, plugin: 'live_shows' },
     {
         ...section('livecast', 'LiveCast', Radio, '/api/v1/site/livecast', '/livecast', 'Стріми камерою чи екраном'),

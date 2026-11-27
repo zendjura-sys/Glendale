@@ -1285,6 +1285,8 @@ Route::prefix('v1')->group(function () {
                 Route::post('{party}/time', [PartyController::class, 'voteTime'])->middleware('throttle:30,1');
                 Route::post('{party}/time/{slot}', [PartyController::class, 'pickTime'])->whereNumber('slot')->middleware('throttle:10,1');
                 Route::delete('{party}/join', [PartyController::class, 'leave']);
+                Route::post('{party}/bump', [PartyController::class, 'bump'])->middleware('throttle:10,1');
+                Route::post('{party}/invite-link', [InviteLinkController::class, 'party'])->middleware('throttle:20,1');
                 Route::delete('{party}', [PartyController::class, 'close']);
             });
 
