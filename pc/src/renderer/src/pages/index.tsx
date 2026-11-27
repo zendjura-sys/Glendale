@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { FamiliesList } from './family/FamiliesList';
 import { FamilyPage } from './family/FamilyPage';
+import { MessagesPage } from './messages/MessagesPage';
 
 /**
  * Сторінки програми за шляхом (як адреси сайту): /families, /families/<slug> … Кожен розділ
@@ -11,6 +12,7 @@ export function resolvePage(path: string): ReactNode | null {
     const tab = new URLSearchParams(query).get('tab') ?? undefined;
     let m: RegExpMatchArray | null;
     if (p === '/families') return <FamiliesList />;
+    if ((m = p.match(/^\/messages(?:\/(\d+))?$/))) return <MessagesPage key={path} initial={m[1] ? Number(m[1]) : undefined} />;
     if ((m = p.match(/^\/(?:families|f)\/([^/]+)/))) return <FamilyPage key={path} slug={m[1]} initialTab={tab} />;
     return null;
 }

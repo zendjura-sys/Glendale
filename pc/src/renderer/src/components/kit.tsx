@@ -186,8 +186,7 @@ export function PrivateImage({ src, className, onClick }: { src: string; classNa
     const [data, setData] = useState<string | null>(null);
     useEffect(() => {
         let alive = true;
-        // Адреса сайту (/f/<slug>/proofs/<id>) → той самий файл через міст API з токеном.
-        const path = src.startsWith('/') && !src.startsWith('/api/') ? `/api/v1/site${src}` : src;
+        const path = apiPath(src);
         void window.gamecon.blob(path).then((d) => alive && setData(d));
         return () => {
             alive = false;
@@ -214,4 +213,27 @@ export function StatTile({ label, value, hint, alert, accent }: { label: string;
             {hint && <div className="text-[11px] text-white/35">{hint}</div>}
         </div>
     );
+}
+
+/** Адреса сайту → API з токеном: вкладення чатів — /api/v1/messages/…, решта — через міст /api/v1/site. */
+export function apiPath(src: string): string {
+    if (!src.startsWith('/') || src.startsWith('/api/')) return src;
+    if (src.startsWith('/messages/attachments/')) return `/api/v1${src}`;
+    return `/api/v1/site${src}`;
+}
+
+/** Картинка: публічна — напряму, приватна (відносна адреса) — через Main з токеном. */
+export function SmartImage({ src, className, onClick }: { src: string; className?: string; onClick?: (data: string) => void }) {
+    if (src.startsWith('http')) return <img src={src} alt="" draggable={false} onClick={() => onClick?.(src)} className={`${className ?? ''} ${onClick ? 'cursor-zoom-in' : ''}`} />;
+    return <PrivateImage src={src} className={className} onClick={onClick} />;
+}
+
+/** Завантажити файл (приватний — через Main) і зберегти. */
+export async function downloadFile(src: string, name: string): Promise<void> {
+    const data = src.startsWith('http') ? src : await window.gamecon.blob(apiPath(src));
+    if (!data) return;
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = name;
+    a.click();
 }

@@ -1,7 +1,9 @@
 import { ArrowLeft, Send } from 'lucide-react';
+import { Maximize } from 'lucide-react';
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { NotchBadge, NotchedCard } from '@/components/NotchedCard';
 import { Avatar, Empty, IconButton } from '@/components/ui';
+import { useNav } from '@/lib/nav';
 import { api, type User, useLive } from '@/lib/api';
 
 type Conversation = { id: number; title: string; avatar_url: string | null; unread: number; type: string; peer?: User | null; last_message?: { body?: string | null; preview?: string | null } | null };
@@ -17,12 +19,20 @@ export function MessengerModule({ header }: { header?: ReactNode }) {
     const conversations = list.data?.conversations ?? [];
     const unread = list.data?.unread ?? 0;
     const current = conversations.find((c) => c.id === open) ?? null;
+    const nav = useNav();
     return (
         <NotchedCard
             title="Повідомлення"
             subtitle={current ? current.title : 'Особисті й групові чати'}
             glow="violet"
-            header={header}
+            header={
+                <>
+                    <IconButton label="Відкрити повністю" onClick={() => nav.go(current ? `/messages/${current.id}` : '/messages')}>
+                        <Maximize size={15} strokeWidth={1.6} />
+                    </IconButton>
+                    {header}
+                </>
+            }
             badge={<NotchBadge tone={unread ? 'violet' : 'muted'}>{unread}</NotchBadge>}
             badgeWidth={44}
         >

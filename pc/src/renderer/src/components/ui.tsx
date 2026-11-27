@@ -5,7 +5,7 @@ export function Avatar({ user, size = 36, dot }: { user: Partial<User> | null | 
     // Перша літера імені (без дужок тегу «[SCL] …» і емодзі).
     const letter = ((user?.name ?? '').match(/\p{L}|\p{N}/u)?.[0] ?? '?').toUpperCase();
     return (
-        <span className="relative shrink-0" style={{ width: size, height: size }}>
+        <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>
             {user?.avatar_url ? (
                 <img src={user.avatar_url} alt="" draggable={false} className="h-full w-full rounded-full object-cover" />
             ) : (

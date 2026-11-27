@@ -69,7 +69,7 @@ const section = (id: string, title: string, icon: LucideIcon, endpoint: string, 
 export const MODULES: ModuleDef[] = [
     { id: 'profile', title: 'Моя сторінка', icon: UserRound, section: 'profile', render: (h) => <ProfileModule header={h} /> },
     { id: 'feed', title: 'Новини', icon: Newspaper, section: 'feed', render: (h) => <FeedModule header={h} />, wide: true },
-    { id: 'messenger', title: 'Повідомлення', icon: MessageSquare, section: 'messages', render: (h) => <MessengerModule header={h} /> },
+    { id: 'messenger', title: 'Повідомлення', icon: MessageSquare, section: 'messages', page: '/messages', render: (h) => <MessengerModule header={h} /> },
     { id: 'friends', title: 'Друзі', icon: Users, section: 'friends', render: (h) => <FriendsModule header={h} /> },
     { id: 'activity', title: 'Сповіщення', icon: Bell, section: null, render: (h) => <ActivityModule header={h} /> },
     // Голос сімей, кланів і спільнот — є, якщо ввімкнено хоч один з цих розділів (див. availableModules).
