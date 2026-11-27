@@ -545,6 +545,7 @@ Route::prefix('v1')->group(function () {
             Route::prefix('articles')->middleware('module:articles')->controller(ArticleController::class)->group(function () {
                 Route::get('/', 'index');
                 Route::post('/', 'store')->middleware('throttle:10,1');
+                Route::post('images', 'image')->middleware('throttle:30,1');
                 Route::get('{article}/edit', 'edit');
                 Route::get('{article}', 'show');
                 Route::post('{article}', 'update')->middleware('throttle:20,1');

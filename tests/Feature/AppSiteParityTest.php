@@ -950,6 +950,16 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/cards/search?q=cs')->assertOk()->assertJsonStructure(['cards']);
     }
 
+    public function test_app_uploads_article_image_through_bridge(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+
+        $this->withToken($this->app_token($user))
+            ->post('/api/v1/site/articles/images', ['image' => UploadedFile::fake()->image('map.png', 800, 450)], ['Accept' => 'application/json'])
+            ->assertOk()->assertJsonStructure(['url']);
+    }
+
     public function test_app_writes_reads_and_edits_articles_through_bridge(): void
     {
         $token = $this->app_token(User::factory()->create());
