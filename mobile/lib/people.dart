@@ -567,12 +567,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       unawaited(pager.reset().then((_) {
         if (mounted) setState(() {});
       }, onError: (_) {}));
-      final profile = await api.get(Api.site('/u/$name'));
+      // Спершу швидко — без повільних блоків (сетап, досягнення, Steam…), потім повна версія у фоні.
+      final profile = await api.get(Api.site('/u/$name'), headers: {'X-Bridge-Lite': '1'});
       if (!mounted) return;
       setState(() {
         page = profile;
         error = null;
       });
+      unawaited(api.get(Api.site('/u/$name')).then((full) {
+        if (mounted) setState(() => page = full);
+      }, onError: (_) {}));
     } catch (e) {
       if (mounted) setState(() => error = e);
     }

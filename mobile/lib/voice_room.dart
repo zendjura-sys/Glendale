@@ -272,12 +272,13 @@ class VoiceCall extends ChangeNotifier {
         await next.disconnect();
         return;
       }
-      await _keepAlive(true);
       micBlocked = next.localParticipant?.permissions.canPublish == false;
       status = 'connected';
       connectedAt = DateTime.now();
       notifyListeners();
       if (!micBlocked) await _setMic(true);
+      // Фоновий сервіс із мікрофоном — лише після дозволу на мікрофон (інакше Android 14+ завершує застосунок).
+      if (micOn) await _keepAlive(true);
     } catch (e) {
       await _room?.disconnect();
       await _reset();
@@ -456,7 +457,6 @@ class VoiceCall extends ChangeNotifier {
     if (!kIsWeb && Platform.isAndroid) {
       final allowed = await Helper.requestCapturePermission();
       if (!allowed) return tr('Дозвольте захоплення екрана.');
-      await _keepAlive(true);
     }
     try {
       await local.setScreenShareEnabled(true, captureScreenAudio: true);

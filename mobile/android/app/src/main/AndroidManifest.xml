@@ -7,8 +7,6 @@
     <!-- Камера: QR входу на сайт і відеокружок у чаті. -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
-    <!-- Wear OS: той самий APK може ставитися на годинник; телефон не вимагає watch. -->
-    <uses-feature android:name="android.hardware.type.watch" android:required="false"/>
     <!-- Музика у фоні: foreground-сервіс медіасесії (audio_service). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -122,10 +120,11 @@
                 <action android:name="android.media.browse.MediaBrowserService"/>
             </intent-filter>
         </service>
-        <!-- Розмова / демонстрація екрана не обривається, коли застосунок згорнуто (flutter_background). -->
+        <!-- Розмова не обривається, коли застосунок згорнуто (flutter_background). Лише microphone: тип mediaProjection
+             без дозволу на запис екрана в Android 14+ валить застосунок (SecurityException) при виході в ефір. -->
         <service
             android:name="de.julianassmann.flutter_background.IsolateHolderService"
-            android:foregroundServiceType="microphone|mediaProjection"
+            android:foregroundServiceType="microphone"
             android:exported="false" />
         <receiver
             android:name="com.ryanheise.audioservice.MediaButtonReceiver"

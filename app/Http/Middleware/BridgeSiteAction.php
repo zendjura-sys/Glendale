@@ -36,6 +36,11 @@ class BridgeSiteAction
             if (! $event->response instanceof InertiaResponse || $event->request->attributes->get(self::PAGE) !== true) {
                 return;
             }
+            // «Швидко» (X-Bridge-Lite: 1): сторінка без відкладених props — застосунок показує її одразу
+            // й догружає повну версію окремим запитом (повільні блоки не тримають екран).
+            if ($event->request->headers->get('X-Bridge-Lite') === '1') {
+                return;
+            }
             // Компонент — захищене поле Inertia\Response; часткове перезавантаження без only/except = усі props.
             $component = (fn () => $this->component)->call($event->response);
             if (is_string($component) && $component !== '') {
