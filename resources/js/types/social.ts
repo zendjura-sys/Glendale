@@ -319,6 +319,8 @@ export type PlusMark = {
     fx?: 'flow' | 'shine' | 'neon' | 'rainbow' | null;
     /** Рух рамки аватара (GameCon+). */
     motion?: 'spin' | 'pulse' | 'glint' | null;
+    /** Шрифт ніку (сімейство Google Fonts з кирилицею). */
+    font?: string | null;
 };
 
 /** Роль-плашка користувача («old», «Big Sponsor»). */

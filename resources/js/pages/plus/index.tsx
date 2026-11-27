@@ -21,7 +21,7 @@ import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { PlusTabs } from '@/components/billing/plus-tabs';
 import { FamilyLogo } from '@/components/families/family-logo';
-import { PlusBadge, plusNameProps } from '@/components/gc/plus';
+import { loadNameFont, PlusBadge, plusNameProps } from '@/components/gc/plus';
 import { titleColor, UserTitle } from '@/components/gc/user-title';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { perPeriod, periodLabel, useKind } from '@/lib/billing';
@@ -55,6 +55,8 @@ type Style = {
     accent?: string;
     fx?: string;
     header?: string;
+    font?: string;
+    color?: string;
 };
 
 type Props = {
@@ -65,6 +67,7 @@ type Props = {
         frames: Record<string, string[]>;
         accents: Record<string, string[]>;
         effects: string[];
+        fonts?: Record<string, string>;
         headers: string[];
         motions?: string[];
         themes?: Record<string, string[]>;
@@ -411,9 +414,16 @@ function StyleEditor({
         header: style.header ?? '',
         motion: style.motion ?? '',
         theme: style.theme ?? '',
+        font: style.font ?? '',
+        color: style.color ?? '',
     });
     const mark = {
-        name: form.data.name ? (options.names[form.data.name] ?? null) : null,
+        name: form.data.color
+            ? [form.data.color]
+            : form.data.name
+              ? (options.names[form.data.name] ?? null)
+              : null,
+        font: form.data.font ? (options.fonts?.[form.data.font] ?? null) : null,
         frame: form.data.frame
             ? (options.frames[form.data.frame] ?? null)
             : null,
@@ -507,6 +517,61 @@ function StyleEditor({
                     onChange={(value) => form.setData('motion', value)}
                 />
             )}
+            {options.fonts && (
+                <div>
+                    <p className="mb-2 text-xs font-semibold text-[var(--gc-text-2)]">
+                        {tr('Шрифт ніку')}
+                    </p>
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                        {['', ...Object.keys(options.fonts)].map((key) => {
+                            const family = key ? options.fonts?.[key] : null;
+                            if (family) loadNameFont(family);
+
+                            return (
+                                <button
+                                    key={key || 'none'}
+                                    type="button"
+                                    aria-pressed={
+                                        (form.data.font ?? '') === key
+                                    }
+                                    title={family ?? tr('Звичайний')}
+                                    onClick={() => form.setData('font', key)}
+                                    className={cn(
+                                        'gc-solid-2 grid h-14 place-items-center rounded-xl text-2xl transition',
+                                        (form.data.font ?? '') === key &&
+                                            'ring-2 ring-[var(--gc-accent)]',
+                                    )}
+                                    style={
+                                        family
+                                            ? { fontFamily: `'${family}'` }
+                                            : undefined
+                                    }
+                                >
+                                    Gg
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+            <label className="flex items-center gap-3 text-xs font-semibold text-[var(--gc-text-2)]">
+                {tr('Свій колір ніку')}
+                <input
+                    type="color"
+                    value={form.data.color || '#6b8afd'}
+                    onChange={(e) => form.setData('color', e.target.value)}
+                    className="h-9 w-12 cursor-pointer rounded-lg border-0 bg-transparent"
+                />
+                {form.data.color && (
+                    <button
+                        type="button"
+                        className="text-[var(--gc-text-2)] underline"
+                        onClick={() => form.setData('color', '')}
+                    >
+                        {tr('Скинути')}
+                    </button>
+                )}
+            </label>
             <EffectPicker
                 label={tr('Анімація ніку')}
                 value={form.data.fx ?? ''}

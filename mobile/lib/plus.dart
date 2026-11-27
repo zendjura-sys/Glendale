@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
@@ -25,12 +26,15 @@ List<Color>? _colors(dynamic value) {
 
 /// Оформлення GameCon+ з картки користувача (`user['plus']`); null — GameCon+ не активний.
 class PlusMark {
-  const PlusMark({this.name, this.frame, this.fx});
+  const PlusMark({this.name, this.frame, this.fx, this.font});
   final List<Color>? name;
   final List<Color>? frame;
 
   /// Анімація ніку: flow — перелив кольорів, shine — відблиск, neon — неонове сяйво, rainbow — веселка.
   final String? fx;
+
+  /// Шрифт ніку — сімейство Google Fonts (як на сайті), null — звичайний.
+  final String? font;
 
   static const effects = ['flow', 'shine', 'neon', 'rainbow'];
 
@@ -39,7 +43,7 @@ class PlusMark {
   static PlusMark? from(dynamic plus) {
     if (plus is! Map) return null;
     final fx = text(plus['fx']);
-    return PlusMark(name: _colors(plus['name']), frame: _colors(plus['frame']), fx: effects.contains(fx) ? fx : null);
+    return PlusMark(name: _colors(plus['name']), frame: _colors(plus['frame']), fx: effects.contains(fx) ? fx : null, font: text(plus['font']));
   }
 }
 
@@ -198,13 +202,14 @@ class _PlusNameState extends State<PlusName> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final style = _fontStyle(widget.style, widget.plus?.font);
     final plus = widget.plus;
     final colors = plus?.name;
-    final label = Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: widget.style.copyWith(color: Colors.white));
+    final label = Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: style.copyWith(color: Colors.white));
     final fx = _fx;
     if (fx == null) {
-      if (colors == null) return Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: widget.style);
-      if (colors.length == 1) return Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: widget.style.copyWith(color: colors.first));
+      if (colors == null) return Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: style);
+      if (colors.length == 1) return Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: style.copyWith(color: colors.first));
       return ShaderMask(blendMode: BlendMode.srcIn, shaderCallback: (rect) => LinearGradient(colors: colors).createShader(rect), child: label);
     }
     final tones = colors ?? const [Colors.white];
@@ -215,7 +220,7 @@ class _PlusNameState extends State<PlusName> with TickerProviderStateMixin {
       // Нік у своїх кольорах; неон — пульсуюче сяйво, веселка — плавний поворот відтінку.
       Widget painted(double t) {
         final glow = fx == 'neon' ? [Shadow(color: first, blurRadius: 1 + 5 * (0.5 - 0.5 * math.cos(t * 2 * math.pi)))] : null;
-        final text = Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: widget.style.copyWith(color: tones.length == 1 ? first : Colors.white, shadows: glow));
+        final text = Text(widget.name, maxLines: widget.maxLines == 1 ? null : widget.maxLines, style: style.copyWith(color: tones.length == 1 ? first : Colors.white, shadows: glow));
         final colored = tones.length == 1 ? text : ShaderMask(blendMode: BlendMode.srcIn, shaderCallback: (rect) => LinearGradient(colors: tones).createShader(rect), child: text);
         return fx == 'rainbow' ? ColorFiltered(colorFilter: ColorFilter.matrix(_hueRotate(t * 360)), child: colored) : colored;
       }
@@ -373,4 +378,15 @@ class _RimPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RimPainter old) => old.t != t || old.colors != colors;
+}
+
+
+/// Шрифт ніку з Google Fonts (кешується на телефоні); невідоме сімейство — звичайний шрифт.
+TextStyle _fontStyle(TextStyle base, String? family) {
+  if (family == null || family.isEmpty) return base;
+  try {
+    return GoogleFonts.getFont(family, textStyle: base);
+  } catch (_) {
+    return base;
+  }
 }

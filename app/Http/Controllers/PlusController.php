@@ -176,6 +176,8 @@ class PlusController extends Controller
             'header' => ['nullable', 'string', 'max:16'],
             'motion' => ['nullable', 'string', 'max:16'],
             'theme' => ['nullable', 'string', 'max:16'],
+            'font' => ['nullable', 'string', 'max:16'],
+            'color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ]);
         $user->forceFill(['plus_style' => PlusStyle::clean($data) ?: null])->save();
 

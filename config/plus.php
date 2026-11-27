@@ -91,6 +91,22 @@ return [
     // neon — м’яке пульсуюче світіння, rainbow — плавна зміна відтінку.
     'name_effects' => ['flow', 'shine', 'neon', 'rainbow'],
 
+    // Шрифт ніку (як «стилі імені» в Discord): ключ => сімейство Google Fonts з кирилицею.
+    'name_fonts' => [
+        'unbounded' => 'Unbounded',
+        'rubik_mono' => 'Rubik Mono One',
+        'russo' => 'Russo One',
+        'pixel' => 'Pixelify Sans',
+        'press' => 'Press Start 2P',
+        'comfortaa' => 'Comfortaa',
+        'pacifico' => 'Pacifico',
+        'marck' => 'Marck Script',
+        'bad_script' => 'Bad Script',
+        'neucha' => 'Neucha',
+        'ruslan' => 'Ruslan Display',
+        'play' => 'Play',
+    ],
+
     // Ефект шапки профілю в кольорах сторінки: aurora — повільне сяйво внизу обкладинки, rim — жива рамка шапки.
     'header_effects' => ['aurora', 'rim'],
 

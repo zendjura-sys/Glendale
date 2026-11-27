@@ -20,15 +20,37 @@ export function PlusBadge({ className }: { className?: string }) {
     );
 }
 
-/** Колір ніку GameCon+: однотонний або градієнт (значення лише з сервера). */
+const loadedFonts = new Set<string>();
+
+/** Шрифт ніку: підвантажуємо з Google Fonts один раз (лише кирилиця й латиниця, display=swap). */
+export function loadNameFont(family: string | null | undefined): void {
+    if (!family || loadedFonts.has(family) || typeof document === 'undefined')
+        return;
+    loadedFonts.add(family);
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, '+')}&display=swap&subset=cyrillic`;
+    document.head.appendChild(link);
+}
+
+function fontStyle(plus: PlusMark | null | undefined): CSSProperties {
+    if (!plus?.font) return {};
+    loadNameFont(plus.font);
+
+    return { fontFamily: `'${plus.font}', var(--font-sans, sans-serif)` };
+}
+
+/** Колір і шрифт ніку GameCon+: однотонний або градієнт (значення лише з сервера). */
 export function plusNameStyle(
     plus: PlusMark | null | undefined,
 ): CSSProperties | undefined {
     const colors = plus?.name;
-    if (!colors?.length) return undefined;
-    if (colors.length === 1) return { color: colors[0] };
+    const font = fontStyle(plus);
+    if (!colors?.length) return plus?.font ? font : undefined;
+    if (colors.length === 1) return { ...font, color: colors[0] };
 
     return {
+        ...font,
         backgroundImage: `linear-gradient(90deg, ${colors.join(', ')})`,
         WebkitBackgroundClip: 'text',
         backgroundClip: 'text',
@@ -55,6 +77,7 @@ export function plusNameProps(plus: PlusMark | null | undefined): {
                 plus.fx === 'neon' ? 'plus-name-neon' : 'plus-name-rainbow',
             style: {
                 ...(plusNameStyle(plus) ?? { color: first }),
+                ...fontStyle(plus),
                 ['--plus-glow' as string]: first,
             },
         };
@@ -75,6 +98,7 @@ export function plusNameProps(plus: PlusMark | null | undefined): {
     return {
         className: plus.fx === 'flow' ? 'plus-name-flow' : 'plus-name-shine',
         style: {
+            ...fontStyle(plus),
             backgroundImage: `linear-gradient(100deg, ${stops.join(', ')})`,
             WebkitBackgroundClip: 'text',
             backgroundClip: 'text',
