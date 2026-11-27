@@ -4,10 +4,11 @@ import { Cover } from '@/components/kit';
 import { mmss, player, usePlayer } from '@/lib/player';
 
 /** Плеєр унизу вікна: обкладинка, назва, керування, прогрес з перемотуванням, гучність, черга. */
-export function PlayerBar() {
+export function PlayerBar({ hidden = false }: { hidden?: boolean }) {
     const p = usePlayer();
     const [queue, setQueue] = useState(false);
-    if (!p.current) return null;
+    // На сторінці «Музика» плеєр — у правій панелі, нижній не дублюємо.
+    if (!p.current || hidden) return null;
     const t = p.current;
     const pct = p.duration ? (p.time / p.duration) * 100 : 0;
     const btn = 'grid h-10 w-10 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white';

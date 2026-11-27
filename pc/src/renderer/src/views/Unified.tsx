@@ -108,7 +108,7 @@ export function UnifiedView() {
                     )}
                 </main>
                 {/* Плеєр — унизу вікна на всіх сторінках, поки щось у черзі. */}
-                <PlayerBar />
+                <PlayerBar hidden={!!nav.path?.startsWith('/music')} />
             </div>
             {panel && <SettingsPanel onClose={() => setPanel(false)} />}
         </div>

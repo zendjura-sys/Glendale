@@ -4,6 +4,7 @@ import { Button, Card, Cover, Input, Loading, PageHeader, StatTile, Tabs, useSit
 import { api } from '@/lib/api';
 import { useNav } from '@/lib/nav';
 import { mmss, player, type Track, usePlayer } from '@/lib/player';
+import { NowPlaying } from './NowPlaying';
 
 type Tile = { kind: string; key?: string; name?: string; title?: string; artist?: string; colors?: string[]; covers?: string[]; cover_url?: string | null; href?: string; tracks_count?: number };
 type TabId = 'home' | 'new' | 'radio' | 'charts' | 'library' | 'search';
@@ -150,13 +151,19 @@ export function MusicPage() {
                 value={tab}
                 onChange={setTab}
             />
-            <div className="min-h-0 flex-1 overflow-y-auto p-5">
+            <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_340px] gap-5 px-5 pt-5 max-[1100px]:grid-cols-1">
+                <div className="min-h-0 overflow-y-auto pb-5">
                 {tab === 'home' && <Home open={open} />}
                 {tab === 'new' && <New open={open} />}
                 {tab === 'radio' && <RadioTab open={open} />}
                 {tab === 'charts' && <Charts />}
                 {tab === 'library' && <Library />}
                 {tab === 'search' && <SearchTab q={query} />}
+                </div>
+                {/* Праворуч — великий плеєр, швидкі дії й черга. */}
+                <div className="min-h-0 overflow-y-auto pb-5 max-[1100px]:hidden">
+                    <NowPlaying onTab={setTab} />
+                </div>
             </div>
         </div>
     );
