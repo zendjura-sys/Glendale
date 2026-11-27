@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { NotchToggle } from '@/components/NotchedCard';
 import { IconButton } from '@/components/ui';
 import { ToastHost } from '@/components/kit';
+import { PlayerBar } from '@/components/PlayerBar';
 import { useLayout, useSettings } from '@/lib/layout';
 import { useNav } from '@/lib/nav';
 import { resolvePage } from '@/pages';
@@ -103,6 +104,8 @@ export function UnifiedView() {
                         </div>
                     )}
                 </main>
+                {/* Плеєр — унизу вікна на всіх сторінках, поки щось у черзі. */}
+                <PlayerBar />
             </div>
             {panel && <SettingsPanel onClose={() => setPanel(false)} />}
         </div>
