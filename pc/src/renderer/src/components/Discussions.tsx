@@ -1,14 +1,15 @@
-import { ArrowLeft, Eye, Heart, Lock, MessageSquare, Pin, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Eye, Film, Heart, Lock, MessageSquare, Paperclip, Pin, Plus, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Input, Loading, Select, TextArea, useToast, when } from '@/components/kit';
+import { Button, Card, Cover, Input, Loading, Select, TextArea, useToast, when } from '@/components/kit';
 import { Avatar } from '@/components/ui';
 import { api, type User } from '@/lib/api';
 import { useNav } from '@/lib/nav';
 
 type Topic = { id: number; title: string; excerpt: string | null; category: string; category_label: string; subject_type: string | null; spoiler: boolean; is_pinned: boolean; is_locked: boolean; replies_count: number; likes_count: number; views_count: number; liked: boolean; user: User | null; created_at: string; last_reply_at: string | null; can_edit: boolean; can_moderate: boolean };
-type Reply = { id: number; body: string; spoiler: boolean; likes_count: number; liked: boolean; user: User | null; parent: { id: number; author: string | null; body: string | null } | null; created_at: string; can_delete: boolean };
+export type Embed = { type: string; id: number; label: string; title: string; href: string; cover: string | null; subtitle: string | null };
+type Reply = { id: number; body: string; embeds?: Embed[]; spoiler: boolean; likes_count: number; liked: boolean; user: User | null; parent: { id: number; author: string | null; body: string | null } | null; created_at: string; can_delete: boolean };
 type List = { subject: { title: string } | null; categories: Record<string, string>; discussions: { data: Topic[]; last_page: number; total: number } };
-type Thread = { discussion: Topic & { body: string | null }; subject: { title: string; label: string; href: string } | null; replies: { data: Reply[] } };
+type Thread = { discussion: Topic & { body: string | null; embeds?: Embed[] }; subject: { title: string; label: string; href: string } | null; replies: { data: Reply[] } };
 
 const call = <T,>(method: string, path: string, body?: unknown): Promise<T> => api<T>(method, `/api/v1/discussions${path}`, body);
 
@@ -16,12 +17,12 @@ const call = <T,>(method: string, path: string, body?: unknown): Promise<T> => a
  * «Обговорення» в програмі: з subject — теми про гру, фільм, сервер, сім’ю, клан, спільноту чи статтю
  * (блок на їхніх сторінках); без subject — загальний розділ з категоріями. Розділ теми обирається.
  */
-export function Discussions({ subject, compact = false }: { subject?: { type: string; id: number }; compact?: boolean }) {
+export function Discussions({ subject, compact = false, initialOpen }: { subject?: { type: string; id: number }; compact?: boolean; initialOpen?: number }) {
     const [list, setList] = useState<List | null>(null);
     const [category, setCategory] = useState('');
     const [sort, setSort] = useState<'active' | 'new' | 'top'>('active');
     const [page, setPage] = useState(1);
-    const [open, setOpen] = useState<number | null>(null);
+    const [open, setOpen] = useState<number | null>(initialOpen ?? null);
     const [creating, setCreating] = useState(false);
     const q = subject ? `type=${subject.type}&id=${subject.id}` : `category=${category}`;
     const load = useCallback(async () => {
@@ -104,11 +105,12 @@ function NewTopic({ subject, categories, category, onDone }: { subject?: { type:
     const [body, setBody] = useState('');
     const [cat, setCat] = useState(category || (subject ? '' : 'general'));
     const [spoiler, setSpoiler] = useState(false);
+    const [embeds, setEmbeds] = useState<Embed[]>([]);
     const [busy, setBusy] = useState(false);
     const submit = async (): Promise<void> => {
         setBusy(true);
         try {
-            const r = await call<{ discussion: { id: number } }>('POST', '', { ...(subject ?? {}), category: cat || null, title, body: body || null, spoiler });
+            const r = await call<{ discussion: { id: number } }>('POST', '', { ...(subject ?? {}), category: cat || null, title, body: body || null, spoiler, embeds: embeds.map((x) => ({ type: x.type, id: x.id })) });
             onDone(r.discussion.id);
         } catch (e) {
             toast((e as Error).message, 'error');
@@ -119,6 +121,7 @@ function NewTopic({ subject, categories, category, onDone }: { subject?: { type:
         <div className="mb-4 space-y-2 rounded-xl bg-white/[0.04] p-3">
             <Input value={title} maxLength={160} placeholder="Тема (від 4 символів)" onChange={(e) => setTitle(e.target.value)} />
             <TextArea value={body} maxLength={10000} placeholder="Що хочете обговорити?" onChange={(e) => setBody(e.target.value)} />
+            <EmbedPicker category={cat} value={embeds} onChange={setEmbeds} />
             <div className="flex flex-wrap items-center gap-3">
                 <span className="text-sm text-white/60">Розділ</span>
                 <Select value={cat} onChange={(e) => setCat(e.target.value)} className="!w-48">
@@ -139,6 +142,8 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
     const [t, setT] = useState<Thread | null>(null);
     const [body, setBody] = useState('');
     const [reply, setReply] = useState<Reply | null>(null);
+    const [embeds, setEmbeds] = useState<Embed[]>([]);
+    const [attach, setAttach] = useState(false);
     const [shown, setShown] = useState<Record<number, boolean>>({});
     const load = useCallback(async () => {
         try {
@@ -195,6 +200,7 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
                 {d.can_edit && <Button small tone="danger" onClick={() => window.confirm('Видалити тему?') && void act('DELETE', `/${id}`, undefined, onBack)}><Trash2 size={14} /></Button>}
             </div>
             {d.body && <p onClick={() => setShown({ ...shown, 0: true })} className={`mt-3 text-[14.5px] whitespace-pre-wrap text-white/85 ${d.spoiler && !shown[0] ? 'cursor-pointer blur-sm' : ''}`}>{d.body}</p>}
+            <EmbedCards embeds={d.embeds} />
             <div className="mt-4 space-y-3 border-t border-white/[0.06] pt-4">
                 {t.replies.data.length === 0 && <p className="text-sm text-white/45">Відповідей ще немає — будьте першим.</p>}
                 {t.replies.data.map((r) => (
@@ -204,6 +210,7 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
                             <p className="text-sm"><b>{r.user?.name}</b> <span className="text-xs text-white/40">{when(r.created_at)}</span></p>
                             {r.parent && <p className="my-1 border-l-2 border-white/20 pl-2 text-xs text-white/50"><b>{r.parent.author}</b> {r.parent.body ?? 'видалена відповідь'}</p>}
                             <p onClick={() => setShown({ ...shown, [r.id]: true })} className={`text-sm whitespace-pre-wrap text-white/80 ${r.spoiler && !shown[r.id] ? 'cursor-pointer blur-sm' : ''}`}>{r.body}</p>
+                            <EmbedCards embeds={r.embeds} />
                             <div className="mt-1 flex gap-3 text-xs text-white/45">
                                 <button type="button" onClick={() => void act('POST', `/${id}/replies/${r.id}/like`)} className={`inline-flex items-center gap-1 ${r.liked ? 'text-rose-300' : ''}`}><Heart size={12} fill={r.liked ? 'currentColor' : 'none'} />{r.likes_count}</button>
                                 {!d.is_locked && <button type="button" onClick={() => setReply(r)}>Відповісти</button>}
@@ -218,12 +225,87 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
             ) : (
                 <div className="mt-4">
                     {reply && <p className="mb-1 text-xs text-white/50">Відповідь для {reply.user?.name} <button type="button" onClick={() => setReply(null)}>✕</button></p>}
+                    {attach && <div className="mb-2"><EmbedPicker category={d.category} value={embeds} onChange={setEmbeds} /></div>}
                     <div className="flex gap-2">
+                        <Button tone={attach ? 'primary' : 'ghost'} onClick={() => setAttach((v) => !v)}><Paperclip size={15} /></Button>
                         <TextArea value={body} maxLength={5000} placeholder="Ваша відповідь…" onChange={(e) => setBody(e.target.value)} rows={2} />
-                        <Button tone="primary" disabled={!body.trim()} onClick={() => void act('POST', `/${id}/replies`, { body, parent_id: reply?.id ?? null }, () => (setBody(''), setReply(null)))}>Надіслати</Button>
+                        <Button tone="primary" disabled={!body.trim()} onClick={() => void act('POST', `/${id}/replies`, { body, parent_id: reply?.id ?? null, embeds: embeds.map((x) => ({ type: x.type, id: x.id })) }, () => (setBody(''), setReply(null), setEmbeds([]), setAttach(false)))}>Надіслати</Button>
                     </div>
                 </div>
             )}
         </Card>
+    );
+}
+
+const TYPE_FOR: Record<string, string> = { cinema: 'movie', series: 'movie', anime: 'movie', games: 'game', music: 'track' };
+const TYPES: Record<string, string> = { movie: 'Фільм / серіал / аніме', game: 'Гра', server: 'Сервер', track: 'Трек', family: 'Сім’я', clan: 'Клан', community: 'Спільнота', article: 'Стаття' };
+
+/** Вбудовані картки (фільм, гра, сервер, трек…) — відкривають сторінку в програмі. */
+export function EmbedCards({ embeds }: { embeds?: Embed[] }) {
+    const nav = useNav();
+    if (!embeds?.length) return null;
+    return (
+        <div className="mt-2 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2">
+            {embeds.map((e) => (
+                <button key={`${e.type}-${e.id}`} type="button" onClick={() => nav.go(e.href)} className="flex items-center gap-3 rounded-xl bg-white/[0.05] p-2 text-left ring-1 ring-white/10 transition hover:ring-neon-cyan/40">
+                    <Cover src={e.cover} className={`shrink-0 rounded-lg ${e.type === 'movie' ? 'h-16 w-11' : 'h-12 w-12'}`} fallback={<Film size={18} />} />
+                    <span className="min-w-0">
+                        <span className="block text-[10.5px] tracking-wide text-white/45 uppercase">{e.label}</span>
+                        <span className="block truncate text-sm font-semibold">{e.title}</span>
+                        {e.subtitle && <span className="block truncate text-xs text-white/50">{e.subtitle}</span>}
+                    </span>
+                </button>
+            ))}
+        </div>
+    );
+}
+
+/** Вибір картки: тип (за розділом — підказаний) і пошук за назвою. */
+function EmbedPicker({ category, value, onChange }: { category: string; value: Embed[]; onChange: (v: Embed[]) => void }) {
+    const [type, setType] = useState(TYPE_FOR[category] ?? 'movie');
+    const [q, setQ] = useState('');
+    const [items, setItems] = useState<Embed[]>([]);
+    useEffect(() => {
+        if (TYPE_FOR[category]) setType(TYPE_FOR[category]);
+    }, [category]);
+    useEffect(() => {
+        if (q.trim().length < 2) return setItems([]);
+        const t = window.setTimeout(() => void call<{ items: Embed[] }>('GET', `/embeds?type=${type}&q=${encodeURIComponent(q)}`).then((r) => setItems(r.items), () => setItems([])), 250);
+        return () => window.clearTimeout(t);
+    }, [q, type]);
+    return (
+        <div className="space-y-2">
+            {value.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                    {value.map((e) => (
+                        <span key={`${e.type}-${e.id}`} className="inline-flex items-center gap-1 rounded-full bg-neon-cyan/15 px-2.5 py-1 text-xs ring-1 ring-neon-cyan/30">
+                            {e.title}
+                            <button type="button" aria-label="Прибрати" onClick={() => onChange(value.filter((x) => x !== e))}><X size={12} /></button>
+                        </span>
+                    ))}
+                </div>
+            )}
+            {value.length < 6 && (
+                <div className="flex gap-2">
+                    <Select value={type} onChange={(e) => setType(e.target.value)} className="!w-56">
+                        {Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </Select>
+                    <div className="relative min-w-0 flex-1">
+                        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Додати картку: почніть вводити назву" />
+                        {items.length > 0 && (
+                            <div className="absolute inset-x-0 top-full z-30 mt-1 max-h-64 overflow-y-auto rounded-xl bg-[#141826] p-1 shadow-2xl ring-1 ring-white/10">
+                                {items.map((it) => (
+                                    <button key={it.id} type="button" onClick={() => (onChange([...value, it]), setQ(''), setItems([]))} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-white/10">
+                                        <Cover src={it.cover} className="h-8 w-8 rounded" fallback={<Film size={12} />} />
+                                        <span className="min-w-0 flex-1 truncate">{it.title}</span>
+                                        {it.subtitle && <span className="text-xs text-white/45">{it.subtitle}</span>}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }

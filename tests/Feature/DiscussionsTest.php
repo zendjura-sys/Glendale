@@ -67,6 +67,19 @@ class DiscussionsTest extends TestCase
         $this->actingAs($classic)->getJson('/discussions/list')->assertOk()->assertJsonMissingPath('categories.games');
     }
 
+    public function test_topic_embeds_movie_and_game_cards(): void
+    {
+        $user = User::factory()->create();
+        $movie = Movie::query()->create(['slug' => 'matrix', 'type' => 'movie', 'title' => 'Матриця', 'is_published' => true]);
+        $game = Game::query()->create(['name' => 'Celeste', 'slug' => 'celeste', 'letter' => 'C', 'category' => 'pc', 'is_published' => true]);
+        $this->actingAs($user)->getJson('/discussions/embeds?type=movie&q=Матр')->assertOk()->assertJsonPath('items.0.title', 'Матриця');
+        $id = $this->actingAs($user)->postJson('/discussions', ['category' => 'cinema', 'title' => 'Фільми про симуляцію', 'embeds' => [['type' => 'movie', 'id' => $movie->id], ['type' => 'movie', 'id' => 999]]])->assertCreated()->json('discussion.id');
+        $this->actingAs($user)->postJson("/discussions/{$id}/replies", ['body' => 'А ще гра', 'embeds' => [['type' => 'game', 'id' => $game->id]]])->assertOk();
+        $this->actingAs($user)->getJson("/discussions/{$id}")->assertOk()
+            ->assertJsonCount(1, 'discussion.embeds')->assertJsonPath('discussion.embeds.0.title', 'Матриця')
+            ->assertJsonPath('replies.data.0.embeds.0.title', 'Celeste');
+    }
+
     public function test_only_staff_pins_and_locks(): void
     {
         $user = User::factory()->create();

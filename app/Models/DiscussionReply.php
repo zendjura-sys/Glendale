@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property int|null $parent_id
  * @property string $body
+ * @property array<int, mixed>|null $embeds
  * @property bool $spoiler
  * @property int $likes_count
  * @property Carbon $created_at
@@ -23,14 +24,14 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $user
  * @property-read Discussion|null $discussion
  */
-#[Fillable(['discussion_id', 'user_id', 'parent_id', 'body', 'spoiler'])]
+#[Fillable(['discussion_id', 'user_id', 'parent_id', 'body', 'embeds', 'spoiler'])]
 class DiscussionReply extends Model
 {
     use SoftDeletes;
 
     protected function casts(): array
     {
-        return ['spoiler' => 'boolean'];
+        return ['spoiler' => 'boolean', 'embeds' => 'array'];
     }
 
     /** @return BelongsTo<User, $this> */

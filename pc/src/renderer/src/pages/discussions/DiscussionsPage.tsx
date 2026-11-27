@@ -6,14 +6,14 @@ import { useLive } from '@/lib/api';
 type Top = { discussions: { data: { id: number; title: string; replies_count: number; likes_count: number; category_label: string }[] } };
 
 /** «Обговорення»: загальний розділ програми — теми ліворуч, найкращі й правила праворуч. */
-export function DiscussionsPage() {
+export function DiscussionsPage({ open }: { open?: number }) {
     const top = useLive<Top>('/api/v1/discussions/list?sort=top', 120_000);
     return (
         <div className="flex h-full flex-col">
             <PageHeader title="Обговорення" subtitle="Кіно, серіали, аніме, ігри, музика, техніка й усе інше" />
             <div className="min-h-0 flex-1 overflow-y-auto p-5">
                 <div className="mx-auto grid max-w-[1180px] grid-cols-[minmax(0,1fr)_320px] gap-5 max-[1100px]:grid-cols-1">
-                    <Discussions />
+                    <Discussions initialOpen={open} />
                     <aside className="space-y-4 max-[1100px]:hidden">
                         <Card title={<span className="flex items-center gap-2"><Flame size={15} className="text-orange-400" /> Найкращі теми</span>}>
                             {(top.data?.discussions.data ?? []).slice(0, 6).map((d, i) => (

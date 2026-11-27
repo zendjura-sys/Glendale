@@ -10,6 +10,7 @@ use App\Models\Family;
 use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\Movie;
+use App\Models\Track;
 use App\Support\Modules\ModuleManager;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,6 +29,7 @@ class DiscussionSubjects
         'clan' => ['model' => Clan::class, 'module' => 'clans', 'label' => 'Клан'],
         'community' => ['model' => Community::class, 'module' => 'communities', 'label' => 'Спільнота'],
         'article' => ['model' => Article::class, 'module' => 'articles', 'label' => 'Стаття'],
+        'track' => ['model' => Track::class, 'module' => 'music', 'label' => 'Трек'],
     ];
 
     /** Категорія загального розділу → модуль, без якого її немає (null — є завжди). */
@@ -63,6 +65,7 @@ class DiscussionSubjects
         }
         $published = match (true) {
             $subject instanceof Movie, $subject instanceof Game, $subject instanceof Article => (bool) $subject->is_published,
+            $subject instanceof Family => $subject->isVerified(),
             $subject instanceof GtaServer => $subject->status === GtaServer::STATUS_PUBLISHED,
             default => true,
         };
@@ -85,10 +88,18 @@ class DiscussionSubjects
     /**
      * Картка предмета для списку тем і шапки теми.
      *
-     * @return array{type: string, id: int, label: string, title: string, href: string, cover: string|null}
+     * @return array{type: string, id: int, label: string, title: string, href: string, cover: string|null, subtitle: string|null}
      */
     public function card(string $type, Model $subject): array
     {
+        $subtitle = match (true) {
+            $subject instanceof Movie => trim(implode(' · ', array_filter([Movie::TYPES[$subject->type] ?? null, $subject->year ? (string) $subject->year : null]))),
+            $subject instanceof Game => $subject->released?->format('Y'),
+            $subject instanceof GtaServer => $subject->players_online !== null ? $subject->players_online.' онлайн' : null,
+            $subject instanceof Family, $subject instanceof Clan, $subject instanceof Community => $subject->members_count.' учасників',
+            $subject instanceof Track => $subject->album,
+            default => null,
+        };
         [$title, $href, $cover] = match (true) {
             $subject instanceof Movie => [$subject->title, '/cinema/'.$subject->slug, $subject->poster_url],
             $subject instanceof Game => [$subject->name, '/games/'.$subject->slug, $subject->cover],
@@ -97,9 +108,79 @@ class DiscussionSubjects
             $subject instanceof Clan => [$subject->display_name, '/clans/'.$subject->slug, $subject->logo_url],
             $subject instanceof Community => [$subject->name, '/c/'.$subject->slug, $subject->avatar_url],
             $subject instanceof Article => [$subject->title, '/articles/'.$subject->slug, null],
+            $subject instanceof Track => [$subject->artist.' — '.$subject->title, '/music/search?q='.rawurlencode($subject->title), $subject->cover_url],
             default => ['', '/', null],
         };
 
-        return ['type' => $type, 'id' => (int) $subject->getKey(), 'label' => self::TYPES[$type]['label'], 'title' => (string) $title, 'href' => $href, 'cover' => $cover];
+        return ['type' => $type, 'id' => (int) $subject->getKey(), 'label' => self::TYPES[$type]['label'], 'title' => (string) $title, 'href' => $href, 'cover' => $cover, 'subtitle' => $subtitle ?: null];
+    }
+
+    /**
+     * Пошук для вставки картки в тему: за назвою в межах типу (лише опубліковане й доступне).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function search(string $type, string $q): array
+    {
+        if (! $this->allowed($type) || mb_strlen(trim($q)) < 2) {
+            return [];
+        }
+        $like = '%'.trim($q).'%';
+        $query = match ($type) {
+            'movie' => Movie::query()->where('is_published', true)->where(fn ($w) => $w->where('title', 'like', $like)->orWhere('title_original', 'like', $like)),
+            'game' => Game::query()->where('is_published', true)->where('name', 'like', $like),
+            'server' => GtaServer::query()->where('status', GtaServer::STATUS_PUBLISHED)->where('name', 'like', $like),
+            'family' => Family::query()->where('status', Family::STATUS_VERIFIED)->where(fn ($w) => $w->where('name', 'like', $like)->orWhere('tag', 'like', $like)),
+            'clan' => Clan::query()->where(fn ($w) => $w->where('name', 'like', $like)->orWhere('tag', 'like', $like)),
+            'community' => Community::query()->where('name', 'like', $like),
+            'article' => Article::query()->where('is_published', true)->where('title', 'like', $like),
+            'track' => Track::query()->where(fn ($w) => $w->where('title', 'like', $like)->orWhere('artist', 'like', $like)),
+            default => null,
+        };
+        if ($query === null) {
+            return [];
+        }
+
+        return array_values($query->limit(8)->get()->map(fn (Model $m) => $this->card($type, $m))->all());
+    }
+
+    /**
+     * Перевірені вбудовані картки з запиту: лише існуючі й доступні, не більше 6.
+     *
+     * @param  array<int, mixed>  $embeds
+     * @return list<array{type: string, id: int}>
+     */
+    public function cleanEmbeds(array $embeds): array
+    {
+        $out = [];
+        foreach (array_slice($embeds, 0, 6) as $e) {
+            if (is_array($e) && is_string($e['type'] ?? null) && is_numeric($e['id'] ?? null) && $this->find($e['type'], (int) $e['id']) !== null) {
+                $out[] = ['type' => $e['type'], 'id' => (int) $e['id']];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Картки для показу (зниклі чи недоступні глядачу — пропускаються).
+     *
+     * @param  array<int, mixed>|null  $embeds
+     * @return list<array<string, mixed>>
+     */
+    public function embedCards(?array $embeds): array
+    {
+        $out = [];
+        foreach ($embeds ?? [] as $e) {
+            if (! is_array($e) || ! is_string($e['type'] ?? null)) {
+                continue;
+            }
+            $subject = $this->find($e['type'], (int) ($e['id'] ?? 0));
+            if ($subject !== null) {
+                $out[] = $this->card($e['type'], $subject);
+            }
+        }
+
+        return $out;
     }
 }

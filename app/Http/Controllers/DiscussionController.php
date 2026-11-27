@@ -87,6 +87,17 @@ class DiscussionController extends Controller
         ]);
     }
 
+    /** Пошук картки для вставки: фільм, гра, сервер, трек, сім’я, клан, спільнота, стаття. */
+    public function embeds(Request $request): JsonResponse
+    {
+        $data = $request->validate(['type' => ['required', Rule::in(array_keys(DiscussionSubjects::TYPES))], 'q' => ['required', 'string', 'max:80']]);
+
+        return response()->json([
+            'types' => array_map(fn (array $t) => $t['label'], array_filter(DiscussionSubjects::TYPES, fn (array $t, string $k) => $this->subjects->allowed($k), ARRAY_FILTER_USE_BOTH)),
+            'items' => $this->subjects->search($data['type'], $data['q']),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -96,6 +107,7 @@ class DiscussionController extends Controller
             'title' => ['required', 'string', 'min:4', 'max:160'],
             'body' => ['nullable', 'string', 'max:10000'],
             'spoiler' => ['sometimes', 'boolean'],
+            'embeds' => ['nullable', 'array', 'max:6'],
         ]);
         $user = $this->user($request);
         $category = $data['category'] ?? 'general';
@@ -119,6 +131,7 @@ class DiscussionController extends Controller
             'title' => (string) $this->filter->clean(trim($data['title'])),
             'body' => isset($data['body']) ? $this->filter->clean(trim($data['body'])) : null,
             'spoiler' => (bool) ($data['spoiler'] ?? false),
+            'embeds' => $this->subjects->cleanEmbeds($data['embeds'] ?? []) ?: null,
         ]);
 
         return response()->json(['ok' => true, 'message' => 'Тему створено.', 'discussion' => $this->card($discussion->load('user'), $user, [])], 201);
@@ -138,6 +151,7 @@ class DiscussionController extends Controller
             'discussion' => [
                 ...$this->card($discussion->load('user'), $user, in_array(null, $liked, true) ? [$discussion->id] : []),
                 'body' => $discussion->body,
+                'embeds' => $this->subjects->embedCards($discussion->embeds),
             ],
             'subject' => $subject,
             'replies' => [
@@ -145,6 +159,7 @@ class DiscussionController extends Controller
                     'id' => $r->id,
                     'body' => $r->body,
                     'spoiler' => $r->spoiler,
+                    'embeds' => $this->subjects->embedCards($r->embeds),
                     'likes_count' => $r->likes_count,
                     'liked' => in_array($r->id, $liked, true),
                     'user' => $r->user?->toCard(),
@@ -169,6 +184,7 @@ class DiscussionController extends Controller
             'body' => ['required', 'string', 'min:1', 'max:5000'],
             'parent_id' => ['nullable', 'integer'],
             'spoiler' => ['sometimes', 'boolean'],
+            'embeds' => ['nullable', 'array', 'max:6'],
         ]);
         $parent = isset($data['parent_id']) ? DiscussionReply::query()->where('discussion_id', $discussion->id)->whereKey((int) $data['parent_id'])->first() : null;
         DB::transaction(function () use ($discussion, $user, $data, $parent) {
@@ -178,6 +194,7 @@ class DiscussionController extends Controller
                 'parent_id' => $parent?->id,
                 'body' => (string) $this->filter->clean(trim($data['body'])),
                 'spoiler' => (bool) ($data['spoiler'] ?? false),
+                'embeds' => $this->subjects->cleanEmbeds($data['embeds'] ?? []) ?: null,
             ]);
             $discussion->increment('replies_count', 1, ['last_reply_at' => now()]);
         });

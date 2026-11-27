@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 | (/api/v1/site): файл підключається в кожну з груп.
 */
 Route::prefix('discussions')->middleware('module:discussions')->whereNumber(['discussion', 'reply'])->group(function () {
+    Route::get('embeds', [DiscussionController::class, 'embeds'])->middleware('throttle:120,1');
     Route::get('list', [DiscussionController::class, 'index'])->middleware('throttle:120,1');
     Route::post('/', [DiscussionController::class, 'store'])->middleware('throttle:10,1');
     Route::get('{discussion}', [DiscussionController::class, 'show'])->middleware('throttle:120,1');

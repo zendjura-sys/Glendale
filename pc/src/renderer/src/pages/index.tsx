@@ -24,6 +24,7 @@ export function resolvePage(path: string): ReactNode | null {
     if (p === '/families') return <FamiliesList />;
     if (p === '/feed') return <FeedPage />;
     if (p === '/discussions') return <DiscussionsPage />;
+    if ((m = p.match(/^\/discussions\/(\d+)$/))) return <DiscussionsPage key={path} open={Number(m[1])} />;
     if (p === '/music') return <MusicPage />;
     if (/^\/music\/(album|artist|genre|mix|mood|playlists)\b/.test(p)) return <MusicCollection key={path} path={path} />;
     if (p === '/servers') return <ServersList />;

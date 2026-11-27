@@ -1,12 +1,15 @@
+import { Link } from '@inertiajs/react';
 import {
     ArrowLeft,
     Eye,
+    Film,
     Heart,
     Lock,
     MessageSquare,
     Pin,
     Plus,
     Trash2,
+    X,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -37,7 +40,17 @@ export type DiscussionCard = {
     can_edit: boolean;
     can_moderate: boolean;
 };
+export type Embed = {
+    type: string;
+    id: number;
+    label: string;
+    title: string;
+    href: string;
+    cover: string | null;
+    subtitle: string | null;
+};
 type Reply = {
+    embeds?: Embed[];
     id: number;
     body: string;
     spoiler: boolean;
@@ -50,7 +63,7 @@ type Reply = {
     can_delete: boolean;
 };
 type Thread = {
-    discussion: DiscussionCard & { body: string | null };
+    discussion: DiscussionCard & { body: string | null; embeds?: Embed[] };
     subject: { title: string; href: string; label: string } | null;
     replies: { data: Reply[]; current_page: number; last_page: number };
 };
@@ -291,6 +304,7 @@ function NewTopic({
     const [body, setBody] = useState('');
     const [cat, setCat] = useState(category || (subject ? '' : 'general'));
     const [spoiler, setSpoiler] = useState(false);
+    const [embeds, setEmbeds] = useState<Embed[]>([]);
     const [busy, setBusy] = useState(false);
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -301,6 +315,7 @@ function NewTopic({
             title,
             body: body || null,
             spoiler,
+            embeds: embeds.map((x) => ({ type: x.type, id: x.id })),
         })
             .then((r) => onDone(r.discussion.id))
             .catch((err: { message?: string }) =>
@@ -328,6 +343,7 @@ function NewTopic({
                 placeholder={tr('Що хочете обговорити?')}
                 className="w-full rounded-lg bg-white/[0.06] px-3 py-2 text-sm text-white outline-none"
             />
+            <EmbedPicker category={cat} value={embeds} onChange={setEmbeds} />
             <div className="flex flex-wrap items-center gap-3">
                 <label className="flex items-center gap-2 text-sm text-white/65">
                     {tr('Розділ')}
@@ -370,6 +386,8 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
     const [t, setT] = useState<Thread | null>(null);
     const [body, setBody] = useState('');
     const [reply, setReply] = useState<Reply | null>(null);
+    const [embeds, setEmbeds] = useState<Embed[]>([]);
+    const [attach, setAttach] = useState(false);
     const [shown, setShown] = useState<Record<number, boolean>>({});
     const load = useCallback(
         () =>
@@ -402,8 +420,17 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
             void act(
                 'POST',
                 `/discussions/${id}/replies`,
-                { body, parent_id: reply?.id ?? null },
-                () => (setBody(''), setReply(null)),
+                {
+                    body,
+                    parent_id: reply?.id ?? null,
+                    embeds: embeds.map((x) => ({ type: x.type, id: x.id })),
+                },
+                () => (
+                    setBody(''),
+                    setReply(null),
+                    setEmbeds([]),
+                    setAttach(false)
+                ),
             );
     };
     return (
@@ -509,6 +536,7 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
                     {d.body}
                 </p>
             )}
+            <EmbedCards embeds={d.embeds} />
             <ul className="mt-4 space-y-3 border-t border-white/[0.06] pt-4">
                 {t.replies.data.map((r) => (
                     <li key={r.id} className="flex gap-3">
@@ -541,6 +569,7 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
                             >
                                 {r.body}
                             </p>
+                            <EmbedCards embeds={r.embeds} />
                             <div className="mt-1 flex gap-3 text-xs text-white/45">
                                 <button
                                     type="button"
@@ -608,7 +637,29 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
                             </button>
                         </p>
                     )}
+                    {attach && (
+                        <div className="mb-2">
+                            <EmbedPicker
+                                category={d.category}
+                                value={embeds}
+                                onChange={setEmbeds}
+                            />
+                        </div>
+                    )}
                     <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setAttach((v) => !v)}
+                            title={tr('Додати картку')}
+                            className={cn(
+                                'self-end rounded-full p-2 ring-1',
+                                attach
+                                    ? 'text-sky-300 ring-sky-300/40'
+                                    : 'text-white/55 ring-white/15',
+                            )}
+                        >
+                            <Plus className="size-4" />
+                        </button>
                         <textarea
                             value={body}
                             onChange={(e) => setBody(e.target.value)}
@@ -628,5 +679,179 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
                 </form>
             )}
         </section>
+    );
+}
+
+const TYPE_FOR: Record<string, string> = {
+    cinema: 'movie',
+    series: 'movie',
+    anime: 'movie',
+    games: 'game',
+    music: 'track',
+};
+const TYPES: Record<string, string> = {
+    movie: tr('Фільм / серіал / аніме'),
+    game: tr('Гра'),
+    server: tr('Сервер'),
+    track: tr('Трек'),
+    family: tr('Сім’я'),
+    clan: tr('Клан'),
+    community: tr('Спільнота'),
+    article: tr('Стаття'),
+};
+
+/** Вбудовані картки (фільм, гра, сервер, трек…) у темі чи відповіді. */
+export function EmbedCards({ embeds }: { embeds?: Embed[] }) {
+    if (!embeds?.length) return null;
+    return (
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {embeds.map((e) => (
+                <Link
+                    key={`${e.type}-${e.id}`}
+                    href={e.href}
+                    className="flex items-center gap-3 rounded-xl bg-white/[0.05] p-2 ring-1 ring-white/10 transition hover:ring-white/25"
+                >
+                    {e.cover ? (
+                        <img
+                            src={e.cover}
+                            alt=""
+                            className={cn(
+                                'shrink-0 rounded-lg object-cover',
+                                e.type === 'movie' ? 'h-16 w-11' : 'size-12',
+                            )}
+                        />
+                    ) : (
+                        <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-white/10 text-white/50">
+                            <Film className="size-5" />
+                        </span>
+                    )}
+                    <span className="min-w-0">
+                        <span className="block text-[11px] tracking-wide text-white/45 uppercase">
+                            {e.label}
+                        </span>
+                        <span className="block truncate text-sm font-semibold text-white">
+                            {e.title}
+                        </span>
+                        {e.subtitle && (
+                            <span className="block truncate text-xs text-white/50">
+                                {e.subtitle}
+                            </span>
+                        )}
+                    </span>
+                </Link>
+            ))}
+        </div>
+    );
+}
+
+/** Вибір картки для вставки: тип (за розділом — підказаний) і пошук за назвою. */
+function EmbedPicker({
+    category,
+    value,
+    onChange,
+}: {
+    category: string;
+    value: Embed[];
+    onChange: (v: Embed[]) => void;
+}) {
+    const [type, setType] = useState(TYPE_FOR[category] ?? 'movie');
+    const [q, setQ] = useState('');
+    const [items, setItems] = useState<Embed[]>([]);
+    useEffect(() => setType(TYPE_FOR[category] ?? type), [category]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        if (q.trim().length < 2) return setItems([]);
+        const t = window.setTimeout(
+            () =>
+                void api<{ items: Embed[] }>(
+                    'GET',
+                    `/discussions/embeds?type=${type}&q=${encodeURIComponent(q)}`,
+                )
+                    .then((r) => setItems(r.items))
+                    .catch(() => setItems([])),
+            250,
+        );
+        return () => window.clearTimeout(t);
+    }, [q, type]);
+    return (
+        <div className="space-y-2">
+            {value.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                    {value.map((e) => (
+                        <span
+                            key={`${e.type}-${e.id}`}
+                            className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs text-white"
+                        >
+                            {e.title}
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    onChange(value.filter((x) => x !== e))
+                                }
+                                aria-label={tr('Прибрати')}
+                            >
+                                <X className="size-3" />
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            )}
+            {value.length < 6 && (
+                <div className="flex gap-2">
+                    <select
+                        value={type}
+                        onChange={(e) => setType(e.target.value)}
+                        className="rounded-lg bg-white/[0.06] px-2 py-1.5 text-sm text-white"
+                    >
+                        {Object.entries(TYPES).map(([k, v]) => (
+                            <option key={k} value={k}>
+                                {v}
+                            </option>
+                        ))}
+                    </select>
+                    <div className="relative min-w-0 flex-1">
+                        <input
+                            value={q}
+                            onChange={(e) => setQ(e.target.value)}
+                            placeholder={tr(
+                                'Додати картку: почніть вводити назву',
+                            )}
+                            className="w-full rounded-lg bg-white/[0.06] px-3 py-1.5 text-sm text-white outline-none"
+                        />
+                        {items.length > 0 && (
+                            <div className="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-xl bg-[#141826] p-1 shadow-xl ring-1 ring-white/10">
+                                {items.map((it) => (
+                                    <button
+                                        key={it.id}
+                                        type="button"
+                                        onClick={() => (
+                                            onChange([...value, it]),
+                                            setQ(''),
+                                            setItems([])
+                                        )}
+                                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-white hover:bg-white/10"
+                                    >
+                                        {it.cover && (
+                                            <img
+                                                src={it.cover}
+                                                alt=""
+                                                className="size-8 rounded object-cover"
+                                            />
+                                        )}
+                                        <span className="min-w-0 flex-1 truncate">
+                                            {it.title}
+                                        </span>
+                                        {it.subtitle && (
+                                            <span className="text-xs text-white/45">
+                                                {it.subtitle}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }

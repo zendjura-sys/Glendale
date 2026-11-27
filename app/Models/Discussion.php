@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property string $title
  * @property string|null $body
+ * @property array<int, mixed>|null $embeds
  * @property bool $spoiler
  * @property bool $is_pinned
  * @property bool $is_locked
@@ -30,7 +31,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read User|null $user
  */
-#[Fillable(['subject_type', 'subject_id', 'category', 'user_id', 'title', 'body', 'spoiler', 'is_pinned', 'is_locked', 'last_reply_at'])]
+#[Fillable(['subject_type', 'subject_id', 'category', 'user_id', 'title', 'body', 'embeds', 'spoiler', 'is_pinned', 'is_locked', 'last_reply_at'])]
 class Discussion extends Model
 {
     use SoftDeletes;
@@ -50,6 +51,7 @@ class Discussion extends Model
     {
         return [
             'spoiler' => 'boolean',
+            'embeds' => 'array',
             'is_pinned' => 'boolean',
             'is_locked' => 'boolean',
             'last_reply_at' => 'datetime',
