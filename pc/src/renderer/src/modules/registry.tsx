@@ -78,7 +78,7 @@ export const MODULES: ModuleDef[] = [
     section('phone', 'Телефон', Phone, '/api/v1/site/phone', '/phone', 'Дзвінки й контакти'),
     { ...section('communities', 'Спільноти', UsersRound, '/api/v1/communities?tab=mine', '/communities'), page: '/communities' },
     section('photos', 'Фотографії', Image, '/api/v1/site/photos', '/photos'),
-    section('servers', 'Сервери GTA', Server, '/api/v1/servers', '/servers', 'Онлайн і моніторинг'),
+    { ...section('servers', 'Сервери GTA', Server, '/api/v1/servers', '/servers', 'Онлайн і моніторинг'), page: '/servers' },
     section('music', 'Музика', Music, '/api/v1/music', '/music'),
     section('cinema', 'Кіно', Clapperboard, '/api/v1/cinema', '/cinema'),
     { id: 'families', title: 'Сім’ї', icon: Crown, section: 'families', page: '/families', render: (h) => <FamiliesModule header={h} /> },
