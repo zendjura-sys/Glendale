@@ -3,6 +3,7 @@ import { FamiliesList } from './family/FamiliesList';
 import { FamilyPage } from './family/FamilyPage';
 import { MessagesPage } from './messages/MessagesPage';
 import { FeedPage } from './social/FeedPage';
+import { GamePage, GamesList } from './games/Games';
 import { ClanPage, ClansList } from './groups/Clans';
 import { CommunitiesList, CommunityPage } from './groups/Communities';
 import { FriendsPage } from './social/FriendsPage';
@@ -19,6 +20,8 @@ export function resolvePage(path: string): ReactNode | null {
     let m: RegExpMatchArray | null;
     if (p === '/families') return <FamiliesList />;
     if (p === '/feed') return <FeedPage />;
+    if (p === '/games') return <GamesList />;
+    if ((m = p.match(/^\/games\/([^/]+)$/))) return <GamePage key={m[1]} slug={m[1]} />;
     if (p === '/clans') return <ClansList />;
     if ((m = p.match(/^\/clans\/([^/]+)$/)) && m[1] !== 'create') return <ClanPage key={m[1]} slug={m[1]} />;
     if (p === '/communities') return <CommunitiesList />;

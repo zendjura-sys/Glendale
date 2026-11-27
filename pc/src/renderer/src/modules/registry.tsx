@@ -82,7 +82,7 @@ export const MODULES: ModuleDef[] = [
     section('music', 'Музика', Music, '/api/v1/music', '/music'),
     section('cinema', 'Кіно', Clapperboard, '/api/v1/cinema', '/cinema'),
     { id: 'families', title: 'Сім’ї', icon: Crown, section: 'families', page: '/families', render: (h) => <FamiliesModule header={h} /> },
-    section('games', 'Ігри', Gamepad2, '/api/v1/games', '/games'),
+    { ...section('games', 'Ігри', Gamepad2, '/api/v1/games', '/games'), page: '/games' },
     { ...section('clans', 'Клани', Shield, '/api/v1/site/clans', '/clans'), page: '/clans' },
     section('events', 'Події', CalendarDays, '/api/v1/site/events', '/events'),
     { id: 'quests', title: 'Завдання', icon: Target, section: 'quests', render: (h) => <QuestsModule header={h} /> },

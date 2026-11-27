@@ -237,3 +237,10 @@ export async function downloadFile(src: string, name: string): Promise<void> {
     a.download = name;
     a.click();
 }
+
+/** Обкладинка з запасним варіантом: не завантажилась — градієнт з іконкою, а не «бита» картинка. */
+export function Cover({ src, className, fallback }: { src: string | null | undefined; className?: string; fallback?: ReactNode }) {
+    const [broken, setBroken] = useState(false);
+    if (!src || broken) return <div className={`grid place-items-center bg-gradient-to-br from-neon-blue/25 via-neon-violet/20 to-neon-cyan/15 text-white/35 ${className ?? ''}`}>{fallback}</div>;
+    return <img src={src} alt="" draggable={false} onError={() => setBroken(true)} className={`object-cover ${className ?? ''}`} />;
+}
