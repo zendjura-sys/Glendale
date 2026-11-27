@@ -91,11 +91,12 @@ export const MODULES: ModuleDef[] = [
     { ...section('moments', 'Моменти', Camera, '/api/v1/site/moments', '/moments'), page: '/moments' },
     { ...section('articles', 'Статті', BookOpen, '/api/v1/site/articles', '/articles'), page: '/articles' },
     { ...section('party', 'Пошук паті', Swords, '/api/v1/site/party', '/party'), page: '/party' },
-    { ...section('gamecast', 'GameCast', Mic, '/api/v1/site/shows', '/shows', 'Подкасти наживо'), section: null, plugin: 'live_shows' },
+    { ...section('gamecast', 'GameCast', Mic, '/api/v1/site/shows', '/shows', 'Подкасти наживо'), section: null, plugin: 'live_shows', page: '/shows' },
     {
         ...section('livecast', 'LiveCast', Radio, '/api/v1/site/livecast', '/livecast', 'Стріми камерою чи екраном'),
         section: null,
         plugin: 'livecast',
+        page: '/livecast',
         // Студія як OBS: сцени, джерела, мікшер, ефір / RTMP / запис.
         render: (header) => <SectionModule title="LiveCast" subtitle="Стріми камерою чи екраном" endpoint="/api/v1/site/livecast" webPath="/livecast" header={<>{header}<IconButton label="Студія LiveCast" onClick={() => void window.gamecon.studio.open()}><Clapperboard size={15} strokeWidth={1.5} /></IconButton></>} />,
     },
