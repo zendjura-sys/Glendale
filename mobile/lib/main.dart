@@ -159,7 +159,10 @@ Future<void> main() async {
   final initial = await links.getInitialLink();
   if (initial != null) session.takeLink(initial);
 
-  final router = GoRouter(
+  late final GoRouter router;
+  // Оверлей у грі просить відкрити розділ — GameCon виходить наперед і переходить туди.
+  if (isAndroid) GameOverlay.listen((path) => router.go(path));
+  router = GoRouter(
     refreshListenable: session,
     // Без інтернету, але з завантаженою музикою — одразу в розділ музики.
     initialLocation: session.token == null ? '/login' : (!Api.online.value && !downloads.isEmpty ? '/music' : (isDesktop ? '/home' : '/feed')),

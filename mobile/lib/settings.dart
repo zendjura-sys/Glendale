@@ -1142,13 +1142,7 @@ class _GameOverlaySettingsState extends State<_GameOverlaySettings> with Widgets
   List<String> chosen = const [];
   bool usage = true;
 
-  static Map<String, String> get _labels => {
-        'friends': tr('Друзі онлайн'),
-        'chats': tr('Непрочитані чати'),
-        'ready': tr('«Готовий грати»'),
-        'playing': tr('Хто з друзів у грі'),
-        'quests': tr('Завдання дня'),
-      };
+  static Map<String, String> get _labels => GameOverlay.labels();
 
   @override
   void initState() {
@@ -1206,7 +1200,7 @@ class _GameOverlaySettingsState extends State<_GameOverlaySettings> with Widgets
         value: on,
         contentPadding: EdgeInsets.zero,
         title: Text(tr('Оверлей у грі'), style: body(14.5, weight: FontWeight.w600)),
-        subtitle: Text(tr('Крапля GameCon поверх гри: друзі, чати й «Готовий грати» без виходу з гри.'), style: body(12.5, color: muted)),
+        subtitle: Text(tr('Крапля GameCon поверх гри: друзі, чати, сім’я, клани, сповіщення й завдання — без виходу з гри.'), style: body(12.5, color: muted)),
         onChanged: (v) async {
           if (v && !await GameOverlay.hasPermission()) {
             await GameOverlay.requestPermission();
@@ -1239,7 +1233,7 @@ class _GameOverlaySettingsState extends State<_GameOverlaySettings> with Widgets
             ),
           ),
         const SizedBox(height: 8),
-        Text(tr('Що показувати в оверлеї'), style: body(13, color: muted)),
+        Text(tr('Вкладки оверлею (лише з увімкнених вам розділів)'), style: body(13, color: muted)),
         Wrap(spacing: 8, runSpacing: 8, children: [
           for (final key in available)
             SelectPill(

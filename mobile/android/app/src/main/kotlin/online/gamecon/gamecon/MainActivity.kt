@@ -29,6 +29,11 @@ class MainActivity : AudioServiceActivity() {
                 "usageAccess" -> result.success(PlayingDetector.hasUsageAccess(this))
                 // Ігровий оверлей (#17): яка гра зараз на екрані — назва або null.
                 "foregroundGame" -> result.success(PlayingDetector.currentGame(this)?.second)
+                // Ігровий оверлей: «Відкрити в GameCon» — вивести застосунок наперед (дозвіл «Поверх інших» дозволяє старт із фону).
+                "bringToFront" -> {
+                    startActivity(android.content.Intent(this, MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+                    result.success(true)
+                }
                 "openUsageAccess" -> {
                     startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS))
                     result.success(true)

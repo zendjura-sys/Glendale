@@ -10,10 +10,10 @@ type Cast = { live: number; listeners: number };
 
 /** Друзі онлайн і голос: хто в мережі, хто в грі, живі голосові кімнати GameCast. */
 export function FriendsModule({ header }: { header?: ReactNode }) {
-    const online = useLive<{ friends: { data: Friend[] } }>('/api/v1/friends?tab=online', 30_000, ['friends']);
+    const online = useLive<{ users: { data: Friend[] } }>('/api/v1/friends?tab=online', 30_000, ['friends']);
     const pulse = useLive<Pulse>('/api/v1/me/pulse-widget', 30_000);
     const cast = useLive<Cast>('/api/v1/site/shows/pulse', 30_000);
-    const friends = online.data?.friends?.data ?? [];
+    const friends = online.data?.users?.data ?? [];
     const playing = new Map((pulse.data?.playing ?? []).map((p) => [p.name, p.label]));
     return (
         <NotchedCard title="Друзі" subtitle="Хто зараз у мережі й голос" glow="blue" header={header} badge={<NotchBadge tone={friends.length ? 'cyan' : 'muted'}>{friends.length}</NotchBadge>} badgeWidth={44}>
