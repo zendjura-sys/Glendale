@@ -69,6 +69,8 @@ export default defineConfig({
             'mobile/**',
             // Застосунок для Windows (Rust + Tauri) — окремий проєкт зі своєю перевіркою (cargo test).
             'desktop/**',
+            // Програма для ПК (Electron) — окремий проєкт зі своєю перевіркою (pc: npm run typecheck).
+            'pc/**',
             // Зібраний веб-SDK (npm run sdk:build) — лінтер перевіряє його джерело resources/js/sdk/gamecon-sdk.ts.
             'resources/sdk/gamecon-sdk.js',
             // Шаблон для сторонніх Next.js-проєктів: next-auth ставиться там, не тут.
@@ -101,6 +103,7 @@ export default defineConfig({
             // Flutter-застосунок форматує `dart format`, не vp.
             'mobile/**',
             'desktop/**',
+            'pc/**',
             'resources/js/components/ui/*',
             'resources/views/mail/*',
             // Каталог перекладів генерує scripts/i18n/extract.mjs.
