@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/Discussions';
 import { ExternalLink, Gamepad2, Search, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button, Card, Cover, Field, Input, Loading, Masonry, PageHeader, Select, StatTile, Tabs, TextArea, money, useAction, useSite, when } from '@/components/kit';
@@ -96,7 +97,7 @@ type Game = {
     guides: { id: number; title: string; excerpt?: string | null; votes?: number; author?: User | null }[];
     screenshots: string[] | null;
 };
-type TabId = 'overview' | 'reviews' | 'prices' | 'pc' | 'news' | 'qa' | 'guides';
+type TabId = 'overview' | 'talk' | 'reviews' | 'prices' | 'pc' | 'news' | 'qa' | 'guides';
 const BACKLOG: Record<string, string> = { want: 'Хочу пограти', playing: 'Граю', done: 'Пройдено', dropped: 'Закинув' };
 
 /** Гра повністю: обкладинка, оцінка спільноти й моя, «Хочу / Граю / Пройдено», хто грає, відгуки, ціни, чи потягне ПК, новини, питання й гайди. */
@@ -139,6 +140,7 @@ export function GamePage({ slug }: { slug: string }) {
             <Tabs
                 tabs={[
                     { id: 'overview', label: 'Огляд' },
+                    { id: 'talk', label: 'Обговорення' },
                     { id: 'reviews', label: 'Відгуки' },
                     { id: 'prices', label: 'Ціни' },
                     { id: 'pc', label: 'Чи потягне ПК' },
@@ -273,6 +275,7 @@ export function GamePage({ slug }: { slug: string }) {
                         )}
                     </div>
                 )}
+                {tab === 'talk' && <Discussions subject={{ type: 'game', id: g.id }} />}
                 {tab === 'reviews' && <Reviews slug={slug} />}
                 {tab === 'prices' && <Prices slug={slug} />}
                 {tab === 'pc' && <PcCheck slug={slug} />}

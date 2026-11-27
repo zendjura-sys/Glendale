@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/Discussions';
 import { LogOut, MessageSquare, Plus, Search, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { Button, Card, Field, Input, Loading, Masonry, Modal, PageHeader, Select, StatTile, Tabs, TextArea, money, useAction, useSite, when } from '@/components/kit';
@@ -89,7 +90,7 @@ type Clan = {
     settings: { name: string; tag: string; description: string | null; rules: string | null; join_mode: string; is_recruiting: boolean; currency: string; questions: string[] } | null;
     allies: { name: string; slug: string }[];
 };
-type TabId = 'overview' | 'news' | 'events' | 'members' | 'shifts' | 'treasury' | 'rating' | 'rules' | 'settings';
+type TabId = 'overview' | 'talk' | 'news' | 'events' | 'members' | 'shifts' | 'treasury' | 'rating' | 'rules' | 'settings';
 
 /** Клан чи гільдія повністю: огляд і MVP, новини, заходи, склад і заявки, зміни, скарбниця, рейтинг, правила, налаштування; вступ і чат. */
 export function ClanPage({ slug }: { slug: string }) {
@@ -113,6 +114,7 @@ export function ClanPage({ slug }: { slug: string }) {
         { id: 'shifts', label: 'Зміни', show: !!d.me && has('shifts') },
         { id: 'treasury', label: 'Скарбниця', show: !!d.me && has('treasury') },
         { id: 'rating', label: 'Рейтинг', show: !!d.me && has('rating') },
+        { id: 'talk', label: 'Обговорення', show: true },
         { id: 'rules', label: 'Правила', show: !!c.rules },
         { id: 'settings', label: 'Налаштування', show: !!d.settings },
     ];
@@ -268,6 +270,7 @@ export function ClanPage({ slug }: { slug: string }) {
                         </div>
                     </div>
                 )}
+                {tab === 'talk' && <Discussions subject={{ type: 'clan', id: c.id }} />}
                 {tab === 'news' && <ClanNews d={d} base={base} reload={reload} can={can} />}
                 {tab === 'events' && <ClanEvents d={d} base={base} reload={reload} can={can} />}
                 {tab === 'members' && <ClanMembers d={d} base={base} reload={reload} can={can} />}

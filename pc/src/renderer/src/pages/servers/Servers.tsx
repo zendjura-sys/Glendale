@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/Discussions';
 import { BadgeCheck, Copy, ExternalLink, Search, Server, ThumbsUp, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Button, Card, Cover, Input, Loading, Masonry, PageHeader, StatTile, Tabs, TextArea, useAction, useSite, useToast, when } from '@/components/kit';
@@ -88,7 +89,7 @@ type ServerPage = {
     ownership: { news: { id: number; title: string; body: string; created_at: string }[] } | null;
     tournaments: { list: { id: number; title: string; status: string; starts_at: string; prize?: string | null; entries_count?: number }[] } | null;
 };
-type TabId = 'overview' | 'families' | 'reviews' | 'events';
+type TabId = 'overview' | 'families' | 'reviews' | 'events' | 'talk';
 
 /** Сервер повністю: онлайн, підключення, голос дня, графік голосів, сім’ї сервера, хто грає, події й турніри, відгуки, схожі. */
 export function ServerPage({ slug }: { slug: string }) {
@@ -130,6 +131,7 @@ export function ServerPage({ slug }: { slug: string }) {
                     { id: 'overview', label: 'Огляд' },
                     { id: 'families', label: 'Сім’ї', badge: d.families.length },
                     { id: 'events', label: 'Події й турніри' },
+                    { id: 'talk', label: 'Обговорення' },
                     { id: 'reviews', label: 'Відгуки', badge: d.reviews.count },
                 ]}
                 value={tab}
@@ -284,6 +286,7 @@ export function ServerPage({ slug }: { slug: string }) {
                         </Card>
                     </Masonry>
                 )}
+                {tab === 'talk' && <Discussions subject={{ type: 'server', id: s.id }} />}
                 {tab === 'reviews' && (
                     <div className="grid grid-cols-[minmax(0,1fr)_340px] gap-5 max-[1000px]:grid-cols-1">
                         <div className="space-y-3">

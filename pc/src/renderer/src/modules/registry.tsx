@@ -13,6 +13,7 @@ import {
     Radio,
     UserRound,
     MessageSquare,
+    MessagesSquare,
     Music,
     Newspaper,
     Search,
@@ -74,6 +75,7 @@ export const MODULES: ModuleDef[] = [
     { id: 'activity', page: '/notifications', title: 'Сповіщення', icon: Bell, section: null, render: (h) => <ActivityModule header={h} /> },
     // Голос сімей, кланів і спільнот — є, якщо ввімкнено хоч один з цих розділів (див. availableModules).
     { id: 'voice', title: 'Голосові кімнати', icon: Headphones, section: 'families', anyOf: ['families', 'clans', 'communities'], render: (h) => <VoiceModule header={h} /> },
+    { ...section('discussions', 'Обговорення', MessagesSquare, '/api/v1/discussions/list', '/discussions', 'Теми й відповіді'), page: '/discussions' },
     section('people', 'Пошук людей', Search, '/api/v1/people', '/people'),
     section('phone', 'Телефон', Phone, '/api/v1/site/phone', '/phone', 'Дзвінки й контакти'),
     { ...section('communities', 'Спільноти', UsersRound, '/api/v1/communities?tab=mine', '/communities'), page: '/communities' },

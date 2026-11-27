@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/Discussions';
 import { Crown } from 'lucide-react';
 import { useState } from 'react';
 import { Loading, PageHeader, Tabs, useSite } from '@/components/kit';
@@ -11,7 +12,7 @@ import { FamilyQueue, FamilyReports } from './Reports';
 import { FamilySettings } from './Settings';
 import type { FamilyShell } from './types';
 
-type TabId = 'overview' | 'reports' | 'queue' | 'members' | 'bank' | 'events' | 'rating' | 'discipline' | 'warehouse' | 'shifts' | 'charter' | 'wiki' | 'relations' | 'history' | 'audit' | 'settings';
+type TabId = 'overview' | 'talk' | 'reports' | 'queue' | 'members' | 'bank' | 'events' | 'rating' | 'discipline' | 'warehouse' | 'shifts' | 'charter' | 'wiki' | 'relations' | 'history' | 'audit' | 'settings';
 
 /**
  * Сім’я в програмі — повністю, як на сайті: огляд, звіти з доказами, перевірка, склад і заявки,
@@ -39,6 +40,7 @@ export function FamilyPage({ slug, initialTab }: { slug: string; initialTab?: st
         { id: 'wiki', label: 'Вікі', show: !!d.me },
         { id: 'relations', label: 'Союзи й війни', show: true },
         { id: 'history', label: 'Історія', show: true },
+        { id: 'talk', label: 'Обговорення', show: true },
         { id: 'audit', label: 'Журнал', show: !!can['audit.view'] },
         { id: 'settings', label: 'Налаштування', show: !!can['settings.manage'] },
     ];
@@ -70,6 +72,7 @@ export function FamilyPage({ slug, initialTab }: { slug: string; initialTab?: st
                 {tab === 'wiki' && <FamilyWiki {...props} />}
                 {tab === 'relations' && <FamilyRelations {...props} />}
                 {tab === 'history' && <FamilyHistory {...props} />}
+                {tab === 'talk' && <Discussions subject={{ type: 'family', id: family.id }} />}
                 {tab === 'audit' && <FamilyAudit {...props} />}
                 {tab === 'settings' && <FamilySettings {...props} />}
             </div>

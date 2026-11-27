@@ -3,6 +3,7 @@ import { FamiliesList } from './family/FamiliesList';
 import { FamilyPage } from './family/FamilyPage';
 import { MessagesPage } from './messages/MessagesPage';
 import { FeedPage } from './social/FeedPage';
+import { DiscussionsPage } from './discussions/DiscussionsPage';
 import { GamePage, GamesList } from './games/Games';
 import { ServerPage, ServersList } from './servers/Servers';
 import { MusicCollection, MusicPage } from './music/Music';
@@ -22,6 +23,7 @@ export function resolvePage(path: string): ReactNode | null {
     let m: RegExpMatchArray | null;
     if (p === '/families') return <FamiliesList />;
     if (p === '/feed') return <FeedPage />;
+    if (p === '/discussions') return <DiscussionsPage />;
     if (p === '/music') return <MusicPage />;
     if (/^\/music\/(album|artist|genre|mix|mood|playlists)\b/.test(p)) return <MusicCollection key={path} path={path} />;
     if (p === '/servers') return <ServersList />;

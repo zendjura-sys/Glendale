@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/Discussions';
 import { LogOut, Plus, Search, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { Button, Card, Field, Input, Loading, Masonry, PageHeader, Select, StatTile, Tabs, TextArea, useAction, useSite, when } from '@/components/kit';
@@ -79,7 +80,7 @@ type Community = {
     posts: { data: Post[] };
     queue: Post[];
 };
-type TabId = 'posts' | 'members' | 'events' | 'wiki' | 'rules' | 'settings';
+type TabId = 'posts' | 'talk' | 'members' | 'events' | 'wiki' | 'rules' | 'settings';
 
 /** Спільнота повністю: записи (і від імені спільноти), учасники й заявки, події, вікі, правила, налаштування; вступ і вихід. */
 export function CommunityPage({ slug }: { slug: string }) {
@@ -100,6 +101,7 @@ export function CommunityPage({ slug }: { slug: string }) {
     };
     const tabs: { id: TabId; label: string; badge?: number; show: boolean }[] = [
         { id: 'posts', label: 'Записи', show: true },
+        { id: 'talk', label: 'Обговорення', show: d.can.view },
         { id: 'members', label: 'Учасники', badge: d.stats.requests, show: d.can.view },
         { id: 'events', label: 'Події', show: d.can.view },
         { id: 'wiki', label: 'Вікі', show: d.can.view },
@@ -207,6 +209,7 @@ export function CommunityPage({ slug }: { slug: string }) {
                         </aside>
                     </div>
                 )}
+                {tab === 'talk' && <Discussions subject={{ type: 'community', id: c.id }} />}
                 {tab === 'members' && <CommunityMembers slug={slug} manage={d.can.manage} />}
                 {tab === 'events' && <CommunityEvents slug={slug} />}
                 {tab === 'wiki' && <CommunityWiki slug={slug} />}
