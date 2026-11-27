@@ -39,7 +39,7 @@ export function useSite<T>(path: string | null): { data: T | null; error: string
         if (!path) return;
         setLoading(true);
         try {
-            setData(await api<T>('GET', `/api/v1/site${path}`));
+            setData(await api<T>('GET', path.startsWith('/api/') ? path : `/api/v1/site${path}`));
             setError(null);
         } catch (e) {
             setError((e as Error).message);

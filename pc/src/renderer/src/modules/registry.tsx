@@ -82,7 +82,7 @@ export const MODULES: ModuleDef[] = [
     section('photos', 'Фотографії', Image, '/api/v1/site/photos', '/photos'),
     { ...section('servers', 'Сервери GTA', Server, '/api/v1/servers', '/servers', 'Онлайн і моніторинг'), page: '/servers' },
     { ...section('music', 'Музика', Music, '/api/v1/music', '/music'), page: '/music' },
-    section('cinema', 'Кіно', Clapperboard, '/api/v1/cinema', '/cinema'),
+    { ...section('cinema', 'Кіно', Clapperboard, '/api/v1/cinema', '/cinema'), page: '/cinema' },
     { id: 'families', title: 'Сім’ї', icon: Crown, section: 'families', page: '/families', render: (h) => <FamiliesModule header={h} /> },
     { ...section('games', 'Ігри', Gamepad2, '/api/v1/games', '/games'), page: '/games' },
     { ...section('clans', 'Клани', Shield, '/api/v1/site/clans', '/clans'), page: '/clans' },
