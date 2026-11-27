@@ -32,6 +32,8 @@ import { MessengerModule } from './Messenger';
 import { ProfileModule } from './Profile';
 import { SectionModule } from './Section';
 import { VoiceModule } from './Voice';
+import { FamiliesModule } from './Families';
+import { QuestsModule } from './Quests';
 import { IconButton } from '@/components/ui';
 
 export type ModuleDef = {
@@ -75,11 +77,11 @@ export const MODULES: ModuleDef[] = [
     section('servers', 'Сервери GTA', Server, '/api/v1/servers', '/servers', 'Онлайн і моніторинг'),
     section('music', 'Музика', Music, '/api/v1/music', '/music'),
     section('cinema', 'Кіно', Clapperboard, '/api/v1/cinema', '/cinema'),
-    section('families', 'Сім’ї', Crown, '/api/v1/families', '/families', 'Ваші сім’ї та склад'),
+    { id: 'families', title: 'Сім’ї', icon: Crown, section: 'families', render: (h) => <FamiliesModule header={h} /> },
     section('games', 'Ігри', Gamepad2, '/api/v1/games', '/games'),
     section('clans', 'Клани', Shield, '/api/v1/site/clans', '/clans'),
     section('events', 'Події', CalendarDays, '/api/v1/site/events', '/events'),
-    section('quests', 'Завдання', Target, '/api/v1/site/quests', '/quests'),
+    { id: 'quests', title: 'Завдання', icon: Target, section: 'quests', render: (h) => <QuestsModule header={h} /> },
     section('moments', 'Моменти', Camera, '/api/v1/site/moments', '/moments'),
     section('articles', 'Статті', BookOpen, '/api/v1/site/articles', '/articles'),
     section('party', 'Пошук паті', Swords, '/api/v1/site/party', '/party'),
