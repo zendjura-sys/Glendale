@@ -180,7 +180,7 @@ export function PostCard({ post, onDeleted }: { post: Post; onDeleted?: () => vo
 }
 
 /** Новий запис: текст, фото й відео (перетягнути чи Ctrl+V), хто бачить, спойлер; на чужій стіні — wall. */
-export function Composer({ wall, onPosted, placeholder = 'Що нового?' }: { wall?: string; onPosted: () => void; placeholder?: string }) {
+export function Composer({ wall, community, asCommunity, onPosted, placeholder = 'Що нового?' }: { wall?: string; community?: string; asCommunity?: boolean; onPosted: () => void; placeholder?: string }) {
     const { me } = useMe();
     const toast = useToast();
     const [text, setText] = useState('');
@@ -201,7 +201,7 @@ export function Composer({ wall, onPosted, placeholder = 'Що нового?' }:
         setBusy(true);
         try {
             const upload = await Promise.all(files.map(async (f) => ({ field: 'images[]', name: f.name, type: f.type, data: await f.arrayBuffer() })));
-            await api('POST', '/api/v1/posts', { __form: true, fields: { body: text.trim() || null, visibility, spoiler, wall: wall ?? null }, files: upload });
+            await api('POST', '/api/v1/posts', { __form: true, fields: { body: text.trim() || null, visibility, spoiler, wall: wall ?? null, community: community ?? null, as_community: asCommunity ?? null }, files: upload });
             setText('');
             setFiles([]);
             setSpoiler(false);
@@ -241,7 +241,7 @@ export function Composer({ wall, onPosted, placeholder = 'Що нового?' }:
                 <Button small onClick={pick}>
                     <ImagePlus size={15} /> Фото / відео
                 </Button>
-                {!wall && (
+                {!wall && !community && (
                     <Select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="!h-8 !w-40 !py-0 text-[13px]">
                         <option value="public">Бачать усі</option>
                         <option value="friends">Лише друзі</option>
