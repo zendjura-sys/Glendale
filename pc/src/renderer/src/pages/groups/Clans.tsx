@@ -152,7 +152,7 @@ export function ClanPage({ slug }: { slug: string }) {
             <div className="min-h-0 flex-1 overflow-y-auto p-5">
                 {tab === 'overview' && (
                     <div className="space-y-4">
-                        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
                             <StatTile label="Учасників" value={c.members_count} accent />
                             {has('treasury') && <StatTile label="Скарбниця" value={money(c.treasury, c.currency)} />}
                             {d.me && <StatTile label="Мій внесок" value={money(d.me.contributed, c.currency)} />}
@@ -198,12 +198,74 @@ export function ClanPage({ slug }: { slug: string }) {
                                     ))}
                                 </Card>
                             )}
-                            {d.news.slice(0, 2).map((n) => (
-                                <Card key={n.id} title={n.title}>
-                                    <p className="line-clamp-4 text-sm text-white/70">{n.body}</p>
+                            {d.members.length > 0 && (
+                                <Card title={`Склад · ${d.members.length}`} actions={<Button small onClick={() => setTab('members')}>Усі</Button>}>
+                                    <div className="grid grid-cols-6 gap-2">
+                                        {d.members.slice(0, 12).map((m) => (
+                                            <button key={m.id} type="button" title={m.nickname ?? m.user?.name} onClick={() => m.user?.username && nav.go(`/u/${m.user.username}`)} className="flex flex-col items-center gap-1">
+                                                <Avatar user={m.user} size={40} dot={m.user?.is_online ? 'online' : null} />
+                                                <span className="w-full truncate text-center text-[11px] text-white/55">{m.nickname ?? m.user?.first_name}</span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </Card>
-                            ))}
+                            )}
+                            {has('events') && d.me && (
+                                <Card title="Найближчі заходи" actions={<Button small onClick={() => setTab('events')}>Усі</Button>}>
+                                    {d.events.length === 0 ? (
+                                        <Hint text="Запланованих заходів немає." action={can['events.manage'] ? 'Створити захід' : undefined} onAction={() => setTab('events')} />
+                                    ) : (
+                                        d.events.slice(0, 3).map((e) => (
+                                            <div key={e.id} className="flex items-center gap-3 py-1.5 text-sm">
+                                                <span className="w-24 shrink-0 text-white/50">{when(e.starts_at)}</span>
+                                                <span className="min-w-0 flex-1 truncate">{e.title}</span>
+                                                <span className="text-xs text-neon-cyan">{e.going_count} іде</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </Card>
+                            )}
+                            {has('news') && d.me && (
+                                <Card title="Новини" actions={<Button small onClick={() => setTab('news')}>Усі</Button>}>
+                                    {d.news.length === 0 ? (
+                                        <Hint text="Новин ще не було." action={can['news.post'] ? 'Написати новину' : undefined} onAction={() => setTab('news')} />
+                                    ) : (
+                                        d.news.slice(0, 2).map((n) => (
+                                            <div key={n.id} className="mb-2 last:mb-0">
+                                                <p className="text-sm font-semibold">{n.title}</p>
+                                                <p className="line-clamp-2 text-sm text-white/60">{n.body}</p>
+                                            </div>
+                                        ))
+                                    )}
+                                </Card>
+                            )}
                         </Masonry>
+                        {/* Можливості клану — плитки з переходом у вкладки (замість порожнечі знизу). */}
+                        <div>
+                            <h3 className="mb-2 px-1 text-xs font-semibold tracking-wide text-white/45 uppercase">Можливості клану</h3>
+                            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+                                {Object.entries(d.features).map(([k, f]) => {
+                                    const on = has(k);
+                                    const target = ({ news: 'news', events: 'events', treasury: 'treasury', rating: 'rating', rules: 'rules', shifts: 'shifts' } as Record<string, TabId>)[k];
+                                    return (
+                                        <button
+                                            key={k}
+                                            type="button"
+                                            disabled={!on || (!target && k !== 'chat')}
+                                            onClick={() => (k === 'chat' && c.conversation_id ? nav.go(`/messages/${c.conversation_id}`) : target && setTab(target))}
+                                            className={`group rounded-2xl p-4 text-left ring-1 transition ${on ? 'bg-gradient-to-br from-white/[0.05] to-white/[0.02] ring-white/[0.08] hover:ring-neon-cyan/40' : 'bg-white/[0.015] opacity-50 ring-white/[0.04]'}`}
+                                        >
+                                            <span className="flex items-center gap-2 text-sm font-semibold">
+                                                <span className={`h-2 w-2 rounded-full ${on ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-white/25'}`} />
+                                                {f.label}
+                                            </span>
+                                            <span className="mt-1 block text-xs text-white/50">{f.text}</span>
+                                            {!on && can['settings.manage'] && <span className="mt-2 block text-[11px] text-white/40">Вимкнено — увімкніть у налаштуваннях</span>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
                 )}
                 {tab === 'news' && <ClanNews d={d} base={base} reload={reload} can={can} />}
@@ -501,7 +563,7 @@ function ClanTreasury({ d, base, reload, can }: Sub) {
     const [spend, setSpend] = useState({ amount: '', comment: '' });
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
                 <StatTile label="У скарбниці" value={money(d.clan.treasury, cur)} accent />
                 <StatTile label="Мій внесок" value={money(d.me?.contributed, cur)} />
             </div>
@@ -644,6 +706,20 @@ function ClanSettings({ d, base, reload }: { d: Clan; base: string; reload: () =
                     Зберегти
                 </Button>
             </div>
+        </div>
+    );
+}
+
+/** Порожній стан з підказкою й дією (замість порожнього місця). */
+function Hint({ text, action, onAction }: { text: string; action?: string; onAction?: () => void }) {
+    return (
+        <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-3 text-sm text-white/50">
+            <span className="flex-1">{text}</span>
+            {action && (
+                <Button small tone="primary" onClick={onAction}>
+                    {action}
+                </Button>
+            )}
         </div>
     );
 }

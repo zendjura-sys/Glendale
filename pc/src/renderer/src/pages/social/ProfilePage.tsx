@@ -100,7 +100,7 @@ export function ProfilePage({ username }: { username: string }) {
                         </div>
                     )}
                 </div>
-                <div className="mt-5 grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
+                <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                     <StatTile label="Друзів" value={d.stats.friends} />
                     <StatTile label="Записів" value={d.stats.posts} />
                     <StatTile label="Фото" value={d.stats.photos} />

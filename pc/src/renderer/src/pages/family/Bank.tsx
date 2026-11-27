@@ -46,7 +46,7 @@ export function FamilyBank({ slug, shell, reloadShell }: FamilyTabProps) {
                     </Button>
                 </div>
             )}
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
                 <StatTile label="Мій баланс" value={money(shell.me?.balance)} />
                 {shell.family.treasury !== null && <StatTile label="Казна" value={money(shell.family.treasury)} />}
                 {d.totals && (

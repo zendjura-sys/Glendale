@@ -21,7 +21,7 @@ export function FamilyOverview({ slug, shell }: FamilyTabProps) {
     return (
         <div className="space-y-4">
             {/* Головне — одним рядом компактних плиток. */}
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
                 <StatTile label="Мій баланс" value={money(shell.me?.balance)} accent />
                 <StatTile label="Заробив за тиждень" value={money(s.week_earned)} hint={s.week_total ? `${Math.round((s.week_earned / s.week_total) * 100)}% від ${money(s.week_total)}` : undefined} />
                 <StatTile label="Звіти на перевірці" value={s.pending_reports} />
