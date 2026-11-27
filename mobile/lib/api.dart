@@ -98,7 +98,8 @@ class Api {
   Api(this.token);
   final String? Function() token;
 
-  static const root = 'https://gamecon.online';
+  // Для локальної перевірки збірки: --dart-define=GC_API=http://127.0.0.1:8123 (у релізі — gamecon.online).
+  static const root = String.fromEnvironment('GC_API', defaultValue: 'https://gamecon.online');
 
   /// Чи дійшов останній запит до GameCon: false — немає інтернету (музика переходить на завантажене).
   static final online = ValueNotifier<bool>(true);

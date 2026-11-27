@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'platform.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:video_player/video_player.dart';
@@ -1276,6 +1277,8 @@ class ShellChrome extends InheritedWidget {
 /// Скільки місця шапка займає зверху, щоб перший елемент стартував під нею,
 /// а прокрутка йшла вже під прозорими кнопками.
 double siteHeaderInset(BuildContext context) {
+  // ПК: шапки телефона немає — заголовок вікна дає оболонка Fluent.
+  if (isDesktop) return 8;
   final top = MediaQuery.viewPaddingOf(context).top;
   return top + siteBarHeight + 12;
 }

@@ -32,6 +32,8 @@ import 'site_parity.dart';
 import 'platform.dart';
 import 'desktop/desktop.dart';
 import 'desktop/native.dart';
+import 'desktop/fluent_shell.dart';
+import 'desktop/modules.dart';
 import 'community_quiz.dart';
 import 'family_widget.dart';
 import 'game_card.dart';
@@ -160,7 +162,7 @@ Future<void> main() async {
   final router = GoRouter(
     refreshListenable: session,
     // Без інтернету, але з завантаженою музикою — одразу в розділ музики.
-    initialLocation: session.token == null ? '/login' : (!Api.online.value && !downloads.isEmpty ? '/music' : '/feed'),
+    initialLocation: session.token == null ? '/login' : (!Api.online.value && !downloads.isEmpty ? '/music' : (isDesktop ? '/home' : '/feed')),
     redirect: (context, state) {
       final logging = state.matchedLocation == '/login';
       if (session.token == null && !logging) return '/login';
@@ -177,8 +179,10 @@ Future<void> main() async {
       GoRoute(path: '/app-login/:id', builder: (_, state) => AppLoginScreen(key: ValueKey(state.pathParameters['id']), api: session.api, id: state.pathParameters['id']!)),
       GoRoute(path: '/scan-login', builder: (_, _) => const AppLoginScanScreen()),
       ShellRoute(
-        builder: (_, _, child) => AppShell(session: session, player: player, child: child),
+        // ПК — власна оболонка в стилі Windows 11 (Fluent, Mica); телефон і планшет — як було.
+        builder: (_, _, child) => isDesktop ? DesktopShell(session: session, player: player, child: child) : AppShell(session: session, player: player, child: child),
         routes: [
+          GoRoute(path: '/home', builder: (_, _) => isDesktop ? const DesktopHome() : const FeedScreen()),
           GoRoute(path: '/feed', builder: (_, _) => const FeedScreen()),
           GoRoute(path: '/search', builder: (_, state) => SearchScreen(initial: state.uri.queryParameters['q'] ?? '')),
           GoRoute(path: '/posts/:id', builder: (_, state) => PostScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
@@ -464,6 +468,7 @@ Future<void> main() async {
     unawaited(showFullPlayer(context, player, session: session));
   });
   // ПК: вікно, трей і робота у фоні (lib/desktop/).
+  await DesktopShell.initEffects();
   await Desktop.init(open: router.go);
   // Нативне ядро (Rust): гра на весь екран → статус «Граю» для друзів.
   NativeCore.load()?.watch(() => session.api, () => session.token != null);

@@ -21,7 +21,8 @@ class Desktop with WindowListener, TrayListener {
     if (!isDesktop) return;
     await windowManager.ensureInitialized();
     await windowManager.waitUntilReadyToShow(
-      const WindowOptions(size: Size(1440, 900), minimumSize: Size(960, 640), center: true, title: 'GameCon'),
+      // Без системної рамки: своя смуга заголовка Fluent; прозоре тло — під Mica.
+      const WindowOptions(size: Size(1440, 900), minimumSize: Size(960, 640), center: true, title: 'GameCon', titleBarStyle: TitleBarStyle.hidden, backgroundColor: Color(0x00000000)),
       () async {
         await windowManager.show();
         await windowManager.focus();
