@@ -76,7 +76,7 @@ export const MODULES: ModuleDef[] = [
     // Голос сімей, кланів і спільнот — є, якщо ввімкнено хоч один з цих розділів (див. availableModules).
     { id: 'voice', title: 'Голосові кімнати', icon: Headphones, section: 'families', anyOf: ['families', 'clans', 'communities'], render: (h) => <VoiceModule header={h} /> },
     { ...section('discussions', 'Обговорення', MessagesSquare, '/api/v1/discussions/list', '/discussions', 'Теми й відповіді'), page: '/discussions' },
-    section('people', 'Пошук людей', Search, '/api/v1/people', '/people'),
+    { ...section('people', 'Пошук людей', Search, '/api/v1/people', '/people'), page: '/people' },
     { ...section('phone', 'Телефон', Phone, '/api/v1/site/phone', '/phone', 'Дзвінки й контакти'), page: '/phone' },
     { ...section('communities', 'Спільноти', UsersRound, '/api/v1/communities?tab=mine', '/communities'), page: '/communities' },
     { ...section('photos', 'Фотографії', Image, '/api/v1/site/photos', '/photos'), page: '/photos' },
