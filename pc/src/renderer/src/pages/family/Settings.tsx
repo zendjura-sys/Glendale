@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card, Field, Input, Loading, TextArea, useAction, useSite } from '@/components/kit';
+import { Button, Card, Masonry, Field, Input, Loading, TextArea, useAction, useSite } from '@/components/kit';
 import type { FamilyTabProps } from './FamilyPage';
 
 type S = {
@@ -88,7 +88,7 @@ export function FamilySettings({ slug, reloadShell }: FamilyTabProps) {
                     </Button>
                 </div>
             </Card>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
+            <Masonry>
                 {GROUPS.map((g) => (
                     <Card key={g.key} title={g.title}>
                         <div className="space-y-2">
@@ -114,7 +114,7 @@ export function FamilySettings({ slug, reloadShell }: FamilyTabProps) {
                         </div>
                     </Card>
                 ))}
-            </div>
+            </Masonry>
             <div className="flex justify-end">
                 <Button tone="primary" disabled={busy || !settings} onClick={() => void run('PUT', `/f/${slug}/settings`, s, 'Налаштування збережено.', async () => (setSettings(null), await done()))}>
                     Зберегти налаштування

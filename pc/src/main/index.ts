@@ -35,7 +35,7 @@ let windows: WindowManager;
 let tray: Tray | null = null;
 
 /** Налаштування програми: оверлей, автозапуск і модулі, які людина сама обрала (з увімкнених їй розділів). */
-type Settings = { overlay: 'auto' | 'always' | 'off'; launchAtLogin: boolean; modules: ModuleId[] };
+type Settings = { overlay: 'auto' | 'always' | 'off'; launchAtLogin: boolean; modules: ModuleId[]; sizes?: Record<string, 's' | 'm' | 'l'> };
 const defaults: Settings = { overlay: 'auto', launchAtLogin: false, modules: ['feed', 'messenger', 'friends', 'activity'] };
 const settings = (): Settings => ({ ...defaults, ...((store.get('settings') as Partial<Settings> | null) ?? {}) });
 

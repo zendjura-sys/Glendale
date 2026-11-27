@@ -1,4 +1,4 @@
-import { Card, Loading, money, useSite, when } from '@/components/kit';
+import { Card, Loading, Masonry, StatTile, money, useSite, when } from '@/components/kit';
 import { Avatar } from '@/components/ui';
 import type { FamilyTabProps } from './FamilyPage';
 import type { Member } from './types';
@@ -19,16 +19,17 @@ export function FamilyOverview({ slug, shell }: FamilyTabProps) {
     if (!data) return <Loading error={error} />;
     const s = data.stats;
     return (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
-            <Card title="Мій тиждень">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                    <Stat label="Баланс" value={money(shell.me?.balance)} />
-                    <Stat label="Заробив за тиждень" value={money(s.week_earned)} hint={s.week_total ? `${Math.round((s.week_earned / s.week_total) * 100)}% від ${money(s.week_total)}` : undefined} />
-                    <Stat label="Звіти на перевірці" value={String(s.pending_reports)} />
-                    <Stat label="Варни" value={`${s.warns}/${s.warn_limit}`} alert={s.warns > 0} />
-                    {shell.family.treasury !== null && <Stat label="Казна" value={money(shell.family.treasury)} />}
-                </div>
-            </Card>
+        <div className="space-y-4">
+            {/* Головне — одним рядом компактних плиток. */}
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
+                <StatTile label="Мій баланс" value={money(shell.me?.balance)} accent />
+                <StatTile label="Заробив за тиждень" value={money(s.week_earned)} hint={s.week_total ? `${Math.round((s.week_earned / s.week_total) * 100)}% від ${money(s.week_total)}` : undefined} />
+                <StatTile label="Звіти на перевірці" value={s.pending_reports} />
+                <StatTile label="Варни" value={`${s.warns}/${s.warn_limit}`} alert={s.warns > 0} />
+                {shell.family.treasury !== null && <StatTile label="Казна" value={money(shell.family.treasury)} />}
+                <StatTile label="Учасників" value={shell.family.members_count} />
+            </div>
+            <Masonry>
             <Card title="Лідери тижня">
                 <ol className="space-y-2">
                     {data.leaders.slice(0, 6).map((l) => (
@@ -111,6 +112,7 @@ export function FamilyOverview({ slug, shell }: FamilyTabProps) {
                     </div>
                 ))}
             </Card>
+            </Masonry>
         </div>
     );
 }

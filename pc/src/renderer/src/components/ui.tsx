@@ -18,7 +18,7 @@ export function Avatar({ user, size = 36, dot }: { user: Partial<User> | null | 
 
 export function IconButton({ label, onClick, children, active }: { label: string; onClick: () => void; children: ReactNode; active?: boolean }) {
     return (
-        <button type="button" aria-label={label} title={label} onClick={onClick} className={`no-drag grid h-8 w-8 place-items-center rounded-lg transition hover:bg-white/10 ${active ? 'text-neon-cyan' : 'text-white/60 hover:text-white'}`}>
+        <button type="button" aria-label={label} title={label} onClick={onClick} className={`no-drag grid h-9 w-9 place-items-center rounded-xl transition hover:bg-white/10 ${active ? 'text-neon-cyan' : 'text-white/60 hover:text-white'}`}>
             {children}
         </button>
     );

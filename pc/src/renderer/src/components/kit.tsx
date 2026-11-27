@@ -81,8 +81,8 @@ export function PageHeader({ title, subtitle, image, actions }: { title: ReactNo
     const nav = useNav();
     return (
         <div className="flex items-center gap-3 px-5 pt-4 pb-3">
-            <button type="button" onClick={nav.back} aria-label="Назад" title="Назад (Esc)" className="grid h-9 w-9 place-items-center rounded-xl text-white/70 ring-1 ring-white/10 hover:bg-white/10">
-                <ArrowLeft size={17} />
+            <button type="button" onClick={nav.back} aria-label="Назад" title="Назад (Esc)" className="grid h-11 w-11 place-items-center rounded-xl text-white/75 ring-1 ring-white/10 hover:bg-white/10">
+                <ArrowLeft size={19} />
             </button>
             {image}
             <div className="min-w-0 flex-1">
@@ -90,8 +90,8 @@ export function PageHeader({ title, subtitle, image, actions }: { title: ReactNo
                 {subtitle && <div className="truncate text-xs text-white/50">{subtitle}</div>}
             </div>
             {actions}
-            <button type="button" onClick={nav.close} aria-label="Закрити" title="До модулів" className="grid h-9 w-9 place-items-center rounded-xl text-white/50 hover:bg-white/10">
-                <X size={16} />
+            <button type="button" onClick={nav.close} aria-label="Закрити" title="До модулів" className="grid h-11 w-11 place-items-center rounded-xl text-white/55 ring-1 ring-white/10 hover:bg-white/10">
+                <X size={18} />
             </button>
         </div>
     );
@@ -99,13 +99,13 @@ export function PageHeader({ title, subtitle, image, actions }: { title: ReactNo
 
 export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: string; badge?: number | null }[]; value: T; onChange: (id: T) => void }) {
     return (
-        <div className="flex gap-1 overflow-x-auto border-b border-white/5 px-5 pb-2">
+        <div className="flex gap-1.5 overflow-x-auto border-b border-white/5 px-5 pb-3">
             {tabs.map((t) => (
                 <button
                     key={t.id}
                     type="button"
                     onClick={() => onChange(t.id)}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition ${t.id === value ? 'bg-white/10 text-white ring-1 ring-neon-cyan/40' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+                    className={`flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-4 text-[14px] font-medium transition ${t.id === value ? 'bg-white/10 text-white ring-1 ring-neon-cyan/40' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
                 >
                     {t.label}
                     {!!t.badge && <span className="rounded-full bg-neon-violet px-1.5 text-[10px] font-bold">{t.badge}</span>}
@@ -117,7 +117,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: 
 
 export function Card({ title, actions, children, className = '' }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
     return (
-        <section className={`rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/[0.07] ${className}`}>
+        <section className={`break-inside-avoid rounded-2xl bg-white/[0.035] p-4 ring-1 ring-white/[0.07] ${className}`}>
             {(title || actions) && (
                 <div className="mb-3 flex items-center gap-2">
                     <h2 className="flex-1 text-sm font-semibold text-white/85">{title}</h2>
@@ -137,13 +137,13 @@ export function Button({ children, onClick, tone = 'ghost', disabled, type = 'bu
         ok: 'bg-emerald-500/20 text-emerald-200 ring-1 ring-emerald-400/40 hover:bg-emerald-500/30',
     };
     return (
-        <button type={type} disabled={disabled} onClick={onClick} className={`inline-flex items-center justify-center gap-1.5 rounded-lg ${small ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-2 text-sm'} transition disabled:opacity-40 ${tones[tone]}`}>
+        <button type={type} disabled={disabled} onClick={onClick} className={`inline-flex items-center justify-center gap-1.5 rounded-lg ${small ? 'h-8 px-3 text-[13px]' : 'h-10 px-4 text-sm'} transition disabled:opacity-40 ${tones[tone]}`}>
             {children}
         </button>
     );
 }
 
-const fieldClass = 'w-full rounded-lg bg-white/[0.05] px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10 placeholder:text-white/30 focus:ring-neon-cyan/50';
+const fieldClass = 'w-full rounded-xl bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none ring-1 ring-white/10 placeholder:text-white/30 focus:ring-neon-cyan/50';
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
     return (
         <label className="block">
@@ -194,4 +194,24 @@ export function PrivateImage({ src, className, onClick }: { src: string; classNa
         };
     }, [src]);
     return data ? <img src={data} alt="" draggable={false} onClick={() => onClick?.(data)} className={`${className ?? ''} ${onClick ? 'cursor-zoom-in' : ''}`} /> : <div className={`${className ?? ''} animate-pulse bg-white/5`} />;
+}
+
+/** Bento-кладка для карток сторінки: кожна картка — своєї висоти, без порожнечі й розтягування. */
+export function Masonry({ children, min = 320 }: { children: ReactNode; min?: number }) {
+    return (
+        <div className="gap-4 [&>*]:mb-4" style={{ columnWidth: min, columnGap: 16 }}>
+            {children}
+        </div>
+    );
+}
+
+/** Компактна плитка-показник (баланс, варни…). */
+export function StatTile({ label, value, hint, alert, accent }: { label: string; value: ReactNode; hint?: string; alert?: boolean; accent?: boolean }) {
+    return (
+        <div className={`rounded-xl px-3.5 py-3 ring-1 ${accent ? 'bg-neon-cyan/[0.07] ring-neon-cyan/20' : 'bg-white/[0.04] ring-white/[0.06]'}`}>
+            <div className={`text-lg leading-tight font-bold ${alert ? 'text-rose-300' : ''}`}>{value}</div>
+            <div className="mt-0.5 text-xs text-white/50">{label}</div>
+            {hint && <div className="text-[11px] text-white/35">{hint}</div>}
+        </div>
+    );
 }

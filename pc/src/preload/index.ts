@@ -8,7 +8,7 @@ export type CaptureSource = { id: string; name: string; kind: 'screen' | 'window
 export type CallRoom = { id: number; name: string; owner: { type: string; id: number; title: string } };
 /** Що зараз у дзвінку (для модуля й пігулки): кімната, мікрофон, хто говорить. */
 export type CallState = { room: CallRoom; muted: boolean; deafened: boolean; speaking: number[]; count: number };
-export type Settings = { overlay: 'auto' | 'always' | 'off'; launchAtLogin: boolean; modules: ModuleId[] };
+export type Settings = { overlay: 'auto' | 'always' | 'off'; launchAtLogin: boolean; modules: ModuleId[]; sizes?: Record<string, 's' | 'm' | 'l'> };
 
 function on<T>(channel: string, listener: (payload: T) => void): () => void {
     const handler = (_e: IpcRendererEvent, payload: T): void => listener(payload);

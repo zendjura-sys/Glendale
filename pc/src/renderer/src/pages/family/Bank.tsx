@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Button, Card, Field, Input, Loading, Select, money, useAction, useSite, when } from '@/components/kit';
+import { Button, Card, Masonry, StatTile, Field, Input, Loading, Select, money, useAction, useSite, when } from '@/components/kit';
 import type { FamilyTabProps } from './FamilyPage';
-import { Stat } from './Overview';
 import { CashoutRow } from './Reports';
 import type { Roster } from './types';
 
@@ -47,17 +46,17 @@ export function FamilyBank({ slug, shell, reloadShell }: FamilyTabProps) {
                     </Button>
                 </div>
             )}
-            <div className="grid grid-cols-4 gap-3">
-                <Stat label="Мій баланс" value={money(shell.me?.balance)} />
-                {shell.family.treasury !== null && <Stat label="Казна" value={money(shell.family.treasury)} />}
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-3">
+                <StatTile label="Мій баланс" value={money(shell.me?.balance)} />
+                {shell.family.treasury !== null && <StatTile label="Казна" value={money(shell.family.treasury)} />}
                 {d.totals && (
                     <>
-                        <Stat label="Баланси учасників" value={money(d.totals.balances)} />
-                        <Stat label="Чекають виведення" value={money(d.totals.pending_cashouts)} hint={`Виплачено за тиждень: ${money(d.totals.paid_week)}`} />
+                        <StatTile label="Баланси учасників" value={money(d.totals.balances)} />
+                        <StatTile label="Чекають виведення" value={money(d.totals.pending_cashouts)} hint={`Виплачено за тиждень: ${money(d.totals.paid_week)}`} />
                     </>
                 )}
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
+            <Masonry>
                 <Card title="Вивести гроші">
                     <div className="space-y-2">
                         <Field label="Сума" hint={`Мінімум ${money(d.config.cashout_min)}`}>
@@ -139,7 +138,7 @@ export function FamilyBank({ slug, shell, reloadShell }: FamilyTabProps) {
                         </div>
                     </Card>
                 )}
-            </div>
+            </Masonry>
             {d.cashouts.length > 0 && (
                 <Card title="Заявки на виведення">
                     {d.cashouts.map((c) =>

@@ -50,6 +50,8 @@ export type ModuleDef = {
     page?: string;
     render: (header?: ReactNode) => ReactNode;
     wide?: boolean;
+    /** Типовий розмір плитки в bento-сітці: s — компактна, m — звичайна, l — велика. */
+    size?: 's' | 'm' | 'l';
 };
 
 const section = (id: string, title: string, icon: LucideIcon, endpoint: string, webPath: string, subtitle?: string): ModuleDef => ({
@@ -96,6 +98,9 @@ export const MODULES: ModuleDef[] = [
         render: (header) => <SectionModule title="LiveCast" subtitle="Стріми камерою чи екраном" endpoint="/api/v1/site/livecast" webPath="/livecast" header={<>{header}<IconButton label="Студія LiveCast" onClick={() => void window.gamecon.studio.open()}><Clapperboard size={15} strokeWidth={1.5} /></IconButton></>} />,
     },
 ];
+
+/** Розмір за замовчуванням: великі — стрічка й чати, решта — звичайні, прості списки — компактні. */
+export const defaultSize = (m: ModuleDef): 's' | 'm' | 'l' => m.size ?? (m.id === 'feed' || m.id === 'messenger' ? 'l' : ['activity', 'families', 'quests', 'voice', 'profile'].includes(m.id) ? 'm' : 's');
 
 export const DEFAULT_MODULES = ['feed', 'messenger', 'friends', 'activity'];
 
