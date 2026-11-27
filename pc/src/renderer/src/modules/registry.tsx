@@ -6,6 +6,7 @@ import {
     Clapperboard,
     Crown,
     Gamepad2,
+    Headphones,
     Image,
     Mic,
     Phone,
@@ -30,6 +31,7 @@ import { FriendsModule } from './Friends';
 import { MessengerModule } from './Messenger';
 import { ProfileModule } from './Profile';
 import { SectionModule } from './Section';
+import { VoiceModule } from './Voice';
 import { IconButton } from '@/components/ui';
 
 export type ModuleDef = {
@@ -40,6 +42,8 @@ export type ModuleDef = {
     section: string | null;
     /** Плагін (config/plugins.php), без якого модуля немає. */
     plugin?: string;
+    /** Модуль є, якщо ввімкнено будь-який із цих розділів (замість одного section). */
+    anyOf?: string[];
     render: (header?: ReactNode) => ReactNode;
     wide?: boolean;
 };
@@ -62,6 +66,8 @@ export const MODULES: ModuleDef[] = [
     { id: 'messenger', title: 'Повідомлення', icon: MessageSquare, section: 'messages', render: (h) => <MessengerModule header={h} /> },
     { id: 'friends', title: 'Друзі', icon: Users, section: 'friends', render: (h) => <FriendsModule header={h} /> },
     { id: 'activity', title: 'Сповіщення', icon: Bell, section: null, render: (h) => <ActivityModule header={h} /> },
+    // Голос сімей, кланів і спільнот — є, якщо ввімкнено хоч один з цих розділів (див. availableModules).
+    { id: 'voice', title: 'Голосові кімнати', icon: Headphones, section: 'families', anyOf: ['families', 'clans', 'communities'], render: (h) => <VoiceModule header={h} /> },
     section('people', 'Пошук людей', Search, '/api/v1/people', '/people'),
     section('phone', 'Телефон', Phone, '/api/v1/site/phone', '/phone', 'Дзвінки й контакти'),
     section('communities', 'Спільноти', UsersRound, '/api/v1/communities', '/communities'),
@@ -91,7 +97,7 @@ export const DEFAULT_MODULES = ['feed', 'messenger', 'friends', 'activity'];
 
 /** Модулі, доступні людині: розділ і плагін увімкнено на сервері (режим, модулі, плагіни). */
 export function availableModules(sections: string[] | null, plugins: Record<string, boolean> | null = null): ModuleDef[] {
-    return MODULES.filter((m) => (m.section === null || sections === null || sections.includes(m.section)) && (!m.plugin || plugins === null || plugins[m.plugin] === true));
+    return MODULES.filter((m) => (m.section === null || sections === null || (m.anyOf ?? [m.section]).some((s) => sections.includes(s))) && (!m.plugin || plugins === null || plugins[m.plugin] === true));
 }
 
 export const moduleById = (id: string): ModuleDef | undefined => MODULES.find((m) => m.id === id);

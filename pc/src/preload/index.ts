@@ -4,6 +4,10 @@ export type ModuleId = string;
 export type LayoutState = { mode: 'unified' | 'widgets'; gameOverlay: boolean; widgets: Record<ModuleId, { open: boolean; pinned: boolean }> };
 export type ApiResult<T = unknown> = { ok: true; status: number; data: T } | { ok: false; status: number; message: string };
 export type CaptureSource = { id: string; name: string; kind: 'screen' | 'window'; thumbnail: string; icon: string | null };
+/** Кімната, куди заходимо: власник (family / clan / community / server / party) і сама кімната. */
+export type CallRoom = { id: number; name: string; owner: { type: string; id: number; title: string } };
+/** Що зараз у дзвінку (для модуля й пігулки): кімната, мікрофон, хто говорить. */
+export type CallState = { room: CallRoom; muted: boolean; deafened: boolean; speaking: number[]; count: number };
 export type Settings = { overlay: 'auto' | 'always' | 'off'; launchAtLogin: boolean; modules: ModuleId[] };
 
 function on<T>(channel: string, listener: (payload: T) => void): () => void {
@@ -46,6 +50,16 @@ const api = {
         onChange: (listener: (settings: Settings) => void) => on('settings', listener),
     },
     onGame: (listener: (title: string | null) => void) => on('game', listener),
+    /** Голосові кімнати (сім’ї, клани, спільноти, сервери, паті). */
+    call: {
+        join: (room: CallRoom) => ipcRenderer.invoke('call:join', room),
+        room: () => ipcRenderer.invoke('call:room') as Promise<CallRoom | null>,
+        left: () => ipcRenderer.invoke('call:left'),
+        publish: (state: CallState | null) => ipcRenderer.send('call:state', state),
+        onRoom: (cb: (room: CallRoom) => void) => on('call:room', cb),
+        onState: (cb: (state: CallState | null) => void) => on('call:state', cb),
+        onToggleMute: (cb: () => void) => on<void>('call:toggle-mute', () => cb()),
+    },
     studio: {
         open: () => ipcRenderer.invoke('studio:open'),
         load: <T>(key: string) => ipcRenderer.invoke('store:get', key) as Promise<T | null>,

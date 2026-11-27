@@ -5,7 +5,7 @@ import type { Core, CoreStore, Rect, WindowState } from './native';
 /** Модуль = розділ GameCon (feed, messenger, families, …); які показувати — обирає людина. */
 export type ModuleId = string;
 export type Mode = 'unified' | 'widgets';
-export const isModuleId = (id: unknown): id is ModuleId => typeof id === 'string' && /^[a-z_]{2,24}$/.test(id) && !['main', 'dock', 'studio'].includes(id);
+export const isModuleId = (id: unknown): id is ModuleId => typeof id === 'string' && /^[a-z_]{2,24}$/.test(id) && !['main', 'dock', 'studio', 'call'].includes(id);
 
 const WIDGET_SIZE: Record<string, { width: number; height: number }> = {
     feed: { width: 380, height: 520 },
@@ -168,6 +168,27 @@ export class WindowManager {
             this.studio = null;
         });
         this.studio = win;
+    }
+
+    call: BrowserWindow | null = null;
+
+    /** Голосова кімната — окреме компактне вікно: дзвінок живе, хоч би як людина перемикала режими. */
+    openCall(): void {
+        if (this.call && !this.call.isDestroyed()) {
+            this.call.show();
+            this.call.focus();
+            return;
+        }
+        const area = screen.getPrimaryDisplay().workArea;
+        const saved = this.store.window('call');
+        const win = this.create({ x: saved?.x ?? area.x + 24, y: saved?.y ?? area.y + area.height - 560, width: saved?.width ?? 340, height: saved?.height ?? 520, minWidth: 300, minHeight: 360, alwaysOnTop: true }, '/call');
+        win.setAlwaysOnTop(true, 'screen-saver');
+        win.once('ready-to-show', () => win.show());
+        this.track(win, 'call');
+        win.on('closed', () => {
+            this.call = null;
+        });
+        this.call = win;
     }
 
     /** Перемкнути режим (Mode-Switch Toggle). */

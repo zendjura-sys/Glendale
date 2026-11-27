@@ -87,6 +87,21 @@ function registerIpc(): void {
         if (String(key).startsWith('studio')) store.set(String(key), value);
     });
 
+    // Голосові кімнати: модуль просить зайти — вікно дзвінка бере кімнату й підключається.
+    let callRoom: unknown = null;
+    ipcMain.handle('call:join', (_e, room: unknown) => {
+        callRoom = room;
+        const fresh = !windows.call || windows.call.isDestroyed();
+        windows.openCall();
+        if (!fresh) windows.call?.webContents.send('call:room', room);
+    });
+    ipcMain.handle('call:room', () => callRoom);
+    ipcMain.handle('call:left', () => {
+        callRoom = null;
+        windows.broadcast('call:state', null);
+    });
+    ipcMain.on('call:state', (_e, state: unknown) => windows.broadcast('call:state', state));
+
     // Налаштування програми.
     ipcMain.handle('settings:get', () => settings());
     ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => {
@@ -142,6 +157,8 @@ function createTray(): void {
 /** Глобальні клавіші (діють і в грі): показати GameCon, перемкнути режим віджетів. */
 function registerHotkeys(): void {
     globalShortcut.register('CommandOrControl+Shift+G', () => windows.setMode('unified'));
+    // Мікрофон у голосовій кімнаті — і просто з гри.
+    globalShortcut.register('CommandOrControl+Shift+M', () => windows.call?.webContents.send('call:toggle-mute'));
     globalShortcut.register('CommandOrControl+Shift+O', () => windows.setMode(windows.mode === 'widgets' ? 'unified' : 'widgets'));
 }
 

@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import type { User } from '@/lib/api';
 
 export function Avatar({ user, size = 36, dot }: { user: Partial<User> | null | undefined; size?: number; dot?: 'online' | 'idle' | null }) {
-    const letter = (user?.name ?? '?').trim().charAt(0).toUpperCase();
+    // Перша літера імені (без дужок тегу «[SCL] …» і емодзі).
+    const letter = ((user?.name ?? '').match(/\p{L}|\p{N}/u)?.[0] ?? '?').toUpperCase();
     return (
         <span className="relative shrink-0" style={{ width: size, height: size }}>
             {user?.avatar_url ? (
