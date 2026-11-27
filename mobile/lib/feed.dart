@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'home_carousels.dart';
 import 'people.dart';
 import 'posts.dart';
 import 'shell.dart';
@@ -106,10 +107,12 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   final stories = GlobalKey<StoriesStripState>();
+  final carousels = GlobalKey<HomeCarouselsState>();
   final pulse = GlobalKey<FeedPulseState>();
 
   Future<void> _reload() async {
     unawaited(stories.currentState?.reload());
+    unawaited(carousels.currentState?.reload());
     unawaited(pulse.currentState?.reload());
     // «Активність друзів» — окремий список (міст /site/feed/activity), без пагінатора постів.
     if (tab == 'activity') {
@@ -146,6 +149,8 @@ class _FeedScreenState extends State<FeedScreen> {
       onRefresh: _reload,
       children: [
         const IncidentBanner(),
+        // Угорі головної — каруселі кіно, ігор і музики.
+        HomeCarousels(key: carousels),
         StoriesStrip(key: stories),
         FeedPulse(key: pulse),
         if (newcomer != null) ...[
