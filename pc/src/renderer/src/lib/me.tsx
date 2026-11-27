@@ -14,6 +14,7 @@ export function MeProvider({ children }: { children: ReactNode }) {
                 (r) => {
                     setMe(r.user);
                     (window as unknown as { gcMe?: number }).gcMe = r.user.id;
+                    (window as unknown as { gcUsername?: string }).gcUsername = r.user.username;
                 },
                 () => undefined,
             );

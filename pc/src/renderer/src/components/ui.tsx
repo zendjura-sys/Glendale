@@ -1,17 +1,22 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '@/lib/api';
 
 export function Avatar({ user, size = 36, dot }: { user: Partial<User> | null | undefined; size?: number; dot?: 'online' | 'idle' | null }) {
-    // Перша літера імені (без дужок тегу «[SCL] …» і емодзі).
+    // Перша літера імені (без дужок тегу «[SCL] …» і емодзі); картинка не завантажилась — теж літера.
     const letter = ((user?.name ?? '').match(/\p{L}|\p{N}/u)?.[0] ?? '?').toUpperCase();
+    const [broken, setBroken] = useState(false);
+    const dotSize = Math.max(10, Math.round(size / 4.5));
     return (
         <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>
-            {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="" draggable={false} className="h-full w-full rounded-full object-cover" />
+            {user?.avatar_url && !broken ? (
+                <img src={user.avatar_url} alt="" draggable={false} onError={() => setBroken(true)} className="h-full w-full rounded-full object-cover" />
             ) : (
-                <span className="grid h-full w-full place-items-center rounded-full bg-gradient-to-br from-neon-blue to-neon-violet text-sm font-bold">{letter}</span>
+                <span className="grid h-full w-full place-items-center rounded-full bg-gradient-to-br from-neon-blue to-neon-violet font-bold" style={{ fontSize: Math.max(12, size * 0.4) }}>
+                    {letter}
+                </span>
             )}
-            {dot && <span className={`absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full ring-2 ring-obsidian-solid ${dot === 'online' ? 'bg-emerald-400' : 'bg-white/30'}`} />}
+            {dot && <span className={`absolute right-0 bottom-0 rounded-full ring-2 ring-obsidian-solid ${dot === 'online' ? 'bg-emerald-400' : 'bg-white/30'}`} style={{ width: dotSize, height: dotSize }} />}
         </span>
     );
 }

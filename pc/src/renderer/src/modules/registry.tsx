@@ -67,11 +67,11 @@ const section = (id: string, title: string, icon: LucideIcon, endpoint: string, 
  * плюс GameCast і LiveCast (плагіни) та сповіщення. Показуються лише увімкнені людині розділи.
  */
 export const MODULES: ModuleDef[] = [
-    { id: 'profile', title: 'Моя сторінка', icon: UserRound, section: 'profile', render: (h) => <ProfileModule header={h} /> },
-    { id: 'feed', title: 'Новини', icon: Newspaper, section: 'feed', render: (h) => <FeedModule header={h} />, wide: true },
+    { id: 'profile', page: '/profile', title: 'Моя сторінка', icon: UserRound, section: 'profile', render: (h) => <ProfileModule header={h} /> },
+    { id: 'feed', page: '/feed', title: 'Новини', icon: Newspaper, section: 'feed', render: (h) => <FeedModule header={h} />, wide: true },
     { id: 'messenger', title: 'Повідомлення', icon: MessageSquare, section: 'messages', page: '/messages', render: (h) => <MessengerModule header={h} /> },
-    { id: 'friends', title: 'Друзі', icon: Users, section: 'friends', render: (h) => <FriendsModule header={h} /> },
-    { id: 'activity', title: 'Сповіщення', icon: Bell, section: null, render: (h) => <ActivityModule header={h} /> },
+    { id: 'friends', page: '/friends', title: 'Друзі', icon: Users, section: 'friends', render: (h) => <FriendsModule header={h} /> },
+    { id: 'activity', page: '/notifications', title: 'Сповіщення', icon: Bell, section: null, render: (h) => <ActivityModule header={h} /> },
     // Голос сімей, кланів і спільнот — є, якщо ввімкнено хоч один з цих розділів (див. availableModules).
     { id: 'voice', title: 'Голосові кімнати', icon: Headphones, section: 'families', anyOf: ['families', 'clans', 'communities'], render: (h) => <VoiceModule header={h} /> },
     section('people', 'Пошук людей', Search, '/api/v1/people', '/people'),
