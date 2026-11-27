@@ -5,6 +5,7 @@ import { NotchToggle } from '@/components/NotchedCard';
 import { IconButton } from '@/components/ui';
 import { ToastHost } from '@/components/kit';
 import { PlayerBar } from '@/components/PlayerBar';
+import { HomeCarousels } from '@/components/HomeCarousels';
 import { useLayout, useSettings } from '@/lib/layout';
 import { useNav } from '@/lib/nav';
 import { resolvePage } from '@/pages';
@@ -77,6 +78,8 @@ export function UnifiedView() {
                 {page && <div className="relative min-h-0 flex-1 overflow-hidden"><ToastHost>{page}</ToastHost></div>}
                 {/* Bento-сітка модулів. */}
                 <main className={`min-h-0 flex-1 overflow-y-auto px-4 pt-1 pb-4 ${page ? 'hidden' : ''}`}>
+                    {/* Угорі головної — каруселі кіно, ігор і музики. */}
+                    <HomeCarousels />
                     {modules.length === 0 ? (
                         <button type="button" onClick={() => setPanel(true)} className="mx-auto mt-24 flex items-center gap-2 rounded-xl px-4 py-3 text-white/60 ring-1 ring-white/10 hover:bg-white/5">
                             <LayoutGrid size={16} /> Оберіть модулі в налаштуваннях
