@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<title>GameCon — заставка установника</title>
+<style>
+    @font-face { font-family: 'Onest'; src: url('fonts/onest-cyrillic-wght-normal.woff2') format('woff2'); font-weight: 100 900; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+    @font-face { font-family: 'Onest'; src: url('fonts/onest-latin-wght-normal.woff2') format('woff2'); font-weight: 100 900; }
+    @font-face { font-family: 'Unbounded'; src: url('fonts/unbounded-latin-wght-normal.woff2') format('woff2'); font-weight: 200 900; }
+    html, body { margin: 0; background: #07080d; overflow: hidden; }
+    canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="440" height="300"></canvas>
+<script>
+/*
+ * Заставка установника GameCon (Squirrel loadingGif), 440×300.
+ * Кадр — чиста функція часу draw(t): усі рухи мають період PERIOD, тож GIF зациклюється без шва.
+ * Рендер: scripts/render-splash.mjs (Playwright → PNG-кадри → FFmpeg palettegen/paletteuse).
+ */
+const W = 440, H = 300, PERIOD = 3;
+const CYAN = '#22d3ee', VIOLET = '#a855f7';
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const TAU = Math.PI * 2;
+
+// Картка NotchedCard: відступ, радіус кутів, виріз у правому верхньому куті під бейдж.
+const card = { x: 12, y: 12, w: W - 24, h: H - 24, r: 18 };
+const notch = { w: 58, h: 30, r: 10, gap: 6 };
+
+function cardPath() {
+    const { x, y, w, h, r } = card;
+    const nx = x + w - notch.w; // де починається виріз
+    const ny = y + notch.h;     // глибина вирізу
+    const p = new Path2D();
+    p.moveTo(x + r, y);
+    p.lineTo(nx - notch.r, y);
+    p.arcTo(nx, y, nx, y + notch.r, notch.r);           // вниз у виріз
+    p.lineTo(nx, ny - notch.r);
+    p.arcTo(nx, ny, nx + notch.r, ny, notch.r);         // дно вирізу
+    p.lineTo(x + w - r, ny);
+    p.arcTo(x + w, ny, x + w, ny + r, r);               // правий край
+    p.lineTo(x + w, y + h - r);
+    p.arcTo(x + w, y + h, x + w - r, y + h, r);
+    p.lineTo(x + r, y + h);
+    p.arcTo(x, y + h, x, y + h - r, r);
+    p.lineTo(x, y + r);
+    p.arcTo(x, y, x + r, y, r);
+    p.closePath();
+    return p;
+}
+const path = cardPath();
+
+function roundRect(x, y, w, h, r) {
+    const p = new Path2D();
+    p.roundRect(x, y, w, h, r);
+    return p;
+}
+
+function draw(t) {
+    const phase = (t % PERIOD) / PERIOD;             // 0…1 за період
+    const pulse = 0.5 + 0.5 * Math.sin(phase * TAU);  // мʼяка пульсація
+
+    // Тло за карткою — глибока ніч із ледь помітним світлом.
+    ctx.clearRect(0, 0, W, H);
+    const bg = ctx.createRadialGradient(W / 2, H * 0.42, 10, W / 2, H / 2, W * 0.7);
+    bg.addColorStop(0, '#11142099');
+    bg.addColorStop(1, '#06070b');
+    ctx.fillStyle = '#06070b';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Скло картки: обсидіан rgba(15,18,28) + підсвітка зверху.
+    ctx.save();
+    ctx.clip(path);
+    const glass = ctx.createLinearGradient(0, card.y, 0, card.y + card.h);
+    glass.addColorStop(0, '#141826');
+    glass.addColorStop(1, '#0d1019');
+    ctx.fillStyle = glass;
+    ctx.fillRect(0, 0, W, H);
+    // Мʼяке кольорове сяйво за логотипом.
+    const aura = ctx.createRadialGradient(W / 2, 112, 0, W / 2, 112, 150);
+    aura.addColorStop(0, `rgba(34,211,238,${0.10 + 0.06 * pulse})`);
+    aura.addColorStop(0.5, `rgba(168,85,247,${0.05 + 0.03 * pulse})`);
+    aura.addColorStop(1, 'rgba(168,85,247,0)');
+    ctx.fillStyle = aura;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+
+    // Рамка 1px: градієнт циан → фіолет, легке світіння.
+    const edge = ctx.createLinearGradient(card.x, card.y, card.x + card.w, card.y + card.h);
+    edge.addColorStop(0, 'rgba(34,211,238,0.75)');
+    edge.addColorStop(0.5, 'rgba(255,255,255,0.10)');
+    edge.addColorStop(1, 'rgba(168,85,247,0.75)');
+    ctx.save();
+    ctx.shadowColor = 'rgba(34,211,238,0.35)';
+    ctx.shadowBlur = 8;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = edge;
+    ctx.translate(0.5, 0.5);
+    ctx.stroke(path);
+    ctx.restore();
+
+    // Міні-бейдж у вирізі (рівний зазор до стінок вирізу).
+    const bx = card.x + card.w - notch.w + notch.gap, by = card.y;
+    const bw = notch.w - notch.gap, bh = notch.h - notch.gap;
+    const badge = roundRect(bx, by, bw, bh, bh / 2);
+    ctx.save();
+    ctx.fillStyle = 'rgba(168,85,247,0.16)';
+    ctx.fill(badge);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = `rgba(168,85,247,${0.55 + 0.25 * pulse})`;
+    ctx.shadowColor = VIOLET;
+    ctx.shadowBlur = 6 + 4 * pulse;
+    ctx.stroke(badge);
+    ctx.restore();
+    ctx.fillStyle = '#e9d5ff';
+    ctx.font = '700 10px Onest';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('PC', bx + bw / 2, by + bh / 2 + 0.5);
+
+    // Логотип: обертове кільце-комета (циан → фіолет) і неонова «G».
+    const cx = W / 2, cy = 112, R = 44;
+    const angle = phase * TAU - Math.PI / 2;
+    ctx.save();
+    ctx.lineCap = 'round';
+    // тьмяна доріжка кільця
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, TAU);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    // градієнтна дуга, що обертається
+    const ring = ctx.createConicGradient(angle, cx, cy);
+    ring.addColorStop(0, 'rgba(34,211,238,0)');
+    ring.addColorStop(0.25, 'rgba(34,211,238,0.9)');
+    ring.addColorStop(0.62, 'rgba(168,85,247,1)');
+    ring.addColorStop(0.72, 'rgba(168,85,247,0)');
+    ring.addColorStop(1, 'rgba(34,211,238,0)');
+    ctx.shadowColor = `rgba(168,85,247,${0.6 + 0.3 * pulse})`;
+    ctx.shadowBlur = 12 + 6 * pulse;
+    ctx.strokeStyle = ring;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, angle + 0.05 * TAU, angle + 0.70 * TAU);
+    ctx.stroke();
+    // яскрава «голова» дуги
+    const hx = cx + R * Math.cos(angle + 0.70 * TAU), hy = cy + R * Math.sin(angle + 0.70 * TAU);
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = VIOLET;
+    ctx.fillStyle = '#f3e8ff';
+    ctx.beginPath();
+    ctx.arc(hx, hy, 2.2, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+
+    // Внутрішній диск і «G».
+    ctx.save();
+    const disc = ctx.createRadialGradient(cx, cy - 8, 2, cx, cy, R - 8);
+    disc.addColorStop(0, '#1a1f30');
+    disc.addColorStop(1, '#0f121c');
+    ctx.fillStyle = disc;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R - 9, 0, TAU);
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.stroke();
+    const g = ctx.createLinearGradient(cx - 16, cy - 18, cx + 16, cy + 18);
+    g.addColorStop(0, CYAN);
+    g.addColorStop(1, VIOLET);
+    ctx.fillStyle = g;
+    ctx.font = '800 36px Unbounded';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = `rgba(34,211,238,${0.55 + 0.35 * pulse})`;
+    ctx.shadowBlur = 10 + 10 * pulse;
+    ctx.fillText('G', cx + 1, cy + 2);
+    ctx.shadowBlur = 0;
+    ctx.fillText('G', cx + 1, cy + 2);
+    ctx.restore();
+
+    // Текст.
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#f4f5f8';
+    ctx.font = '600 17px Onest';
+    ctx.fillText('Встановлюємо GameCon...', W / 2, 196);
+    ctx.fillStyle = 'rgba(244,245,248,0.45)';
+    ctx.font = '500 11px Onest';
+    ctx.letterSpacing = '1.5px';
+    ctx.fillText('GCDev Software', W / 2, 217);
+    ctx.letterSpacing = '0px';
+
+    // Тонкий прогрес-бар з бігучим відблиском (два проходи за період).
+    const px = 70, py = 248, pw = W - 140, ph = 4;
+    const track = roundRect(px, py, pw, ph, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.fill(track);
+    const fill = ctx.createLinearGradient(px, 0, px + pw, 0);
+    fill.addColorStop(0, 'rgba(34,211,238,0.55)');
+    fill.addColorStop(1, 'rgba(168,85,247,0.55)');
+    ctx.fillStyle = fill;
+    ctx.fill(track);
+    const s = ((phase * 2) % 1) * (pw + 160) - 80 + px; // центр відблиску
+    ctx.save();
+    ctx.clip(track);
+    const shine = ctx.createLinearGradient(s - 60, 0, s + 60, 0);
+    shine.addColorStop(0, 'rgba(255,255,255,0)');
+    shine.addColorStop(0.5, 'rgba(255,255,255,0.95)');
+    shine.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = shine;
+    ctx.fillRect(px, py, pw, ph);
+    ctx.restore();
+    // світіння під відблиском
+    ctx.save();
+    const halo = ctx.createRadialGradient(s, py + 2, 0, s, py + 2, 40);
+    halo.addColorStop(0, 'rgba(34,211,238,0.22)');
+    halo.addColorStop(1, 'rgba(34,211,238,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(Math.max(px - 20, s - 40), py - 14, 80, 32);
+    ctx.restore();
+}
+
+window.PERIOD = PERIOD;
+window.draw = draw;
+window.ready = document.fonts.ready.then(() => Promise.all([
+    document.fonts.load('600 17px Onest', 'Встановлюємо'),
+    document.fonts.load('800 36px Unbounded', 'G'),
+])).then(() => draw(0));
+// Відкрито вручну в браузері — живе превʼю.
+if (!navigator.webdriver) {
+    const loop = (ms) => { draw(ms / 1000); requestAnimationFrame(loop); };
+    window.ready.then(() => requestAnimationFrame(loop));
+}
+</script>
+</body>
+</html>

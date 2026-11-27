@@ -1,75 +1,76 @@
 {
-  "name": "gamecon-pc",
-  "productName": "GameCon",
-  "version": "1.2611.0",
-  "description": "GameCon для ПК: автономне середовище (Electron + React 19 + нативне ядро Rust через NAPI-RS).",
-  "author": "GCDev Software",
-  "private": true,
-  "main": "./out/main/index.js",
-  "scripts": {
-    "native:build": "napi build --platform --release --manifest-path native/Cargo.toml --package-json-path native/package.json --output-dir native",
-    "native:debug": "napi build --platform --manifest-path native/Cargo.toml --package-json-path native/package.json --output-dir native",
-    "dev": "npm run native:debug && electron-vite dev",
-    "build": "npm run native:build && electron-vite build",
-    "start": "electron-vite preview",
-    "test:native": "node native/test.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "dist:win": "npm run build && electron-builder --win squirrel"
-  },
-  "dependencies": {
-    "@types/qrcode": "^1.5.6",
-    "ffmpeg-static": "^5.3.0",
-    "livekit-client": "^2.25.0",
-    "lucide-react": "^1.82.0",
-    "qrcode": "^1.5.4",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
-  },
-  "devDependencies": {
-    "@napi-rs/cli": "^3.11.1",
-    "@tailwindcss/vite": "^4.3.5",
-    "@types/node": "^24.0.0",
-    "@types/react": "^19.3.3",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.3.0",
-    "electron": "^45.5.0",
-    "electron-builder": "^26.18.0",
-    "electron-builder-squirrel-windows": "^26.18.0",
-    "electron-vite": "^6.0.0",
-    "tailwindcss": "^4.3.5",
-    "typescript": "~5.9.3",
-    "vite": "^8.4.0"
-  },
-  "build": {
-    "appId": "online.gamecon.pc",
+    "name": "gamecon-pc",
     "productName": "GameCon",
-    "copyright": "© 2026 GCDev Software",
-    "directories": {
-      "buildResources": "build",
-      "output": "dist"
+    "version": "1.2611.0",
+    "description": "GameCon для ПК: автономне середовище (Electron + React 19 + нативне ядро Rust через NAPI-RS).",
+    "author": "GCDev Software",
+    "private": true,
+    "main": "./out/main/index.js",
+    "scripts": {
+        "native:build": "napi build --platform --release --manifest-path native/Cargo.toml --package-json-path native/package.json --output-dir native",
+        "native:debug": "napi build --platform --manifest-path native/Cargo.toml --package-json-path native/package.json --output-dir native",
+        "dev": "npm run native:debug && electron-vite dev",
+        "build": "npm run native:build && electron-vite build",
+        "start": "electron-vite preview",
+        "test:native": "node native/test.mjs",
+        "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+        "dist:win": "npm run build && electron-builder --win squirrel",
+        "splash": "node scripts/render-splash.mjs"
     },
-    "files": [
-      "out/**",
-      "native/*.node",
-      "native/index.js",
-      "resources/**"
-    ],
-    "asarUnpack": [
-      "native/*.node",
-      "node_modules/ffmpeg-static/**"
-    ],
-    "win": {
-      "target": [
-        "squirrel"
-      ],
-      "icon": "build/icon.ico",
-      "publisherName": "GCDev Software"
+    "dependencies": {
+        "@types/qrcode": "^1.5.6",
+        "ffmpeg-static": "^5.3.0",
+        "livekit-client": "^2.25.0",
+        "lucide-react": "^1.82.0",
+        "qrcode": "^1.5.4",
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1"
     },
-    "squirrelWindows": {
-      "iconUrl": "https://gamecon.online/favicon.ico",
-      "loadingGif": "build/install-spinner.gif",
-      "useAppIdAsId": false,
-      "name": "GameCon"
+    "devDependencies": {
+        "@napi-rs/cli": "^3.11.1",
+        "@tailwindcss/vite": "^4.3.5",
+        "@types/node": "^24.0.0",
+        "@types/react": "^19.3.3",
+        "@types/react-dom": "^19.3.0",
+        "@vitejs/plugin-react": "^6.3.0",
+        "electron": "^45.5.0",
+        "electron-builder": "^26.18.0",
+        "electron-builder-squirrel-windows": "^26.18.0",
+        "electron-vite": "^6.0.0",
+        "tailwindcss": "^4.3.5",
+        "typescript": "~5.9.3",
+        "vite": "^8.4.0"
+    },
+    "build": {
+        "appId": "online.gamecon.pc",
+        "productName": "GameCon",
+        "copyright": "© 2026 GCDev Software",
+        "directories": {
+            "buildResources": "build",
+            "output": "dist"
+        },
+        "files": [
+            "out/**",
+            "native/*.node",
+            "native/index.js",
+            "resources/**"
+        ],
+        "asarUnpack": [
+            "native/*.node",
+            "node_modules/ffmpeg-static/**"
+        ],
+        "win": {
+            "target": [
+                "squirrel"
+            ],
+            "icon": "build/icon.ico",
+            "publisherName": "GCDev Software"
+        },
+        "squirrelWindows": {
+            "iconUrl": "https://gamecon.online/favicon.ico",
+            "loadingGif": "build/installer-splash.gif",
+            "useAppIdAsId": false,
+            "name": "GameCon"
+        }
     }
-  }
 }
