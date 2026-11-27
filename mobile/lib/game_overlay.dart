@@ -255,8 +255,9 @@ class _OverlayRootState extends State<_OverlayRoot> {
       case 'family':
         final w = await _get('/api/v1/me/family-widget');
         final first = (w?['families'] as List?)?.whereType<Map>().firstOrNull;
-        final id = (first?['family'] as Map?)?['id'];
-        data[key] = {'widget': first, 'details': id == null ? null : await _get('/api/v1/families/$id')};
+        // Сім'я в API — за slug (як на сайті), не за id.
+        final slug = (first?['family'] as Map?)?['slug'];
+        data[key] = {'widget': first, 'details': slug == null ? null : await _get('/api/v1/families/$slug')};
       case 'clans':
         data[key] = await _get('/api/v1/site/clans');
       case 'notifications':

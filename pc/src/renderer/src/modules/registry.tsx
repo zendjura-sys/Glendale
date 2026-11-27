@@ -46,6 +46,8 @@ export type ModuleDef = {
     plugin?: string;
     /** Модуль є, якщо ввімкнено будь-який із цих розділів (замість одного section). */
     anyOf?: string[];
+    /** Повна сторінка розділу в програмі (док-рейл і «Відкрити» ведуть сюди). */
+    page?: string;
     render: (header?: ReactNode) => ReactNode;
     wide?: boolean;
 };
@@ -77,7 +79,7 @@ export const MODULES: ModuleDef[] = [
     section('servers', 'Сервери GTA', Server, '/api/v1/servers', '/servers', 'Онлайн і моніторинг'),
     section('music', 'Музика', Music, '/api/v1/music', '/music'),
     section('cinema', 'Кіно', Clapperboard, '/api/v1/cinema', '/cinema'),
-    { id: 'families', title: 'Сім’ї', icon: Crown, section: 'families', render: (h) => <FamiliesModule header={h} /> },
+    { id: 'families', title: 'Сім’ї', icon: Crown, section: 'families', page: '/families', render: (h) => <FamiliesModule header={h} /> },
     section('games', 'Ігри', Gamepad2, '/api/v1/games', '/games'),
     section('clans', 'Клани', Shield, '/api/v1/site/clans', '/clans'),
     section('events', 'Події', CalendarDays, '/api/v1/site/events', '/events'),

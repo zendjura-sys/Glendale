@@ -78,6 +78,17 @@ function registerIpc(): void {
         return session.request(String(method).toUpperCase(), path, body);
     });
 
+    ipcMain.handle('api:blob', (_e, path: string) => (typeof path === 'string' ? session.blob(path) : null));
+    // Перехід на сторінку з віджета: показуємо єдине вікно й відкриваємо там сторінку.
+    ipcMain.handle('nav:open', (_e, path: string) => {
+        if (typeof path !== 'string' || !path.startsWith('/')) return;
+        if (windows.mode === 'widgets') windows.setMode('unified');
+        else windows.showMain();
+        const send = (): void => void windows.main?.webContents.send('nav:go', path);
+        if (windows.main?.webContents.isLoading()) windows.main.webContents.once('did-finish-load', send);
+        else send();
+    });
+
     // Синхронізація: подія з одного вікна (нове повідомлення, лайк) — в усі інші.
     ipcMain.on('sync', (e, topic: string, payload: unknown) => windows.broadcast('sync', { topic, payload }, e.sender));
 
@@ -177,6 +188,9 @@ app.whenReady().then(() => {
     const hidden = process.argv.includes('--hidden');
     if (windows.mode === 'widgets') windows.setMode('widgets');
     else if (!hidden) windows.showMain();
+    // --open=/families/<slug>: одразу відкрити сторінку в програмі (ярлики, сповіщення).
+    const deep = process.argv.find((a) => a.startsWith('--open='))?.slice(7);
+    if (deep?.startsWith('/')) windows.main?.webContents.once('did-finish-load', () => setTimeout(() => windows.main?.webContents.send('nav:go', deep), 1500));
     // --studio: одразу відкрити студію LiveCast (ярлик «GameCon Студія»).
     if (process.argv.includes('--studio')) windows.openStudio();
 });

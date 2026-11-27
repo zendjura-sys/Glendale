@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MeProvider } from './lib/me';
+import { NavProvider } from './lib/nav';
 import { AuthView } from './views/Auth';
 import { DockView } from './views/Dock';
 import { UnifiedView } from './views/Unified';
@@ -28,5 +29,9 @@ export default function App() {
     if (route === '/call') return <MeProvider><CallView /></MeProvider>;
     if (route === '/studio') return <MeProvider><StudioView /></MeProvider>;
     const widget = route.match(/^\/widget\/([a-z_]+)$/);
-    return <MeProvider>{widget ? <WidgetView id={widget[1]} /> : <UnifiedView />}</MeProvider>;
+    return (
+        <MeProvider>
+            <NavProvider widget={!!widget}>{widget ? <WidgetView id={widget[1]} /> : <UnifiedView />}</NavProvider>
+        </MeProvider>
+    );
 }

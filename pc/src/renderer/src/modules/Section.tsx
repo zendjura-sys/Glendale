@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { NotchBadge, NotchedCard } from '@/components/NotchedCard';
 import { Avatar, Empty } from '@/components/ui';
 import { useLive } from '@/lib/api';
+import { useNav } from '@/lib/nav';
+import { hasPage } from '@/pages';
 
 type Row = { id: string; title: string; subtitle: string | null; image: string | null; href: string | null };
 
@@ -48,9 +50,12 @@ export function SectionModule({ title, subtitle, endpoint, webPath, header, glow
         })(),
         href: pick(item, HREF),
     }));
+    const nav = useNav();
+    // Лише всередині програми: є нативна сторінка — відкриваємо її, сайт не відкриваємо ніколи.
     const open = (href: string | null): void => {
-        const path = href ?? webPath;
-        window.open(path.startsWith('http') ? path : `https://gamecon.online${path.startsWith('/') ? '' : '/'}${path}`, '_blank');
+        const path = href && !href.startsWith('http') ? href : null;
+        if (hasPage(path)) nav.go(path);
+        else if (hasPage(webPath)) nav.go(webPath);
     };
     return (
         <NotchedCard title={title} subtitle={subtitle} glow={glow} header={header} badge={<NotchBadge tone={rows.length ? 'cyan' : 'muted'}>{rows.length}</NotchBadge>} badgeWidth={44}>

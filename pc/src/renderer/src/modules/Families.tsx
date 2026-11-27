@@ -1,8 +1,9 @@
-import { CalendarClock, ExternalLink, ShieldAlert, Trophy, Wallet } from 'lucide-react';
+import { CalendarClock, ChevronRight, ShieldAlert, Trophy, Wallet } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { NotchBadge, NotchedCard } from '@/components/NotchedCard';
 import { Avatar, Empty } from '@/components/ui';
 import { useLive } from '@/lib/api';
+import { useNav } from '@/lib/nav';
 
 type Widget = {
     family: { id: number; slug?: string; name: string; tag?: string | null; logo_url?: string | null };
@@ -19,13 +20,14 @@ type Widget = {
 };
 
 const money = (n: number): string => `${Math.round(n).toLocaleString('uk-UA')} $`;
-const web = (path: string): void => void window.open(`https://gamecon.online${path}`, '_blank');
 
 /** «Сім’ї»: ваш стан у сім’ї — гроші, ранг, тиждень, рейтинг, бізвари, варни й найближча подія. */
 export function FamiliesModule({ header }: { header?: ReactNode }) {
     const { data, error } = useLive<{ families: Widget[] }>('/api/v1/me/family-widget', 60_000, ['families']);
     const families = data?.families ?? [];
     const [index, setIndex] = useState(0);
+    const nav = useNav();
+    const web = (path: string): void => nav.go(path);
     const w = families[Math.min(index, families.length - 1)];
     return (
         <NotchedCard title="Сім’ї" subtitle={w ? `${w.member.rank_title} · ${w.member.display}` : 'Ваша сім’я'} glow="violet" header={header} badge={<NotchBadge tone={w?.warns ? 'violet' : 'muted'}>{w?.rating.place ? `#${w.rating.place}` : '—'}</NotchBadge>} badgeWidth={52}>
@@ -48,7 +50,7 @@ export function FamiliesModule({ header }: { header?: ReactNode }) {
                             <span className="block truncate font-semibold">{w.family.tag ? `[${w.family.tag}] ` : ''}{w.family.name}</span>
                             <span className="block truncate text-xs text-white/50">Ранг {w.member.rank} · {w.member.rank_title}</span>
                         </span>
-                        <ExternalLink size={14} className="text-white/40" />
+                        <ChevronRight size={14} className="text-white/40" />
                     </button>
                     <div className="grid grid-cols-3 gap-2">
                         <Stat icon={<Wallet size={13} />} label="Баланс" value={money(w.balance)} />
@@ -72,10 +74,10 @@ export function FamiliesModule({ header }: { header?: ReactNode }) {
                         </div>
                     )}
                     <div className="flex gap-2">
-                        <button type="button" onClick={() => web(`/families/${w.family.slug ?? w.family.id}/reports`)} className="no-drag flex-1 rounded-lg bg-gradient-to-r from-neon-violet/80 to-neon-blue/80 py-2 text-sm font-semibold">
+                        <button type="button" onClick={() => web(`/families/${w.family.slug ?? w.family.id}?tab=reports`)} className="no-drag flex-1 rounded-lg bg-gradient-to-r from-neon-violet/80 to-neon-blue/80 py-2 text-sm font-semibold">
                             Здати звіт
                         </button>
-                        <button type="button" onClick={() => web(`/families/${w.family.slug ?? w.family.id}/bank`)} className="no-drag flex-1 rounded-lg py-2 text-sm ring-1 ring-white/15 hover:bg-white/5">
+                        <button type="button" onClick={() => web(`/families/${w.family.slug ?? w.family.id}?tab=bank`)} className="no-drag flex-1 rounded-lg py-2 text-sm ring-1 ring-white/15 hover:bg-white/5">
                             Банк
                         </button>
                     </div>

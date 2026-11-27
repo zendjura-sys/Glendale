@@ -2,7 +2,10 @@ import { LayoutGrid, Minus, PictureInPicture2, Settings, Square, X } from 'lucid
 import { useState } from 'react';
 import { NotchToggle } from '@/components/NotchedCard';
 import { IconButton } from '@/components/ui';
+import { ToastHost } from '@/components/kit';
 import { useLayout, useSettings } from '@/lib/layout';
+import { useNav } from '@/lib/nav';
+import { resolvePage } from '@/pages';
 import { useMe } from '@/lib/me';
 import { availableModules } from '@/modules/registry';
 import { SettingsPanel } from './Settings';
@@ -17,6 +20,8 @@ export function UnifiedView() {
     const { me, sections, plugins } = useMe();
     const [panel, setPanel] = useState(false);
     const modules = availableModules(sections, plugins).filter((m) => settings?.modules.includes(m.id));
+    const nav = useNav();
+    const page = nav.path ? resolvePage(nav.path) : null;
 
     return (
         <div className="relative flex h-full overflow-hidden rounded-[22px] bg-[radial-gradient(120%_120%_at_0%_0%,rgba(34,211,238,0.10),transparent_45%),radial-gradient(120%_120%_at_100%_100%,rgba(168,85,247,0.14),transparent_50%)] bg-obsidian-solid/80 ring-1 ring-white/10 backdrop-blur-2xl">
@@ -24,7 +29,7 @@ export function UnifiedView() {
             <nav className="drag flex w-14 shrink-0 flex-col items-center gap-1 border-r border-white/5 py-3">
                 <div className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-neon-cyan to-neon-violet text-sm font-black text-obsidian-solid">G</div>
                 {modules.map((m) => (
-                    <IconButton key={m.id} label={m.title} onClick={() => document.getElementById(`module-${m.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
+                    <IconButton key={m.id} label={m.title} onClick={() => (m.page ? nav.go(m.page) : (nav.close(), document.getElementById(`module-${m.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })))}>
                         <m.icon size={18} strokeWidth={1.5} />
                     </IconButton>
                 ))}
@@ -55,8 +60,10 @@ export function UnifiedView() {
                         </button>
                     </div>
                 </header>
+                {/* Сторінка розділу (повністю в програмі) — поверх сітки модулів. */}
+                {page && <div className="relative min-h-0 flex-1 overflow-hidden"><ToastHost>{page}</ToastHost></div>}
                 {/* Bento-сітка модулів. */}
-                <main className="min-h-0 flex-1 overflow-y-auto p-4 pt-1">
+                <main className={`min-h-0 flex-1 overflow-y-auto p-4 pt-1 ${page ? 'hidden' : ''}`}>
                     {modules.length === 0 ? (
                         <button type="button" onClick={() => setPanel(true)} className="mx-auto mt-24 flex items-center gap-2 rounded-xl px-4 py-3 text-white/60 ring-1 ring-white/10 hover:bg-white/5">
                             <LayoutGrid size={16} /> Оберіть модулі в налаштуваннях

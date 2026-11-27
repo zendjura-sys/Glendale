@@ -50,6 +50,13 @@ const api = {
         onChange: (listener: (settings: Settings) => void) => on('settings', listener),
     },
     onGame: (listener: (title: string | null) => void) => on('game', listener),
+    /** Приватний файл з API як data: URL (докази звітів). */
+    blob: (path: string) => ipcRenderer.invoke('api:blob', path) as Promise<string | null>,
+    /** Відкрити сторінку в єдиному вікні (з віджета). */
+    nav: {
+        open: (path: string) => ipcRenderer.invoke('nav:open', path),
+        onGo: (cb: (path: string) => void) => on('nav:go', cb),
+    },
     /** Голосові кімнати (сім’ї, клани, спільноти, сервери, паті). */
     call: {
         join: (room: CallRoom) => ipcRenderer.invoke('call:join', room),
