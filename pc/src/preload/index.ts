@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 export type ModuleId = string;
 export type LayoutState = { mode: 'unified' | 'widgets'; gameOverlay: boolean; widgets: Record<ModuleId, { open: boolean; pinned: boolean }> };
 export type ApiResult<T = unknown> = { ok: true; status: number; data: T } | { ok: false; status: number; message: string };
+export type CaptureSource = { id: string; name: string; kind: 'screen' | 'window'; thumbnail: string; icon: string | null };
 export type Settings = { overlay: 'auto' | 'always' | 'off'; launchAtLogin: boolean; modules: ModuleId[] };
 
 function on<T>(channel: string, listener: (payload: T) => void): () => void {
@@ -45,6 +46,18 @@ const api = {
         onChange: (listener: (settings: Settings) => void) => on('settings', listener),
     },
     onGame: (listener: (title: string | null) => void) => on('game', listener),
+    studio: {
+        open: () => ipcRenderer.invoke('studio:open'),
+        load: <T>(key: string) => ipcRenderer.invoke('store:get', key) as Promise<T | null>,
+        persist: (key: string, value: unknown) => ipcRenderer.invoke('store:set', key, value),
+        sources: () => ipcRenderer.invoke('capture:sources') as Promise<CaptureSource[]>,
+        save: (bytes: ArrayBuffer, name: string) => ipcRenderer.invoke('studio:save', bytes, name) as Promise<string | null>,
+        rtmpStart: (url: string, bitrate: number, fps: number) => ipcRenderer.invoke('rtmp:start', url, bitrate, fps) as Promise<{ ok: boolean; message?: string }>,
+        rtmpChunk: (bytes: ArrayBuffer) => ipcRenderer.send('rtmp:chunk', bytes),
+        rtmpStop: () => ipcRenderer.invoke('rtmp:stop'),
+        onRtmpClosed: (listener: (code: number | null) => void) => on('rtmp:closed', listener),
+        onRtmpLog: (listener: (line: string) => void) => on('rtmp:log', listener),
+    },
 };
 
 contextBridge.exposeInMainWorld('gamecon', api);

@@ -5,7 +5,7 @@ import type { Core, CoreStore, Rect, WindowState } from './native';
 /** Модуль = розділ GameCon (feed, messenger, families, …); які показувати — обирає людина. */
 export type ModuleId = string;
 export type Mode = 'unified' | 'widgets';
-export const isModuleId = (id: unknown): id is ModuleId => typeof id === 'string' && /^[a-z_]{2,24}$/.test(id) && !['main', 'dock'].includes(id);
+export const isModuleId = (id: unknown): id is ModuleId => typeof id === 'string' && /^[a-z_]{2,24}$/.test(id) && !['main', 'dock', 'studio'].includes(id);
 
 const WIDGET_SIZE: Record<string, { width: number; height: number }> = {
     feed: { width: 380, height: 520 },
@@ -149,6 +149,25 @@ export class WindowManager {
             this.dock = null;
         });
         this.dock = win;
+    }
+
+    private studio: BrowserWindow | null = null;
+
+    /** Студія LiveCast — окреме велике вікно (сцени, джерела, мікшер, ефір). */
+    openStudio(): void {
+        if (this.studio && !this.studio.isDestroyed()) {
+            this.studio.show();
+            this.studio.focus();
+            return;
+        }
+        const area = screen.getPrimaryDisplay().workArea;
+        const win = this.create({ width: Math.min(1480, area.width - 40), height: Math.min(920, area.height - 40), minWidth: 1100, minHeight: 700, center: true }, '/studio');
+        win.once('ready-to-show', () => win.show());
+        this.track(win, 'studio');
+        win.on('closed', () => {
+            this.studio = null;
+        });
+        this.studio = win;
     }
 
     /** Перемкнути режим (Mode-Switch Toggle). */

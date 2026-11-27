@@ -3,6 +3,7 @@ import { basename, dirname, join } from 'node:path';
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray } from 'electron';
 import { loadCore } from './native';
 import { Session } from './session';
+import { registerStudio } from './studio';
 import { isModuleId as isModule, type Mode, type ModuleId, WindowManager } from './windows';
 
 /**
@@ -80,6 +81,12 @@ function registerIpc(): void {
     // Синхронізація: подія з одного вікна (нове повідомлення, лайк) — в усі інші.
     ipcMain.on('sync', (e, topic: string, payload: unknown) => windows.broadcast('sync', { topic, payload }, e.sender));
 
+    // Сховище студії (сцени, джерела, мікшер, вихід) — у Rust-ядрі, ключі лише з префіксом studio.
+    ipcMain.handle('store:get', (_e, key: string) => (String(key).startsWith('studio') ? store.get(String(key)) : null));
+    ipcMain.handle('store:set', (_e, key: string, value: unknown) => {
+        if (String(key).startsWith('studio')) store.set(String(key), value);
+    });
+
     // Налаштування програми.
     ipcMain.handle('settings:get', () => settings());
     ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => {
@@ -146,12 +153,15 @@ app.whenReady().then(() => {
     session = new Session(store);
     windows = new WindowManager(core, store, () => settings().modules, join(__dirname, '../preload/index.js'), process.env.ELECTRON_RENDERER_URL, join(__dirname, '../renderer/index.html'));
     registerIpc();
+    registerStudio(() => windows.openStudio());
     createTray();
     registerHotkeys();
     watchGames();
     const hidden = process.argv.includes('--hidden');
     if (windows.mode === 'widgets') windows.setMode('widgets');
     else if (!hidden) windows.showMain();
+    // --studio: одразу відкрити студію LiveCast (ярлик «GameCon Студія»).
+    if (process.argv.includes('--studio')) windows.openStudio();
 });
 
 app.on('will-quit', () => globalShortcut.unregisterAll());

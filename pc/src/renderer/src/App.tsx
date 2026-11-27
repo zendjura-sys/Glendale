@@ -4,6 +4,7 @@ import { AuthView } from './views/Auth';
 import { DockView } from './views/Dock';
 import { UnifiedView } from './views/Unified';
 import { WidgetView } from './views/Widget';
+import { StudioView } from './studio/Studio';
 
 /** Кожне вікно знає свою роль з адреси: «/» — єдине вікно, «/widget/<id>» — віджет, «/dock» — пігулка. */
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
             </div>
         ) : null;
     }
+    if (route === '/studio') return <MeProvider><StudioView /></MeProvider>;
     const widget = route.match(/^\/widget\/([a-z_]+)$/);
     return <MeProvider>{widget ? <WidgetView id={widget[1]} /> : <UnifiedView />}</MeProvider>;
 }

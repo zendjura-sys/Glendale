@@ -30,6 +30,7 @@ import { FriendsModule } from './Friends';
 import { MessengerModule } from './Messenger';
 import { ProfileModule } from './Profile';
 import { SectionModule } from './Section';
+import { IconButton } from '@/components/ui';
 
 export type ModuleDef = {
     id: string;
@@ -77,7 +78,13 @@ export const MODULES: ModuleDef[] = [
     section('articles', 'Статті', BookOpen, '/api/v1/site/articles', '/articles'),
     section('party', 'Пошук паті', Swords, '/api/v1/site/party', '/party'),
     { ...section('gamecast', 'GameCast', Mic, '/api/v1/site/shows', '/shows', 'Подкасти наживо'), section: null, plugin: 'live_shows' },
-    { ...section('livecast', 'LiveCast', Radio, '/api/v1/site/livecast', '/livecast', 'Стріми камерою чи екраном'), section: null, plugin: 'livecast' },
+    {
+        ...section('livecast', 'LiveCast', Radio, '/api/v1/site/livecast', '/livecast', 'Стріми камерою чи екраном'),
+        section: null,
+        plugin: 'livecast',
+        // Студія як OBS: сцени, джерела, мікшер, ефір / RTMP / запис.
+        render: (header) => <SectionModule title="LiveCast" subtitle="Стріми камерою чи екраном" endpoint="/api/v1/site/livecast" webPath="/livecast" header={<>{header}<IconButton label="Студія LiveCast" onClick={() => void window.gamecon.studio.open()}><Clapperboard size={15} strokeWidth={1.5} /></IconButton></>} />,
+    },
 ];
 
 export const DEFAULT_MODULES = ['feed', 'messenger', 'friends', 'activity'];
