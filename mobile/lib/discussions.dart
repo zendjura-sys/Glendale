@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
@@ -155,6 +156,7 @@ class _NewTopicSheetState extends State<_NewTopicSheet> {
   late String cat = widget.category.isNotEmpty ? widget.category : (widget.subjectType != null ? '' : 'general');
   bool spoiler = false;
   bool busy = false;
+  final embeds = <Map<String, dynamic>>[];
 
   @override
   void dispose() {
@@ -173,6 +175,7 @@ class _NewTopicSheetState extends State<_NewTopicSheet> {
         'title': title.text.trim(),
         'body': bodyText.text.trim().isEmpty ? null : bodyText.text.trim(),
         'spoiler': spoiler,
+        'embeds': [for (final e in embeds) {'type': e['type'], 'id': e['id']}],
       });
       if (mounted) Navigator.pop(context, intOf(mapOf(r['discussion'])['id']));
     } catch (e) {
@@ -200,6 +203,17 @@ class _NewTopicSheetState extends State<_NewTopicSheet> {
               if (widget.subjectType != null) SelectPill(label: tr('Автоматично'), selected: cat.isEmpty, onTap: () => setState(() => cat = '')),
               for (final e in widget.categories.entries) SelectPill(label: '${e.value}', selected: cat == e.key, onTap: () => setState(() => cat = e.key)),
             ]),
+            const SizedBox(height: 8),
+            EmbedChips(embeds: embeds, onRemove: (e) => setState(() => embeds.remove(e))),
+            GhostButton(
+              label: tr('Додати картку (фільм, гра, сервер…)'),
+              icon: LucideIcons.paperclip,
+              compact: true,
+              onPressed: () async {
+                final e = await pickEmbed(context, widget.api, cat);
+                if (e != null) setState(() => embeds.add(e));
+              },
+            ),
             SwitchListTile(contentPadding: EdgeInsets.zero, value: spoiler, onChanged: (v) => setState(() => spoiler = v), title: Text(tr('Спойлер'), style: body(14))),
             PrimaryButton(label: tr('Створити'), busy: busy, onPressed: () => title.text.trim().length >= 4 ? unawaited(submit()) : toast(context, tr('Тема — від 4 символів.'))),
           ]),
@@ -223,6 +237,7 @@ class _DiscussionThreadScreenState extends State<DiscussionThreadScreen> {
   final input = TextEditingController();
   Map<String, dynamic>? replyTo;
   final shown = <int>{};
+  final replyEmbeds = <Map<String, dynamic>>[];
 
   Api get api => AppScope.read(context).session.api;
 
@@ -280,6 +295,7 @@ class _DiscussionThreadScreenState extends State<DiscussionThreadScreen> {
                       const SizedBox(height: 10),
                       _Spoiler(hidden: t['spoiler'] == true && !shown.contains(0), onReveal: () => setState(() => shown.add(0)), child: Text(text(t['body'])!, style: body(15, color: soft).copyWith(height: 1.45))),
                     ],
+                    EmbedCards(embeds: maps(t['embeds'])),
                     const SizedBox(height: 10),
                     Row(children: [
                       GhostButton(
@@ -318,6 +334,7 @@ class _DiscussionThreadScreenState extends State<DiscussionThreadScreen> {
                                   child: Text('↪ ${text(mapOf(r['parent'])['author']) ?? ''}: ${text(mapOf(r['parent'])['body']) ?? tr('видалена відповідь')}', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
                                 ),
                               _Spoiler(hidden: r['spoiler'] == true && !shown.contains(intOf(r['id'])), onReveal: () => setState(() => shown.add(intOf(r['id']))), child: Text(text(r['body']) ?? '', style: body(14, color: soft))),
+                              EmbedCards(embeds: maps(r['embeds'])),
                               const SizedBox(height: 4),
                               Row(children: [
                                 InkWell(
@@ -352,16 +369,28 @@ class _DiscussionThreadScreenState extends State<DiscussionThreadScreen> {
                           Expanded(child: Text(tr('Відповідь для {name}', {'name': text(mapOf(replyTo!['user'])['name']) ?? ''}), style: body(12.5, color: muted))),
                           IconButton(onPressed: () => setState(() => replyTo = null), icon: const Icon(LucideIcons.x, size: 16)),
                         ]),
+                      EmbedChips(embeds: replyEmbeds, onRemove: (e) => setState(() => replyEmbeds.remove(e))),
                       Row(children: [
+                        IconButton(
+                          tooltip: tr('Додати картку'),
+                          icon: const Icon(LucideIcons.paperclip),
+                          onPressed: () async {
+                            final e = await pickEmbed(context, api, text(t['category']) ?? '');
+                            if (e != null) setState(() => replyEmbeds.add(e));
+                          },
+                        ),
                         Expanded(child: TextField(controller: input, minLines: 1, maxLines: 4, style: body(14), decoration: InputDecoration(hintText: tr('Ваша відповідь…')))),
                         IconButton(
                           icon: const Icon(LucideIcons.sendHorizontal),
                           onPressed: () async {
                             final textBody = input.text.trim();
                             if (textBody.isEmpty) return;
-                            if (await attempt(context, () => api.post('/api/v1/discussions/${widget.id}/replies', {'body': textBody, 'parent_id': replyTo == null ? null : intOf(replyTo!['id'])}))) {
+                            if (await attempt(context, () => api.post('/api/v1/discussions/${widget.id}/replies', {'body': textBody, 'parent_id': replyTo == null ? null : intOf(replyTo!['id']), 'embeds': [for (final e in replyEmbeds) {'type': e['type'], 'id': e['id']}]}))) {
                               input.clear();
-                              setState(() => replyTo = null);
+                              setState(() {
+                                replyTo = null;
+                                replyEmbeds.clear();
+                              });
                               await load();
                             }
                           },
@@ -414,4 +443,137 @@ class DiscussionsButton extends StatelessWidget {
       onPressed: () => openDiscussions(context, type, id, title: title),
     );
   }
+}
+
+const _typeFor = {'cinema': 'movie', 'series': 'movie', 'anime': 'movie', 'games': 'game', 'music': 'track'};
+Map<String, String> _types() => {
+      'movie': tr('Фільм / серіал / аніме'),
+      'game': tr('Гра'),
+      'server': tr('Сервер'),
+      'track': tr('Трек'),
+      'family': tr('Сім’я'),
+      'clan': tr('Клан'),
+      'community': tr('Спільнота'),
+      'article': tr('Стаття'),
+    };
+
+/// Вбудовані картки (фільм, гра, сервер, трек…) у темі чи відповіді — відкривають сторінку.
+class EmbedCards extends StatelessWidget {
+  const EmbedCards({required this.embeds, super.key});
+  final List<Map<String, dynamic>> embeds;
+
+  @override
+  Widget build(BuildContext context) {
+    if (embeds.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(children: [
+        for (final e in embeds)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Glass(
+              padding: const EdgeInsets.all(8),
+              onTap: text(e['href']) == null ? null : () => context.push(text(e['href'])!.replaceFirst(RegExp(r'^/c/'), '/communities/')),
+              child: Row(children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: text(e['cover']) == null
+                      ? Container(width: 46, height: 46, color: Colors.white.withValues(alpha: .08), child: Icon(LucideIcons.film, size: 18, color: muted))
+                      : Image.network(text(e['cover'])!, width: 46, height: e['type'] == 'movie' ? 64 : 46, fit: BoxFit.cover, errorBuilder: (_, _, _) => Container(width: 46, height: 46, color: Colors.white.withValues(alpha: .08))),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text((text(e['label']) ?? '').toUpperCase(), style: body(10.5, color: muted)),
+                    Text(text(e['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
+                    if (text(e['subtitle']) != null) Text(text(e['subtitle'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                  ]),
+                ),
+                Icon(LucideIcons.chevronRight, size: 16, color: muted),
+              ]),
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
+/// Обрані картки перед надсиланням (з хрестиком).
+class EmbedChips extends StatelessWidget {
+  const EmbedChips({required this.embeds, required this.onRemove, super.key});
+  final List<Map<String, dynamic>> embeds;
+  final void Function(Map<String, dynamic>) onRemove;
+
+  @override
+  Widget build(BuildContext context) => embeds.isEmpty
+      ? const SizedBox.shrink()
+      : Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Wrap(spacing: 6, runSpacing: 6, children: [
+            for (final e in embeds) InputChip(label: Text(text(e['title']) ?? '', style: body(12.5)), onDeleted: () => onRemove(e)),
+          ]),
+        );
+}
+
+/// Вибір картки: тип (за розділом — підказаний) і пошук за назвою.
+Future<Map<String, dynamic>?> pickEmbed(BuildContext context, Api api, String category) {
+  var type = _typeFor[category] ?? 'movie';
+  var items = <Map<String, dynamic>>[];
+  Timer? debounce;
+  return showModalBottomSheet<Map<String, dynamic>>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheet) => StatefulBuilder(
+      builder: (sheet, setState) {
+        Future<void> search(String q) async {
+          if (q.trim().length < 2) return setState(() => items = []);
+          try {
+            final r = await api.get('/api/v1/discussions/embeds?type=$type&q=${Uri.encodeQueryComponent(q)}');
+            setState(() => items = maps(r['items']));
+          } catch (_) {}
+        }
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom),
+          child: ArcticGlassSheetSurface(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text(tr('Додати картку'), style: display(17)),
+                const SizedBox(height: 10),
+                Wrap(spacing: 6, runSpacing: 6, children: [
+                  for (final e in _types().entries) SelectPill(label: e.value, selected: type == e.key, onTap: () => setState(() => type = e.key)),
+                ]),
+                const SizedBox(height: 8),
+                TextField(
+                  autofocus: true,
+                  style: body(14),
+                  decoration: InputDecoration(hintText: tr('Почніть вводити назву')),
+                  onChanged: (q) {
+                    debounce?.cancel();
+                    debounce = Timer(const Duration(milliseconds: 250), () => search(q));
+                  },
+                ),
+                const SizedBox(height: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 320),
+                  child: ListView(shrinkWrap: true, children: [
+                    for (final it in items)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: text(it['cover']) == null ? const Icon(LucideIcons.film) : ClipRRect(borderRadius: BorderRadius.circular(6), child: Image.network(text(it['cover'])!, width: 40, height: 40, fit: BoxFit.cover, errorBuilder: (_, _, _) => const Icon(LucideIcons.film))),
+                        title: Text(text(it['title']) ?? '', style: body(14)),
+                        subtitle: text(it['subtitle']) == null ? null : Text(text(it['subtitle'])!, style: body(12, color: muted)),
+                        onTap: () => Navigator.pop(sheet, it),
+                      ),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+        );
+      },
+    ),
+  );
 }
