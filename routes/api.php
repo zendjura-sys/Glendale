@@ -1071,6 +1071,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1');
                 Route::post('rules/accept', [CommunityController::class, 'acceptRules'])->middleware('throttle:30,1');
                 Route::get('log', [CommunityController::class, 'log']);
+                // Правила й довідник спільноти (застосунок показує їх у шторці).
+                Route::get('rules', [CommunityController::class, 'page'])->defaults('page', 'rules');
+                Route::get('handbook', [CommunityController::class, 'page'])->defaults('page', 'handbook');
                 Route::delete('join', [CommunityController::class, 'leave']);
                 Route::get('photos', [PhotoController::class, 'community'])->middleware('module:photos');
                 Route::delete('/', [CommunityController::class, 'destroy']);
@@ -1116,6 +1119,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('radio', [MusicHubController::class, 'radio']);
                 Route::get('library', [MusicHubController::class, 'library']);
                 Route::post('library/sections', [MusicHubController::class, 'sections']);
+                // «Джем»: застосунок читає й зберігає налаштування через міст (як на сайті /music/jam).
+                Route::match(['get', 'put'], 'jam', [ListenPartyController::class, 'jamPrefs'])->middleware('throttle:30,1');
                 Route::get('library/{section}', [MusicHubController::class, 'librarySection'])->where('section', '[a-z]+');
                 Route::get('artist', [MusicHubController::class, 'artist']);
                 Route::get('artist/info', [MusicHubController::class, 'artistInfo'])->middleware('throttle:60,1');

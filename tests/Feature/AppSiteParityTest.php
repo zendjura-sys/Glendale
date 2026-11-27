@@ -103,6 +103,13 @@ class AppSiteParityTest extends TestCase
         $this->withToken($this->app_token($user))->getJson('/api/v1/site/settings/parental')->assertOk()->assertJsonPath('parents', []);
     }
 
+    public function test_app_bridge_has_music_jam(): void
+    {
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/music/jam')->assertOk();
+        $this->withToken($token)->putJson('/api/v1/site/music/jam', ['auto_invite' => true])->assertOk();
+    }
+
     public function test_app_bridge_has_episode_talk(): void
     {
         $routes = collect(Route::getRoutes()->getRoutes())->map(fn ($r) => $r->methods()[0].' '.$r->uri());
@@ -460,6 +467,20 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->postJson("/api/v1/site/c/{$community->slug}/channels", ['name' => 'стратегії', 'type' => 'text'])->assertSuccessful();
         $channel = $community->channels()->where('name', 'стратегії')->firstOrFail();
         $this->withToken($token)->getJson("/api/v1/site/c/{$community->slug}/channels/{$channel->id}")->assertOk();
+    }
+
+    public function test_app_reads_community_rules_and_handbook(): void
+    {
+        $user = User::factory()->create();
+        $community = app(CommunityService::class)->create($user, [
+            'name' => 'Клан', 'type' => Community::TYPE_GROUP, 'privacy' => Community::PRIVACY_OPEN,
+            'wall' => Community::WALL_OPEN, 'category' => 'esports',
+        ]);
+        $community->forceFill(['rules' => "# Головне\nБез токсичності", 'handbook' => '# Старт'])->save();
+        $token = $this->app_token($user);
+
+        $this->withToken($token)->getJson("/api/v1/site/c/{$community->slug}/rules")->assertOk()->assertJsonPath('text', "# Головне\nБез токсичності");
+        $this->withToken($token)->getJson("/api/v1/site/c/{$community->slug}/handbook")->assertOk()->assertJsonPath('page', 'handbook');
     }
 
     public function test_app_changes_community_access(): void

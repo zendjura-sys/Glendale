@@ -657,6 +657,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         builder: (sheet, controller) => FutureBuilder<Map<String, dynamic>>(
           future: api.get(Api.site('/c/${widget.slug}/$kind')),
           builder: (sheet, snap) {
+            if (snap.hasError) return Padding(padding: const EdgeInsets.all(24), child: Text(tr('Не вдалося завантажити. Спробуйте ще раз.'), style: body(14.5, color: muted)));
             if (!snap.hasData) return const ScreenSkeleton();
             final lines = (text(snap.data!['text']) ?? '').split(RegExp(r'\r?\n'));
             return ListView(controller: controller, padding: const EdgeInsets.fromLTRB(20, 20, 20, 32), children: [
