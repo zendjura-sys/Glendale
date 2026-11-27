@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'discussions.dart';
 import 'game_reviews.dart';
 import 'games.dart';
 import 'shell.dart';
@@ -481,6 +482,8 @@ class _ClanScreenState extends State<ClanScreen> {
             ]),
           ]),
         ),
+        const SizedBox(height: 8),
+        DiscussionsButton(type: 'clan', id: intOf(clan['id']), title: text(clan['display_name'])),
         const SizedBox(height: 12),
         Segmented(scroll: true, options: tabs, selected: current, onSelect: (v) => setState(() => tab = v)),
         const SizedBox(height: 12),

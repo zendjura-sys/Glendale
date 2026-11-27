@@ -13,6 +13,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'api.dart';
+import 'discussions.dart';
 import 'episode_talk.dart';
 import 'cinema_ui.dart';
 import 'movie_extras.dart';
@@ -520,6 +521,11 @@ class _MovieScreenState extends State<MovieScreen> {
           if (AppScope.of(context).session.pluginOn('movie_lists')) ...[
             const SizedBox(width: 8),
             _TonalAction(icon: LucideIcons.listPlus, label: null, color: cinemaAccent, onTap: () => showAddToList(context, intOf(movie['id']), widget.slug)),
+          ],
+          if (AppScope.of(context).session.modules?.contains('discussions') ?? true) ...[
+            const SizedBox(width: 8),
+            // Обговорення фільму / серіалу / аніме — теми з відповідями.
+            _TonalAction(icon: LucideIcons.messagesSquare, label: null, color: cinemaAccent, onTap: () => openDiscussions(context, 'movie', intOf(movie['id']), title: text(movie['title']))),
           ],
           const SizedBox(width: 8),
           _TonalAction(

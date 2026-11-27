@@ -9,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'discussions.dart';
 import 'cinema.dart';
 import 'events.dart';
 import 'i18n.dart';
@@ -671,7 +672,20 @@ class _SubjectActionsState extends State<SubjectActions> {
 
   @override
   Widget build(BuildContext context) {
+    final modules = AppScope.read(context).session.modules;
+    final talk = (modules == null || modules.contains('discussions')) && const {'game', 'server', 'movie', 'family', 'clan', 'community', 'article'}.contains(widget.kind);
     return Row(mainAxisSize: MainAxisSize.min, children: [
+      // Обговорення предмета (теми й відповіді) — окремим екраном.
+      if (talk) ...[
+        RoundIcon(
+          icon: LucideIcons.messagesSquare,
+          color: ink,
+          size: widget.size,
+          tooltip: tr('Обговорення'),
+          onTap: () => openDiscussions(context, widget.kind, intOf(widget.id)),
+        ),
+        const SizedBox(width: 6),
+      ],
       RoundIcon(
         icon: saved ? LucideIcons.bookmarkCheck : LucideIcons.bookmark,
         color: saved ? gold : ink,

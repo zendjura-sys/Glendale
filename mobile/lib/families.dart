@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'discussions.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'family_chat_card.dart';
 import 'family_extras.dart';
@@ -638,6 +639,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
         padding: const EdgeInsets.fromLTRB(14, 6, 14, 96),
         children: [
           _FamilyHeader(family: family, me: me, onChat: family['conversation_id'] != null ? _chat : null),
+          const SizedBox(height: 8),
+          DiscussionsButton(type: 'family', id: intOf(family['id']), title: text(family['name'])),
           const SizedBox(height: 10),
           SizedBox(
             height: 44,

@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'discussions.dart';
 import 'core/widgets/arctic_glass/arctic_glass.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -787,6 +788,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 8),
+        DiscussionsButton(type: 'community', id: intOf(c['id']), title: text(c['name'])),
         if (can['view'] == false) ...[
           const SizedBox(height: 12),
           EmptyState(icon: LucideIcons.lock, title: tr('Це закрита група'), text: tr('Записи та учасників бачать лише учасники. Подайте заявку — адміністратори розглянуть її найближчим часом.')),

@@ -34,13 +34,14 @@ final navCatalog = [
   NavItem('/events', tr('Події'), tr('Календар подій'), LucideIcons.calendarDays, LucideIcons.calendarDays500),
   NavItem('/party', tr('Паті'), tr('Пошук паті'), LucideIcons.userRoundSearch, LucideIcons.userRoundSearch500),
   NavItem('/moments', tr('Моменти'), tr('Моменти'), LucideIcons.clapperboard, LucideIcons.clapperboard500),
+  NavItem('/discussions', tr('Обговорення'), tr('Обговорення'), LucideIcons.messagesSquare, LucideIcons.messagesSquare500),
   NavItem('/quests', tr('Завдання'), tr('Завдання й сезон'), LucideIcons.target, LucideIcons.target500),
   NavItem('/cards', tr('Картки'), tr('Колекційні картки'), LucideIcons.layers, LucideIcons.layers500),
   NavItem('/saved', tr('Збережене'), tr('Збережене'), LucideIcons.bookmark, LucideIcons.bookmark500),
 ];
 
 /// Розділи, які є модулями сайту: їх ховає режим соцмережі («Геймер», «Мінімал»…) чи адміністратор.
-const _moduleKeys = {'profile', 'feed', 'friends', 'people', 'messages', 'phone', 'communities', 'photos', 'servers', 'music', 'cinema', 'families', 'games', 'clans', 'events', 'quests', 'moments', 'party'};
+const _moduleKeys = {'profile', 'feed', 'friends', 'people', 'messages', 'phone', 'communities', 'photos', 'servers', 'music', 'cinema', 'families', 'games', 'clans', 'events', 'quests', 'moments', 'party', 'discussions'};
 
 /// Розділи меню з урахуванням увімкнених модулів акаунта (`modules` з /me); null — показуємо всі.
 List<NavItem> visibleNav(Set<String>? modules) => [

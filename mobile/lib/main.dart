@@ -93,6 +93,7 @@ import 'widgets.dart';
 import 'wrapped.dart';
 import 'shake_report.dart';
 import 'game_overlay.dart';
+import 'discussions.dart';
 
 /// Слухач життєвого циклу для ігрового оверлею (тримаємо посилання, щоб не зібрав GC).
 // ignore: unused_element
@@ -305,6 +306,7 @@ Future<void> main() async {
           GoRoute(path: '/moments', builder: (_, _) => const MomentsScreen()),
           GoRoute(path: '/phone', builder: (_, state) => PhoneScreen(key: ValueKey(state.uri.queryParameters['dial']), dial: state.uri.queryParameters['dial'])),
           GoRoute(path: '/quests', builder: (_, _) => const QuestsScreen()),
+          GoRoute(path: '/discussions', builder: (_, _) => const DiscussionsScreen()),
           GoRoute(path: '/season', builder: (_, _) => const SeasonScreen()),
           GoRoute(path: '/level', builder: (_, _) => const LevelScreen()),
           GoRoute(path: '/rewards', builder: (_, _) => const LoginRewardsScreen()),
