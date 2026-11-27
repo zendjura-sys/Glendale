@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/discussions/discussions';
 import { Head, Link, router } from '@inertiajs/react';
 import { Clock3, Eye, ListTree, PenLine, Share2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -191,6 +192,9 @@ export default function ArticleShow({
                     </div>
                 </section>
             )}
+            <div className="mx-auto mt-4 w-full max-w-5xl">
+                <Discussions subject={{ type: 'article', id: article.id }} />
+            </div>
         </>
     );
 }

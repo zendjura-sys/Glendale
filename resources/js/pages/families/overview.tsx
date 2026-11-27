@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/discussions/discussions';
 import { OnboardingCard } from '@/components/families/onboarding-card';
 import type { OnboardingCardData } from '@/components/families/onboarding-card';
 import { Link, router } from '@inertiajs/react';
@@ -389,6 +390,9 @@ export default function FamilyOverview(props: Props) {
                         {tr('Покинути сім’ю')}
                     </button>
                 )}
+            </div>
+            <div className="mx-auto mt-4 w-full max-w-5xl">
+                <Discussions subject={{ type: 'family', id: family.id }} />
             </div>
         </FamilyShell>
     );

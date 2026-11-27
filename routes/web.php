@@ -38,6 +38,7 @@ use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\CrosspostController;
 use App\Http\Controllers\DesktopWidgetController;
 use App\Http\Controllers\Developer;
+use App\Http\Controllers\DiscussionController;
 use App\Http\Controllers\EmbedWidgetController;
 use App\Http\Controllers\EpisodeTalkController;
 use App\Http\Controllers\EventController;
@@ -247,6 +248,9 @@ Route::get('app-login/{id}', [AppLoginController::class, 'open'])->whereUuid('id
 Route::get('.well-known/assetlinks.json', AppLinksController::class)->middleware('throttle:60,1')->name('app-links');
 
 Route::middleware(['auth', 'verified.site', 'parental'])->group(function () {
+    // Обговорення: сторінка розділу й дії (той самий набір шляхів — у застосунку й мосту).
+    Route::get('discussions', [DiscussionController::class, 'page'])->middleware('module:discussions')->name('discussions');
+    require __DIR__.'/discussions.php';
     Route::get('join/{token}', [InviteLinkController::class, 'show'])->name('invites.show');
     Route::post('join/{token}', [InviteLinkController::class, 'accept'])->middleware('throttle:20,1')->name('invites.accept');
 

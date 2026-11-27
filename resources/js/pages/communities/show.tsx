@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/discussions/discussions';
 import { CommunityPromoteCard } from '@/components/communities/promote-card';
 import type { Promotion } from '@/components/communities/promote-card';
 import { CommunityWelcomeCard } from '@/components/communities/welcome-card';
@@ -789,6 +790,11 @@ export default function CommunityShow({
                     </div>
                 </div>
             )}
+            <div className="mx-auto mt-4 w-full max-w-5xl">
+                <Discussions
+                    subject={{ type: 'community', id: community.id }}
+                />
+            </div>
         </>
     );
 }

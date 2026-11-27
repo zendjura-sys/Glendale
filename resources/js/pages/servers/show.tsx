@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/discussions/discussions';
 import { Head, Link, router } from '@inertiajs/react';
 import { ServerWidgetBuilder } from '@/components/servers/server-widget-builder';
 import {
@@ -910,6 +911,9 @@ export default function ServerShow({
                             ))}
                     </section>
                 )}
+            </div>
+            <div className="mx-auto mt-4 w-full max-w-5xl">
+                <Discussions subject={{ type: 'server', id: server.id }} />
             </div>
         </>
     );

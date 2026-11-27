@@ -24,6 +24,10 @@ return [
         'profile' => ['label' => 'Моя сторінка', 'module' => 'profile', 'subs' => [
             'visitors' => 'Гості профілю', 'streak' => 'Серія днів', 'badges' => 'Значки й досягнення', 'memories' => 'Спогади',
         ]],
+        'discussions' => ['label' => 'Обговорення', 'module' => 'discussions', 'added' => '2026-11-27', 'subs' => [
+            'hot' => ['label' => 'Гарячі теми', 'added' => '2026-11-27'],
+            'mine' => ['label' => 'Мої теми й відповіді', 'added' => '2026-11-27'],
+        ]],
         'phone' => ['label' => 'Телефон', 'module' => 'phone', 'subs' => [
             'missed' => 'Пропущені дзвінки', 'sms' => 'Повідомлення за номером',
         ]],

@@ -508,7 +508,11 @@ Route::prefix('v1')->group(function () {
          * Дії й сторінки сайту для застосунку: ті самі контролери, що й у routes/web.php, за тими самими
          * шляхами з префіксом /api/v1/site. BridgeSiteAction перетворює редиректи й Inertia-сторінки на JSON.
          */
+        // Обговорення (застосунок і програма для ПК).
+        require __DIR__.'/discussions.php';
+
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
+            require __DIR__.'/discussions.php';
             // ШІ: зведення дня й помічник по сайту (ті самі контролери, що й на сайті).
             Route::get('today', [AiToolsController::class, 'today'])->middleware('throttle:30,1');
             Route::post('help-assistant', [AiToolsController::class, 'assistant'])->middleware('throttle:20,1');

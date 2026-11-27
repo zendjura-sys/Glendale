@@ -142,6 +142,15 @@ return [
         'default' => true,
         'nav' => ['label' => 'Події', 'route' => 'events.index', 'position' => 107],
     ],
+    'discussions' => [
+        'name' => 'Обговорення',
+        'description' => 'Теми й відповіді про фільми, серіали, аніме, ігри, сервери, сім’ї, клани, спільноти й статті та загальний розділ за категоріями.',
+        'icon' => 'messages-square',
+        'core' => false,
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Обговорення', 'route' => 'discussions', 'position' => 108],
+    ],
     'quests' => [
         'name' => 'Завдання й сезони',
         'description' => 'Три завдання щодня: досвід у рівень і очки сезону, таблиця лідерів місяця.',

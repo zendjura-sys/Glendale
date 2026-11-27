@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/discussions/discussions';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     Download,
@@ -1414,6 +1415,9 @@ export default function GameShow({
                     )}
                 </div>
             )}
+            <div className="mx-auto mt-4 w-full max-w-5xl">
+                <Discussions subject={{ type: 'game', id: game.id }} />
+            </div>
         </div>
     );
 }

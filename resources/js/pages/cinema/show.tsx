@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/discussions/discussions';
 import { EpisodeTalk } from '@/components/cinema/episode-talk';
 import { Head, Link, router } from '@inertiajs/react';
 import {
@@ -787,6 +788,9 @@ export default function CinemaShow({
                 open={sharing}
                 onOpenChange={setSharing}
             />
+            <div className="mx-auto mt-4 w-full max-w-5xl">
+                <Discussions subject={{ type: 'movie', id: movie.id }} />
+            </div>
         </>
     );
 }

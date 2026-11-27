@@ -1,3 +1,4 @@
+import { Discussions } from '@/components/discussions/discussions';
 import { LiveBracket } from '@/components/clans/live-bracket';
 import type { BracketData } from '@/components/clans/live-bracket';
 import { ShiftsTab } from '@/components/clans/shifts-tab';
@@ -899,6 +900,9 @@ export default function ClanShow(props: Props) {
                         action={base}
                     />
                 )}
+            </div>
+            <div className="mx-auto mt-4 w-full max-w-5xl">
+                <Discussions subject={{ type: 'clan', id: clan.id }} />
             </div>
         </>
     );
