@@ -6,6 +6,7 @@ import { FeedPage } from './social/FeedPage';
 import { DiscussionsPage } from './discussions/DiscussionsPage';
 import { GamePage, GamesList } from './games/Games';
 import { CinemaList, MovieView } from './cinema/Cinema';
+import { EventsPage } from './events/Events';
 import { ServerPage, ServersList } from './servers/Servers';
 import { MusicCollection, MusicPage } from './music/Music';
 import { ClanPage, ClansList } from './groups/Clans';
@@ -30,6 +31,7 @@ export function resolvePage(path: string): ReactNode | null {
     if (/^\/music\/(album|artist|genre|mix|mood|playlists)\b/.test(p)) return <MusicCollection key={path} path={path} />;
     if (p === '/servers') return <ServersList />;
     if ((m = p.match(/^\/servers\/([^/]+)$/)) && m[1] !== 'compare') return <ServerPage key={m[1]} slug={m[1]} />;
+    if (p === '/events') return <EventsPage />;
     if (p === '/cinema') return <CinemaList />;
     if ((m = p.match(/^\/cinema\/([^/]+)$/))) return <MovieView key={m[1]} slug={m[1]} />;
     if (p === '/games') return <GamesList />;

@@ -86,7 +86,7 @@ export const MODULES: ModuleDef[] = [
     { id: 'families', title: 'Сім’ї', icon: Crown, section: 'families', page: '/families', render: (h) => <FamiliesModule header={h} /> },
     { ...section('games', 'Ігри', Gamepad2, '/api/v1/games', '/games'), page: '/games' },
     { ...section('clans', 'Клани', Shield, '/api/v1/site/clans', '/clans'), page: '/clans' },
-    section('events', 'Події', CalendarDays, '/api/v1/site/events', '/events'),
+    { ...section('events', 'Події', CalendarDays, '/api/v1/site/events', '/events'), page: '/events' },
     { id: 'quests', title: 'Завдання', icon: Target, section: 'quests', render: (h) => <QuestsModule header={h} /> },
     section('moments', 'Моменти', Camera, '/api/v1/site/moments', '/moments'),
     section('articles', 'Статті', BookOpen, '/api/v1/site/articles', '/articles'),
