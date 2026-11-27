@@ -8,8 +8,24 @@ import { mmss, player, type Track, usePlayer } from '@/lib/player';
 type Tile = { kind: string; key?: string; name?: string; title?: string; artist?: string; colors?: string[]; covers?: string[]; cover_url?: string | null; href?: string; tracks_count?: number };
 type TabId = 'home' | 'new' | 'radio' | 'charts' | 'library' | 'search';
 
-const KIND: Record<string, string> = { discovery: 'Відкриття тижня', 'mood-match': 'За настроєм', me: 'Моя хвиля' };
-const tileTitle = (t: Tile): string => t.name ?? t.title ?? KIND[t.key ?? ''] ?? t.key ?? '';
+/** Назви й підписи міксів і станцій (сервер віддає лише ключі) — як на сайті. */
+const MIX: Record<string, [string, string]> = {
+    favorites: ['Мікс улюбленого', 'Те, що ти слухаєш найчастіше'],
+    discovery: ['Мікс відкриттів', 'Нове для тебе у твоїх жанрах'],
+    new: ['Мікс новинок', 'Свіжі треки, що можуть сподобатись'],
+    friends: ['Мікс друзів', 'Що слухають твої друзі'],
+    chill: ['Мікс для відпочинку', 'Спокійна музика без поспіху'],
+    'mood-raid': ['Рейд', 'Важкий і швидкий звук для бою'],
+    'mood-match': ['Катка', 'Ритм, що тримає в грі'],
+    'mood-chill': ['Чіл', 'Після катки — видихнути'],
+    'mood-focus': ['Фокус', 'Без слів — для тренувань'],
+    'mood-night': ['Нічний стрім', 'Синтвейв і нічні вайби'],
+};
+const tileTitle = (t: Tile): string => {
+    if (t.kind === 'station') return t.key === 'me' ? `Станція ${t.name ?? ''}` : t.key?.startsWith('group:') ? `Станція «${t.name}»` : `Станція ${t.name ?? ''}`;
+    return MIX[t.key ?? '']?.[0] ?? t.name ?? t.title ?? t.key ?? '';
+};
+const tileSub = (t: Tile): string | undefined => (t.kind === 'station' ? (t.key === 'me' ? 'На основі того, що ти слухаєш' : 'Нескінченна станція') : (MIX[t.key ?? '']?.[1] ?? t.artist));
 
 /** Список треків: номер / грати, назва й виконавець, альбом, тривалість, вподобати, у медіатеку. */
 export function TrackList({ tracks, numbered = true }: { tracks: Track[]; numbered?: boolean }) {
@@ -74,7 +90,7 @@ function TileCard({ t, onOpen }: { t: Tile; onOpen: () => void }) {
                 {t.kind === 'station' && <Radio size={18} className="absolute top-3 left-3 text-white/80" />}
             </div>
             <p className="mt-2 truncate text-sm font-semibold">{tileTitle(t)}</p>
-            {t.artist && <p className="truncate text-xs text-white/50">{t.artist}</p>}
+            {tileSub(t) && <p className="truncate text-xs text-white/50">{tileSub(t)}</p>}
         </button>
     );
 }
@@ -84,7 +100,7 @@ function Shelf({ title, tiles, onOpen }: { title: string; tiles: Tile[]; onOpen:
     return (
         <section>
             <h2 className="mb-3 text-lg font-bold">{title}</h2>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,180px))] gap-4">
                 {tiles.slice(0, 12).map((t, i) => (
                     <TileCard key={`${t.key ?? t.title}-${i}`} t={t} onOpen={() => onOpen(t)} />
                 ))}
