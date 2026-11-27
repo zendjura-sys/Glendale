@@ -10,6 +10,7 @@ import { EventsPage } from './events/Events';
 import { PartyBoard, PartyPage } from './party/Party';
 import { ArticleEditor, ArticleView, ArticlesList } from './articles/Articles';
 import { MomentsPage } from './moments/Moments';
+import { AlbumPage, PhotosPage } from './photos/Photos';
 import { ServerPage, ServersList } from './servers/Servers';
 import { MusicCollection, MusicPage } from './music/Music';
 import { ClanPage, ClansList } from './groups/Clans';
@@ -34,6 +35,9 @@ export function resolvePage(path: string): ReactNode | null {
     if (/^\/music\/(album|artist|genre|mix|mood|playlists)\b/.test(p)) return <MusicCollection key={path} path={path} />;
     if (p === '/servers') return <ServersList />;
     if ((m = p.match(/^\/servers\/([^/]+)$/)) && m[1] !== 'compare') return <ServerPage key={m[1]} slug={m[1]} />;
+    if (p === '/photos') return <PhotosPage username={null} />;
+    if ((m = p.match(/^\/photos\/u\/([^/]+)$/))) return <PhotosPage key={m[1]} username={m[1]} />;
+    if ((m = p.match(/^\/albums\/(\d+)$/))) return <AlbumPage key={m[1]} id={Number(m[1])} />;
     if (p === '/moments') return <MomentsPage />;
     if (p === '/articles') return <ArticlesList />;
     if (p === '/articles/new' || p === '/articles/create') return <ArticleEditor slug={null} />;
