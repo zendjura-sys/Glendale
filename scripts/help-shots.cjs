@@ -129,8 +129,8 @@ const SHOTS = [
         url: '/dashboard',
         device: PC,
         regions: {
-            logo: (p) => p.locator('header a.gc-wordmark').first(),
-            search: (p) => p.locator('header .gc-lobby-search').first(),
+            logo: (p) => p.locator('a.gc-wordmark').first(),
+            search: (p) => p.locator('.ios-header-search:visible').first(),
             gamecast: (p) => p.locator('header a[aria-label^="GameCast"]'),
             sections: (p) => p.locator('header nav.gc-header-nav'),
             theme: (p) => p.locator('header button[aria-label*="тема"]'),
@@ -140,7 +140,8 @@ const SHOTS = [
                 p.locator('header button[aria-label="Меню облікового запису"]'),
             hero: (p) => p.locator('.gc-lobby-hero').first(),
             ready: (p) => p.locator('.gc-ready-toggle').first(),
-            quests: (p) => p.locator('button[aria-label="Завдання дня"]').first(),
+            quests: (p) =>
+                p.locator('button[aria-label="Завдання дня"]').first(),
             now: (p) => p.locator('.gc-now-tile').first(),
             dock: (p) => p.locator('nav.gc-live-dock').first(),
             create: (p) => p.locator('.gc-dock-create').first(),
@@ -151,7 +152,7 @@ const SHOTS = [
         url: '/dashboard',
         device: PHONE,
         regions: {
-            search: (p) => p.locator('header .gc-lobby-search').first(),
+            search: (p) => p.locator('.ios-header-search:visible').first(),
             whatsnew: (p) => p.locator('header button[aria-label="Що нового"]'),
             bell: (p) => p.locator('header button[aria-label^="Сповіщення"]'),
             hero: (p) => p.locator('.gc-lobby-hero').first(),
@@ -1725,6 +1726,8 @@ async function capture(browser, state, shot, manifest) {
             ...(shot.guest ? {} : { storageState: state }),
         });
         const p = await ctx.newPage();
+        // Короткі очікування: зламаний селектор не повинен гальмувати всю зйомку.
+        p.setDefaultTimeout(8000);
         await p.goto(BASE + shot.url);
         await p.waitForTimeout(2500);
         await tidy(p);
