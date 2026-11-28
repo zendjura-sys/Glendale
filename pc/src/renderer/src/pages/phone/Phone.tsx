@@ -1,4 +1,4 @@
-import { Delete, Dices, ExternalLink, Gift, MessageSquare, Phone as PhoneIcon, PhoneIncoming, PhoneMissed, PhoneOutgoing, Search, Send, Shield, Sparkles } from 'lucide-react';
+import { Copy, Delete, Dices, ExternalLink, Gift, MessageSquare, Phone as PhoneIcon, PhoneIncoming, PhoneMissed, PhoneOutgoing, Search, Send, Shield, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button, Card, Field, Input, Loading, PageHeader, Select, StatTile, useAction, useSite, useToast, when } from '@/components/kit';
 import { Avatar } from '@/components/ui';
@@ -91,10 +91,12 @@ export function PhonePage() {
                         {d.phone ? (
                             <>
                                 <p className="mt-1 text-2xl font-black tracking-wide tabular-nums">{d.phone.number}</p>
-                                <p className={`mt-1 text-sm font-semibold ${TIER[d.phone.tier]?.tone ?? ''}`}>{TIER[d.phone.tier]?.label ?? d.phone.tier}</p>
-                                <Button small onClick={() => void navigator.clipboard.writeText(d.phone!.number).then(() => toast('Номер скопійовано.'))}>
-                                    Копіювати
-                                </Button>
+                                <div className="mt-4 flex items-end justify-between gap-3">
+                                    <p className={`text-sm font-semibold ${TIER[d.phone.tier]?.tone ?? ''}`}>{TIER[d.phone.tier]?.label ?? d.phone.tier}</p>
+                                    <Button small onClick={() => void navigator.clipboard.writeText(d.phone!.number).then(() => toast('Номер скопійовано.'))}>
+                                        <Copy size={13} /> Копіювати
+                                    </Button>
+                                </div>
                             </>
                         ) : (
                             <>
