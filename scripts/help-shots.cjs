@@ -1513,10 +1513,9 @@ const SHOTS = [
         id: 'app-download',
         url: '/app',
         device: PC,
-        prepare: scrollTo(H('Як встановити без магазину'), 160),
         regions: {
-            install: H('Як встановити без магазину'),
-            apk: (p) => p.getByRole('button', { name: /APK для Android/ }),
+            qr: (p) => p.getByLabel('QR-код сторінки застосунку').first(),
+            shots: (p) => p.getByRole('button', { name: 'Знімок 1' }).first(),
         },
     },
     {
