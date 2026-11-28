@@ -64,7 +64,9 @@
                 "squirrel"
             ],
             "icon": "build/icon.ico",
-            "publisherName": "GCDev Software"
+            "signtoolOptions": {
+                "publisherName": "GCDev Software"
+            }
         },
         "squirrelWindows": {
             "iconUrl": "https://gamecon.online/favicon.ico",

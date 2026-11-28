@@ -32,7 +32,8 @@ class MusicImportTest extends TestCase
         parent::setUp();
         Storage::fake('public');
         // Обмеження 10 запитів на хвилину тут заважало б перебрати багато посилань поспіль.
-        $this->withoutMiddleware(ThrottleRequests::class);
+        // «throttle» — це ThrottlePerRoute (окремий лічильник на маршрут), тож вимикаємо обидва.
+        $this->withoutMiddleware([ThrottleRequests::class, ThrottlePerRoute::class]);
         $this->dir = sys_get_temp_dir().'/music-import-'.uniqid();
         @mkdir($this->dir);
 
