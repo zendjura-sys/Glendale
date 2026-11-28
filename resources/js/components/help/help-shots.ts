@@ -931,16 +931,16 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
         "phone": false,
         "regions": {
             "achievements": {
-                "x": 22.2,
-                "y": 28.9,
-                "w": 32.1,
+                "x": 11.7,
+                "y": 28.8,
+                "w": 33.3,
                 "h": 37.6
             },
             "timeline": {
-                "x": 58.2,
-                "y": 25.8,
-                "w": 39,
-                "h": 29.8
+                "x": 48,
+                "y": 25.7,
+                "w": 40.3,
+                "h": 11.6
             }
         }
     },
@@ -1019,16 +1019,10 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
         "phone": false,
         "regions": {
             "nav": {
-                "x": 22.2,
+                "x": 11.7,
                 "y": 24.4,
-                "w": 12.5,
-                "h": 8.4
-            },
-            "page": {
-                "x": 38.6,
-                "y": 24.4,
-                "w": 58.6,
-                "h": 13.7
+                "w": 13.3,
+                "h": 1.8
             }
         }
     },
