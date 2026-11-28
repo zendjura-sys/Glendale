@@ -244,9 +244,9 @@ export function MovieView({ slug }: { slug: string }) {
                     <Cover src={m.backdrop ?? m.poster} className="h-full w-full scale-110 opacity-40 blur-2xl" />
                     <div className="absolute inset-0 bg-gradient-to-b from-[#0c0f17]/40 via-[#0c0f17]/70 to-[#0c0f17]" />
                 </div>
-                <div className="relative px-5 pt-4">
+                <div className="relative">
                     <PageHeader title="" />
-                    <div className="-mt-4 flex gap-6 pb-5">
+                    <div className="flex gap-6 px-5 pt-1 pb-5">
                         <Cover src={m.poster} className="aspect-[2/3] w-44 shrink-0 rounded-2xl shadow-2xl ring-1 ring-white/15" fallback={<Clapperboard size={40} />} />
                         <div className="min-w-0 flex-1 pt-2">
                             <h1 className="text-3xl font-black">{m.title}</h1>

@@ -33,7 +33,7 @@ type State = {
 type Index = {
     live: ShowCard[];
     upcoming: ShowCard[];
-    mine: ShowCard[];
+    mine: number[];
     formats: Record<string, { stage: number; guests: number }>;
     trends: { topic: string; count?: number }[] | string[];
     max_topics: number;
@@ -41,7 +41,7 @@ type Index = {
 
 const FORMAT: Record<string, string> = { duo: 'Дует: 2 на сцені', double: 'Подвійний: 4 на сцені', custom: 'Свій формат' };
 
-function ShowTile({ s, onOpen }: { s: ShowCard; onOpen: () => void }) {
+function ShowTile({ s, onOpen, mine }: { s: ShowCard; onOpen: () => void; mine?: boolean }) {
     const live = s.status === 'live';
     return (
         <button
@@ -59,6 +59,7 @@ function ShowTile({ s, onOpen }: { s: ShowCard; onOpen: () => void }) {
                         <CalendarClock size={12} /> {s.scheduled_at ? when(s.scheduled_at) : 'Скоро'}
                     </span>
                 )}
+                {mine && <span className="rounded-md bg-neon-violet/20 px-1.5 py-0.5 text-neon-violet">Ваш ефір</span>}
                 {live && (
                     <span className="ml-auto flex items-center gap-1 text-white/55">
                         <Users size={12} /> {s.listeners}
@@ -66,7 +67,7 @@ function ShowTile({ s, onOpen }: { s: ShowCard; onOpen: () => void }) {
                 )}
             </div>
             <p className="line-clamp-2 font-bold">{s.title}</p>
-            {s.topic && <p className="mt-1 line-clamp-2 text-sm text-white/55">{s.topic}</p>}
+            {s.topic && !s.topics.includes(s.topic) && <p className="mt-1 line-clamp-2 text-sm text-white/55">{s.topic}</p>}
             {s.topics.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
                     {s.topics.map((t) => (
@@ -98,7 +99,7 @@ export function GameCastList() {
                 <h2 className="mb-3 text-lg font-bold">{title}</h2>
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
                     {list.map((s) => (
-                        <ShowTile key={s.id} s={s} onOpen={() => nav.go(`/shows/${s.id}`)} />
+                        <ShowTile key={s.id} s={s} mine={d?.mine.includes(s.id)} onOpen={() => nav.go(`/shows/${s.id}`)} />
                     ))}
                 </div>
             </section>
@@ -117,7 +118,7 @@ export function GameCastList() {
             <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_300px] gap-5 overflow-y-auto p-5 max-[1100px]:grid-cols-1">
                 <div className="min-w-0">
                     {!d && <Loading error={page.error} />}
-                    {d && d.live.length + d.upcoming.length + d.mine.length === 0 && (
+                    {d && d.live.length + d.upcoming.length === 0 && (
                         <div className="grid place-items-center rounded-2xl border border-dashed border-white/10 py-16 text-center">
                             <Radio size={36} className="mb-3 text-white/25" />
                             <p className="font-semibold">Ефірів поки немає</p>
@@ -131,7 +132,6 @@ export function GameCastList() {
                     )}
                     {d && section('Зараз в ефірі', d.live)}
                     {d && section('Заплановані', d.upcoming)}
-                    {d && section('Мої ефіри', d.mine)}
                 </div>
                 <aside className="space-y-4">
                     <div className="grid grid-cols-2 gap-2">
@@ -378,7 +378,7 @@ export function GameCastView({ id }: { id: number }) {
             <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_320px] gap-5 overflow-y-auto p-5 max-[1100px]:grid-cols-1">
                 <div className="min-w-0 space-y-4">
                     <div className="rounded-3xl bg-gradient-to-b from-neon-violet/15 via-white/[0.03] to-transparent p-6 ring-1 ring-white/10">
-                        {s.topic && <p className="mb-5 text-center text-white/65">{s.topic}</p>}
+                        {s.topic && !s.topics.includes(s.topic) && <p className="mb-5 text-center text-white/65">{s.topic}</p>}
                         <div className="flex flex-wrap justify-center gap-8">{state.stage.map((p) => seat(p, true))}</div>
                         {state.guests.length > 0 && (
                             <>

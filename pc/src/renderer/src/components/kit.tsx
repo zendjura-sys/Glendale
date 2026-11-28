@@ -174,7 +174,19 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
 }
 
 export function Loading({ error }: { error?: string | null }) {
-    return <div className="grid h-40 place-items-center text-sm text-white/50">{error ?? <Loader2 className="animate-spin" size={20} />}</div>;
+    const nav = useNav();
+    if (!error) return <div className="grid h-40 place-items-center text-sm text-white/50"><Loader2 className="animate-spin" size={20} /></div>;
+    // Помилка (сторінки немає, немає доступу) — не лишаємо людину в тупику: є шлях назад.
+    return (
+        <div className="grid h-60 place-items-center text-center">
+            <div>
+                <p className="mb-4 max-w-md text-sm text-white/55">{/could not be found|not found/i.test(error) ? 'Цю сторінку не знайдено — можливо, її видалили або посилання застаріло.' : error}</p>
+                <button type="button" onClick={nav.back} className="inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-sm text-white/80 ring-1 ring-white/15 hover:bg-white/10">
+                    <ArrowLeft size={15} /> Назад
+                </button>
+            </div>
+        </div>
+    );
 }
 
 export const money = (n: number | string | null | undefined, unit = '$'): string => `${Math.round(Number(n ?? 0)).toLocaleString('uk-UA')} ${unit}`;

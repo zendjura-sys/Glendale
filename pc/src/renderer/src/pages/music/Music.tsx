@@ -313,9 +313,9 @@ export function MusicCollection({ path }: { path: string }) {
     const colors = d.mix?.colors ?? ['#2f7bff', '#a855f7'];
     return (
         <div className="h-full overflow-y-auto">
-            <div className="relative px-5 pt-4 pb-6" style={{ background: `linear-gradient(180deg, ${colors[0]}55, transparent)` }}>
+            <div className="relative pb-6" style={{ background: `linear-gradient(180deg, ${colors[0]}55, transparent)` }}>
                 <PageHeader title="" />
-                <div className="-mt-6 flex items-end gap-6 px-1">
+                <div className="flex items-end gap-6 px-6 pt-1">
                     <Cover src={cover} className="h-44 w-44 shrink-0 rounded-2xl shadow-2xl ring-1 ring-white/15" fallback={<MusicIcon size={44} />} />
                     <div className="min-w-0">
                         <h1 className="truncate text-4xl font-black">{title}</h1>

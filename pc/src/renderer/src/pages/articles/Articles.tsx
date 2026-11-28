@@ -137,7 +137,7 @@ export function ArticleView({ slug }: { slug: string }) {
             <div className="relative">
                 <Cover src={a.cover} className="h-72 w-full" fallback={<BookOpen size={48} />} />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-[#0c0f17]/40 to-[#0c0f17]" />
-                <div className="absolute inset-x-0 top-0 px-5 pt-4">
+                <div className="absolute inset-x-0 top-0">
                     <PageHeader
                         title=""
                         actions={
