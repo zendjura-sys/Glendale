@@ -241,7 +241,7 @@ class SocialApiController extends ApiController
 
     public function notifications(Request $request, NotificationController $notifications): JsonResponse
     {
-        return $notifications->index($request);
+        return $notifications->list($request);
     }
 
     public function readNotifications(Request $request, NotificationController $notifications): JsonResponse

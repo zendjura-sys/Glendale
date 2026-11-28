@@ -20,6 +20,13 @@ class NotificationController extends Controller
         if (! $request->expectsJson()) {
             return Inertia::render('notifications/index');
         }
+
+        return $this->list($request);
+    }
+
+    /** Список для дзвіночка й застосунків — завжди JSON. */
+    public function list(Request $request): JsonResponse
+    {
         $notifications = NotifyPrefs::visible($request->user()->notifications())->latest()->limit(30)->get();
         $actors = User::query()
             ->whereIn('id', $notifications->pluck('data.actor_id')->merge($notifications->pluck('data.actor_ids')->flatten())->filter()->unique())
