@@ -318,7 +318,7 @@ class _DialerState extends State<_Dialer> {
             physics: NeverScrollableScrollPhysics(),
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
-            childAspectRatio: 1.35,
+            childAspectRatio: cellAspect(context, 1.35),
             children: [
               for (final (key, letters) in _keys)
                 Material(

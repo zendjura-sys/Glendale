@@ -438,7 +438,7 @@ class MovieListScreen extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 12,
               crossAxisSpacing: 10,
-              childAspectRatio: 0.52,
+              childAspectRatio: cellAspect(context, 0.52),
               children: [for (final m in movies) PosterCard(movie: m)],
             ),
           ],

@@ -122,7 +122,7 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 10,
             crossAxisSpacing: 8,
-            childAspectRatio: rareRow ? 0.62 : 0.82,
+            childAspectRatio: cellAspect(context, rareRow ? 0.62 : 0.82),
             children: [
               for (final b in shown) _badge(b),
             ],

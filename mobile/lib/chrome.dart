@@ -1112,7 +1112,7 @@ class _MenuContentState extends State<MenuContent> {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
-          childAspectRatio: 1.55,
+          childAspectRatio: cellAspect(context, 1.55),
           children: [
             if (_on('servers')) _tile(LucideIcons.server, _sky, tr('Сервери GTA'), tr('Онлайн і моніторинг'), '/servers'),
             if (_on('clans')) _tile(LucideIcons.swords, _amber, tr('Клани & Війни'), tr('Дипломатія й матчі'), '/clans'),

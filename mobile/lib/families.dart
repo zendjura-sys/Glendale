@@ -1441,7 +1441,7 @@ class _ReportFormState extends State<_ReportForm> {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
-          childAspectRatio: 2.6,
+          childAspectRatio: cellAspect(context, 2.6),
           children: [
             for (final e in types.entries)
               _Choice(

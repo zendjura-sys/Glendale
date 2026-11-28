@@ -146,7 +146,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
-              childAspectRatio: 0.86,
+              childAspectRatio: cellAspect(context, 0.86),
               children: [
                 for (final album in albums)
                   AlbumTile(album: album, onTap: () async {

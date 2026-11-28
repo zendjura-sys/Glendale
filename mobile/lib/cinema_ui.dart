@@ -778,7 +778,7 @@ class AnimaxGrid extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 220, mainAxisSpacing: 14, crossAxisSpacing: 12, childAspectRatio: 0.62),
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 220, mainAxisSpacing: 14, crossAxisSpacing: 12, childAspectRatio: cellAspect(context, 0.62)),
       itemCount: movies.length,
       itemBuilder: (_, i) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Expanded(child: AnimaxPoster(movie: movies[i], episodeLabel: true)),

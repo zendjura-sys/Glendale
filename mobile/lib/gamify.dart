@@ -206,7 +206,7 @@ class _LoginRewardsScreenState extends _SiteScreenState<LoginRewardsScreen> {
         physics: const NeverScrollableScrollPhysics(),
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
-        childAspectRatio: 0.9,
+        childAspectRatio: cellAspect(context, 0.9),
         children: [
           for (final c in cells)
             Container(
@@ -452,7 +452,7 @@ class _CardsScreenState extends _SiteScreenState<CardsScreen> {
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 130, childAspectRatio: 5 / 7, mainAxisSpacing: 10, crossAxisSpacing: 10),
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 130, childAspectRatio: cellAspect(context, 5 / 7), mainAxisSpacing: 10, crossAxisSpacing: 10),
           itemCount: cards.length,
           itemBuilder: (_, i) => CollectibleCard(card: cards[i], onTap: () => _details(cards[i])),
         ),

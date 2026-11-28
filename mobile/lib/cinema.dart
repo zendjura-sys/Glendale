@@ -310,7 +310,7 @@ class PosterGrid extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 14, crossAxisSpacing: 10, childAspectRatio: 0.52),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 14, crossAxisSpacing: 10, childAspectRatio: cellAspect(context, 0.52)),
       itemCount: movies.length,
       itemBuilder: (_, i) => PosterCard(movie: movies[i], footer: footer?.call(movies[i])),
     );

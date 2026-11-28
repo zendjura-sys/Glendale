@@ -196,15 +196,15 @@ class TwoColumns extends StatelessWidget {
     for (var i = 0; i < children.length; i += 2) {
       rows.add(Padding(
         padding: const EdgeInsets.only(bottom: 10),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: children[i]),
-              const SizedBox(width: 10),
-              Expanded(child: i + 1 < children.length ? children[i + 1] : const SizedBox.shrink()),
-            ],
-          ),
+        // Без IntrinsicHeight: у картках є LayoutBuilder (FitText), а він не вміє віддавати власну висоту
+        // наперед — розкладка ламалась і кнопка внизу обрізалась. Картки однакової будови й так рівні.
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: children[i]),
+            const SizedBox(width: 10),
+            Expanded(child: i + 1 < children.length ? children[i + 1] : const SizedBox.shrink()),
+          ],
         ),
       ));
     }

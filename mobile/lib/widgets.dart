@@ -2104,3 +2104,8 @@ class CriteriaSliders extends StatelessWidget {
     ]);
   }
 }
+
+
+/// Пропорція клітинки сітки з урахуванням системного розміру шрифту: що більший шрифт, то вища клітинка,
+/// щоб підписи й кнопки не обрізались (жорстка пропорція ламалась на «Великому» шрифті Android).
+double cellAspect(BuildContext context, double aspect) => aspect / MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);

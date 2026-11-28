@@ -783,7 +783,7 @@ class PlaylistGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 10,
       crossAxisSpacing: 10,
-      childAspectRatio: 0.8,
+      childAspectRatio: cellAspect(context, 0.8),
       children: [
         for (final p in playlists)
           Glass(

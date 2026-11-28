@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gamecon/core/widgets/notched_card.dart';
 import 'package:gamecon/events.dart';
+import 'package:gamecon/people.dart';
 import 'package:gamecon/posts.dart';
 import 'package:gamecon/state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -155,6 +156,39 @@ void main() {
     ));
     await tester.pump(const Duration(milliseconds: 600));
     await expectLater(find.byKey(const Key('real')), matchesGoldenFile('shots/notched_card_real.png'));
+  });
+
+  testWidgets('Сітка людей з великим шрифтом: кнопка не обрізається', skip: !shots, (tester) async {
+    await _fonts();
+    palette = neonPalette;
+    SharedPreferences.setMockInitialValues({});
+    final session = Session(await SharedPreferences.getInstance());
+    tester.view.physicalSize = const Size(412 * 2, 900 * 2);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final people = [
+      for (final (n, m, c) in [('Вячеслав Скоблей', 1, null), ('Google Access', 4, null), ('брендон Ovsyanka', 0, 'Миколаїв'), ('Morgan Kraken', 4, null), ('Hikaro Haruko', 2, null), ('olof Reex', 3, null)])
+        {'id': n.hashCode, 'name': n, 'username': n.toLowerCase().replaceAll(' ', '.'), 'mutual': m, 'city': c, 'relation': 'friends', 'is_online': false},
+    ];
+    await tester.pumpWidget(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: gameConTheme(),
+      builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.35)), child: child!),
+      home: AppScope(
+        session: session,
+        player: TrackPlayer(),
+        child: Scaffold(
+          backgroundColor: voidColor,
+          body: RepaintBoundary(
+            key: const Key('people'),
+            child: ColoredBox(color: voidColor, child: ListView(padding: const EdgeInsets.all(14), children: [TwoColumns(children: [for (final u in people) PersonCard(user: u)])])),
+          ),
+        ),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(tester.takeException(), isNull);
+    await expectLater(find.byKey(const Key('people')), matchesGoldenFile('shots/people_grid_large_font.png'));
   });
 
   test('NotchedCard: шлях з вирізом замкнений і не виходить за межі картки', () {

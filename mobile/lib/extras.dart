@@ -925,7 +925,7 @@ class _TopTenScreenState extends State<TopTenScreen> with _SitePage {
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 10,
             mainAxisSpacing: 12,
-            childAspectRatio: 0.52,
+            childAspectRatio: cellAspect(context, 0.52),
             children: [
               for (var i = 0; i < movies.length; i++)
                 Stack(children: [
