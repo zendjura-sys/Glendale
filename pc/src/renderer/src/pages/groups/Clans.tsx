@@ -36,7 +36,8 @@ export function ClansList() {
     return (
         <div className="flex h-full flex-col">
             <PageHeader title="Клани" subtitle="Клани й гільдії гравців" />
-            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+            <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_300px] gap-5 overflow-y-auto p-5 max-[1100px]:grid-cols-1">
+<div className="min-w-0 space-y-5">
                 {!page.data && <Loading error={page.error} />}
                 {page.data && page.data.mine.length > 0 && (
                     <Card title="Мої">
@@ -66,6 +67,31 @@ export function ClansList() {
                         <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-3">{page.data.clans.data.map(card)}</div>
                     </Card>
                 )}
+                </div>
+                <aside className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2">
+                        <StatTile label="Мої" value={page.data?.mine.length ?? '—'} accent />
+                        <StatTile label="Набирають" value={page.data ? page.data.clans.data.filter((c) => c.is_recruiting).length : '—'} />
+                    </div>
+                    {page.data && (
+                        <Card title="Типи">
+                            <div className="flex flex-wrap gap-1.5">
+                                {Object.entries(page.data.types).map(([k, v]) => (
+                                    <button key={k} type="button" onClick={() => setType(type === k ? '' : k)} className={`h-8 rounded-lg px-2.5 text-xs ring-1 ${type === k ? 'bg-white/10 ring-white/25' : 'text-white/60 ring-white/10 hover:bg-white/5'}`}>
+                                        {v}
+                                    </button>
+                                ))}
+                            </div>
+                        </Card>
+                    )}
+                    <Card title="Навіщо клан">
+                        <ul className="space-y-2 text-sm text-white/60">
+                            <li>• Спільний чат і голосова кімната для команди.</li>
+                            <li>• Події з реєстрацією та турнірні сітки.</li>
+                            <li>• Скарбниця, ранги й «Гравець місяця».</li>
+                        </ul>
+                    </Card>
+                </aside>
             </div>
         </div>
     );
