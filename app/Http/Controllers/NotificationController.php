@@ -9,11 +9,17 @@ use App\Support\NotifyPrefs;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class NotificationController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse|Response
     {
+        // Браузер (посилання, палітра команд, розділений екран) — сторінка; дзвіночок і застосунки — JSON.
+        if (! $request->expectsJson()) {
+            return Inertia::render('notifications/index');
+        }
         $notifications = NotifyPrefs::visible($request->user()->notifications())->latest()->limit(30)->get();
         $actors = User::query()
             ->whereIn('id', $notifications->pluck('data.actor_id')->merge($notifications->pluck('data.actor_ids')->flatten())->filter()->unique())

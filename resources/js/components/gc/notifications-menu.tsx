@@ -246,99 +246,12 @@ export function NotificationsMenu() {
                                                     }
                                                 />
                                             );
-                                        const meta =
-                                            kindIcon[item.kind] ??
-                                            (item.kind.startsWith('family_')
-                                                ? familyIcon
-                                                : {
-                                                      icon: Bell,
-                                                      className: 'bg-white/20',
-                                                  });
-                                        const Icon = meta.icon;
-
                                         return (
-                                            <Link
+                                            <NotificationRow
                                                 key={item.id}
-                                                href={item.url ?? '#'}
-                                                onClick={() => setOpen(false)}
-                                                className={cn(
-                                                    'flex gap-3 rounded-xl px-2.5 py-2.5 transition hover:bg-white/5',
-                                                    !item.read &&
-                                                        'bg-gc-blue/[0.06]',
-                                                )}
-                                            >
-                                                <span className="relative">
-                                                    {(item.actors?.length ??
-                                                        0) > 1 &&
-                                                    (item.count ?? 1) > 1 ? (
-                                                        <span className="relative block size-11">
-                                                            <UserAvatar
-                                                                user={
-                                                                    item
-                                                                        .actors![1]
-                                                                }
-                                                                size="sm"
-                                                                showOnline={
-                                                                    false
-                                                                }
-                                                                className="absolute top-0 left-0"
-                                                            />
-                                                            <UserAvatar
-                                                                user={
-                                                                    item
-                                                                        .actors![0]
-                                                                }
-                                                                size="sm"
-                                                                showOnline={
-                                                                    false
-                                                                }
-                                                                className="absolute right-0 bottom-0 ring-2 ring-[#0d1222]"
-                                                            />
-                                                        </span>
-                                                    ) : item.actor ? (
-                                                        <UserAvatar
-                                                            user={item.actor}
-                                                            size="md"
-                                                            showOnline={false}
-                                                        />
-                                                    ) : (
-                                                        <span className="block size-11 rounded-full bg-white/5" />
-                                                    )}
-                                                    <span
-                                                        className={cn(
-                                                            'absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full ring-2 ring-[#0d1222]',
-                                                            meta.className,
-                                                        )}
-                                                    >
-                                                        <Icon className="size-3 text-white" />
-                                                    </span>
-                                                </span>
-                                                <span className="min-w-0 flex-1 text-sm leading-snug break-words">
-                                                    {groupedLine(item) ?? (
-                                                        <>
-                                                            <span className="font-semibold text-white">
-                                                                {
-                                                                    item.actor
-                                                                        ?.name
-                                                                }
-                                                            </span>{' '}
-                                                            <span className="text-white/70">
-                                                                {item.text}
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                    {item.excerpt && (
-                                                        <span className="mt-0.5 block truncate text-xs text-white/45">
-                                                            «{item.excerpt}»
-                                                        </span>
-                                                    )}
-                                                    <span className="mt-1 block text-xs text-white/40">
-                                                        {timeAgo(
-                                                            item.created_at,
-                                                        )}
-                                                    </span>
-                                                </span>
-                                            </Link>
+                                                item={item}
+                                                onOpen={() => setOpen(false)}
+                                            />
                                         );
                                     })
                                 )}
@@ -348,6 +261,89 @@ export function NotificationsMenu() {
                     document.body,
                 )}
         </div>
+    );
+}
+
+/** Рядок сповіщення: аватар (або два для згрупованих), значок типу, текст і час. */
+export function NotificationRow({
+    item,
+    onOpen,
+}: {
+    item: NotificationItem;
+    onOpen?: () => void;
+}) {
+    const meta =
+        kindIcon[item.kind] ??
+        (item.kind.startsWith('family_')
+            ? familyIcon
+            : {
+                  icon: Bell,
+                  className: 'bg-white/20',
+              });
+    const Icon = meta.icon;
+
+    return (
+        <Link
+            href={item.url ?? '#'}
+            onClick={onOpen}
+            className={cn(
+                'flex gap-3 rounded-xl px-2.5 py-2.5 transition hover:bg-white/5',
+                !item.read && 'bg-gc-blue/[0.06]',
+            )}
+        >
+            <span className="relative">
+                {(item.actors?.length ?? 0) > 1 && (item.count ?? 1) > 1 ? (
+                    <span className="relative block size-11">
+                        <UserAvatar
+                            user={item.actors![1]}
+                            size="sm"
+                            showOnline={false}
+                            className="absolute top-0 left-0"
+                        />
+                        <UserAvatar
+                            user={item.actors![0]}
+                            size="sm"
+                            showOnline={false}
+                            className="absolute right-0 bottom-0 ring-2 ring-[#0d1222]"
+                        />
+                    </span>
+                ) : item.actor ? (
+                    <UserAvatar
+                        user={item.actor}
+                        size="md"
+                        showOnline={false}
+                    />
+                ) : (
+                    <span className="block size-11 rounded-full bg-white/5" />
+                )}
+                <span
+                    className={cn(
+                        'absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full ring-2 ring-[#0d1222]',
+                        meta.className,
+                    )}
+                >
+                    <Icon className="size-3 text-white" />
+                </span>
+            </span>
+            <span className="min-w-0 flex-1 text-sm leading-snug break-words">
+                {groupedLine(item) ?? (
+                    <>
+                        <span className="font-semibold text-white">
+                            {item.actor?.name}
+                        </span>{' '}
+                        <span className="text-white/70">{item.text}</span>
+                    </>
+                )}
+                {item.excerpt && (
+                    <span className="mt-0.5 block truncate text-xs text-white/45">
+                        «{item.excerpt}»
+                    </span>
+                )}
+                <span className="mt-1 block text-xs text-white/40">
+                    {timeAgo(item.created_at)}
+                </span>
+            </span>
+        </Link>
     );
 }
 
