@@ -129,43 +129,21 @@ const SHOTS = [
         url: '/dashboard',
         device: PC,
         regions: {
-            logo: (p) => p.locator('header a[href="/feed"]').first(),
-            search: (p) =>
-                p.locator('header input[placeholder^="Пошук"]').locator('..'),
-            nav: (p) => p.locator('nav[aria-label="Головні розділи"]'),
-            music: (p) =>
-                p.locator('nav[aria-label="Головні розділи"] a').last(),
+            logo: (p) => p.locator('header a.gc-wordmark').first(),
+            search: (p) => p.locator('header .gc-lobby-search').first(),
             gamecast: (p) => p.locator('header a[aria-label^="GameCast"]'),
+            sections: (p) => p.locator('header nav.gc-header-nav'),
             theme: (p) => p.locator('header button[aria-label*="тема"]'),
             whatsnew: (p) => p.locator('header button[aria-label="Що нового"]'),
             bell: (p) => p.locator('header button[aria-label^="Сповіщення"]'),
             avatar: (p) =>
                 p.locator('header button[aria-label="Меню облікового запису"]'),
-            profile: (p) => p.locator('aside section').first(),
-            menu: (p) => p.locator('nav[aria-label="Розділи"]'),
-            app: (p) => p.locator('aside a[href="/app"]').first(),
-            stories: (p) =>
-                p
-                    .getByText('Момент', { exact: true })
-                    .locator(
-                        'xpath=ancestor::*[contains(@class,"gc-solid")][1]',
-                    ),
-            streak: (p) =>
-                p
-                    .locator('main section', {
-                        has: p.locator('button[aria-label="Завдання дня"]'),
-                    })
-                    .first(),
-            ready: (p) =>
-                p
-                    .locator('main button', { hasText: 'Я готовий грати' })
-                    .first(),
-            quests: (p) => p.locator('button[aria-label="Завдання дня"]'),
-            composer: (p) => p.locator('section.gc-composer'),
-            continue: (p) => p.locator('section[aria-label="Продовжити"]'),
-            tabs: (p) => p.locator('nav[aria-label="Стрічка"]'),
-            requests: (p) => p.locator('aside.gc-split-hide section').first(),
-            widgets: (p) => p.locator('aside.gc-split-hide'),
+            hero: (p) => p.locator('.gc-lobby-hero').first(),
+            ready: (p) => p.locator('.gc-ready-toggle').first(),
+            quests: (p) => p.locator('button[aria-label="Завдання дня"]').first(),
+            now: (p) => p.locator('.gc-now-tile').first(),
+            dock: (p) => p.locator('nav.gc-live-dock').first(),
+            create: (p) => p.locator('.gc-dock-create').first(),
         },
     },
     {
@@ -173,33 +151,16 @@ const SHOTS = [
         url: '/dashboard',
         device: PHONE,
         regions: {
-            search: (p) =>
-                p.locator('header input[placeholder^="Пошук"]').locator('..'),
+            search: (p) => p.locator('header .gc-lobby-search').first(),
             whatsnew: (p) => p.locator('header button[aria-label="Що нового"]'),
             bell: (p) => p.locator('header button[aria-label^="Сповіщення"]'),
-            stories: (p) =>
-                p
-                    .getByText('Момент', { exact: true })
-                    .locator(
-                        'xpath=ancestor::*[contains(@class,"gc-solid")][1]',
-                    ),
-            streak: (p) =>
-                p
-                    .locator('main section', {
-                        has: p.locator('button[aria-label="Завдання дня"]'),
-                    })
-                    .first(),
-            composer: (p) => p.locator('section.gc-composer'),
-            'tab-profile': (p) =>
-                p.locator('.gc-vk-tabbar a, .gc-vk-tabbar button').nth(0),
-            'tab-feed': (p) =>
-                p.locator('.gc-vk-tabbar a, .gc-vk-tabbar button').nth(1),
-            'tab-chat': (p) =>
-                p.locator('.gc-vk-tabbar a, .gc-vk-tabbar button').nth(2),
-            'tab-friends': (p) =>
-                p.locator('.gc-vk-tabbar a, .gc-vk-tabbar button').nth(3),
-            'tab-menu': (p) =>
-                p.locator('.gc-vk-tabbar a, .gc-vk-tabbar button').nth(4),
+            hero: (p) => p.locator('.gc-lobby-hero').first(),
+            ready: (p) => p.locator('.gc-ready-toggle').first(),
+            'tab-profile': (p) => p.locator('nav.gc-live-dock a').nth(0),
+            'tab-feed': (p) => p.locator('nav.gc-live-dock a').nth(1),
+            create: (p) => p.locator('.gc-dock-create').first(),
+            'tab-chat': (p) => p.locator('nav.gc-live-dock a').nth(2),
+            'tab-friends': (p) => p.locator('nav.gc-live-dock a').nth(3),
         },
     },
     {
