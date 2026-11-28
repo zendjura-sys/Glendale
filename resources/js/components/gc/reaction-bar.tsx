@@ -93,7 +93,7 @@ export function ReactionBar({
                 <div
                     role="menu"
                     aria-label={tr('Реакції')}
-                    className="glass-strong absolute bottom-full left-0 z-20 mb-2 flex max-w-[calc(100vw-32px)] animate-in items-center gap-1 overflow-x-auto rounded-full border border-white/10 p-1.5 shadow-xl duration-150 fade-in-0 slide-in-from-bottom-1"
+                    className="glass-strong absolute bottom-full left-0 z-20 mb-2 flex max-w-[calc(100vw-32px)] animate-in items-center gap-1 overflow-x-auto rounded-full p-1.5 duration-150 fade-in-0 slide-in-from-bottom-1"
                 >
                     {available.map((item) => (
                         <button
@@ -138,10 +138,8 @@ export function ReactionBar({
                     onPick(reaction ?? 'like');
                 }}
                 className={cn(
-                    'inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-full px-3 text-sm transition select-none [-webkit-touch-callout:none]',
-                    current
-                        ? 'bg-white/[0.1] text-white'
-                        : 'bg-white/[0.045] text-white/70 hover:bg-white/10 hover:text-white',
+                    'gc-vk-pill min-w-9 justify-center select-none [-webkit-touch-callout:none]',
+                    current && 'is-on',
                 )}
             >
                 {current ? (

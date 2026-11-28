@@ -38,7 +38,7 @@ class ProfileController extends Controller
                 'last_name' => $user->last_name,
                 'username' => $user->username,
                 'email' => $user->email,
-                'status' => $user->status,
+                'status' => $user->statusExpired() ? null : $user->status,
                 'about' => $user->about,
                 'city' => $user->city,
                 'country' => $user->country,
@@ -47,7 +47,10 @@ class ProfileController extends Controller
                 'website' => $user->website,
                 'is_private' => $user->is_private,
                 'message_privacy' => $user->message_privacy,
+                'call_privacy' => $user->pref('call_privacy', 'everyone'),
+                'group_add' => $user->pref('group_add', 'friends'),
                 'email_social' => $user->email_social,
+                'news_email' => $user->pref('news_email', false) === true,
             ],
             'countries' => Countries::options(),
             'connections' => $social->connections($user, [
@@ -62,13 +65,24 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $data = $request->validated();
+        $news = array_key_exists('news_email', $data) ? (bool) $data['news_email'] : null;
+        unset($data['news_email']);
+        $request->user()->fill($request->user()->applyContactPrivacy($data));
+
+        // Статус, змінений у налаштуваннях, — постійний: таймер швидкого статусу знімається.
+        if ($request->user()->isDirty('status')) {
+            $request->user()->status_until = null;
+        }
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
         }
 
         $request->user()->save();
+        if ($news !== null && $news !== ($request->user()->pref('news_email', false) === true)) {
+            $request->user()->mergePref(['news_email' => $news]);
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Профіль оновлено.']);
 

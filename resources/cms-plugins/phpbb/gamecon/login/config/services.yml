@@ -1,0 +1,22 @@
+services:
+    gamecon.login.controller:
+        class: gamecon\login\controller\main
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '@user'
+            - '@request'
+            - '@controller.helper'
+            - '@language'
+            - '%core.root_path%'
+            - '%core.php_ext%'
+            - '%core.table_prefix%'
+    gamecon.login.listener:
+        class: gamecon\login\event\listener
+        arguments:
+            - '@config'
+            - '@controller.helper'
+            - '@template'
+            - '@user'
+        tags:
+            - { name: event.listener }

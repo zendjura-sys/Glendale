@@ -32,9 +32,12 @@ class Playlist extends Model
 
     public const MAX_TRACKS = 1000;
 
+    /** Настрої й заняття для добірок редакції (вкладка «Нове»). */
+    public const CATEGORIES = ['energy', 'chill', 'focus', 'workout', 'party', 'sleep', 'road', 'gaming', 'sad', 'happy'];
+
     protected function casts(): array
     {
-        return ['is_public' => 'boolean'];
+        return ['is_public' => 'boolean', 'is_featured' => 'boolean'];
     }
 
     /**
@@ -88,6 +91,8 @@ class Playlist extends Model
             'cover_url' => $this->cover_url,
             'covers' => $covers,
             'is_public' => $this->is_public,
+            'is_featured' => (bool) $this->is_featured,
+            'category' => $this->category,
             'tracks_count' => $this->tracks_count,
             'duration' => $this->duration,
             'user_id' => $this->user_id,

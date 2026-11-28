@@ -16,10 +16,22 @@ import { usePlayer } from '@/lib/player';
 import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ConversationSummary } from '@/types';
 import { ConversationAvatar } from './conversation-avatar';
+import { useStoredDraft } from '@/lib/drafts';
 import { tr } from '@/lib/i18n';
 
 function Preview({ conversation }: { conversation: ConversationSummary }) {
     const last = conversation.last_message;
+    const draft = useStoredDraft(`chat:${conversation.id}`);
+
+    // Незакінчене повідомлення — як у Telegram: «Чернетка: …».
+    if (draft.trim()) {
+        return (
+            <span>
+                <span className="text-red-400">{tr('Чернетка:')}</span>{' '}
+                {draft.split('\n')[0]}
+            </span>
+        );
+    }
 
     if (!last) {
         return <span className="text-white/35">{tr('Немає повідомлень')}</span>;
@@ -74,7 +86,7 @@ export function ConversationList({
                 <div className="flex items-center">
                     <Link
                         href="/messages/saved"
-                        className="flex size-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.07] hover:text-white"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white"
                         aria-label={tr('Обрані')}
                         title={tr('Обрані')}
                     >
@@ -83,7 +95,7 @@ export function ConversationList({
                     <button
                         type="button"
                         onClick={onCompose}
-                        className="flex size-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.07] hover:text-white"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white"
                         aria-label={tr('Нове повідомлення')}
                         title={tr('Нове повідомлення')}
                     >
@@ -106,12 +118,12 @@ export function ConversationList({
             <div
                 className={cn(
                     'min-h-0 flex-1 overflow-y-auto px-2',
-                    dockedAboveNav(playing, 'lg:pb-2'),
+                    dockedAboveNav(playing, 'md:pb-2'),
                 )}
             >
                 {visible.length === 0 ? (
                     <div className="flex flex-col items-center px-6 py-14 text-center">
-                        <span className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-white/[0.04]">
+                        <span className="gc-solid-2 mb-4 flex size-14 items-center justify-center rounded-2xl">
                             <MessagesSquare className="size-7 text-white/25" />
                         </span>
                         <p className="text-sm text-white/50">
@@ -143,7 +155,7 @@ export function ConversationList({
                                     'group flex items-center gap-3 rounded-2xl px-2.5 py-2.5 transition',
                                     active
                                         ? 'nav-active'
-                                        : 'hover:bg-white/[0.04]',
+                                        : 'hover:bg-[var(--gc-l3)]',
                                 )}
                             >
                                 <ConversationAvatar
@@ -155,7 +167,13 @@ export function ConversationList({
                                             {conversation.title}
                                         </span>
                                         {conversation.peer?.is_verified && (
-                                            <VerifiedBadge className="size-3.5 shrink-0" />
+                                            <VerifiedBadge
+                                                kind={
+                                                    conversation.peer
+                                                        ?.verified_kind
+                                                }
+                                                className="size-3.5 shrink-0"
+                                            />
                                         )}
                                         {conversation.peer?.plus && (
                                             <PlusBadge className="size-3.5" />
@@ -176,7 +194,10 @@ export function ConversationList({
                                         )}
                                     </span>
                                     <span className="mt-0.5 flex items-center gap-2">
-                                        <span className="min-w-0 flex-1 truncate text-[13px] text-white/50">
+                                        <span
+                                            data-private
+                                            className="min-w-0 flex-1 truncate text-[13px] text-white/50"
+                                        >
                                             {conversation.folder && (
                                                 <span className="text-white/35">
                                                     {conversation.folder} ·{' '}
@@ -204,7 +225,7 @@ export function ConversationList({
                                                     'flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white',
                                                     conversation.is_muted
                                                         ? 'bg-white/20'
-                                                        : 'bg-gradient-brand shadow-[0_0_12px_rgb(124_140_255/0.7)]',
+                                                        : 'bg-sky-500',
                                                 )}
                                             >
                                                 {conversation.unread > 99

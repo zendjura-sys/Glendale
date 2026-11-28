@@ -38,6 +38,8 @@ jobs:
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
+          # Redis у CI немає: міграції, що чистять кеш, працюють із кешем у пам'яті.
+          CACHE_STORE: array
         run: composer setup
 
       - name: Run CI Checks

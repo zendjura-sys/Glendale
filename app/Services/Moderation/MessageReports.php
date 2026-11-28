@@ -2,6 +2,7 @@
 
 namespace App\Services\Moderation;
 
+use App\Jobs\AssessMessageReport;
 use App\Models\Conversation;
 use App\Models\Family;
 use App\Models\Message;
@@ -9,6 +10,7 @@ use App\Models\MessageReport;
 use App\Models\User;
 use App\Services\Families\FamilyNotifier;
 use App\Services\Messenger;
+use App\Support\Plugins\Plugins;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -36,6 +38,11 @@ class MessageReports
             ['reason' => $reason, 'comment' => $comment, 'status' => MessageReport::PENDING],
         );
 
+        // ШІ оцінить терміновість для черги модерації — після відповіді, скарга не чекає.
+        if (app(Plugins::class)->on('ai_moderation')) {
+            AssessMessageReport::dispatch($report->id)->afterResponse();
+        }
+
         $family = $conversation->family_id !== null ? Family::query()->find($conversation->family_id) : null;
         if ($family instanceof Family) {
             $author = $message->user->name ?? 'учасника';
@@ -61,6 +68,10 @@ class MessageReports
                 'muted_until' => now()->addHours(max(1, (int) $hours)),
                 'mute_reason' => $reason !== null && trim($reason) !== '' ? Str::limit(trim($reason), 200, '') : MessageReport::REASONS[$report->reason] ?? null,
             ])->save();
+        }
+
+        if (in_array($action, ['delete', 'mute'], true) && $author instanceof User) {
+            app(Strikes::class)->add($author, $moderator, $reason ?? (MessageReport::REASONS[$report->reason] ?? null), 'message_report');
         }
 
         MessageReport::query()->where('message_id', $report->message_id)->where('status', MessageReport::PENDING)->update([

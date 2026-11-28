@@ -19,13 +19,16 @@ use Illuminate\Support\Carbon;
  * @property int $balance
  * @property string $status
  * @property string|null $application_note
+ * @property array<string, string>|null $answers
+ * @property list<string>|null $onboarding_done
+ * @property Carbon|null $onboarded_at
  * @property Carbon|null $joined_at
  * @property Carbon|null $left_at
  * @property Carbon $created_at
  * @property-read Family $family
  * @property-read User $user
  */
-#[Fillable(['family_id', 'user_id', 'rp_nickname', 'static_id', 'rank', 'duties', 'status', 'application_note', 'joined_at', 'left_at'])]
+#[Fillable(['family_id', 'user_id', 'rp_nickname', 'static_id', 'rank', 'duties', 'status', 'application_note', 'joined_at', 'left_at', 'answers', 'onboarding_done', 'onboarded_at'])]
 class FamilyMember extends Model
 {
     public const STATUS_PENDING = 'pending';
@@ -48,6 +51,9 @@ class FamilyMember extends Model
             'balance' => 'integer',
             'joined_at' => 'datetime',
             'left_at' => 'datetime',
+            'answers' => 'array',
+            'onboarding_done' => 'array',
+            'onboarded_at' => 'datetime',
         ];
     }
 
@@ -91,6 +97,30 @@ class FamilyMember extends Model
     public function displayName(): string
     {
         return "{$this->rp_nickname} [{$this->static_id}]";
+    }
+
+    /**
+     * RP-досьє персонажа для картки гравця й меню: сім'я, нік, ранг, баланс, догани, сервер.
+     * Сім'я (з сервером) має бути завантажена заздалегідь.
+     *
+     * @return array<string, mixed>
+     */
+    public function dossier(): array
+    {
+        $family = $this->family;
+
+        return [
+            'name' => $family->name,
+            'tag' => $family->tag,
+            'href' => '/f/'.$family->slug,
+            'nickname' => $this->displayName(),
+            'rank' => $this->rank,
+            'rank_title' => $family->rankTitle($this->rank),
+            'balance' => $this->balance,
+            'warns' => FamilyPunishment::query()->active()->where('member_id', $this->id)->where('type', FamilyPunishment::TYPE_WARN)->count(),
+            'warn_limit' => (int) $family->setting('discipline.warn_limit', 3),
+            'server' => $family->server?->name,
+        ];
     }
 
     /**

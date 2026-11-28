@@ -1,25 +1,42 @@
-import { router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     Check,
     ChevronDown,
+    ClipboardList,
     Clock3,
+    KeyRound,
+    LogIn,
     LogOut,
     Plus,
+    ScrollText,
     UserPlus,
 } from 'lucide-react';
 import { useState } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { api } from '@/lib/api';
+import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import type { CommunityCard, CommunityRole, MembershipStatus } from '@/types';
 import { tr } from '@/lib/i18n';
 
 type Props = {
-    community: Pick<CommunityCard, 'slug' | 'type' | 'privacy'>;
+    community: Pick<CommunityCard, 'slug' | 'type' | 'privacy'> & {
+        has_password?: boolean;
+        join_questions?: string[];
+        rules_accept?: boolean;
+        rules_text?: string | null;
+    };
     status: MembershipStatus | null;
     role?: CommunityRole | null;
     size?: 'sm' | 'md';
@@ -34,6 +51,11 @@ export function JoinButton({
     className,
 }: Props) {
     const [busy, setBusy] = useState(false);
+    const [asking, setAsking] = useState(false);
+    const [rulesOk, setRulesOk] = useState(false);
+    const [rulesOpen, setRulesOpen] = useState(false);
+    const signedIn = Boolean(usePage().props.auth.user);
+    const formsOn = usePlugin('join_forms');
     const isPublic = community.type === 'public';
     const height =
         size === 'sm' ? 'h-9 px-3.5 text-[13px]' : 'h-10 px-4 text-sm';
@@ -43,6 +65,115 @@ export function JoinButton({
         onStart: () => setBusy(true),
         onFinish: () => setBusy(false),
     };
+
+    // Правила при вступі: спершу «Погоджуюся», далі — звичайний вступ (пароль, анкета чи одразу).
+    const needsRules =
+        signedIn && status === null && community.rules_accept && !rulesOk;
+    const acceptRules = async () => {
+        await api('POST', `/c/${community.slug}/rules/accept`);
+        setRulesOk(true);
+        setRulesOpen(false);
+        const dialog =
+            community.has_password ||
+            ((community.join_questions ?? []).length > 0 && formsOn);
+        if (dialog) {
+            setAsking(true);
+        } else {
+            router.post(url, {}, options);
+        }
+    };
+    if (needsRules) {
+        return (
+            <>
+                <button
+                    type="button"
+                    onClick={() => setRulesOpen(true)}
+                    className={cn(
+                        'btn-glow inline-flex items-center justify-center gap-2 rounded-xl font-semibold',
+                        height,
+                        className,
+                    )}
+                >
+                    <ScrollText className="size-4" />
+                    {isPublic ? tr('Підписатися') : tr('Вступити')}
+                </button>
+                <RulesDialog
+                    open={rulesOpen}
+                    onOpenChange={setRulesOpen}
+                    rules={community.rules_text ?? ''}
+                    rulesHref={`/c/${community.slug}/rules`}
+                    onAccept={acceptRules}
+                />
+            </>
+        );
+    }
+
+    // Гість (без акаунта) — спершу вхід.
+    if (!signedIn) {
+        return (
+            <Link
+                href="/login"
+                className={cn(
+                    'btn-glow inline-flex items-center justify-center gap-2 rounded-xl font-semibold',
+                    height,
+                    className,
+                )}
+            >
+                <LogIn className="size-4" />
+                {tr('Увійти, щоб вступити')}
+            </Link>
+        );
+    }
+
+    if (status === null && community.has_password) {
+        return (
+            <>
+                <button
+                    type="button"
+                    onClick={() => setAsking(true)}
+                    className={cn(
+                        'btn-glow inline-flex items-center justify-center gap-2 rounded-xl font-semibold',
+                        height,
+                        className,
+                    )}
+                >
+                    <KeyRound className="size-4" />
+                    {tr('Вступити')}
+                </button>
+                <PasswordDialog
+                    open={asking}
+                    onOpenChange={setAsking}
+                    url={url}
+                />
+            </>
+        );
+    }
+
+    const questions = community.join_questions ?? [];
+    if (status === null && questions.length > 0 && formsOn) {
+        return (
+            <>
+                <button
+                    type="button"
+                    onClick={() => setAsking(true)}
+                    className={cn(
+                        'btn-glow inline-flex items-center justify-center gap-2 rounded-xl font-semibold',
+                        height,
+                        className,
+                    )}
+                >
+                    <ClipboardList className="size-4" />
+                    {tr('Подати заявку')}
+                </button>
+                <QuestionsDialog
+                    open={asking}
+                    onOpenChange={setAsking}
+                    url={url}
+                    questions={questions}
+                />
+            </>
+        );
+    }
 
     if (status === null) {
         const label = isPublic
@@ -80,7 +211,7 @@ export function JoinButton({
                 onClick={() => router.delete(url, options)}
                 title={tr('Скасувати заявку')}
                 className={cn(
-                    'group inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.07] font-semibold text-white/80 transition hover:bg-rose-500/15 hover:text-rose-200',
+                    'group inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.07] font-semibold text-white/80 transition hover:bg-red-500/15 hover:text-red-400',
                     height,
                     className,
                 )}
@@ -112,7 +243,7 @@ export function JoinButton({
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 align="end"
-                className="glass-strong w-56 rounded-2xl border-white/10 p-1.5 text-white"
+                className="glass-strong w-56 rounded-2xl p-1.5 text-white"
             >
                 {role === 'owner' ? (
                     <div className="px-2.5 py-2 text-xs leading-relaxed text-white/50">
@@ -122,10 +253,10 @@ export function JoinButton({
                     </div>
                 ) : (
                     <DropdownMenuItem
-                        className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                        className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400"
                         onSelect={() => router.delete(url, options)}
                     >
-                        <LogOut className="text-rose-300" />
+                        <LogOut className="text-red-400" />
                         {isPublic
                             ? tr('Відписатися')
                             : tr('Вийти зі спільноти')}
@@ -133,5 +264,220 @@ export function JoinButton({
                 )}
             </DropdownMenuContent>
         </DropdownMenu>
+    );
+}
+
+/** Вступ у спільноту з паролем: пароль дає адміністрація спільноти. */
+function PasswordDialog({
+    open,
+    onOpenChange,
+    url,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    url: string;
+}) {
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+    const submit = (event: React.FormEvent) => {
+        event.preventDefault();
+        router.post(
+            url,
+            { password },
+            {
+                preserveScroll: true,
+                onStart: () => setBusy(true),
+                onFinish: () => setBusy(false),
+                onError: (errors) => setError(errors.password ?? null),
+                onSuccess: () => onOpenChange(false),
+            },
+        );
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="gap-4 sm:max-w-sm">
+                <div>
+                    <DialogTitle className="font-display text-lg font-semibold text-white">
+                        {tr('Спільнота з паролем')}
+                    </DialogTitle>
+                    <DialogDescription className="mt-1 text-sm text-white/50">
+                        {tr(
+                            'Введіть пароль, який дала адміністрація, — і одразу станете учасником.',
+                        )}
+                    </DialogDescription>
+                </div>
+                <form onSubmit={submit} className="space-y-3">
+                    <input
+                        type="password"
+                        autoFocus
+                        value={password}
+                        onChange={(event) => {
+                            setPassword(event.target.value);
+                            setError(null);
+                        }}
+                        placeholder={tr('Пароль')}
+                        className="input-glass h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
+                    />
+                    {error && <p className="text-xs text-red-400">{error}</p>}
+                    <button
+                        type="submit"
+                        disabled={busy || password === ''}
+                        className="btn-glow inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold disabled:opacity-60"
+                    >
+                        <KeyRound className="size-4" />
+                        {tr('Вступити')}
+                    </button>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/** Анкета вступу до закритої спільноти: відповіді побачать адміни в заявці. */
+function QuestionsDialog({
+    open,
+    onOpenChange,
+    url,
+    questions,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    url: string;
+    questions: string[];
+}) {
+    const [answers, setAnswers] = useState<string[]>(() =>
+        questions.map(() => ''),
+    );
+    const [error, setError] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+    const submit = (event: React.FormEvent) => {
+        event.preventDefault();
+        router.post(
+            url,
+            { answers },
+            {
+                preserveScroll: true,
+                onStart: () => setBusy(true),
+                onFinish: () => setBusy(false),
+                onError: (errors) => setError(errors.answers ?? null),
+                onSuccess: () => onOpenChange(false),
+            },
+        );
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-md">
+                <div>
+                    <DialogTitle className="font-display text-lg font-semibold text-white">
+                        {tr('Анкета вступу')}
+                    </DialogTitle>
+                    <DialogDescription className="mt-1 text-sm text-white/50">
+                        {tr(
+                            'Адміністрація прочитає відповіді й вирішить щодо заявки.',
+                        )}
+                    </DialogDescription>
+                </div>
+                <form onSubmit={submit} className="space-y-3">
+                    {questions.map((question, i) => (
+                        <label
+                            key={i}
+                            className="block text-sm font-medium text-white/80"
+                        >
+                            {question}
+                            <textarea
+                                autoFocus={i === 0}
+                                value={answers[i]}
+                                onChange={(event) => {
+                                    setAnswers(
+                                        answers.map((a, j) =>
+                                            j === i ? event.target.value : a,
+                                        ),
+                                    );
+                                    setError(null);
+                                }}
+                                rows={2}
+                                maxLength={1000}
+                                className="input-glass mt-1.5 w-full resize-y rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none"
+                            />
+                        </label>
+                    ))}
+                    {error && <p className="text-xs text-red-400">{error}</p>}
+                    <button
+                        type="submit"
+                        disabled={busy || answers.some((a) => a.trim() === '')}
+                        className="btn-glow inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold disabled:opacity-60"
+                    >
+                        <UserPlus className="size-4" />
+                        {tr('Надіслати заявку')}
+                    </button>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/** Правила спільноти перед вступом: прочитати й погодитися. */
+function RulesDialog({
+    open,
+    onOpenChange,
+    rules,
+    rulesHref,
+    onAccept,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    rules: string;
+    rulesHref: string;
+    onAccept: () => Promise<void>;
+}) {
+    const [agree, setAgree] = useState(false);
+    const [busy, setBusy] = useState(false);
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-lg" data-rules-dialog>
+                <DialogTitle>{tr('Правила спільноти')}</DialogTitle>
+                <DialogDescription>
+                    {tr(
+                        'Щоб вступити, прочитайте правила й погодьтеся з ними.',
+                    )}
+                </DialogDescription>
+                <div className="gc-solid-2 max-h-[45vh] overflow-y-auto rounded-xl p-4 text-sm leading-relaxed whitespace-pre-line text-white/80">
+                    {rules || (
+                        <Link href={rulesHref} className="text-primary">
+                            {tr('Відкрити правила')}
+                        </Link>
+                    )}
+                </div>
+                <label className="flex items-center gap-3 text-sm text-white/85">
+                    <input
+                        type="checkbox"
+                        checked={agree}
+                        onChange={(event) => setAgree(event.target.checked)}
+                        className="size-4 accent-gc-indigo"
+                    />
+                    {tr('Я прочитав(-ла) правила й погоджуюся з ними')}
+                </label>
+                <button
+                    type="button"
+                    disabled={!agree || busy}
+                    onClick={async () => {
+                        setBusy(true);
+                        try {
+                            await onAccept();
+                        } finally {
+                            setBusy(false);
+                        }
+                    }}
+                    className="btn-glow inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-40"
+                >
+                    <Check className="size-4" />
+                    {tr('Погоджуюся і вступаю')}
+                </button>
+            </DialogContent>
+        </Dialog>
     );
 }

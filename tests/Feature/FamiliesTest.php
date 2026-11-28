@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Family;
@@ -13,20 +14,29 @@ use App\Models\FamilyItemLog;
 use App\Models\FamilyMember;
 use App\Models\FamilyPunishment;
 use App\Models\FamilyReport;
+use App\Models\FamilyShift;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
 use App\Models\Message;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\Families\FamilyBank;
 use App\Services\Families\FamilyNotifier;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
+use App\Services\Families\ReportService;
 use App\Services\Families\WeeklyDigest;
+use App\Services\ImageStorage;
 use App\Services\MessengerPresenter;
+use App\Services\PostPresenter;
+use App\Services\Profile\Affiliations;
+use App\Support\Settings\SiteSettings;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 use Inertia\Testing\AssertableInertia as Assert;
 use LogicException;
 use Tests\TestCase;
@@ -136,6 +146,76 @@ class FamiliesTest extends TestCase
         $this->assertSame(count(FamilyItem::STARTER), $family->items()->count());
         $this->assertTrue(FamilyAuditLog::query()->where('family_id', $family->id)->where('action', 'FAMILY_CREATE')->exists());
         $this->assertNull($family->conversation_id);
+    }
+
+    public function test_posts_show_author_family_role_and_server(): void
+    {
+        $post = Post::query()->create(['author_id' => $this->leaderUser->id, 'wall_type' => $this->leaderUser->getMorphClass(), 'wall_id' => $this->leaderUser->id, 'body' => 'Закрили контракт', 'visibility' => 'public']);
+        $card = app(PostPresenter::class)->many(new Collection([$post]), $this->leaderUser)[0];
+
+        $this->assertSame('SCL', $card['family']['tag']);
+        $this->assertSame(10, $card['family']['rank']);
+        $this->assertSame($this->family->rankTitle(10), $card['family']['rank_title']);
+        $this->assertSame('Quant RP', $card['family']['server']);
+
+        // Логотипи біля ніка: сім'я (з роллю й підказкою) і сервер сім'ї.
+        $badges = $card['author']['badges'];
+        $this->assertSame(['family', 'server'], array_column($badges, 'kind'));
+        $this->assertSame('/f/'.$this->family->slug, $badges[0]['href']);
+        $this->assertSame($this->family->rankTitle(10), $badges[0]['role']);
+        $this->assertSame('Quant RP', $badges[1]['name']);
+
+        // Без сім'ї — без значка.
+        $stranger = User::factory()->create();
+        $other = Post::query()->create(['author_id' => $stranger->id, 'wall_type' => $stranger->getMorphClass(), 'wall_id' => $stranger->id, 'body' => 'Привіт', 'visibility' => 'public']);
+        $this->assertNull(app(PostPresenter::class)->many(new Collection([$other]), $stranger)[0]['family']);
+        $this->assertSame([], app(PostPresenter::class)->many(new Collection([$other]), $stranger)[0]['author']['badges']);
+    }
+
+    public function test_badge_is_small_copy_of_logo_and_follows_new_logo(): void
+    {
+        Storage::fake('public');
+        $images = app(ImageStorage::class);
+        $this->family->forceFill(['logo_path' => $images->store(UploadedFile::fake()->image('a.png', 600, 600), 'families/logos', cover: [512, 512])['path']])->save();
+        $this->family->server?->forceFill(['icon_path' => $images->store(UploadedFile::fake()->image('s.png', 300, 300), 'gta-servers', cover: [256, 256])['path'], 'icon_url' => null])->save();
+
+        $badges = app(Affiliations::class)->forUsers([$this->leaderUser->fresh()])[$this->leaderUser->id];
+        $first = (string) $badges[0]['logo'];
+        $this->assertStringContainsString('/badges/', $first);
+        $this->assertStringContainsString('/badges/', (string) $badges[1]['logo']);
+        $thumb = 'badges/'.basename($first);
+        Storage::disk('public')->assertExists($thumb);
+        $this->assertSame([64, 64], array_slice(getimagesizefromstring((string) Storage::disk('public')->get($thumb)) ?: [], 0, 2));
+
+        // Новий логотип — новий значок.
+        $this->family->forceFill(['logo_path' => $images->store(UploadedFile::fake()->image('b.png', 600, 600), 'families/logos', cover: [512, 512])['path']])->save();
+        $again = app(Affiliations::class)->forUsers([$this->leaderUser->fresh()])[$this->leaderUser->id];
+        $this->assertNotSame($first, $again[0]['logo']);
+    }
+
+    public function test_overview_shows_family_chat_card_with_rp_names(): void
+    {
+        // Після опівночі за Києвом, але ще «вчора» за UTC — лічильник «сьогодні» має рахувати за Києвом.
+        $this->travelTo(now('UTC')->setTime(22, 30));
+        $conversation = Conversation::query()->findOrFail($this->family->conversation_id);
+        $conversation->messages()->create(['user_id' => $this->leaderUser->id, 'type' => Message::TYPE_TEXT, 'body' => "Збір о 21:30\nбіля особняка"]);
+
+        $this->actingAs($this->leaderUser)
+            ->get(route('families.show', $this->family), [
+                'X-Inertia' => 'true',
+                'X-Inertia-Version' => app(HandleInertiaRequests::class)->version(request()),
+                'X-Inertia-Partial-Component' => 'families/overview',
+                'X-Inertia-Partial-Data' => 'chat',
+            ])
+            ->assertOk()
+            ->assertJsonPath('props.chat.id', $conversation->id)
+            ->assertJsonPath('props.chat.today', 1)
+            ->assertJsonPath('props.chat.latest.0.name', 'Marco_Scaletta [10001]')
+            ->assertJsonPath('props.chat.latest.0.body', 'Збір о 21:30 біля особняка');
+
+        // Не учасник чату — картки немає (публічна сторінка сім'ї).
+        $this->actingAs(User::factory()->create())->get(route('families.show', $this->family))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->missing('chat'));
     }
 
     public function test_verification_opens_family_chat_with_rp_names(): void
@@ -324,6 +404,20 @@ class FamiliesTest extends TestCase
         $this->assertSame(2, FamilyReport::query()->count());
     }
 
+    public function test_old_cashouts_are_returned_to_treasury_once(): void
+    {
+        $soldier = $this->member();
+        // Як було до виправлення: виплата 145 000 ₴ із заробленого зменшила казну до мінуса.
+        app(FamilyBank::class)->post($this->family, $soldier, 'cashout_paid', 0, -14_500_000, $this->leader, 'Виплата в грі');
+        $this->assertSame(-14_500_000, $this->family->fresh()->treasury);
+
+        (require database_path('migrations/2026_11_21_000266_fix_treasury_after_cashouts.php'))->up();
+
+        $this->assertSame(0, $this->family->fresh()->treasury);
+        $this->assertSame(1, FamilyTransaction::query()->where('type', 'treasury_fix')->count());
+        $this->assertSame(1, FamilyTransaction::query()->where('type', 'cashout_paid')->count());
+    }
+
     public function test_cashout_holds_funds_and_officer_pays_in_game(): void
     {
         $soldier = $this->member();
@@ -342,7 +436,8 @@ class FamiliesTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertSame(FamilyCashout::STATUS_PAID, $cashout->fresh()->status);
-        $this->assertSame(10_000_000 - 300000, $this->family->fresh()->treasury);
+        // Виплата заробленого — з балансу учасника, казна не змінюється.
+        $this->assertSame(10_000_000, $this->family->fresh()->treasury);
         $this->assertTrue(FamilyAuditLog::query()->where('action', 'MONEY_CASHOUT')->exists());
 
         $this->actingAs($soldier->user)->post(route('families.cashouts.store', $this->family), ['amount' => 1000]);
@@ -527,5 +622,88 @@ class FamiliesTest extends TestCase
         $this->assertTrue($family->fresh()->isVerified());
         $this->assertNotNull($family->fresh()->conversation_id);
         $this->assertTrue(FamilyAuditLog::query()->where('family_id', $family->id)->where('action', 'FAMILY_STATUS')->where('actor_user_id', $admin->id)->exists());
+    }
+
+    public function test_approved_report_credits_shift_goal_to_each_crew_member_separately(): void
+    {
+        $mate = $this->member(1, 'Rocco_Lampone', '30003');
+        $shift = FamilyShift::query()->create([
+            'family_id' => $this->family->id, 'title' => 'Склад', 'member_id' => $this->leader->id,
+            'starts_at' => now()->subHour(), 'ends_at' => now()->addHour(),
+            'goal' => ['type' => 'contract', 'tier' => null, 'count' => 2],
+        ]);
+        $partner = $shift->partners()->create(['member_id' => $mate->id, 'status' => 'approved', 'approved_at' => now()]);
+        $reports = app(ReportService::class);
+
+        // Подати звіт (раніше падало на невизначеній змінній) і схвалити — напарник виконав своє, бригадир — ні.
+        $report = $reports->submit($this->family, $mate, ['for' => 'self', 'type' => 'contract', 'tier' => 'light', 'count' => 2, 'event_date' => now()->toDateString()], [UploadedFile::fake()->image('proof.png', 400, 300)]);
+        $reports->review($this->family, $report, $this->leader, true, null);
+
+        $this->assertNotNull($partner->fresh()->completed_at);
+        $this->assertSame(2, $partner->fresh()->progress);
+        $this->assertNull($shift->fresh()->completed_at);
+    }
+
+    public function test_lobby_now_shows_running_and_upcoming_family_shifts(): void
+    {
+        FamilyShift::query()->create(['family_id' => $this->family->id, 'title' => 'Склад', 'member_id' => $this->leader->id, 'starts_at' => now()->subHour(), 'ends_at' => now()->addHour()]);
+        FamilyShift::query()->create(['family_id' => $this->family->id, 'title' => 'Вечірня', 'starts_at' => now()->addHours(3), 'ends_at' => now()->addHours(5)]);
+        FamilyShift::query()->create(['family_id' => $this->family->id, 'title' => 'Завтра', 'starts_at' => now()->addDays(2), 'ends_at' => now()->addDays(2)->addHour()]);
+
+        $this->actingAs($this->leader->user)->getJson('/me/now')->assertOk()
+            ->assertJsonCount(2, 'shifts')
+            ->assertJsonPath('shifts.0.title', 'Склад')->assertJsonPath('shifts.0.live', true)->assertJsonPath('shifts.0.mine', true)
+            ->assertJsonPath('shifts.1.title', 'Вечірня')->assertJsonPath('shifts.1.live', false);
+    }
+
+    public function test_catalog_recruiting_tab_and_season_top(): void
+    {
+        $viewer = User::factory()->create();
+        $closed = app(FamilyService::class)->create(User::factory()->create(), [
+            'server_id' => $this->server->id, 'name' => 'Closed Family', 'tag' => 'CLS', 'rp_nickname' => 'Vito_Closed', 'static_id' => '30001',
+        ]);
+        app(FamilyService::class)->setStatus($closed, User::factory()->admin()->create(), Family::STATUS_VERIFIED, null);
+        $closed->forceFill(['is_recruiting' => false])->save();
+
+        // «Шукаємо» — лише відкритий набір.
+        $this->actingAs($viewer)->get('/families?tab=recruiting')->assertInertia(fn (Assert $p) => $p
+            ->where('filters.tab', 'recruiting')
+            ->where('families.data', fn ($rows) => collect($rows)->pluck('tag')->all() === ['SCL'])
+            ->where('recruitingCount', 1));
+
+        // Рейтинг сезону: сім’я з підтвердженим звітом — на першому місці.
+        $reports = app(ReportService::class);
+        $report = $reports->submit($this->family, $this->leader, ['for' => 'self', 'type' => 'contract', 'tier' => 'light', 'count' => 2, 'event_date' => now()->toDateString()], [UploadedFile::fake()->image('proof.png', 400, 300)]);
+        $reports->review($this->family, $report, $this->leader, true, null);
+        $this->actingAs($viewer)->withHeaders(['X-Inertia' => 'true', 'X-Inertia-Partial-Component' => 'families/index', 'X-Inertia-Partial-Data' => 'top', 'X-Inertia-Version' => (string) Inertia::getVersion()])
+            ->get('/families?tab=top')->assertOk()
+            ->assertJsonPath('props.top.0.tag', 'SCL')->assertJsonPath('props.top.0.place', 1);
+    }
+
+    public function test_family_ai_drafts_charter_ranks_and_report_without_saving(): void
+    {
+        app(SiteSettings::class)->putSecret('ai_key', 'sk-ant-test-key');
+        $replies = [
+            json_encode(['text' => "# Статут\n1. Поважай своїх.", 'quiz' => [['q' => 'Хто вирішує виплати?', 'options' => ['Лідер', 'Будь-хто'], 'correct' => 0], ['q' => 'погане', 'options' => ['одна'], 'correct' => 0]]]),
+            json_encode(['ranks' => ['Пішак', 'Тінь', 'Клинок', 'Вартовий', 'Ловець', 'Ворон', 'Капо', 'Радник', 'Консильєрі', 'Дон']]),
+            'Ось: '.json_encode(['type' => 'contract', 'tier' => 'medium', 'count' => 3, 'event_date' => '2999-01-01', 'note' => 'Три контракти']),
+        ];
+        Http::fake(['api.anthropic.com/*' => function () use (&$replies) {
+            return Http::response(['content' => [['type' => 'text', 'text' => array_shift($replies)]], 'stop_reason' => 'end_turn']);
+        }]);
+        $mate = $this->member(1, 'Rocco_Lampone', '30003');
+        $titles = $this->family->rankTitles();
+
+        $this->actingAs($this->leaderUser)->postJson("/f/{$this->family->slug}/ai/charter", ['brief' => 'Сувора дисципліна'])->assertOk()
+            ->assertJsonPath('text', "# Статут\n1. Поважай своїх.")->assertJsonCount(1, 'quiz');
+        $this->actingAs($this->leaderUser)->postJson("/f/{$this->family->slug}/ai/ranks", ['style' => 'мафія 30-х'])->assertOk()
+            ->assertJsonPath('ranks.1', 'Пішак')->assertJsonPath('ranks.10', 'Дон');
+        // Звіт із тексту: дата з майбутнього не проходить — сьогодні.
+        $this->actingAs($mate->user)->postJson("/f/{$this->family->slug}/ai/report", ['text' => 'вчора 3 середні контракти'])->assertOk()
+            ->assertJsonPath('type', 'contract')->assertJsonPath('tier', 'medium')->assertJsonPath('count', 3)
+            ->assertJsonPath('event_date', now()->toDateString());
+        // Рядовий не може генерувати статут; ШІ нічого не зберіг.
+        $this->actingAs($mate->user)->postJson("/f/{$this->family->slug}/ai/charter", ['brief' => 'x'])->assertForbidden();
+        $this->assertSame($titles, $this->family->fresh()->rankTitles());
     }
 }

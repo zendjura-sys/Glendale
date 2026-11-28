@@ -1,0 +1,64 @@
+# GameCon для Windows — повноцінна програма на Flutter (нативний рендеринг, без веб-інтерфейсу) з mobile/.
+# Результат: артефакт «gamecon-windows» (теки Release для запуску). Випуск — GCDev Software;
+# підпис — сертифікатом із GitHub Secrets (WINDOWS_CERTIFICATE / WINDOWS_CERTIFICATE_PASSWORD), коли вони є.
+name: App build (Windows)
+
+on:
+  push:
+    paths:
+      - mobile/**
+      - desktop/core/**
+      - desktop/native/**
+      - .github/workflows/app-windows.yml
+  workflow_dispatch:
+
+concurrency:
+  group: app-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    if: github.repository == 'zendjura-sys/Glendale'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Залежності
+        run: flutter pub get
+      - name: Збірка
+        shell: pwsh
+        run: |
+          $name = (Select-String -Path pubspec.yaml -Pattern '^gamecon_version:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+          flutter build windows --release --build-name=$name
+      - name: Нативне ядро (Rust)
+        working-directory: desktop
+        run: |
+          cargo test -p gamecon-core
+          cargo build --release -p gamecon-native
+          Copy-Item target\release\gamecon_native.dll ..\mobile\build\windows\x64\runner\Release\
+      - name: Підпис
+        env:
+          CERT: ${{ secrets.WINDOWS_CERTIFICATE }}
+          PASS: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: |
+          if (-not $env:CERT) { Write-Host 'Сертифіката немає — збірка без підпису.'; exit 0 }
+          $pfx = Join-Path $env:RUNNER_TEMP 'gcdev.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:CERT))
+          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          & $signtool.FullName sign /f $pfx /p $env:PASS /fd sha256 /tr http://timestamp.digicert.com /td sha256 /d 'GameCon' build\windows\x64\runner\Release\gamecon.exe build\windows\x64\runner\Release\gamecon_native.dll
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gamecon-windows
+          path: mobile/build/windows/x64/runner/Release/
+          retention-days: 30

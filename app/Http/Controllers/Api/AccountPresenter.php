@@ -2,9 +2,23 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Fun\MemoriesController;
+use App\Http\Controllers\NewcomerController;
+use App\Http\Controllers\Settings\NavigationController;
+use App\Http\Controllers\StatusPageController;
 use App\Models\User;
+use App\Services\Alerts\AirAlertService;
+use App\Services\Engagement\Streaks;
 use App\Services\Moderation\ContentFilter;
+use App\Services\Wrapped\YearInReview;
+use App\Support\Backgrounds;
 use App\Support\Modules\ModuleManager;
+use App\Support\NetworkModes;
+use App\Support\Onboarding;
+use App\Support\Plugins\Plugins;
+use App\Support\Seasons;
+use App\Support\Skins;
+use App\Support\TeenMode;
 
 class AccountPresenter
 {
@@ -15,6 +29,8 @@ class AccountPresenter
      */
     public static function make(User $user): array
     {
+        $modes = app(NetworkModes::class);
+
         return [
             'id' => $user->id,
             'username' => $user->username,
@@ -26,7 +42,9 @@ class AccountPresenter
             'cover_url' => $user->cover_url,
             'is_online' => $user->is_online,
             'is_verified' => $user->is_verified,
-            'status' => $user->status,
+            'status' => $user->statusExpired() ? null : $user->status,
+            'status_emoji' => $user->statusExpired() ? null : $user->status_emoji,
+            'status_until' => $user->statusExpired() ? null : $user->status_until?->toIso8601String(),
             'about' => $user->about,
             'city' => $user->city,
             'birthday' => $user->birthday?->toDateString(),
@@ -34,14 +52,71 @@ class AccountPresenter
             'website' => $user->website,
             'is_private' => $user->is_private,
             'message_privacy' => $user->message_privacy,
+            'call_privacy' => $user->pref('call_privacy', 'everyone'),
+            'group_add' => $user->pref('group_add', 'friends'),
             'role' => $user->role,
-            'nav_tabs' => app(ModuleManager::class)->navTabsFor($user),
-            'two_factor' => $user->two_factor_confirmed_at !== null,
+            // Як на сайті: панель і меню лише з розділів поточного режиму («Геймер», «Класика»…).
+            'nav_tabs' => array_values(array_intersect(app(ModuleManager::class)->navTabsFor($user), $modes->modulesFor($user))),
+            'header_tabs' => array_values(array_intersect(NavigationController::headerTabs($user), $modes->modulesFor($user))),
+            'modules' => $modes->modulesFor($user),
+            'network_mode' => $modes->for($user)['id'],
+            // Перемикачі, що діють одразу (сайт і застосунок однаково).
+            'prefs' => [
+                'notify_sound' => (string) $user->pref('notify_sound', 'soft'),
+                'streamer_mode' => (bool) $user->pref('streamer_mode', false),
+                'data_saver' => (bool) $user->pref('data_saver', false),
+                'hide_profanity' => (bool) $user->pref('hide_profanity', false),
+            ],
+            // Перші кроки новачка, як на сайті: 'phone' | 'mode' | 'interests' | null.
+            'onboarding' => app(Onboarding::class)->step($user),
+            // Сезонні прикраси (Новий рік, Хелловін…) — той самий сезон, що бачить людина на сайті.
+            'season' => app(Seasons::class)->for($user),
+            // Функції-плагіни, які застосунок показує так само, як сайт (напр. пошук GIF у новому записі).
+            // Усі плагіни (з урахуванням режиму людини): застосунок ховає вимкнене за тими самими ключами, що й сайт.
+            'plugins' => $modes->pluginsFor($user),
+            // Кнопки ШІ в чаті застосунку (ШІ-редактор у полі вводу, «Підсумок від ШІ» в меню бесіди).
+            'ai' => array_intersect_key($modes->pluginsFor($user), array_flip(['ai_writer', 'ai_summary'])),
+            // Рік «Підсумків року», коли їхній сезон (грудень — січень): банер у стрічці застосунку.
+            'wrapped' => app(Plugins::class)->on('wrapped') ? app(YearInReview::class)->season() : null,
+            'modes' => array_map(fn (array $mode) => ['id' => $mode['id'], 'name' => $mode['name'], 'description' => $mode['description'], 'icon' => $mode['icon']], $modes->available()),
+            // Тема, як на сайті: system (як на пристрої), dark («Неоновий синій») або light («Крижана Арктика»).
+            'theme' => Skins::theme($user),
+            'theme_schedule' => Skins::schedule($user),
+            'two_factor' => $user->hasEnabledTwoFactorAuthentication(),
+            'two_factor_pending' => $user->two_factor_secret !== null && ! $user->hasEnabledTwoFactorAuthentication(),
             'discord' => filled($user->discord_id),
             'discord_username' => $user->discord_username,
             'google' => filled($user->google_id),
             // Застосунок ховає мат зірочками сам, якщо людина це ввімкнула.
-            'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
+            'profanity_mask' => TeenMode::hidesProfanity($user) ? app(ContentFilter::class)->clientPattern() : null,
+            'teen_mode' => TeenMode::state($user),
+            // Активний збій зі сторінки статусу — застосунок показує банер.
+            'incident' => StatusPageController::banner(),
+            'streak' => app(Streaks::class)->state($user),
+            'memories' => MemoriesController::count($user),
+            'event_frame' => MemoriesController::frameState($user),
+            'home_widgets' => MemoriesController::widgets($user),
+            'home_layout' => MemoriesController::layout($user),
+            'lobby_categories' => MemoriesController::categories($user),
+            'feed_compact' => (bool) $user->pref('feed_compact'),
+            'simple_ui' => (bool) $user->pref('simple_ui'),
+            'tour_pending' => NewcomerController::tourPending($user),
+            'accent' => is_string($user->pref('accent')) ? $user->pref('accent') : null,
+            'lobby_catalog' => MemoriesController::lobbyCatalog($user),
+            // Мапа тривог: лише для людей з України (IP, профіль чи обрана область).
+            'air_alerts' => app(AirAlertService::class)->isAvailableFor(request(), $user),
+            // «Показувати, що я слухаю»: одне налаштування для сайту й застосунку.
+            'show_listening' => $user->showsListening(),
+            'morning_digest' => $user->wantsDigest(),
+            'news_email' => $user->pref('news_email', false) === true,
+            // Фон (Налаштування → Вигляд) і фірмовий фон з Адмінка → Дизайн — застосунок малює їх так само, як сайт.
+            'background' => [
+                ...Backgrounds::for($user),
+                'presets' => Backgrounds::presets(),
+                'image' => Backgrounds::image(),
+                // Бібліотека відеофонів GameCon+ (Адмінка → Дизайн).
+                'videos' => Backgrounds::videos(),
+            ],
         ];
     }
 }

@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Clock, Medal, Target, Trophy } from 'lucide-react';
+import { Clock, Flame, Medal, Target, Ticket, Trophy } from 'lucide-react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { QuestList } from '@/components/quests/quest-list';
 import type { Quest } from '@/components/quests/quest-list';
@@ -18,6 +18,8 @@ type Props = {
     };
     completed: number;
     resets_at: string;
+    weekly: Quest[];
+    weekly_ends_at: string;
 };
 
 const PLACE_TONE = ['text-amber-300', 'text-slate-200', 'text-orange-300'];
@@ -27,11 +29,19 @@ export default function Quests({
     season,
     completed,
     resets_at,
+    weekly,
+    weekly_ends_at,
 }: Props) {
     const month = new Intl.DateTimeFormat(LOCALE, {
         month: 'long',
         year: 'numeric',
     }).format(new Date(`${season.season}-15`));
+    const weekDaysLeft = Math.max(
+        1,
+        Math.ceil(
+            (new Date(weekly_ends_at).getTime() - Date.now()) / 86_400_000,
+        ),
+    );
     const daysLeft = Math.max(
         0,
         Math.ceil(
@@ -42,12 +52,12 @@ export default function Quests({
     return (
         <>
             <Head title={tr('Завдання й сезон')} />
-            <div className="mx-auto max-w-3xl space-y-5">
-                <section className="glass rounded-3xl p-5 sm:p-6">
+            <div className="mx-auto max-w-3xl space-y-3.5">
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
-                            <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
-                                <Target className="size-6 text-gc-lilac-300" />
+                            <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white sm:text-2xl">
+                                <Target className="size-6 text-sky-400" />
                                 {tr('Завдання дня')}
                             </h1>
                             <p className="mt-1 flex items-center gap-1.5 text-sm text-white/50">
@@ -57,7 +67,7 @@ export default function Quests({
                                 })}
                             </p>
                         </div>
-                        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs text-white/60">
+                        <span className="gc-solid-2 rounded-chip px-3 py-1 text-xs text-white/60">
                             {tr('Виконано всього: {n}', { n: completed })}
                         </span>
                     </div>
@@ -66,7 +76,26 @@ export default function Quests({
                     </div>
                 </section>
 
-                <section className="glass rounded-3xl p-5 sm:p-6">
+                {weekly.length > 0 && (
+                    <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
+                                <Flame className="size-5 text-orange-300" />
+                                {tr('Челенджі тижня')}
+                            </h2>
+                            <span className="text-xs text-white/45">
+                                {tr('Ще {n} дн. · однакові для всіх', {
+                                    n: weekDaysLeft,
+                                })}
+                            </span>
+                        </div>
+                        <div className="mt-3">
+                            <QuestList quests={weekly} weekly />
+                        </div>
+                    </section>
+                )}
+
+                <section className="gc-solid rounded-2xl p-3.5 sm:p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                             <Trophy className="size-5 text-amber-300" />
@@ -76,7 +105,7 @@ export default function Quests({
                             {tr('До кінця сезону: {n} дн.', { n: daysLeft })}
                         </span>
                     </div>
-                    <div className="mt-4 flex items-center gap-3 rounded-2xl bg-gc-indigo/10 px-4 py-3">
+                    <div className="mt-4 flex items-center gap-3 rounded-2xl bg-gc-indigo/10 px-3 py-2.5">
                         <Medal className="size-5 shrink-0 text-[#c4b5fd]" />
                         <span className="min-w-0 flex-1 text-sm text-white/80">
                             {season.me.place
@@ -97,7 +126,7 @@ export default function Quests({
                                 <li key={row.user.id}>
                                     <Link
                                         href={`/${row.user.username}`}
-                                        className="flex min-w-0 items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-white/[0.05]"
+                                        className="flex min-w-0 items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-[var(--gc-l3)]"
                                     >
                                         <span
                                             className={cn(
@@ -126,9 +155,19 @@ export default function Quests({
                     )}
                     <p className="mt-3 text-xs text-white/40">
                         {tr(
-                            'Очки сезону — досвід за виконані завдання цього місяця. Він же додається до вашого рівня.',
+                            'Очки сезону — досвід за виконані завдання й челенджі цього місяця. Він же додається до вашого рівня.',
                         )}
                     </p>
+                    <Link
+                        href="/season"
+                        className="mt-3 flex items-center gap-3 rounded-xl bg-primary/10 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/15"
+                    >
+                        <Ticket className="size-5 shrink-0 text-primary" />
+                        <span className="flex-1">{tr('Сезонний пропуск')}</span>
+                        <span className="text-xs font-normal text-white/55">
+                            {tr('Нагороди за очки сезону')}
+                        </span>
+                    </Link>
                 </section>
             </div>
         </>

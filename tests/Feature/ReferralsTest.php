@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Notifications\ReferralActivated;
 use App\Notifications\ReferralJoined;
 use App\Services\Achievements;
 use App\Services\FriendshipService;
 use App\Services\Referrals;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -52,6 +54,19 @@ class ReferralsTest extends TestCase
         $this->assertTrue(collect($after['badges'])->firstWhere('key', 'invite_1')['earned']);
 
         $this->actingAs($inviter)->get(route('referrals.index'))
-            ->assertInertia(fn (Assert $page) => $page->where('total', 1)->where('active', 1)->where('people.0.active', true)->where('ladder.0.reached', true));
+            ->assertInertia(fn (Assert $page) => $page->where('total', 1)->where('active', 1)->where('people.0.active', true)->where('ladder.0.reached', true)
+                ->where('next', ['target' => 5, 'left' => 4, 'from' => 1])
+                ->where('people.0.steps', ['verified' => true, 'avatar' => false, 'post' => false, 'played' => false]));
+    }
+
+    public function test_inviter_hears_when_a_friend_becomes_active(): void
+    {
+        Notification::fake();
+        $inviter = User::factory()->create();
+        $friend = User::factory()->create(['invited_by' => $inviter->id]);
+
+        event(new Verified($friend));
+
+        Notification::assertSentTo($inviter, ReferralActivated::class, fn (ReferralActivated $n) => $n->next === 5);
     }
 }

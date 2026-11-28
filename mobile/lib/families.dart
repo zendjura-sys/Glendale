@@ -8,6 +8,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'discussions.dart';
+import 'core/widgets/arctic_glass/arctic_glass.dart';
+import 'family_chat_card.dart';
+import 'family_extras.dart';
 import 'family_tabs.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -15,8 +19,10 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'listen_rooms.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'skeletons.dart';
 
 /// Шлях сторінки сім’ї на мосту сайту: `/api/v1/site/f/{slug}/{section}`.
 String familyPath(String slug, [String section = '']) => Api.site('/f/$slug${section.isEmpty || section == 'overview' ? '' : '/$section'}');
@@ -34,7 +40,7 @@ class RankPill extends StatelessWidget {
     final color = rankColors[r] ?? soft;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.3))),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
       child: Text('$r ${title ?? ''}'.trim(), style: body(11, color: color, weight: FontWeight.w700)),
     );
   }
@@ -102,7 +108,7 @@ class _AuthImageState extends State<AuthImage> {
           return Container(
             color: raised,
             alignment: Alignment.center,
-            child: snapshot.hasError ? const Icon(LucideIcons.imageOff, color: faint) : const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+            child: snapshot.hasError ? Icon(LucideIcons.imageOff, color: faint) : const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
           );
         },
       ),
@@ -118,7 +124,8 @@ void openAuthImages(BuildContext context, List<String> paths, int index) {
     fullscreenDialog: true,
     builder: (_) => Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
+      extendBodyBehindAppBar: true,
+      appBar: const ArcticGlassAppBar(),
       body: PageView(
         controller: PageController(initialPage: index),
         children: [for (final p in paths) InteractiveViewer(maxScale: 5, child: Center(child: AuthImage(path: p, fit: BoxFit.contain, radius: 0)))],
@@ -187,7 +194,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return const ScreenSkeleton();
     final mine = maps(data['mine']);
     final servers = maps(data['servers']);
     return ScreenScroll(
@@ -234,7 +241,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
         ),
         const SizedBox(height: 12),
         if (loading && families.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          const ListSkeleton(rows: 5)
         else if (families.isEmpty)
           EmptyState(icon: LucideIcons.crown, title: tr('Сімей не знайдено'), text: tr('Спробуйте інший запит або створіть свою.'))
         else ...[
@@ -267,8 +274,6 @@ class _MyFamilyCard extends StatelessWidget {
                 TextSpan(text: '[${family['tag']}] ', style: body(15, color: gold, weight: FontWeight.w800)),
                 TextSpan(text: text(family['name']) ?? '', style: body(15, weight: FontWeight.w700)),
               ]),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
             Text(text(membership['display']) ?? '', style: body(12, color: muted).copyWith(fontFamily: 'monospace')),
             const SizedBox(height: 6),
@@ -302,7 +307,7 @@ class FamilyCard extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
             child: text(family['cover_url']) != null
                 ? NetImage(text(family['cover_url']))
-                : Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF3B2A6E), Color(0xFF1A1F3D)]))),
+                : Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF0B2942), Color(0xFF0B1220)]))),
           ),
         ),
         Padding(
@@ -319,15 +324,13 @@ class FamilyCard extends StatelessWidget {
                       TextSpan(text: '[${family['tag']}] ', style: body(15, color: gold, weight: FontWeight.w800)),
                       TextSpan(text: text(family['name']) ?? '', style: body(15, weight: FontWeight.w700)),
                     ]),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 if (family['status'] == 'verified') const Icon(LucideIcons.shieldCheck, size: 18, color: green),
               ]),
             ),
             if (text(family['description']) != null)
-              Transform.translate(offset: const Offset(0, -14), child: Text(text(family['description'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: soft))),
+              Transform.translate(offset: const Offset(0, -14), child: FitText(text(family['description'])!, style: body(13, color: soft), maxLines: 2)),
             Row(children: [
               if (server != null) ...[
                 if (text(server['icon']) != null) SizedBox(width: 16, height: 16, child: NetImage(text(server['icon']), radius: 4)),
@@ -335,7 +338,7 @@ class FamilyCard extends StatelessWidget {
                 Text(text(server['name']) ?? '', style: body(12, color: muted)),
                 const SizedBox(width: 10),
               ],
-              const Icon(LucideIcons.usersRound, size: 14, color: muted),
+              Icon(LucideIcons.usersRound, size: 14, color: muted),
               const SizedBox(width: 4),
               Text(compact(family['members_count']), style: body(12, color: muted)),
               const Spacer(),
@@ -449,7 +452,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                   height: 76,
                   child: logo == null
                       ? Container(
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+                          decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(18)),
                           child: Icon(LucideIcons.imagePlus, color: muted),
                         )
                       : ClipRRect(borderRadius: BorderRadius.circular(18), child: Image(image: XFileImage(logo!), fit: BoxFit.cover)),
@@ -500,6 +503,11 @@ final familySections = [
   ('members', tr('Учасники'), LucideIcons.usersRound),
   ('discipline', tr('Дисципліна'), LucideIcons.gavel),
   ('events', tr('Події'), LucideIcons.calendarDays),
+  ('shifts', tr('Зміни'), LucideIcons.calendarClock),
+  ('charter', tr('Статут'), LucideIcons.scale),
+  ('wiki', tr('Вікі'), LucideIcons.bookOpen),
+  ('relations', tr('Союзи й війни'), LucideIcons.handshake),
+  ('history', tr('Історія'), LucideIcons.history),
   ('rating', tr('Рейтинг'), LucideIcons.chartNoAxesColumnIncreasing),
   ('audit', tr('Аудит'), LucideIcons.receipt),
   ('settings', tr('Налаштування'), LucideIcons.settings),
@@ -550,7 +558,22 @@ class _FamilyScreenState extends State<FamilyScreen> {
       final result = await api.get(query.isEmpty ? path : '$path?${Uri(queryParameters: query).query}');
       if (!mounted) return;
       setState(() {
-        data = result;
+        // Зберігаємо family/me/can/badges з попереднього розділу, якщо відповідь без оболонки
+        // (захист від «голого» JSON без page() — вкладка інакше падає в FamilyPublic).
+        final prev = data;
+        if (prev != null && prev['me'] != null && result['me'] == null) {
+          data = {
+            ...prev,
+            ...result,
+            'family': prev['family'],
+            'me': prev['me'],
+            'can': prev['can'],
+            'badges': result['badges'] ?? prev['badges'],
+            'section': result['section'] ?? next,
+          };
+        } else {
+          data = result;
+        }
         section = next;
         params = query;
         error = null;
@@ -591,7 +614,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
     final page = data;
     if (page == null) {
       return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          ? const ListSkeleton(rows: 6)
           : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.crown, title: tr('Сім’я недоступна'), text: '$error', action: tr('Спробувати знову'), onAction: load)));
     }
     if (page['me'] == null) return FamilyPublic(slug: widget.slug, data: page, onChanged: load);
@@ -604,6 +627,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
           'queue' => can['reports.review'] == true || can['treasury.manage'] == true,
           'audit' => can['audit.view'] == true,
           'settings' => can['settings.manage'] == true,
+          'shifts' => mapOf(family['sections'])['shifts'] == true || family['shifts_enabled'] == true,
           _ => true,
         });
     final ctx = FamilyContext(slug: widget.slug, data: page, can: can, reload: ({Map<String, String>? extra}) => load(extra: extra), api: api);
@@ -615,6 +639,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
         padding: const EdgeInsets.fromLTRB(14, 6, 14, 96),
         children: [
           _FamilyHeader(family: family, me: me, onChat: family['conversation_id'] != null ? _chat : null),
+          const SizedBox(height: 8),
+          DiscussionsButton(type: 'family', id: intOf(family['id']), title: text(family['name'])),
           const SizedBox(height: 10),
           SizedBox(
             height: 44,
@@ -641,7 +667,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               ],
             ),
           ),
-          if (loading) const LinearProgressIndicator(minHeight: 2, color: primary, backgroundColor: Colors.transparent) else const SizedBox(height: 2),
+          if (loading) LinearProgressIndicator(minHeight: 2, color: primary, backgroundColor: Colors.transparent) else const SizedBox(height: 2),
           const SizedBox(height: 10),
           if (family['status'] == 'pending') ...[
             Glass(
@@ -672,6 +698,11 @@ class _FamilyScreenState extends State<FamilyScreen> {
             'members' => [MembersTab(ctx: ctx)],
             'discipline' => [DisciplineTab(ctx: ctx)],
             'events' => [EventsTab(ctx: ctx)],
+            'shifts' => [ShiftsTab(ctx: ctx)],
+            'charter' => [CharterTab(ctx: ctx)],
+            'wiki' => [WikiTab(ctx: ctx)],
+            'relations' => [RelationsTab(ctx: ctx)],
+            'history' => [HistoryTab(ctx: ctx)],
             'rating' => ratingTab(ctx),
             'audit' => auditTab(ctx),
             'settings' => [SettingsTab(ctx: ctx)],
@@ -680,11 +711,12 @@ class _FamilyScreenState extends State<FamilyScreen> {
           ),
         ],
       ),
+      if (section != 'overview' && section != 'reports')
       Positioned(
         right: 16,
         bottom: 16 + ShellChrome.bottomOf(context),
         child: DecoratedBox(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.5), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -8)]),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
           child: PrimaryButton(label: tr('Звіт'), icon: LucideIcons.filePlus, expand: false, onPressed: _report),
         ),
       ),
@@ -718,13 +750,13 @@ class _SectionTab extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: selected ? Colors.white.withValues(alpha: 0.09) : Colors.white.withValues(alpha: 0),
+            color: selected ? fg.withValues(alpha: 0.09) : fg.withValues(alpha: 0),
             borderRadius: BorderRadius.circular(14),
             border: Border(bottom: BorderSide(color: selected ? primary : primary.withValues(alpha: 0), width: 2)),
           ),
           child: Row(children: [
             TweenAnimationBuilder<Color?>(
-              tween: ColorTween(end: selected ? const Color(0xFF9AA6FF) : muted),
+              tween: ColorTween(end: selected ? accent : muted),
               duration: motion,
               builder: (_, color, _) => Icon(icon, size: 16, color: color),
             ),
@@ -758,7 +790,7 @@ class _FamilyHeader extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
             child: text(family['cover_url']) != null
                 ? NetImage(text(family['cover_url']))
-                : Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF4A3A1A), Color(0xFF2A2350), Color(0xFF151A30)]))),
+                : Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF0B2942), Color(0xFF121D31), Color(0xFF0B1220)]))),
           ),
         ),
         Padding(
@@ -773,7 +805,7 @@ class _FamilyHeader extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('[${family['tag']}]', style: display(18, color: gold)),
                     Row(children: [
-                      Flexible(child: Text(text(family['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: display(19))),
+                      Flexible(child: FitText(text(family['name']) ?? '', style: display(19))),
                       if (family['status'] == 'verified') const Padding(padding: EdgeInsets.only(left: 6), child: Icon(LucideIcons.shieldCheck, size: 18, color: green)),
                     ]),
                     const SizedBox(height: 2),
@@ -788,7 +820,7 @@ class _FamilyHeader extends StatelessWidget {
                           ]),
                         ),
                       Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(LucideIcons.usersRound, size: 13, color: muted),
+                        Icon(LucideIcons.usersRound, size: 13, color: muted),
                         const SizedBox(width: 3),
                         Text(compact(family['members_count']), style: body(12, color: muted)),
                       ]),
@@ -804,11 +836,11 @@ class _FamilyHeader extends StatelessWidget {
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                    decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(14)),
                     child: Row(children: [
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(text(me['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, weight: FontWeight.w600).copyWith(fontFamily: 'monospace')),
+                          FitText(text(me['display']) ?? '', style: body(13, weight: FontWeight.w600).copyWith(fontFamily: 'monospace')),
                           const SizedBox(height: 4),
                           RankPill(rank: me['rank'], title: text(me['rank_title'])),
                         ]),
@@ -846,13 +878,35 @@ class FamilyPublic extends StatelessWidget {
     final nickname = TextEditingController();
     final staticId = TextEditingController();
     final note = TextEditingController();
+    // Тест за статутом: відповіді — індекси варіантів, сервер перевіряє й не пустить без проходження.
+    final quiz = maps(mapOf(data['charter'])['quiz']);
+    final pass = intOf(mapOf(data['charter'])['pass'], 80);
+    final answers = List<int?>.filled(quiz.length, null);
     final sent = await showGcSheet<bool>(
       context,
       title: tr('Заявка на вступ'),
       subtitle: tr('Офіцери сім’ї побачать ваш RP-нікнейм і Static ID.'),
-      builder: (sheet) => SingleChildScrollView(
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) => SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (quiz.isNotEmpty) ...[
+            Text(tr('Тест за статутом'), style: body(15, weight: FontWeight.w700)),
+            Text(tr('Потрібно {pass}% правильних відповідей. Статут — у вкладці «Статут» сім’ї.', {'pass': pass}), style: body(12, color: muted)),
+            const SizedBox(height: 8),
+            for (var i = 0; i < quiz.length; i++) ...[
+              Text('${i + 1}. ${text(quiz[i]['q']) ?? ''}', style: body(13.5, weight: FontWeight.w600)),
+              RadioGroup<int>(
+                groupValue: answers[i],
+                onChanged: (v) => setSheet(() => answers[i] = v),
+                child: Column(children: [
+                  for (final (j, option) in (quiz[i]['options'] is List ? quiz[i]['options'] as List : const []).indexed)
+                    RadioListTile<int>(value: j, dense: true, contentPadding: EdgeInsets.zero, title: Text('$option', style: body(13))),
+                ]),
+              ),
+            ],
+            const SizedBox(height: 10),
+          ],
           GcField(controller: nickname, label: tr('Нікнейм: Ім’я_Прізвище')),
           const SizedBox(height: 10),
           GcField(controller: staticId, label: 'Static ID', keyboard: TextInputType.number),
@@ -866,11 +920,13 @@ class FamilyPublic extends StatelessWidget {
                     'rp_nickname': nickname.text.trim(),
                     'static_id': staticId.text.trim(),
                     'note': note.text.trim(),
+                    if (quiz.isNotEmpty) 'quiz': [for (final a in answers) a],
                   }));
               if (ok && sheet.mounted) Navigator.pop(sheet, true);
             },
           ),
         ]),
+      ),
       ),
     );
     if (sent == true) await onChanged();
@@ -944,7 +1000,7 @@ class MemberTile extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(text(member['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600).copyWith(fontFamily: 'monospace')),
+              FitText(text(member['display']) ?? '', style: body(14, weight: FontWeight.w600).copyWith(fontFamily: 'monospace')),
               const SizedBox(height: 3),
               Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 if (member['is_owner'] == true) const Icon(LucideIcons.crown, size: 14, color: gold),
@@ -980,6 +1036,8 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
       label: '[${text(family['tag']) ?? ''}] ${text(family['name']) ?? ''}',
       route: '/families/${ctx.slug}',
     ),
+    ListenRoomPanel(key: ValueKey('listen-family-${family['id']}'), type: 'family', id: intOf(family['id'])),
+    if (data['chat'] is Map) FamilyChatCard(key: ValueKey('family-chat-${family['id']}'), chat: mapOf(data['chat']), tag: text(family['tag']) ?? ''),
     Row(children: [
       Expanded(child: MetricTile(caps: true, label: tr('Заробив за тиждень'), value: hryvniaShort(stats['week_earned']), icon: LucideIcons.trendingUp, color: green)),
       const SizedBox(width: 8),
@@ -998,8 +1056,8 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
         Container(
           width: 52,
           height: 52,
-          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFEF4444)]), borderRadius: BorderRadius.circular(16)),
-          child: const Icon(LucideIcons.filePlus, color: Colors.white),
+          decoration: BoxDecoration(color: const Color(0xFFFBBF24).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(16)),
+          child: const Icon(LucideIcons.filePlus, color: Color(0xFFFBBF24)),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -1010,6 +1068,39 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
           ]),
         ),
       ]),
+    ),
+    const SizedBox(height: 12),
+    // Тижневі завдання сім’ї: прогрес рахується сам зі звітів, балів і подій.
+    _OverviewCard(
+      title: tr('Завдання тижня'),
+      icon: LucideIcons.target,
+      empty: (LucideIcons.target, tr('Лідер ще не поставив завдань на тиждень')),
+      children: [
+        for (final g in maps(data['goals']))
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Text(text(g['label']) ?? '', style: body(13.5))),
+                Text('${g['progress'] ?? 0} / ${g['target']}', style: body(12.5, color: g['done'] == true ? green : muted, weight: FontWeight.w700)),
+              ]),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(
+                  minHeight: 6,
+                  value: (intOf(g['target']) > 0 ? intOf(g['progress']) / intOf(g['target']) : 0).clamp(0, 1).toDouble(),
+                  color: g['done'] == true ? green : accent,
+                  backgroundColor: fg.withValues(alpha: 0.08),
+                ),
+              ),
+              if (text(g['reward']) != null) ...[
+                const SizedBox(height: 4),
+                Text(tr('Нагорода: {reward}', {'reward': text(g['reward'])}), style: body(12, color: muted)),
+              ],
+            ]),
+          ),
+      ],
     ),
     const SizedBox(height: 12),
     _OverviewCard(
@@ -1024,8 +1115,8 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
             padding: const EdgeInsets.symmetric(vertical: 5),
             child: Row(children: [
               SizedBox(width: 22, child: Text('${l['place']}', style: body(13, color: intOf(l['place']) <= 3 ? gold : muted, weight: FontWeight.w800))),
-              Expanded(child: Text(text(l['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5).copyWith(fontFamily: 'monospace'))),
-              Text(tr('{v} балів', {'v': l['points']}), style: body(12.5, color: const Color(0xFF9AA6FF), weight: FontWeight.w700)),
+              Expanded(child: FitText(text(l['display']) ?? '', style: body(13.5).copyWith(fontFamily: 'monospace'))),
+              Text(tr('{v} балів', {'v': l['points']}), style: body(12.5, color: accent, weight: FontWeight.w700)),
             ]),
           ),
       ],
@@ -1051,7 +1142,7 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
           ListTile(
             contentPadding: EdgeInsets.zero,
             dense: true,
-            leading: const Icon(LucideIcons.calendarDays, color: Color(0xFF9AA6FF)),
+            leading: Icon(LucideIcons.calendarDays, color: accent),
             title: Text(text(e['title']) ?? '', style: body(14, weight: FontWeight.w600)),
             subtitle: Text('${e['type_label']} · ${shortStamp(e['starts_at'])} ${clock(e['starts_at'])}', style: body(12, color: muted)),
           ),
@@ -1181,7 +1272,7 @@ class ReportCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(16)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text('#${report['id']} ', style: body(12, color: faint)),
@@ -1198,7 +1289,7 @@ class ReportCard extends StatelessWidget {
           if (report['for_friend'] == true) Text(tr('За: {v}', {'v': mapOf(report['beneficiary'])['display']}), style: body(12, color: muted)),
           if (report['for_friend'] == true) Text(tr('Подав: {v}', {'v': mapOf(report['submitter'])['display']}), style: body(12, color: muted)),
           if (intOf(report['reward']) > 0) Text(hryvnia(report['reward']), style: body(12.5, color: green, weight: FontWeight.w700)),
-          if (intOf(report['points']) > 0) Text(tr('{v} балів', {'v': report['points']}), style: body(12, color: const Color(0xFF9AA6FF))),
+          if (intOf(report['points']) > 0) Text(tr('{v} балів', {'v': report['points']}), style: body(12, color: accent)),
         ]),
         if (flags['similar_reports'] != null) Padding(padding: const EdgeInsets.only(top: 6), child: Pill(label: tr('Скріншот схожий на попередні'), icon: LucideIcons.triangleAlert, color: gold)),
         if (paths.isNotEmpty) ...[
@@ -1350,7 +1441,7 @@ class _ReportFormState extends State<_ReportForm> {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
-          childAspectRatio: 2.6,
+          childAspectRatio: cellAspect(context, 2.6),
           children: [
             for (final e in types.entries)
               _Choice(
@@ -1454,8 +1545,8 @@ class _ReportFormState extends State<_ReportForm> {
                 child: Container(
                   width: 72,
                   height: 72,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
-                  child: const Icon(LucideIcons.imagePlus, color: muted),
+                  decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(12)),
+                  child: Icon(LucideIcons.imagePlus, color: muted),
                 ),
               ),
           ]),
@@ -1482,13 +1573,13 @@ class _Choice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? primary.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.04),
+      color: selected ? primary.withValues(alpha: 0.14) : fg.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: selected ? primary.withValues(alpha: 0.6) : line)),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, size: 18, color: selected ? const Color(0xFF9AA6FF) : muted),
+          Icon(icon, size: 18, color: selected ? accent : muted),
           const SizedBox(width: 8),
           Text(label, style: body(13.5, color: selected ? ink : soft, weight: FontWeight.w600)),
         ]),
@@ -1510,11 +1601,11 @@ class _Stepper extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget step(IconData icon, VoidCallback? onPressed) => SizedBox.square(
           dimension: 34,
-          child: IconButton(padding: EdgeInsets.zero, onPressed: onPressed, icon: Icon(icon, size: 18), style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.05))),
+          child: IconButton(padding: EdgeInsets.zero, onPressed: onPressed, icon: Icon(icon, size: 18), style: IconButton.styleFrom(backgroundColor: fg.withValues(alpha: 0.05))),
         );
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(14)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: body(12.5, color: muted)),
         const SizedBox(height: 4),

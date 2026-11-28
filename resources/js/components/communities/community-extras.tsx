@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 
 export type CommunityExtras = {
@@ -11,8 +12,12 @@ export type CommunityExtras = {
     welcome: string;
     banned_words: string;
     post_tags: string;
+    join_questions?: string;
+    wiki_open?: boolean;
+    rules_accept?: boolean;
     slow_mode: number;
     premoderation: boolean;
+    weekly_digest?: boolean;
 };
 
 export type CommunityStats = {
@@ -22,7 +27,125 @@ export type CommunityStats = {
     comments: number;
     active_share: number;
     weeks: { week: string; joined: number; posts: number }[];
+    /** Аналітика сторінки (№288): перегляди, відвідувачі й джерела за 30 днів. */
+    page?: {
+        views: number;
+        uniques: number;
+        days: { day: string; views: number; uniques: number }[];
+        sources: { inside: number; search: number; outside: number };
+    };
 };
+
+/** Перегляди сторінки по днях і звідки приходять люди. */
+function PageViews({ page }: { page: NonNullable<CommunityStats['page']> }) {
+    const peak = Math.max(1, ...page.days.map((d) => d.views));
+    const sourceTotal = Math.max(
+        1,
+        page.sources.inside + page.sources.search + page.sources.outside,
+    );
+    const sources = [
+        {
+            key: 'inside',
+            label: tr('З GameCon'),
+            n: page.sources.inside,
+            tone: 'bg-[var(--gc-accent)]',
+        },
+        {
+            key: 'search',
+            label: tr('З пошуковиків'),
+            n: page.sources.search,
+            tone: 'bg-emerald-400',
+        },
+        {
+            key: 'outside',
+            label: tr('Інші сайти й напряму'),
+            n: page.sources.outside,
+            tone: 'bg-amber-300',
+        },
+    ];
+    // Відсотки в сумі рівно 100: останнє джерело — залишок після округлення інших.
+    const shares = sources.map((src) =>
+        Math.round((src.n / sourceTotal) * 100),
+    );
+    shares[shares.length - 1] = Math.max(
+        0,
+        100 - shares.slice(0, -1).reduce((a, b) => a + b, 0),
+    );
+
+    return (
+        <div className="space-y-4">
+            <div>
+                <p className="mb-2 text-xs font-medium text-white/45">
+                    {tr('Перегляди сторінки по днях')}
+                </p>
+                <div
+                    className="flex h-24 items-end gap-[3px]"
+                    role="img"
+                    aria-label={tr(
+                        'Переглядів за 30 днів: {views}, відвідувачів: {uniques}',
+                        { views: page.views, uniques: page.uniques },
+                    )}
+                >
+                    {page.days.map((d) => (
+                        <div
+                            key={d.day}
+                            className="h-full flex-1 content-end"
+                            title={tr(
+                                '{date}: {views} переглядів, {uniques} відвідувачів',
+                                {
+                                    date: formatDate(d.day),
+                                    views: d.views,
+                                    uniques: d.uniques,
+                                },
+                            )}
+                        >
+                            <div
+                                className="w-full rounded-t-sm bg-gc-indigo/70"
+                                style={{
+                                    height: `${d.views === 0 ? 2 : Math.max(6, (d.views / peak) * 100)}%`,
+                                }}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            {page.uniques > 0 && (
+                <div>
+                    <p className="mb-2 text-xs font-medium text-white/45">
+                        {tr('Звідки приходять')}
+                    </p>
+                    <div className="flex h-2.5 overflow-hidden rounded-full bg-white/10">
+                        {sources.map((src) => (
+                            <span
+                                key={src.key}
+                                className={src.tone}
+                                style={{
+                                    width: `${(src.n / sourceTotal) * 100}%`,
+                                }}
+                            />
+                        ))}
+                    </div>
+                    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/60">
+                        {sources.map((src, i) => (
+                            <li
+                                key={src.key}
+                                className="flex items-center gap-1.5"
+                            >
+                                <span
+                                    className={cn(
+                                        'size-2 rounded-full',
+                                        src.tone,
+                                    )}
+                                />
+                                {src.label} · {shares[i]}%
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+}
 
 const field =
     'input-glass w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none';
@@ -46,13 +169,21 @@ export function RulesForm({
     slowModes: number[];
 }) {
     const form = useForm(extras);
+    const joinForms = usePlugin('join_forms');
+    const wikiOn = usePlugin('community_wiki');
     const { data, setData, errors } = form;
     const submit = (event: FormEvent) => {
         event.preventDefault();
         form.patch(`/c/${slug}/settings/rules`, { preserveScroll: true });
     };
     const area = (
-        name: 'rules' | 'handbook' | 'welcome' | 'banned_words' | 'post_tags',
+        name:
+            | 'rules'
+            | 'handbook'
+            | 'welcome'
+            | 'banned_words'
+            | 'post_tags'
+            | 'join_questions',
         label: string,
         hint: string,
         rows: number,
@@ -64,14 +195,14 @@ export function RulesForm({
                 {hint}
             </span>
             <textarea
-                value={data[name]}
+                value={data[name] ?? ''}
                 onChange={(event) => setData(name, event.target.value)}
                 rows={rows}
                 maxLength={max}
                 className={cn(field, 'mt-1.5 resize-y')}
             />
             {errors[name] && (
-                <p className="mt-1 text-xs text-rose-300">{errors[name]}</p>
+                <p className="mt-1 text-xs text-red-400">{errors[name]}</p>
             )}
         </label>
     );
@@ -110,6 +241,16 @@ export function RulesForm({
                         3,
                         1000,
                     )}
+                    {joinForms &&
+                        area(
+                            'join_questions',
+                            tr('Анкета вступу'),
+                            tr(
+                                'Для закритої спільноти: до 5 питань, по одному в рядку. Відповіді — у заявці.',
+                            ),
+                            3,
+                            1500,
+                        )}
                     <div className="grid gap-4 sm:grid-cols-2">
                         {area(
                             'banned_words',
@@ -155,7 +296,7 @@ export function RulesForm({
                                 ))}
                             </select>
                         </label>
-                        <label className="flex items-start gap-3 rounded-2xl border border-white/[0.07] p-3.5 text-sm text-white/80">
+                        <label className="flex items-start gap-3 rounded-2xl p-3.5 text-sm text-white/80">
                             <input
                                 type="checkbox"
                                 checked={data.premoderation}
@@ -174,6 +315,80 @@ export function RulesForm({
                                 <span className="block text-xs text-white/45">
                                     {tr(
                                         'Записи учасників з’являються після схвалення редактором.',
+                                    )}
+                                </span>
+                            </span>
+                        </label>
+                        <label
+                            className="flex items-start gap-3 rounded-2xl p-3.5 text-sm text-white/80"
+                            data-rules-accept
+                        >
+                            <input
+                                type="checkbox"
+                                checked={data.rules_accept ?? false}
+                                onChange={(event) =>
+                                    setData(
+                                        'rules_accept',
+                                        event.target.checked,
+                                    )
+                                }
+                                className="mt-0.5 size-4 accent-gc-indigo"
+                            />
+                            <span>
+                                <span className="block font-medium text-white">
+                                    {tr('Погодитися з правилами при вступі')}
+                                </span>
+                                <span className="block text-xs text-white/45">
+                                    {tr(
+                                        'Перед вступом людина бачить правила й ставить позначку «Погоджуюся». Без неї вступити не вийде.',
+                                    )}
+                                </span>
+                            </span>
+                        </label>
+                        {wikiOn && (
+                            <label className="flex items-start gap-3 rounded-2xl p-3.5 text-sm text-white/80">
+                                <input
+                                    type="checkbox"
+                                    checked={data.wiki_open ?? false}
+                                    onChange={(event) =>
+                                        setData(
+                                            'wiki_open',
+                                            event.target.checked,
+                                        )
+                                    }
+                                    className="mt-0.5 size-4 accent-gc-indigo"
+                                />
+                                <span>
+                                    <span className="block font-medium text-white">
+                                        {tr('Вікі редагують усі')}
+                                    </span>
+                                    <span className="block text-xs text-white/45">
+                                        {tr(
+                                            'Інакше — лише керівники. Кожна правка зберігається в історії.',
+                                        )}
+                                    </span>
+                                </span>
+                            </label>
+                        )}
+                        <label className="flex items-start gap-3 rounded-2xl p-3.5 text-sm text-white/80">
+                            <input
+                                type="checkbox"
+                                checked={data.weekly_digest ?? false}
+                                onChange={(event) =>
+                                    setData(
+                                        'weekly_digest',
+                                        event.target.checked,
+                                    )
+                                }
+                                className="mt-0.5 size-4 accent-gc-indigo"
+                            />
+                            <span>
+                                <span className="block font-medium text-white">
+                                    {tr('Тижневий дайджест')}
+                                </span>
+                                <span className="block text-xs text-white/45">
+                                    {tr(
+                                        'Щопонеділка — запис від спільноти з п’ятьма найкращими записами тижня.',
                                     )}
                                 </span>
                             </span>
@@ -199,6 +414,15 @@ export function StatsCard({ stats }: { stats?: CommunityStats }) {
     const peak = Math.max(1, ...(stats?.weeks.map((w) => w.joined) ?? [1]));
     const tiles = stats
         ? [
+              ...(stats.page
+                  ? [
+                        { label: tr('Переглядів'), value: stats.page.views },
+                        {
+                            label: tr('Відвідувачів'),
+                            value: stats.page.uniques,
+                        },
+                    ]
+                  : []),
               { label: tr('Прийшло'), value: stats.joined },
               { label: tr('Пишуть'), value: stats.authors },
               { label: tr('Записів'), value: stats.posts },
@@ -215,11 +439,18 @@ export function StatsCard({ stats }: { stats?: CommunityStats }) {
                 <div className="skeleton h-40 rounded-2xl" />
             ) : (
                 <div className="space-y-5">
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div
+                        className={cn(
+                            'grid grid-cols-2 gap-3',
+                            tiles.length > 4
+                                ? 'sm:grid-cols-3'
+                                : 'sm:grid-cols-4',
+                        )}
+                    >
                         {tiles.map((tile) => (
                             <div
                                 key={tile.label}
-                                className="rounded-2xl bg-white/[0.04] p-3"
+                                className="gc-solid-2 rounded-2xl p-3"
                             >
                                 <p className="font-display text-2xl font-bold text-white tabular-nums">
                                     {tile.value}
@@ -230,6 +461,7 @@ export function StatsCard({ stats }: { stats?: CommunityStats }) {
                             </div>
                         ))}
                     </div>
+                    {stats.page && <PageViews page={stats.page} />}
                     <p className="text-sm text-white/60">
                         {tr('Пишуть {percent}% учасників', {
                             percent: stats.active_share,

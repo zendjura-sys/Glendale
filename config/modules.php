@@ -99,7 +99,7 @@ return [
     ],
     'cinema' => [
         'name' => 'Кінопортал',
-        'description' => 'Фільми, серіали та аніме з плеєрами Kodik, FlixCDN і власними; списки, оцінки, коментарі.',
+        'description' => 'Фільми, серіали та аніме з вбудованими й власними плеєрами; списки, оцінки, коментарі.',
         'icon' => 'film',
         'core' => false,
         'available' => true,
@@ -142,6 +142,15 @@ return [
         'default' => true,
         'nav' => ['label' => 'Події', 'route' => 'events.index', 'position' => 107],
     ],
+    'discussions' => [
+        'name' => 'Обговорення',
+        'description' => 'Теми й відповіді про фільми, серіали, аніме, ігри, сервери, сім’ї, клани, спільноти й статті та загальний розділ за категоріями.',
+        'icon' => 'messages-square',
+        'core' => false,
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Обговорення', 'route' => 'discussions', 'position' => 108],
+    ],
     'quests' => [
         'name' => 'Завдання й сезони',
         'description' => 'Три завдання щодня: досвід у рівень і очки сезону, таблиця лідерів місяця.',
@@ -159,6 +168,15 @@ return [
         'available' => true,
         'default' => true,
         'nav' => ['label' => 'Моменти', 'route' => 'moments.index', 'position' => 109],
+    ],
+    'articles' => [
+        'name' => 'Статті',
+        'description' => 'Довгі тексти: огляди, історії й гайди із заголовками, картинками й змістом; окрема стрічка статей.',
+        'icon' => 'newspaper',
+        'core' => false,
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Статті', 'route' => 'articles.index', 'position' => 111],
     ],
     'party' => [
         'name' => 'Пошук паті',

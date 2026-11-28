@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Family;
 use App\Services\Families\FamilyBank;
+use App\Services\Families\LeaderWeeklyReport;
 use App\Services\Families\WeeklyDigest;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -13,7 +14,7 @@ use Illuminate\Console\Command;
 #[Description('Виплата депозитів і тижневий звіт виплат сімей')]
 class FamiliesTick extends Command
 {
-    public function handle(FamilyBank $bank, WeeklyDigest $digest): int
+    public function handle(FamilyBank $bank, WeeklyDigest $digest, LeaderWeeklyReport $leaders): int
     {
         $this->info('Депозитів виплачено: '.$bank->matureDue());
 
@@ -29,6 +30,8 @@ class FamiliesTick extends Command
         foreach ($families as $family) {
             $result = $digest->send($family, (bool) $this->option('force'));
             $this->line("  [{$family->tag}] {$family->name}: ".($result === null ? 'вже надіслано' : json_encode($result)));
+            // Лідеру й заступникам — окреме зведення активності тижня.
+            $leaders->send($family, (bool) $this->option('force'));
         }
 
         return self::SUCCESS;

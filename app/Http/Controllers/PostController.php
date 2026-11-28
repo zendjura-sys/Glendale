@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Community;
+use App\Models\FriendMark;
 use App\Models\Like;
 use App\Models\Movie;
 use App\Models\Poll;
@@ -19,6 +20,7 @@ use App\Services\CommunityService;
 use App\Services\CommunityWall;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
+use App\Services\Media\GifSearch;
 use App\Services\Media\LinkPreview;
 use App\Services\Media\YoutubePreview;
 use App\Services\Moderation\ContentFilter;
@@ -36,6 +38,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -130,16 +133,22 @@ class PostController extends Controller
         $maxKb = (int) $this->settings->get('max_upload_mb') * 1024;
 
         $data = $request->validate([
-            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll,card,sticker'],
+            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll,card,sticker,gif'],
             'sticker' => ['nullable', 'string', Rule::in(array_keys(Stickers::ITEMS))],
             'card' => ['nullable', 'array'],
-            'card.kind' => ['required_with:card', Rule::in(['game', 'server', 'game_event', 'server_event'])],
+            'gif' => ['nullable', 'array'],
+            'gif.url' => ['required_with:gif', 'string', 'max:300'],
+            'gif.title' => ['nullable', 'string', 'max:120'],
+            'card.kind' => ['required_with:card', Rule::in(['movie', 'game', 'server', 'game_event', 'server_event'])],
             'card.id' => ['required_with:card', 'integer', 'min:1'],
             'poll' => ['nullable', 'array'],
             'poll.question' => ['required_with:poll', 'string', 'max:200'],
             'poll.options' => ['required_with:poll', 'array', 'min:2', 'max:4'],
             'poll.options.*' => ['required', 'string', 'max:80'],
+            'poll.anonymous' => ['nullable', 'boolean'],
+            'subscribers_only' => ['nullable', 'boolean'],
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
+            'audience' => ['nullable', 'required_if:visibility,'.Post::VISIBILITY_LIST, Rule::in(FriendMark::LISTS)],
             'spoiler' => ['sometimes', 'boolean'],
             'draft' => ['sometimes', 'boolean'],
             'publish_at' => ['nullable', 'date'],
@@ -148,7 +157,12 @@ class PostController extends Controller
             'as_community' => ['nullable', 'boolean'],
             'tag' => ['nullable', 'string', 'max:24'],
             'images' => ['nullable', 'array', 'max:'.$maxFiles],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:'.$maxKb],
+            // Фото й відео разом — до max_attachments; відео до 50 МБ (фото — за налаштуванням сайту).
+            'images.*' => ['file', 'mimes:jpg,jpeg,png,webp,gif,mp4,webm,mov', 'max:'.max($maxKb, 51200), function (string $attribute, mixed $file, \Closure $fail) use ($maxKb) {
+                if ($file instanceof UploadedFile && str_starts_with((string) $file->getMimeType(), 'image/') && $file->getSize() > $maxKb * 1024) {
+                    $fail('Фото завелике: до '.intdiv($maxKb, 1024).' МБ.');
+                }
+            }],
             'music' => ['nullable', 'array'],
             'music.source' => ['required_with:music', Rule::in(['local', 'spotify'])],
             'music.id' => ['required_with:music'],
@@ -198,7 +212,9 @@ class PostController extends Controller
         }
 
         $card = null;
-        if (isset($data['card'])) {
+        if (isset($data['gif']) && app(Plugins::class)->on('gif_search')) {
+            $card = app(GifSearch::class)->card($data['gif']);
+        } elseif (isset($data['card'])) {
             $card = app(PostCards::class)->resolve($data['card']['kind'], (int) $data['card']['id']);
             if ($card === null) {
                 throw ValidationException::withMessages(['card' => 'Картку не знайдено.']);
@@ -220,18 +236,24 @@ class PostController extends Controller
                 'link' => $this->linkCard($data['body'] ?? null),
                 'card' => $card,
                 'visibility' => $data['visibility'],
+                'audience' => $data['visibility'] === Post::VISIBILITY_LIST ? $data['audience'] : null,
                 'spoiler' => (bool) ($data['spoiler'] ?? false),
                 'is_draft' => $request->boolean('draft'),
                 'publish_at' => $publishAt,
                 'is_pending' => $pending,
                 'tag' => $tag,
                 'lang' => LanguageGuess::guess($data['body'] ?? null),
+                // Лише для платних підписників: тільки на власній стіні й коли в автора є рівні підписки.
+                'subscribers_only' => $request->boolean('subscribers_only') && $wallOwner instanceof User && $wallOwner->id === $user->id
+                    && app(Plugins::class)->on('author_subscriptions') && DB::table('author_tiers')->where('user_id', $user->id)->exists(),
             ]);
 
             if (isset($data['poll'])) {
                 $poll = Poll::query()->create([
                     'post_id' => $post->id,
                     'question' => trim($data['poll']['question']),
+                    // Відкрите опитування (видно, хто як голосував) — лише якщо плагін увімкнено.
+                    'is_anonymous' => ! (app(Plugins::class)->on('open_polls') && array_key_exists('anonymous', $data['poll']) && ! filter_var($data['poll']['anonymous'], FILTER_VALIDATE_BOOLEAN)),
                 ]);
                 foreach (array_values($data['poll']['options']) as $position => $label) {
                     $poll->options()->create([
@@ -242,6 +264,20 @@ class PostController extends Controller
             }
 
             foreach (array_values($request->file('images', [])) as $position => $file) {
+                // Відео — як є (браузер грає mp4/webm); фото проходять обробку й стискання.
+                if (str_starts_with((string) $file->getMimeType(), 'video/')) {
+                    $post->attachments()->create([
+                        'type' => PostAttachment::TYPE_VIDEO,
+                        'path' => $file->store('posts/videos', 'public'),
+                        'mime' => (string) $file->getMimeType(),
+                        'width' => null,
+                        'height' => null,
+                        'size' => (int) $file->getSize(),
+                        'position' => $position,
+                    ]);
+
+                    continue;
+                }
                 $stored = $this->images->store($file, 'posts');
                 $post->attachments()->create([
                     'type' => PostAttachment::TYPE_IMAGE,
@@ -463,11 +499,13 @@ class PostController extends Controller
         $user = $request->user();
         abort_unless(($post->wall_type === $user->getMorphClass() && $post->wall_id === $user->id) || $this->managesWall($user, $post), 403);
 
-        // На своїй стіні з GameCon+ можна закріпити до трьох записів; інакше — один (новий замінює старий).
+        // На своїй стіні — до трьох записів (з GameCon+ — до п’яти); на інших стінах — один.
+        // Понад ліміт новий запис замінює найстаріший закріплений — про це кажемо тостом.
         $limit = $post->wall_type === $user->getMorphClass() && $post->wall_id === $user->id
             ? (int) app(Plus::class)->limit($user, 'pinned_posts')
             : 1;
-        DB::transaction(function () use ($post, $limit) {
+        $replaced = false;
+        DB::transaction(function () use ($post, $limit, &$replaced) {
             if ($post->is_pinned) {
                 $post->update(['is_pinned' => false]);
 
@@ -481,9 +519,13 @@ class PostController extends Controller
                 ->pluck('id');
             if ($pinned->count() >= $limit) {
                 Post::query()->whereIn('id', $pinned->take($pinned->count() - $limit + 1))->update(['is_pinned' => false]);
+                $replaced = $limit > 1;
             }
             $post->update(['is_pinned' => true]);
         });
+        if ($replaced) {
+            Inertia::flash('toast', ['type' => 'info', 'message' => "Закріплено. Можна до {$limit} записів — найстаріший закріплений відкріплено."]);
+        }
 
         return back();
     }
@@ -591,7 +633,7 @@ class PostController extends Controller
 
     private function authorizeView(?User $viewer, Post $post): void
     {
-        if ($post->is_draft || $post->publish_at?->isFuture() || $post->is_pending) {
+        if ($post->is_draft || $post->publish_at?->isFuture() || $post->is_pending || $post->archived_at !== null) {
             abort_unless($viewer && ($viewer->id === $post->author_id || $viewer->isStaff()), 404);
 
             return;

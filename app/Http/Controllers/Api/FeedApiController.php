@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\CommunityService;
 use App\Services\FeedSignals;
 use App\Services\FriendshipService;
+use App\Services\Onboarding\NewcomerWeek;
 use App\Services\PostPresenter;
 use App\Support\I18n\LanguageGuess;
 use App\Support\MutedWords;
@@ -73,11 +74,15 @@ class FeedApiController extends ApiController
         $posts = $query->orderByDesc('id')->paginate(10);
         $items = $this->presenter->many(new Collection($posts->items()), $user);
 
+        $firstPage = $request->integer('page', 1) <= 1;
+
         return response()->json([
             'tab' => $tab,
             'lang' => $lang,
             'languages' => LanguageGuess::LANGS,
-            'tomorrow' => $request->integer('page', 1) > 1 ? [] : app(FeedController::class)->tomorrowFor($user),
+            'tomorrow' => $firstPage ? app(FeedController::class)->tomorrowFor($user) : [],
+            // «Тиждень новачка» — той самий блок, що на сайті (перша сторінка).
+            'newcomer' => $firstPage ? app(NewcomerWeek::class)->forUser($user) : null,
             'has_sources' => $hasSources,
             'posts' => $this->page($posts, $items),
             'suggestions' => collect($this->friendships->suggestions($user, 5))

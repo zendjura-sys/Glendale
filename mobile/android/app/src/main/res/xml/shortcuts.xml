@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Статичні ярлики іконки. Відкривають застосунок тим самим шляхом, що й віджети (gamecon://widget/...). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/shortcut_shelter"
+        android:shortcutId="shelter"
+        android:shortcutLongLabel="@string/shortcut_shelter_long"
+        android:shortcutShortLabel="@string/shortcut_shelter_short">
+        <intent
+            android:action="es.antonborri.home_widget.action.LAUNCH"
+            android:data="gamecon://widget/shelter"
+            android:targetClass="online.gamecon.gamecon.MainActivity"
+            android:targetPackage="online.gamecon.gamecon" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/shortcut_siren"
+        android:shortcutId="alerts"
+        android:shortcutLongLabel="@string/shortcut_alerts_long"
+        android:shortcutShortLabel="@string/shortcut_alerts_short">
+        <intent
+            android:action="es.antonborri.home_widget.action.LAUNCH"
+            android:data="gamecon://widget/alerts"
+            android:targetClass="online.gamecon.gamecon.MainActivity"
+            android:targetPackage="online.gamecon.gamecon" />
+    </shortcut>
+</shortcuts>

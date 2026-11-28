@@ -1,6 +1,8 @@
 import type { PlusMark } from './social';
 
 export type User = {
+    /** Свій вибір мережевого статусу (online | idle | dnd | invisible). */
+    presence_choice?: string;
     id: number;
     username: string;
     name: string;
@@ -11,19 +13,36 @@ export type User = {
     cover_url: string | null;
     is_online: boolean;
     is_verified: boolean;
+    verified_kind?: string | null;
+    account_type?: string | null;
     plus?: PlusMark | null;
     status: string | null;
+    status_emoji?: string | null;
+    status_until?: string | null;
     role: 'user' | 'moderator' | 'admin';
     is_admin: boolean;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     /** Ключі розділів нижньої панелі на телефоні (без «Меню»). */
     nav_tabs: string[];
+    /** Розділи шапки на ПК і планшеті; порожньо — автоматично. */
+    header_tabs?: string[];
     palette?: string;
+    /** Компактна стрічка (№297). */
+    feed_compact?: boolean;
+    /** Режим «Простий»: крупніше, з підписами, без анімацій. */
+    simple_ui?: boolean;
+    /** Тур по розділах ще не пройдено (новий акаунт). */
+    tour_pending?: boolean;
+    /** Свій акцентний колір (№296), null — колір стилю. */
+    accent?: string | null;
+    /** Розклад темної теми (№231). */
+    theme_schedule?: { from: string; to: string };
     /** Режим соцмережі (id), див. NetworkModes на сервері. */
     network_mode?: string;
     /** Стиль інтерфейсу: flat (основний), hero, material, flex. */
     skin?: string;
+    theme?: 'system' | 'dark' | 'light';
     /** Фон сайту: сцена, чи рухається вона, і відео YouTube (лише з GameCon+). */
     background?: SiteBackgroundPrefs;
     /** Внутрішній номер GameCon (+555 випадковий / +777 куплений). */
@@ -32,6 +51,13 @@ export type User = {
     /** GameCon+ активний до (ISO), null — немає. */
     plus_until?: string | null;
     profanity_mask?: string | null;
+    /** «Показувати, що я слухаю»: інші бачать, що грає (усі джерела). */
+    show_listening?: boolean;
+    morning_digest?: boolean;
+    weekly_digest?: boolean;
+    data_saver?: boolean;
+    streamer_mode?: boolean;
+    notify_sound?: 'off' | 'soft' | 'pixel' | 'arcade' | 'drop';
     created_at: string;
     updated_at: string;
     /** Сумісність зі стартовими компонентами Laravel. */
@@ -85,10 +111,19 @@ export type SiteBackgroundPreset =
     | 'mesh'
     | 'none';
 
+/** Відеофон з бібліотеки адміністрації (GameCon+): окремі файли для смартфона й ПК/планшета. */
+export type VideoBackground = {
+    id: number;
+    title: string;
+    mobile: string | null;
+    desktop: string | null;
+    poster: string | null;
+};
+
 export type SiteBackgroundPrefs = {
     preset: SiteBackgroundPreset;
     motion: boolean;
-    video: string | null;
+    video: VideoBackground | null;
 };
 
 export type PhoneTier =

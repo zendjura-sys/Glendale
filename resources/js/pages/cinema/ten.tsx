@@ -19,7 +19,7 @@ export default function CinemaTen({
             <Head title={tr('Мої десять')} />
             <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="font-display text-2xl font-bold text-white">
+                    <h1 className="font-display text-xl font-bold text-white sm:text-2xl">
                         {mine
                             ? tr('Мої десять')
                             : tr('Десять {name}', { name: owner.first_name })}

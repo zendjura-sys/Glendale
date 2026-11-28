@@ -2,10 +2,11 @@ import { Music2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const palettes = [
-    'from-gc-blue via-gc-indigo to-gc-purple',
-    'from-gc-mint via-gc-cyan to-gc-blue',
-    'from-gc-pink via-gc-purple to-gc-indigo',
-    'from-gc-coral via-gc-pink to-gc-purple',
+    // Кольори проєкту: неоновий синій і крижана блакить.
+    'from-gc-blue via-gc-indigo to-[#0b1638]',
+    'from-gc-cyan via-gc-blue to-gc-indigo',
+    'from-[#a9c8ff] via-gc-blue to-[#123a8c]',
+    'from-gc-indigo via-[#1d6fe0] to-gc-cyan',
 ];
 
 export function TrackCover({

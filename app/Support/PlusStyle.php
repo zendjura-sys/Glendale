@@ -9,17 +9,37 @@ class PlusStyle
 {
     /**
      * @param  array<string, mixed>|null  $style
-     * @return array{name: list<string>|null, frame: list<string>|null, fx: string|null}
+     * @return array{name: list<string>|null, frame: list<string>|null, fx: string|null, motion: string|null, font: string|null}
      */
     public static function card(?array $style): array
     {
         $fx = $style['fx'] ?? null;
+        $motion = $style['motion'] ?? null;
+        $font = $style['font'] ?? null;
+        $custom = $style['color'] ?? null;
 
         return [
-            'name' => self::colors('name_colors', $style['name'] ?? null),
+            // Свій колір (піпетка) важливіший за готові кольори.
+            'name' => is_string($custom) && self::hex($custom) ? [strtolower($custom)] : self::colors('name_colors', $style['name'] ?? null),
+            'font' => is_string($font) && is_string(config("plus.name_fonts.{$font}")) ? (string) config("plus.name_fonts.{$font}") : null,
             'frame' => self::frame($style['frame'] ?? null),
             'fx' => is_string($fx) && in_array($fx, (array) config('plus.name_effects'), true) ? $fx : null,
+            'motion' => is_string($motion) && in_array($motion, (array) config('plus.frame_motions'), true) ? $motion : null,
         ];
+    }
+
+    /**
+     * Ексклюзивна тема профілю: кольори й візерунок (null — без теми).
+     *
+     * @param  array<string, mixed>|null  $style
+     * @return array{key: string, colors: list<string>, pattern: string}|null
+     */
+    public static function theme(?array $style): ?array
+    {
+        $key = $style['theme'] ?? null;
+        $theme = is_string($key) ? config("plus.themes.{$key}") : null;
+
+        return is_array($theme) ? ['key' => $key, 'colors' => array_values($theme['colors']), 'pattern' => (string) $theme['pattern']] : null;
     }
 
     /**
@@ -48,7 +68,7 @@ class PlusStyle
     /**
      * Дозволені варіанти для форми налаштувань.
      *
-     * @return array{names: array<string, list<string>>, frames: array<string, list<string>>, accents: array<string, list<string>>, effects: list<string>, headers: list<string>}
+     * @return array{names: array<string, list<string>>, frames: array<string, list<string>>, accents: array<string, list<string>>, effects: list<string>, fonts: array<string, string>, headers: list<string>, motions: list<string>, themes: array<string, list<string>>}
      */
     public static function options(): array
     {
@@ -62,7 +82,10 @@ class PlusStyle
             'frames' => $frames,
             'accents' => array_column(Palette::all(), 'colors', 'id'),
             'effects' => array_values((array) config('plus.name_effects')),
+            'fonts' => (array) config('plus.name_fonts'),
             'headers' => array_values((array) config('plus.header_effects')),
+            'motions' => array_values((array) config('plus.frame_motions')),
+            'themes' => array_map(fn (array $t) => $t['colors'], (array) config('plus.themes')),
         ];
     }
 
@@ -87,6 +110,18 @@ class PlusStyle
         }
         if (is_string($input['header'] ?? null) && in_array($input['header'], (array) config('plus.header_effects'), true)) {
             $out['header'] = $input['header'];
+        }
+        if (is_string($input['motion'] ?? null) && in_array($input['motion'], (array) config('plus.frame_motions'), true)) {
+            $out['motion'] = $input['motion'];
+        }
+        if (is_string($input['theme'] ?? null) && array_key_exists($input['theme'], (array) config('plus.themes'))) {
+            $out['theme'] = $input['theme'];
+        }
+        if (is_string($input['font'] ?? null) && array_key_exists($input['font'], (array) config('plus.name_fonts'))) {
+            $out['font'] = $input['font'];
+        }
+        if (is_string($input['color'] ?? null) && self::hex($input['color'])) {
+            $out['color'] = strtolower($input['color']);
         }
 
         return $out;
@@ -118,5 +153,11 @@ class PlusStyle
         }
 
         return self::colors('frames', $key);
+    }
+
+    /** Свій колір ніку: лише #rrggbb. */
+    private static function hex(string $value): bool
+    {
+        return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1;
     }
 }

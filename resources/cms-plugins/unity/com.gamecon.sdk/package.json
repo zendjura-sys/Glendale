@@ -1,0 +1,11 @@
+{
+    "name": "online.gamecon.sdk",
+    "displayName": "GameCon SDK",
+    "version": "1.0.0",
+    "description": "Вхід через GameCon кодом пристрою (RFC 8628), друзі онлайн, статус у грі, досягнення, таблиці лідерів і оверлей GameCon.",
+    "author": {
+        "name": "GameCon",
+        "url": "https://gamecon.online/developers/sdk"
+    },
+    "unity": "2021.3"
+}

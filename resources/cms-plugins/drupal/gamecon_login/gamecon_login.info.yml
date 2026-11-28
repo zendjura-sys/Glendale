@@ -1,0 +1,6 @@
+name: 'Увійти через GameCon'
+type: module
+description: 'Вхід і реєстрація через акаунт GameCon (OAuth 2.1 + PKCE).'
+package: Authentication
+core_version_requirement: ^10 || ^11
+configure: gamecon_login.settings

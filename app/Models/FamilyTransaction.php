@@ -50,6 +50,7 @@ class FamilyTransaction extends Model
         'treasury_in' => 'Поповнення казни',
         'treasury_out' => 'Витрата з казни',
         'investment' => 'Інвестиція в казну',
+        'treasury_fix' => 'Виправлення казни',
     ];
 
     /** Операції, що вважаються заробітком у тижневому звіті. */

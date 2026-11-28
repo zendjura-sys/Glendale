@@ -8,6 +8,7 @@ use App\Models\Call;
 use App\Models\CallParticipant;
 use App\Models\Conversation;
 use App\Models\User;
+use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\Push\PushNotifier;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,21 @@ class Calls
     }
 
     /**
+     * Вхідні дзвінки людини: її кличуть (ще не прийняла й не відхилила), а дзвінок досі дзвонить.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function incoming(User $user): array
+    {
+        return array_values(Call::query()->with(['conversation', 'caller', 'participants.user'])
+            ->where('status', Call::STATUS_RINGING)
+            ->where('created_at', '>', now()->subSeconds(Call::RING_SECONDS))
+            ->whereHas('participants', fn ($q) => $q->where('user_id', $user->id)->where('state', CallParticipant::STATE_INVITED))
+            ->latest('id')->limit(3)->get()
+            ->map(fn (Call $call) => $this->state($call))->all());
+    }
+
+    /**
      * Чи може людина дзвонити в цю бесіду: учасник, а в особистій — співрозмовник приймає повідомлення від неї.
      */
     public function canCall(Conversation $conversation, User $user): bool
@@ -45,7 +61,16 @@ class Calls
         }
         $peer = $conversation->activeParticipants()->where('user_id', '!=', $user->id)->with('user')->first()?->user;
 
-        return $peer instanceof User && $this->messenger->canMessage($user, $peer);
+        if (! $peer instanceof User || ! $this->messenger->canMessage($user, $peer)) {
+            return false;
+        }
+
+        // Налаштування співрозмовника «Хто може дзвонити».
+        return match ($peer->pref('call_privacy', 'everyone')) {
+            'nobody' => false,
+            'friends' => app(FriendshipService::class)->status($user, $peer) === FriendshipService::FRIENDS,
+            default => true,
+        };
     }
 
     /**
@@ -106,7 +131,7 @@ class Calls
                 'u'.$user->id,
                 $user->name,
                 $call->livekitName(),
-                [],
+                ['canPublishSources' => LiveKit::CALL_SOURCES],
                 (string) json_encode(['user_id' => $user->id, 'avatar_url' => $user->avatar_url]),
             ),
             'room' => $call->livekitName(),

@@ -21,6 +21,8 @@ class ProfileUpdateRequest extends FormRequest
             ...$this->profileRules($this->user()->id),
             ...$this->aboutRules($this->user()->id),
             'email_social' => ['sometimes', 'boolean'],
+            // Новини GameCon на пошту (№284) — лише за згодою, у preferences.
+            'news_email' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -28,6 +30,9 @@ class ProfileUpdateRequest extends FormRequest
     {
         $this->merge(['is_private' => $this->boolean('is_private')]);
         // Застосунок і старі форми поля не надсилають — тоді налаштування лишається як було.
+        if ($this->has('news_email')) {
+            $this->merge(['news_email' => $this->boolean('news_email')]);
+        }
         if ($this->has('email_social')) {
             $this->merge(['email_social' => $this->boolean('email_social')]);
         }

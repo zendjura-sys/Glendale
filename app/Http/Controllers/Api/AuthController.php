@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Fortify\CreateNewUser;
+use App\Models\AppLoginRequest;
 use App\Models\User;
 use App\Services\Auth\AccountSecurity;
 use App\Services\Auth\ApiTokens;
+use App\Services\Auth\AppLogin;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\Auth\SocialAuthException;
@@ -139,6 +141,41 @@ class AuthController extends ApiController
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Вхід у програму для ПК через смартфон: той самий запит, що «Увійти через застосунок» на сайті
+     * (QR + код із двох цифр, підтвердження в застосунку, де людина вже увійшла). Секрет — лише програмі.
+     */
+    public function phoneStart(Request $request, AppLogin $logins): JsonResponse
+    {
+        $data = $request->validate(['login' => ['nullable', 'string', 'max:255']]);
+        [$entry, $secret] = $logins->create($request, $data['login'] ?? null);
+
+        return response()->json([
+            'id' => $entry->id,
+            'secret' => $secret,
+            'code' => $entry->code,
+            'qr' => rtrim((string) config('app.url'), '/').'/app-login/'.$entry->id,
+            'expires_at' => $entry->expires_at->toIso8601String(),
+        ], 201);
+    }
+
+    /** Опитування з ПК: підтверджено в застосунку — один раз видаємо токен (2FA вже пройдено на телефоні). */
+    public function phoneStatus(Request $request, string $id, AppLogin $logins): JsonResponse
+    {
+        $entry = AppLoginRequest::query()->with('user')->find($id);
+        abort_unless($entry instanceof AppLoginRequest && $logins->owns($entry, (string) $request->query('secret', '')), 404);
+        $status = $logins->status($entry);
+        if ($status !== 'approved') {
+            return response()->json(['status' => $status]);
+        }
+        $user = $logins->claim($request, $entry);
+        if ($user === null) {
+            return response()->json(['status' => $logins->status($entry->refresh())]);
+        }
+
+        return $this->issue($request, $user, challenge: false);
     }
 
     public function me(Request $request): JsonResponse

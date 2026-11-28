@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notification;
 /** Отримувачу: хтось подарував GameCon+. */
 class PlusGifted extends Notification
 {
-    public function __construct(public readonly User $actor, public readonly int $days) {}
+    public function __construct(public readonly User $actor, public readonly int $days, public readonly ?int $giftId = null) {}
 
     /**
      * @return list<string>
@@ -29,7 +29,7 @@ class PlusGifted extends Notification
             'actor_id' => $this->actor->id,
             'text' => $this->days >= 365 ? 'дарує вам GameCon+ на рік' : 'дарує вам GameCon+ на місяць',
             'excerpt' => null,
-            'url' => '/plus',
+            'url' => $this->giftId ? '/plus/gifts/'.$this->giftId : '/plus',
         ];
     }
 }

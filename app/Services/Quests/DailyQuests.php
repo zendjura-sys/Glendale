@@ -164,22 +164,26 @@ class DailyQuests
 
         return [
             'season' => $season,
-            'ends_at' => Carbon::createFromFormat('Y-m', $season, self::TZ)->endOfMonth()->toIso8601String(),
+            'ends_at' => Carbon::createFromFormat('!Y-m', $season, self::TZ)->endOfMonth()->toIso8601String(),
             'top' => $top,
             'me' => ['place' => $place, 'points' => $mine],
         ];
     }
 
-    public function progress(User $user, string $key): int
+    /** Скільки зроблено з початку дня (або з $from — для челенджів тижня). */
+    public function progress(User $user, string $key, ?Carbon $from = null): int
     {
-        $from = $this->today()->utc();
+        $week = $from !== null;
+        $from = ($from ?? $this->today())->copy()->utc();
         $since = fn ($query, string $column = 'created_at') => $query->where($column, '>=', $from);
 
         return match ($key) {
             'post' => $since(Post::query()->where('author_id', $user->id)->where('is_draft', false))->count(),
             'comment' => $since(Comment::query()->where('user_id', $user->id))->count(),
             'like' => $since(Like::query()->where('user_id', $user->id)->where('likeable_type', 'post'))->count(),
-            'vote' => ServerVote::query()->where('user_id', $user->id)->where('voted_on', app(ServerVotes::class)->today())->count(),
+            'vote' => $week
+                ? ServerVote::query()->where('user_id', $user->id)->where('voted_on', '>=', $from->copy()->setTimezone(self::TZ)->toDateString())->count()
+                : ServerVote::query()->where('user_id', $user->id)->where('voted_on', app(ServerVotes::class)->today())->count(),
             'moment' => $since(Moment::query()->where('user_id', $user->id))->count(),
             'party' => $since(PartyPost::query()->where('user_id', $user->id))->count() + $since(PartyMember::query()->where('user_id', $user->id))->count(),
             'friend' => $since(Friendship::query()->where('requester_id', $user->id))->count(),

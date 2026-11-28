@@ -48,6 +48,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          # Кеш Gradle (дистрибутив обгортки й залежності): збірка менше залежить від того, чи відповідає
+          # github.com з архівом Gradle (8.11.2026 він двічі віддав 504 й зірвав збірку).
+          cache: gradle
+          cache-dependency-path: |
+            mobile/android/*.gradle.kts
+            mobile/android/gradle/wrapper/gradle-wrapper.properties
 
       - uses: subosito/flutter-action@v2
         with:
@@ -59,9 +65,14 @@ jobs:
         id: version
         run: |
           v=$(grep -E '^version:' pubspec.yaml | awk '{print $2}')
-          echo "full=$v" >> "$GITHUB_OUTPUT"
-          echo "name=$(echo "$v" | cut -d+ -f1 | tr . _)" >> "$GITHUB_OUTPUT"
-          echo "Версія: $v"
+          # Версія для людей Г.ГГММ.X.Y (gamecon_version); pubspec version лишається semver для Dart.
+          gv=$(grep -E '^gamecon_version:' pubspec.yaml | awk '{print $2}')
+          gv=${gv:-$(echo "$v" | cut -d+ -f1)}
+          build=$(echo "$v" | cut -s -d+ -f2)
+          echo "gv=$gv" >> "$GITHUB_OUTPUT"
+          echo "full=$gv+$build" >> "$GITHUB_OUTPUT"
+          echo "name=$(echo "$gv" | tr . _)" >> "$GITHUB_OUTPUT"
+          echo "Версія: $gv (збірка $build)"
 
       # Раннер має 16 ГБ пам’яті: Gradle з 8 ГБ, демон Kotlin і нативна збірка WebRTC його вичерпували,
       # і GitHub вимикав машину посеред збірки. Обмежуємо пам’ять і звільняємо диск.
@@ -98,14 +109,25 @@ jobs:
           GAMECON_STORE_PASSWORD: ${{ secrets.GAMECON_STORE_PASSWORD }}
           GAMECON_KEY_ALIAS: ${{ secrets.GAMECON_KEY_ALIAS }}
           GAMECON_KEY_PASSWORD: ${{ secrets.GAMECON_KEY_PASSWORD }}
-        run: flutter build apk --release
+        # Повтор лише тоді, коли сервер Gradle/Maven відповів 5xx (збій мережі), а не при помилці в коді.
+        run: |
+          for i in 1 2 3; do
+            set +e
+            flutter build apk --release --build-name=${{ steps.version.outputs.gv }} 2>&1 | tee "$RUNNER_TEMP/apk.log"
+            code=${PIPESTATUS[0]}
+            set -e
+            [ "$code" -eq 0 ] && exit 0
+            grep -Eq 'HTTP response code: 5[0-9]{2}|status code 5[0-9]{2}|Gateway Time-out|downloading artifacts from the network' "$RUNNER_TEMP/apk.log" || exit "$code"
+            echo "Сервер залежностей недоступний (спроба $i), чекаю 90 с…"; sleep 90
+          done
+          exit 1
 
       - name: Build AAB
         env:
           GAMECON_STORE_PASSWORD: ${{ secrets.GAMECON_STORE_PASSWORD }}
           GAMECON_KEY_ALIAS: ${{ secrets.GAMECON_KEY_ALIAS }}
           GAMECON_KEY_PASSWORD: ${{ secrets.GAMECON_KEY_PASSWORD }}
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --build-name=${{ steps.version.outputs.gv }}
 
       - name: Collect
         run: |

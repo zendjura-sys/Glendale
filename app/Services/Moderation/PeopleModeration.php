@@ -36,6 +36,9 @@ class PeopleModeration
                 app(AccountSecurity::class)->revoke($target, null, null, null);
             } elseif ($action === 'mute') {
                 $target->forceFill(['muted_until' => now()->addHours(max(1, (int) $hours)), 'mute_reason' => $reasonText])->save();
+                app(Strikes::class)->add($target, $moderator, $reasonText, 'user_report');
+            } elseif ($action === 'strike') {
+                app(Strikes::class)->add($target, $moderator, $reasonText, 'user_report');
             }
         }
 
@@ -63,6 +66,8 @@ class PeopleModeration
                 $user->forceFill(['banned_at' => null, 'ban_reason' => null])->save();
             } elseif ($appeal->kind === 'mute') {
                 $user->forceFill(['muted_until' => null, 'mute_reason' => null])->save();
+            } elseif ($appeal->kind === 'strike') {
+                app(Strikes::class)->revokeLatest($user, $moderator);
             }
         }
     }

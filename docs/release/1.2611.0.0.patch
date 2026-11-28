@@ -1,0 +1,56 @@
+diff --git a/.github/workflows/app-build.yml b/.github/workflows/app-build.yml
+index 3bab7367..04bad593 100644
+--- a/.github/workflows/app-build.yml
++++ b/.github/workflows/app-build.yml
+@@ -65,9 +65,14 @@ jobs:
+         id: version
+         run: |
+           v=$(grep -E '^version:' pubspec.yaml | awk '{print $2}')
+-          echo "full=$v" >> "$GITHUB_OUTPUT"
+-          echo "name=$(echo "$v" | cut -d+ -f1 | tr . _)" >> "$GITHUB_OUTPUT"
+-          echo "Версія: $v"
++          # Версія для людей Г.ГГММ.X.Y (gamecon_version); pubspec version лишається semver для Dart.
++          gv=$(grep -E '^gamecon_version:' pubspec.yaml | awk '{print $2}')
++          gv=${gv:-$(echo "$v" | cut -d+ -f1)}
++          build=$(echo "$v" | cut -s -d+ -f2)
++          echo "gv=$gv" >> "$GITHUB_OUTPUT"
++          echo "full=$gv+$build" >> "$GITHUB_OUTPUT"
++          echo "name=$(echo "$gv" | tr . _)" >> "$GITHUB_OUTPUT"
++          echo "Версія: $gv (збірка $build)"
+ 
+       # Раннер має 16 ГБ пам’яті: Gradle з 8 ГБ, демон Kotlin і нативна збірка WebRTC його вичерпували,
+       # і GitHub вимикав машину посеред збірки. Обмежуємо пам’ять і звільняємо диск.
+@@ -108,7 +113,7 @@ jobs:
+         run: |
+           for i in 1 2 3; do
+             set +e
+-            flutter build apk --release 2>&1 | tee "$RUNNER_TEMP/apk.log"
++            flutter build apk --release --build-name=${{ steps.version.outputs.gv }} 2>&1 | tee "$RUNNER_TEMP/apk.log"
+             code=${PIPESTATUS[0]}
+             set -e
+             [ "$code" -eq 0 ] && exit 0
+@@ -122,7 +127,7 @@ jobs:
+           GAMECON_STORE_PASSWORD: ${{ secrets.GAMECON_STORE_PASSWORD }}
+           GAMECON_KEY_ALIAS: ${{ secrets.GAMECON_KEY_ALIAS }}
+           GAMECON_KEY_PASSWORD: ${{ secrets.GAMECON_KEY_PASSWORD }}
+-        run: flutter build appbundle --release
++        run: flutter build appbundle --release --build-name=${{ steps.version.outputs.gv }}
+ 
+       - name: Collect
+         run: |
+diff --git a/mobile/pubspec.yaml b/mobile/pubspec.yaml
+index 4a32e7ba..9aaba0d7 100644
+--- a/mobile/pubspec.yaml
++++ b/mobile/pubspec.yaml
+@@ -16,7 +16,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+ # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+ # In Windows, build-name is used as the major, minor, and patch parts
+ # of the product and file versions while build-number is used as the build suffix.
+-version: 1.1.124+137
++version: 1.2611.0+138
++# Версія для людей і Google Play — Г.ГГММ.X.Y (див. AGENTS.md): Г — глобальна, ГГММ — рік і місяць,
++# X.Y — номер збірки в місяці (Y 0–10, далі X+1; новий місяць — 0.0). Збірка передає її як --build-name.
++gamecon_version: 1.2611.0.0
+ 
+ environment:
+   sdk: ^3.13.5

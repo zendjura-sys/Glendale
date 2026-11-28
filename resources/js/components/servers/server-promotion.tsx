@@ -55,7 +55,7 @@ export function ServerPromotion({
         buyProduct(product, { server_id: serverId });
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <h2 className="font-display text-lg font-bold text-white">
                 {tr('Просування сервера')}
             </h2>
@@ -68,7 +68,10 @@ export function ServerPromotion({
                 {KINDS().map(({ kind, icon: Icon, title, text }) => {
                     const products = Object.entries(catalog)
                         .filter(
-                            ([, p]) => p.kind === 'promo' && p.promo === kind,
+                            ([, p]) =>
+                                p.kind === 'promo' &&
+                                p.promo === kind &&
+                                p.available,
                         )
                         .map(([key]) => key);
                     const mine = data.active.filter((p) => p.kind === kind);
@@ -80,7 +83,7 @@ export function ServerPromotion({
                     return (
                         <div
                             key={kind}
-                            className="flex flex-col gap-2 rounded-2xl bg-white/[0.04] p-4"
+                            className="gc-solid-2 flex flex-col gap-2 rounded-2xl p-4"
                         >
                             <span className="flex items-center gap-2 font-semibold text-white">
                                 <Icon className="size-4 text-indigo-300" />
@@ -120,7 +123,7 @@ export function ServerPromotion({
                                             !data.available.includes(product)
                                         }
                                         onClick={() => buy(product)}
-                                        className="inline-flex h-9 items-center rounded-xl bg-[var(--btn-primary,#6366f1)] px-3 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+                                        className="inline-flex h-9 items-center rounded-xl bg-primary px-3 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
                                     >
                                         {tr('{days} дн. · {price} ₴', {
                                             days: catalog[product].days,

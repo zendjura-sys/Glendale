@@ -16,7 +16,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.45+56
+version: 1.2611.1+154
+# Версія для людей і Google Play — Г.ГГММ.X.Y (див. AGENTS.md): Г — глобальна, ГГММ — рік і місяць,
+# X.Y — номер збірки в місяці (Y 0–10, далі X+1; новий місяць — 0.0). Збірка передає її як --build-name.
+gamecon_version: 1.2611.1.4
 
 environment:
   sdk: ^3.13.5
@@ -37,6 +40,12 @@ dependencies:
   go_router: ^16.2.0
   http: ^1.5.0
   shared_preferences: ^2.5.3
+  # Струс телефона → баг-репорт (№286).
+  sensors_plus: ^6.1.1
+  # Озвучення тривог у машині й навушниках (№263).
+  flutter_tts: ^4.2.3
+  # Ігровий оверлей поверх ігор (#17).
+  flutter_overlay_window: ^0.5.0
   cached_network_image: ^3.4.1
   google_sign_in: 6.2.2
   url_launcher: ^6.3.2
@@ -51,12 +60,32 @@ dependencies:
   flutter_local_notifications: ^22.3.1
   lucide_icons_flutter: ^3.1.21
   audio_service: ^0.18.19
+  audio_session: ^0.2.4
   record: ^7.1.1
   path_provider: ^2.1.6
   livekit_client: ^2.13.0
+  # Прямий імпорт Helper.requestCapturePermission для демонстрації екрана (залежність livekit_client).
+  flutter_webrtc: ^1.6.2
   flutter_background: ^1.3.1
   video_player: ^2.14.1
   home_widget: ^0.10.0
+  # «Поділитися рядками» пісні: картка-картинка в системне меню Android.
+  share_plus: ^12.0.2
+  # GameCon+ у застосунку — лише через Google Play Billing (Billing Library 8: in_app_purchase_android 0.5.4).
+  # Сервер перевіряє кожну покупку.
+  in_app_purchase: ^3.3.1
+  in_app_purchase_android: ^0.5.4
+  # «Сканувати QR для входу»: вхід на сайт через застосунок (QR із https://gamecon.online/app-login/{id}).
+  mobile_scanner: 7.4.2
+  # QR для ввімкнення 2FA (otpauth:// з секретного ключа, як на сайті).
+  qr_flutter: ^4.1.0
+  window_manager: ^0.5.1
+  tray_manager: ^0.5.0
+  hotkey_manager: ^0.2.3
+  ffi: ^2.2.0
+  google_fonts: ^9.0.0
+  fluent_ui: ^4.18.1
+  flutter_acrylic: ^1.1.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -73,22 +102,28 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  assets:
+    - assets/brand/logo-mark.png
+    - assets/seasons/
+    - assets/geo/
+    - assets/desktop/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
   fonts:
-    - family: Montserrat
+    # Onest (OFL, mobile/fonts/Onest-OFL.txt) — шрифт дизайну «Лобі», як на сайті.
+    - family: Onest
       fonts:
-        - asset: fonts/Montserrat-Regular.ttf
-        - asset: fonts/Montserrat-Medium.ttf
+        - asset: fonts/Onest-Regular.ttf
+        - asset: fonts/Onest-Medium.ttf
           weight: 500
-        - asset: fonts/Montserrat-SemiBold.ttf
+        - asset: fonts/Onest-SemiBold.ttf
           weight: 600
-        - asset: fonts/Montserrat-Bold.ttf
+        - asset: fonts/Onest-Bold.ttf
           weight: 700
-        - asset: fonts/Montserrat-ExtraBold.ttf
+        - asset: fonts/Onest-ExtraBold.ttf
           weight: 800
 
   # To add assets to your application, add an assets section, like this:

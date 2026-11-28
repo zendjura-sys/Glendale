@@ -59,13 +59,12 @@ class GamesCatalogTest extends TestCase
         $this->assertSame('gplay', $game->links[0]['store']);
     }
 
-    public function test_igdb_sync_is_preferred_and_fills_the_full_game_card(): void
+    public function test_igdb_sync_fills_the_full_game_card(): void
     {
         app(GameCatalog::class)->seed();
         $settings = app(SiteSettings::class);
         $settings->put(['igdb_client_id' => str_repeat('a', 30)]);
         $settings->putSecret('igdb_client_secret', str_repeat('b', 30));
-        $settings->putSecret('rawg_key', str_repeat('a', 32));
         Http::preventStrayRequests();
         Http::fake([
             'id.twitch.tv/oauth2/token' => Http::response(['access_token' => 'tok', 'expires_in' => 5000000]),
@@ -135,6 +134,76 @@ class GamesCatalogTest extends TestCase
         $this->actingAs($user)->getJson(route('games.index', ['mode' => 'battle_royale']))->assertJsonPath('games.data.0.slug', 'pocket-raid')->assertJsonCount(1, 'games.data');
         $this->actingAs($user)->getJson(route('games.index', ['genre' => 'Пригоди', 'sort' => 'rating']))->assertJsonFragment(['slug' => 'pocket-raid']);
         $this->actingAs($user)->getJson(route('games.index', ['q' => 'Кишеньковий']))->assertJsonPath('games.data.0.slug', 'pocket-raid');
+    }
+
+    public function test_sync_loads_games_from_every_configured_source(): void
+    {
+        app(GameCatalog::class)->seed();
+        $settings = app(SiteSettings::class);
+        $settings->put(['igdb_client_id' => str_repeat('a', 30)]);
+        $settings->putSecret('igdb_client_secret', str_repeat('b', 30));
+        $settings->putSecret('rawg_key', str_repeat('c', 32));
+        Http::preventStrayRequests();
+        Http::fake([
+            'id.twitch.tv/oauth2/token' => Http::response(['access_token' => 'tok', 'expires_in' => 5000000]),
+            'api.igdb.com/v4/game_time_to_beats' => Http::response([]),
+            'api.igdb.com/v4/games' => Http::response([[
+                'id' => 1942, 'slug' => 'counter-strike-2', 'name' => 'Counter-Strike 2', 'platforms' => [6],
+                'genres' => [5], 'total_rating' => 80, 'total_rating_count' => 3000,
+                'cover' => ['image_id' => 'co1abc'],
+                'websites' => [['url' => 'https://store.steampowered.com/app/730/']],
+            ]]),
+            'api.rawg.io/api/games/*/stores*' => Http::response(['results' => [[
+                'store_id' => 11, 'url' => 'https://store.epicgames.com/p/x-arena',
+            ]]]),
+            'api.rawg.io/api/games*' => Http::response(['next' => null, 'results' => [
+                [
+                    'id' => 42, 'slug' => 'counter-strike-2', 'name' => 'Counter-Strike 2', 'released' => '2023-09-27',
+                    'rating' => 1.5, 'added' => 9000, 'background_image' => 'https://media.rawg.io/cs.jpg',
+                    'platforms' => [['platform' => ['slug' => 'pc']], ['platform' => ['slug' => 'linux']]],
+                    'genres' => [['name' => 'Shooter']],
+                ],
+                [
+                    'id' => 999, 'slug' => 'x-arena', 'name' => 'X Arena', 'released' => '2024-05-01',
+                    'rating' => 4.2, 'added' => 5000, 'background_image' => 'https://media.rawg.io/x.jpg',
+                    'platforms' => [['platform' => ['slug' => 'android']]],
+                    'genres' => [['name' => 'Action']],
+                ],
+            ]]),
+        ]);
+
+        $result = app(GameCatalog::class)->sync(1, 10);
+
+        $this->assertGreaterThanOrEqual(2, $result['games']);
+        $this->assertGreaterThanOrEqual(1, $result['links']);
+        $this->assertSame('IGDB + RAWG', app(GameCatalog::class)->source());
+
+        $cs = Game::query()->where('slug', 'counter-strike-2')->sole();
+        $this->assertSame(1942, $cs->igdb_id);
+        $this->assertSame(42, $cs->rawg_id);
+        $this->assertSame('https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg', $cs->cover);
+        $this->assertSame(['Шутер'], $cs->genres);
+        $this->assertEqualsCanonicalizing(['pc', 'linux'], $cs->platforms);
+        $this->assertSame(4.0, (float) $cs->rating);
+        $this->assertSame('https://store.steampowered.com/app/730/', collect($cs->links)->firstWhere('store', 'steam')['url']);
+        $this->assertSame('https://store.epicgames.com/p/x-arena', collect($cs->links)->firstWhere('store', 'epic')['url']);
+
+        $rawgOnly = Game::query()->where('rawg_id', 999)->sole();
+        $this->assertNull($rawgOnly->igdb_id);
+        $this->assertSame(['Action'], $rawgOnly->genres);
+        $this->assertSame('epic', $rawgOnly->links[0]['store']);
+
+        $admin = User::factory()->admin()->create();
+        $this->withoutVite();
+        $this->actingAs($admin)->get('/admin/games?q=Counter-Strike')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('stats.source', 'IGDB + RAWG')
+                ->where('games.data.0.slug', 'counter-strike-2')
+                ->where('games.data.0.source', 'IGDB · RAWG'));
+        $this->actingAs($admin)->get('/admin/games?'.http_build_query(['q' => 'X Arena']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('games.data.0.source', 'RAWG'));
     }
 
     public function test_admin_turns_catalog_features_off_for_site_and_app(): void

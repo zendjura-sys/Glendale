@@ -33,6 +33,12 @@ class Wallet
         return $this->move($user, $amount, 'adjust', $description, null, null, $by);
     }
 
+    /** Розрахункові одиниці балансу GameCon (зберігаються в сотих частках, як копійки): «250 од.». */
+    public static function units(int $hundredths): string
+    {
+        return rtrim(rtrim(number_format($hundredths / 100, 2, '.', ''), '0'), '.').' од.';
+    }
+
     public static function uah(int $kopecks): string
     {
         return rtrim(rtrim(number_format($kopecks / 100, 2, '.', ''), '0'), '.').' ₴';

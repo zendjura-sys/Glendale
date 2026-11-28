@@ -5,11 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
 
 /**
  * @property int $id
+ * @property int|null $community_id набір спільноти (бачать її учасники)
  * @property string $slug
  * @property string $name
  * @property string|null $author
@@ -17,7 +19,7 @@ use Illuminate\Support\Facades\Cache;
  * @property bool $is_plus Лише для GameCon+
  * @property int $position
  */
-#[Fillable(['slug', 'name', 'author', 'is_active', 'is_plus', 'position'])]
+#[Fillable(['community_id', 'slug', 'name', 'author', 'is_active', 'is_plus', 'position'])]
 class StickerPack extends Model
 {
     public const CACHE_KEY = 'messenger.sticker_packs';
@@ -45,6 +47,14 @@ class StickerPack extends Model
     }
 
     /**
+     * @return BelongsTo<Community, $this>
+     */
+    public function community(): BelongsTo
+    {
+        return $this->belongsTo(Community::class);
+    }
+
+    /**
      * @param  Builder<StickerPack>  $query
      */
     public function scopeActive(Builder $query): void
@@ -61,6 +71,7 @@ class StickerPack extends Model
     {
         return Cache::rememberForever(self::CACHE_KEY, fn () => array_values(self::query()
             ->active()
+            ->whereNull('community_id')
             ->whereHas('stickers')
             ->with('stickers')
             ->orderBy('position')

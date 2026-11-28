@@ -7,7 +7,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Videoseed (api.videoseed.tv/apiv2.php): фільми й серіали з озвучками, пошук за ID Кінопошуку, IMDb і TMDB.
+ * Videoseed (api.videoseed.tv/apiv2.php): фільми й серіали з озвучками, пошук за ID каталогу, IMDb і TMDB.
  *
  * Плеєр — iframe на домені Videoseed; кожна озвучка має власне посилання (default_audio_id),
  * тож у нас вона стає окремим джерелом, як і в Kodik.
@@ -168,22 +168,22 @@ class VideoseedClient
     private function request(array $params): array
     {
         if (! $this->configured()) {
-            throw new CinemaException('Videoseed не підключено: додайте токен в інтеграціях.', 422);
+            throw new CinemaException('Плеєр 2 не підключено: додайте токен в інтеграціях.', 422);
         }
 
         try {
             $response = Http::acceptJson()->timeout(15)->retry(2, 300, throw: false)
                 ->get((string) config('services.videoseed.api_url', 'https://api.videoseed.tv/apiv2.php'), [...$params, 'token' => $this->token()]);
         } catch (ConnectionException) {
-            throw new CinemaException('Videoseed не відповідає.');
+            throw new CinemaException('Плеєр 2 не відповідає.');
         }
 
         $json = $response->json();
         if (in_array($response->status(), [401, 403], true) || (is_array($json) && ($json['status'] ?? null) === 'error' && str_contains(mb_strtolower((string) ($json['message'] ?? $json['error'] ?? '')), 'token'))) {
-            throw new CinemaException('Videoseed відхилив токен. Перевірте його в інтеграціях.', 401);
+            throw new CinemaException('Плеєр 2 відхилив токен. Перевірте його в інтеграціях.', 401);
         }
         if (! $response->successful() || ! is_array($json)) {
-            throw new CinemaException('Videoseed тимчасово недоступний.');
+            throw new CinemaException('Плеєр 2 тимчасово недоступний.');
         }
 
         return $json;

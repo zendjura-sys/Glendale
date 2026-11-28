@@ -6,7 +6,6 @@ import { ConversationList } from '@/components/messenger/conversation-list';
 import { GroupInfoDialog } from '@/components/messenger/group-info-dialog';
 import { NewChatDialog } from '@/components/messenger/new-chat-dialog';
 import { inbox } from '@/lib/inbox';
-import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import type {
     ChatHistory,
@@ -29,7 +28,6 @@ export default function Messages({
     draft = null,
 }: Props) {
     const userId = usePage().props.auth.user.id;
-    const playing = usePlayer().current !== null;
     const [list, setList] = useState(conversations);
     const [composeOpen, setComposeOpen] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
@@ -118,8 +116,10 @@ export default function Messages({
             <Head title={active ? active.title : tr('Повідомлення')} />
             <div
                 className={cn(
-                    'glass flex min-h-0 overflow-clip rounded-3xl max-lg:h-[calc(100dvh-76px)] max-lg:rounded-b-none md:flex-row lg:h-[calc(100dvh-100px)]',
-                    playing ? 'max-lg:-mb-44' : 'max-lg:-mb-24',
+                    'gc-solid flex min-h-0 overflow-clip rounded-2xl max-lg:rounded-b-none md:flex-row',
+                    // Immersive chat: на всю висоту під шапкою, без відступу під док.
+                    'max-lg:h-[calc(100dvh-72px-env(safe-area-inset-top))] lg:h-[calc(100dvh-100px)]',
+                    'max-lg:-mb-0',
                 )}
             >
                 <ConversationList
@@ -130,7 +130,7 @@ export default function Messages({
                     }
                     onCompose={() => setComposeOpen(true)}
                     className={cn(
-                        'w-full border-white/[0.06] md:w-[300px] md:border-r xl:w-[340px]',
+                        'w-full md:w-[300px] md:border-r xl:w-[340px]',
                         active && 'hidden md:flex',
                     )}
                 />
@@ -150,7 +150,7 @@ export default function Messages({
                     <div className="hidden flex-1 flex-col items-center justify-center px-8 text-center md:flex">
                         <div className="relative mb-6">
                             <div className="absolute inset-0 animate-pulse rounded-full bg-gc-indigo/40 blur-3xl" />
-                            <div className="gradient-border relative flex size-24 items-center justify-center rounded-[28px] bg-[#0b1020]/70">
+                            <div className="gradient-border relative flex size-24 items-center justify-center rounded-2xl bg-[#0b1020]/70">
                                 <MessagesSquare className="size-11 text-[#9fb0ff] drop-shadow-[0_0_14px_rgb(124_140_255/0.9)]" />
                             </div>
                         </div>

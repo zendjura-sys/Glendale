@@ -27,15 +27,29 @@ export function MovieCardEmbed({
                     decoding="async"
                     src={movie.backdrop ?? movie.poster ?? ''}
                     alt=""
-                    className="pointer-events-none absolute inset-0 size-full object-cover opacity-30 blur-[2px] transition duration-700 group-hover:scale-105"
+                    className={cn(
+                        'pointer-events-none absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105',
+                        !movie.backdrop && 'opacity-30 blur-[2px]',
+                    )}
                 />
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-gc-ink via-gc-ink/85 to-gc-ink/40" />
-            <div className="relative flex gap-4 p-3.5">
-                <MoviePoster
-                    movie={movie}
-                    className="aspect-[2/3] w-[84px] shrink-0 rounded-xl ring-1 ring-white/10 sm:w-[96px]"
-                />
+            {/* Банер — тло картки; затемнення знизу й зліва, щоб текст і кнопка читалися. */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/10" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
+            <div
+                data-on-dark
+                className={cn(
+                    'relative flex gap-4 p-3.5',
+                    movie.backdrop && 'min-h-[220px] items-end',
+                )}
+            >
+                {/* Постер — лише коли банера немає. */}
+                {!movie.backdrop && (
+                    <MoviePoster
+                        movie={movie}
+                        className="aspect-[2/3] w-[84px] shrink-0 rounded-xl ring-1 ring-white/10 sm:w-[96px]"
+                    />
+                )}
                 <div className="flex min-w-0 flex-1 flex-col">
                     <div className="flex items-center gap-2">
                         <RatingBadge value={movie.rating} />
@@ -48,11 +62,11 @@ export function MovieCardEmbed({
                     <p className="mt-1.5 line-clamp-2 font-display text-base leading-tight font-semibold text-white">
                         {movie.title}
                     </p>
-                    <p className="mt-0.5 truncate text-xs text-white/50">
+                    <p className="mt-0.5 text-xs break-words text-white/70">
                         {meta}
                     </p>
                     {movie.description && (
-                        <p className="mt-2 line-clamp-2 text-[13px] leading-snug text-white/60">
+                        <p className="mt-2 line-clamp-2 text-[13px] leading-snug text-white/80">
                             {movie.description}
                         </p>
                     )}

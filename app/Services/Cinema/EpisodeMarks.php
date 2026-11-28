@@ -4,6 +4,7 @@ namespace App\Services\Cinema;
 
 use App\Models\Movie;
 use App\Models\User;
+use App\Services\Cards\CardDrops;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -46,6 +47,8 @@ class EpisodeMarks
                 'season' => $season,
                 'episode' => $episode,
             ]);
+            // Кожні 10 серій (короткий серіал — після останньої) — колекційна картка.
+            app(CardDrops::class)->episodes($user, $movie);
         }
 
         return $this->keys($user, $movie);

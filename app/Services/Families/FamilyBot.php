@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Відправка повідомлень сім’ї в Discord (webhook) і Telegram (бот).
+ * Надсилання повідомлень сім’ї в Discord (webhook) і Telegram (бот).
  */
 class FamilyBot
 {
@@ -29,6 +29,47 @@ class FamilyBot
 
         if (($token = $family->webhook('telegram_token')) && ($chat = $family->webhook('telegram_chat'))) {
             $result['telegram'] = $this->telegram($token, $chat, $text, $title);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Картинка з підписом (підсумки сезону тощо): Discord — файл у вебхук, Telegram — sendPhoto.
+     *
+     * @return array<string, bool>
+     */
+    public function sendImage(Family $family, string $png, string $filename, string $text, ?string $title = null): array
+    {
+        $result = [];
+        if ($url = $family->webhook('discord')) {
+            try {
+                $result['discord'] = Http::timeout(20)->attach('files[0]', $png, $filename, ['Content-Type' => 'image/png'])
+                    ->post($url, ['payload_json' => json_encode([
+                        'username' => Str::limit("[{$family->tag}] {$family->name}", 80, ''),
+                        'embeds' => [[
+                            'title' => $title ? Str::limit($title, 250, '') : null,
+                            'description' => Str::limit($text, 4000),
+                            'color' => 0xFBBF24,
+                            'image' => ['url' => 'attachment://'.$filename],
+                            'footer' => ['text' => 'GameCon · сім’ї GTA RP'],
+                        ]],
+                        'attachments' => [['id' => 0, 'filename' => $filename]],
+                    ], JSON_UNESCAPED_UNICODE)])->successful();
+            } catch (Throwable) {
+                $result['discord'] = false;
+            }
+        }
+        if (($token = $family->webhook('telegram_token')) && ($chat = $family->webhook('telegram_chat'))) {
+            try {
+                $result['telegram'] = Http::timeout(20)->attach('photo', $png, $filename)
+                    ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                        'chat_id' => $chat,
+                        'caption' => Str::limit(($title ? $title."\n\n" : '').$text, 1000),
+                    ])->successful();
+            } catch (Throwable) {
+                $result['telegram'] = false;
+            }
         }
 
         return $result;

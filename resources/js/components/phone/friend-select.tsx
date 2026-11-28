@@ -32,7 +32,7 @@ export function FriendSelect({
             }
             aria-label={tr('Друг')}
             className={cn(
-                'h-10 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none focus:ring-2 focus:ring-primary',
+                'gc-solid-2 h-10 w-full rounded-xl px-3 text-sm text-white outline-none focus:ring-2 focus:ring-primary',
                 className,
             )}
         >

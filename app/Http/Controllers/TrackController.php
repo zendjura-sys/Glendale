@@ -3,11 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Track;
+use App\Services\Music\AudioProbe;
+use App\Services\Music\LyricsFinder;
+use App\Services\Music\MetadataEnricher;
+use App\Services\Music\MusicBrainz;
 use App\Services\MusicService;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -15,10 +21,15 @@ class TrackController extends Controller
 {
     public function __construct(private readonly MusicService $music) {}
 
-    public function store(Request $request, SiteSettings $settings): JsonResponse
+    public function store(Request $request, SiteSettings $settings, AudioProbe $probe): JsonResponse
     {
+        $formats = Track::uploadFormats();
         $data = $request->validate([
-            'audio' => ['required', 'file', 'mimes:'.implode(',', Track::AUDIO_MIMES), 'max:'.(int) $settings->get('music_max_track_mb') * 1024],
+            'audio' => ['required', 'file', 'max:'.(int) $settings->get('music_max_track_mb') * 1024, function (string $attribute, mixed $file, Closure $fail) use ($probe, $formats) {
+                if (! $this->acceptsAudio($file, $probe)) {
+                    $fail('Підтримуються аудіофайли: '.implode(', ', $formats).'.');
+                }
+            }],
             'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'cover_url' => ['nullable', 'url:https', 'max:500'],
             'title' => ['required', 'string', 'max:150'],
@@ -27,13 +38,29 @@ class TrackController extends Controller
             'genre' => ['nullable', 'string', 'max:40'],
             'duration' => ['nullable', 'integer', 'min:0', 'max:7200'],
         ], [
-            'audio.mimes' => 'Підтримуються аудіофайли: '.implode(', ', Track::AUDIO_MIMES).'.',
             'audio.max' => 'Файл завеликий (максимум '.(int) $settings->get('music_max_track_mb').' МБ).',
         ]);
 
         $track = $this->music->upload($request->user(), $request->file('audio'), $data, $request->file('cover'));
 
         return response()->json(['track' => $track->toCard(true)], 201);
+    }
+
+    /**
+     * Формат за вмістом файлу (як правило mimes) — для «рідних» форматів; решту (AIFF, APE, WMA…)
+     * за вмістом не розпізнати, тому їх приймаємо лише тоді, коли ffprobe бачить у файлі звук.
+     */
+    private function acceptsAudio(mixed $file, AudioProbe $probe): bool
+    {
+        if (! $file instanceof UploadedFile || ! $file->isValid() || $file->getPath() === '') {
+            return false;
+        }
+        if (in_array($file->guessExtension(), Track::AUDIO_MIMES, true)) {
+            return true;
+        }
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        return in_array($extension, Track::FFMPEG_MIMES, true) && $probe->available() && $probe->probe($file->getRealPath() ?: $file->getPathname()) !== null;
     }
 
     public function update(Request $request, Track $track): JsonResponse
@@ -46,18 +73,35 @@ class TrackController extends Controller
             'album' => ['nullable', 'string', 'max:150'],
             'genre' => ['nullable', 'string', 'max:40'],
             'lyrics' => ['nullable', 'string', 'max:8000'],
+            'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'cover_url' => ['nullable', 'url:https', 'max:500'],
+            // «Знайти дані автоматично»: обкладинка, вбудована у сам аудіофайл.
+            'cover_embedded' => ['nullable', 'boolean'],
+        ], [
+            'cover.image' => 'Обкладинка має бути картинкою (JPG, PNG або WebP).',
+            'cover.mimes' => 'Обкладинка має бути картинкою (JPG, PNG або WebP).',
+            'cover.max' => 'Обкладинка завелика (максимум 5 МБ).',
         ]);
         $coverUrl = $data['cover_url'] ?? null;
-        unset($data['cover_url']);
+        $embedded = (bool) ($data['cover_embedded'] ?? false);
+        unset($data['cover_url'], $data['cover'], $data['cover_embedded']);
         if (! app(Plugins::class)->on('lyrics')) {
             unset($data['lyrics']);
         }
-        $track->update(array_map(fn ($v) => is_string($v) ? (trim($v) ?: null) : $v, $data));
+        $track->fill(array_map(fn ($v) => is_string($v) ? (trim($v) ?: null) : $v, $data));
+        // Змінене вручну (зокрема очищене) — тепер «від користувача»: автоматика його не чіпає.
+        $track->markUserFields(array_keys($track->getDirty()));
+        $track->save();
 
-        // Обкладинка з автозаповнення (каталог iTunes); стару видаляємо лише після успішного збереження нової.
-        if (filled($coverUrl) && ($cover = $this->music->coverFromUrl((string) $coverUrl)) !== null) {
+        // Обкладинка з файлу (вікно редагування) або з автозаповнення (каталог iTunes);
+        // стару видаляємо лише після успішного збереження нової. Файл — POST з _method=PATCH.
+        $file = $request->file('cover');
+        $cover = $file !== null ? $this->music->storeCover($file)
+            : (filled($coverUrl) ? $this->coverFromUrl((string) $coverUrl)
+                : ($embedded ? $this->embeddedCover($track) : null));
+        if ($cover !== null) {
             $old = $track->cover_path;
+            $track->markUserFields(['cover']);
             $track->update(['cover_path' => $cover]);
             if ($old) {
                 Storage::disk('public')->delete($old);
@@ -67,11 +111,65 @@ class TrackController extends Controller
         return response()->json(['track' => $track->toCard(true)]);
     }
 
+    /**
+     * «Знайти дані автоматично» у вікні редагування: найкращі значення з усіх джерел (теги файлу,
+     * AcoustID, MusicBrainz, Discogs, Spotify, Last.fm, LRCLIB, Cover Art Archive) — без збереження.
+     */
+    public function metadata(Request $request, Track $track, MetadataEnricher $enricher): JsonResponse
+    {
+        abort_unless($this->music->canManageTrack($track, $request->user()), 403);
+
+        return response()->json($enricher->suggest($track));
+    }
+
+    /** Обкладинка за посиланням: каталог iTunes (застосунок) або джерела метаданих (Cover Art Archive, Spotify, Discogs). */
+    private function coverFromUrl(string $url): ?string
+    {
+        return $this->music->coverFromUrl($url)
+            ?? $this->music->coverFromUrl($url, MusicService::METADATA_COVER_HOSTS, ['User-Agent' => MusicBrainz::USER_AGENT]);
+    }
+
+    private function embeddedCover(Track $track): ?string
+    {
+        $disk = Storage::disk('public');
+        if ($track->path === '' || ! $disk->exists($track->path)) {
+            return null;
+        }
+        $temp = app(AudioProbe::class)->extractCover($disk->path($track->path));
+        if ($temp === null) {
+            return null;
+        }
+        try {
+            return $this->music->storeCover(new UploadedFile($temp, basename($temp), null, null, true));
+        } finally {
+            @unlink($temp);
+        }
+    }
+
     public function lyrics(Track $track): JsonResponse
     {
         app(Plugins::class)->ensure('lyrics');
 
+        // Немає свого тексту — шукаємо у відкритому каталозі й зберігаємо в трек (лише додаємо).
+        if (blank($track->lyrics) && ($found = app(LyricsFinder::class)->find($track->artist, $track->title, $track->album, $track->duration ?: null))) {
+            $track->forceFill(['lyrics' => $found, 'metadata_meta' => [...($track->metadata_meta ?? []), 'lyrics' => ['source' => 'lrclib', 'score' => 50]]])->saveQuietly();
+        }
+
         return response()->json(['lyrics' => $track->lyrics]);
+    }
+
+    /** Текст для пісні не з нашого каталогу (Spotify): за виконавцем, назвою й тривалістю. */
+    public function findLyrics(Request $request, LyricsFinder $finder): JsonResponse
+    {
+        app(Plugins::class)->ensure('lyrics');
+        $data = $request->validate([
+            'artist' => ['required', 'string', 'max:200'],
+            'title' => ['required', 'string', 'max:200'],
+            'album' => ['nullable', 'string', 'max:200'],
+            'duration' => ['nullable', 'integer', 'min:0', 'max:7200'],
+        ]);
+
+        return response()->json(['lyrics' => $finder->find($data['artist'], $data['title'], $data['album'] ?? null, $data['duration'] ?? null)]);
     }
 
     public function destroy(Request $request, Track $track): JsonResponse

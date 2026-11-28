@@ -91,7 +91,7 @@ class FcmClient
      * @param  array<string, string>  $data
      * @return self::SENT|self::GONE|self::FAILED
      */
-    public function send(string $deviceToken, string $title, string $body, array $data = [], ?string $channel = null, ?string $tag = null, bool $dataOnly = false): string
+    public function send(string $deviceToken, string $title, string $body, array $data = [], ?string $channel = null, ?string $tag = null, bool $dataOnly = false, ?int $ttl = null): string
     {
         $credentials = $this->credentials();
         $access = $this->accessToken();
@@ -101,6 +101,8 @@ class FcmClient
 
         $android = array_filter([
             'priority' => 'HIGH',
+            // Термінове (тривога): якщо телефон не отримав за ttl секунд — FCM не доставляє застарілий пуш.
+            'ttl' => $ttl !== null ? $ttl.'s' : null,
             'notification' => array_filter([
                 'channel_id' => $channel,
                 'tag' => $tag,

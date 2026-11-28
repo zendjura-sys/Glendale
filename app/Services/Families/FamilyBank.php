@@ -147,7 +147,8 @@ class FamilyBank
             ]);
 
             $member = $locked->member;
-            $this->post($family, $member, 'cashout_paid', 0, -$locked->amount, $officer, 'Виплата в грі '.$member->displayName(), $locked);
+            // Виплачуються зароблені гроші учасника (уже списані з його балансу заявкою) — казна не змінюється.
+            $this->post($family, $member, 'cashout_paid', 0, 0, $officer, 'Виплата в грі '.$member->displayName().' · '.Money::format($locked->amount), $locked);
             $this->audit->log($family, 'MONEY_CASHOUT', $officer, $member, [
                 'cashout_id' => $locked->id,
                 'amount' => $locked->amount,

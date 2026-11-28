@@ -22,7 +22,7 @@ void main() {
   testWidgets('сторінка тайтлу малюється', (tester) async {
     if (out != null) {
       for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
-        await _font('Montserrat', 'fonts/Montserrat-$w.ttf');
+        await _font('Onest', 'fonts/Onest-$w.ttf');
       }
       final lucide = '${Platform.environment['HOME']}/.pub-cache/hosted/pub.dev/lucide_icons_flutter-3.1.21/assets';
       await _font('packages/lucide_icons_flutter/Lucide', '$lucide/lucide.ttf');
@@ -35,7 +35,7 @@ void main() {
     addTearDown(tester.view.reset);
     final key = GlobalKey();
     await tester.pumpWidget(MaterialApp(
-      theme: ThemeData(brightness: Brightness.dark, fontFamily: 'Montserrat', scaffoldBackgroundColor: voidColor),
+      theme: ThemeData(brightness: Brightness.dark, fontFamily: 'Onest', scaffoldBackgroundColor: voidColor),
       home: AppScope(
         session: session,
         player: TrackPlayer(),

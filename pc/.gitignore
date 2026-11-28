@@ -1,0 +1,8 @@
+node_modules/
+out/
+dist/
+native/target/
+native/*.node
+native/index.js
+native/index.d.ts
+*.tsbuildinfo

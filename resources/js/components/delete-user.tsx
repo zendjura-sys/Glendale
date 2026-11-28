@@ -37,7 +37,7 @@ export default function DeleteUser() {
                         {tr('Видалити акаунт')}
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="glass-strong rounded-3xl border-white/10 text-white">
+                <DialogContent className="glass-strong rounded-dialog border-white/10 text-white">
                     <DialogTitle>{tr('Точно видалити акаунт?')}</DialogTitle>
                     <DialogDescription className="text-white/50">
                         {tr(

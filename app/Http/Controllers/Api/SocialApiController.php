@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Services\Auth\SocialLogin;
 use App\Services\FriendshipService;
+use App\Services\Phones\PhoneNumbers;
 use App\Services\PostPresenter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -140,6 +141,8 @@ class SocialApiController extends ApiController
     {
         $viewer = $this->user($request);
         abort_if($user->isBanned() && ! $viewer->isStaff(), 404);
+        // Заморожену власником сторінку не видно й у застосунку — як на сайті (profile/frozen).
+        abort_if($user->isFrozen() && ! $viewer->is($user) && ! $viewer->isStaff(), 404, 'Сторінку заморожено.');
 
         $relation = $this->friendships->status($viewer, $user);
         $open = $viewer->is($user) || ! $user->is_private || $relation === FriendshipService::FRIENDS || $viewer->isStaff();
@@ -163,6 +166,8 @@ class SocialApiController extends ApiController
                 'gender' => $open ? $user->gender : null,
                 'relation' => $relation,
                 'role' => $user->role,
+                // Внутрішній номер, як у профілі на сайті (з урахуванням приватності).
+                'phone' => app(PhoneNumbers::class)->profileCard($viewer, $user),
                 'created_at' => $user->created_at?->toIso8601String(),
                 'friends' => count($this->friendships->friendIds($user)),
                 'friends_preview' => $open
@@ -188,9 +193,11 @@ class SocialApiController extends ApiController
             'website' => ['nullable', 'url:http,https', 'max:255'],
             'is_private' => ['sometimes', 'boolean'],
             'message_privacy' => ['sometimes', Rule::in(User::MESSAGE_PRIVACY)],
+            'call_privacy' => ['sometimes', Rule::in(User::CALL_PRIVACY)],
+            'group_add' => ['sometimes', Rule::in(User::GROUP_ADD_PRIVACY)],
         ]);
 
-        $user->fill($data)->save();
+        $user->fill($user->applyContactPrivacy($data))->save();
 
         return response()->json(['user' => AccountPresenter::make($user->refresh())]);
     }
@@ -234,7 +241,7 @@ class SocialApiController extends ApiController
 
     public function notifications(Request $request, NotificationController $notifications): JsonResponse
     {
-        return $notifications->index($request);
+        return $notifications->list($request);
     }
 
     public function readNotifications(Request $request, NotificationController $notifications): JsonResponse

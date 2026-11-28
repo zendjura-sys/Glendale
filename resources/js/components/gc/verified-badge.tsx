@@ -2,16 +2,49 @@ import { useId } from 'react';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
 
-export function VerifiedBadge({ className }: { className?: string }) {
+/** Кольори й підписи позначки за видом (верифікація 2.0). */
+const KINDS: Record<string, { from: string; to: string; label: () => string }> =
+    {
+        identity: {
+            from: '#2f7bff',
+            to: '#22d3ee',
+            label: () => tr('Підтверджена особа'),
+        },
+        creator: {
+            from: '#7c3aed',
+            to: '#c084fc',
+            label: () => tr('Підтверджений автор'),
+        },
+        business: {
+            from: '#d97706',
+            to: '#facc15',
+            label: () => tr('Підтверджений бізнес'),
+        },
+        organization: {
+            from: '#475569',
+            to: '#94a3b8',
+            label: () => tr('Підтверджена організація'),
+        },
+    };
+
+export function VerifiedBadge({
+    className,
+    kind,
+}: {
+    className?: string;
+    kind?: string | null;
+}) {
+    const look = (kind && KINDS[kind]) || null;
+    const label = look ? look.label() : tr('Підтверджений профіль');
     const gradientId = `gc-verified${useId().replace(/[^\w-]/g, '')}`;
 
     return (
         <svg
             viewBox="0 0 24 24"
             className={cn('inline-block size-4 shrink-0', className)}
-            aria-label={tr('Підтверджений профіль')}
+            aria-label={label}
         >
-            <title>{tr('Підтверджений профіль')}</title>
+            <title>{label}</title>
             <defs>
                 <linearGradient
                     id={gradientId}
@@ -21,8 +54,8 @@ export function VerifiedBadge({ className }: { className?: string }) {
                     y2="24"
                     gradientUnits="userSpaceOnUse"
                 >
-                    <stop stopColor="#4f8bff" />
-                    <stop offset="1" stopColor="#a855f7" />
+                    <stop stopColor={look?.from ?? '#2f7bff'} />
+                    <stop offset="1" stopColor={look?.to ?? '#22d3ee'} />
                 </linearGradient>
             </defs>
             <path

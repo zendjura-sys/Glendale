@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/react';
 import { KeyRound } from 'lucide-react';
 import { destroy } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyRegistrationController';
-import Heading from '@/components/heading';
+import { SettingsCard } from '@/layouts/settings/layout';
 import PasskeyItem from '@/components/passkey-item';
 import PasskeyRegistration from '@/components/passkey-register';
 import type { Passkey } from '@/types/auth';
@@ -45,30 +45,29 @@ export default function ManagePasskeys(props: Props) {
     }
 
     return (
-        <div className="glass space-y-6 rounded-3xl p-6 sm:p-7">
-            <Heading
-                variant="small"
-                title={tr('Ключі доступу')}
-                description={tr(
-                    'Вхід без пароля — відбитком пальця, Face ID або ключем безпеки',
-                )}
-            />
+        <SettingsCard
+            title={tr('Ключі доступу')}
+            description={tr(
+                'Вхід без пароля — відбитком пальця, Face ID або ключем безпеки',
+            )}
+        >
+            <div className="space-y-6">
+                <div className="overflow-hidden rounded-xl border border-[var(--gc-hairline)]">
+                    {passkeys.length > 0 ? (
+                        passkeys.map((passkey) => (
+                            <PasskeyItem
+                                key={passkey.id}
+                                passkey={passkey}
+                                onDelete={handleDelete}
+                            />
+                        ))
+                    ) : (
+                        <EmptyState />
+                    )}
+                </div>
 
-            <div className="overflow-hidden rounded-2xl border border-white/[0.07]">
-                {passkeys.length > 0 ? (
-                    passkeys.map((passkey) => (
-                        <PasskeyItem
-                            key={passkey.id}
-                            passkey={passkey}
-                            onDelete={handleDelete}
-                        />
-                    ))
-                ) : (
-                    <EmptyState />
-                )}
+                <PasskeyRegistration onSuccess={handleRegisterSuccess} />
             </div>
-
-            <PasskeyRegistration onSuccess={handleRegisterSuccess} />
-        </div>
+        </SettingsCard>
     );
 }

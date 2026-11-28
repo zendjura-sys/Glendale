@@ -11,6 +11,7 @@ import {
     UserPlus,
     UserRoundSearch,
     Vote,
+    Flame,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -29,6 +30,8 @@ export type Quest = {
     claimed: boolean;
     /** GameCon+: досвід без очок сезону. */
     bonus?: boolean;
+    /** Челендж тижня: скільки людей уже виконали. */
+    finishers?: number;
 };
 
 const ICONS: Record<string, LucideIcon> = {
@@ -44,6 +47,19 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 /** Назви завдань — так само, як DailyQuests::POOL. */
+/** Назви челенджів тижня (№274) — ті самі, що в WeeklyChallenges::POOL. */
+const WEEKLY_TITLES = (): Record<string, string> => ({
+    post: tr('Опублікуйте 5 записів'),
+    comment: tr('Залиште 20 коментарів'),
+    like: tr('Вподобайте 40 записів'),
+    vote: tr('Голосуйте за сервер 5 днів'),
+    moment: tr('Поділіться 3 моментами'),
+    party: tr('Зіграйте в 3 паті'),
+    friend: tr('Додайте 3 друзів'),
+    photo: tr('Завантажте 5 фото'),
+    story: tr('Опублікуйте 4 сторіс'),
+});
+
 const TITLES = (): Record<string, string> => ({
     post: tr('Опублікуйте запис'),
     comment: tr('Залиште 3 коментарі'),
@@ -69,11 +85,18 @@ const LINKS: Record<string, string> = {
     story: '/feed',
 };
 
-export function QuestList({ quests }: { quests: Quest[] }) {
+export function QuestList({
+    quests,
+    weekly = false,
+}: {
+    quests: Quest[];
+    /** Челенджі тижня (№274): свої назви з сервера й свій адрес нагороди. */
+    weekly?: boolean;
+}) {
     const [busy, setBusy] = useState<string | null>(null);
 
     return (
-        <ul className="space-y-2">
+        <ul className="divide-y divide-white/[0.06]">
             {quests.map((quest) => {
                 const Icon = ICONS[quest.icon] ?? Target;
                 const percent = Math.round(
@@ -83,19 +106,14 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                 return (
                     <li
                         key={quest.key}
-                        className={cn(
-                            'flex items-center gap-3 rounded-2xl px-3 py-3 transition',
-                            quest.claimed
-                                ? 'bg-emerald-400/[0.06]'
-                                : 'bg-white/[0.04]',
-                        )}
+                        className="flex items-center gap-3 px-1 py-3 transition first:pt-1 last:pb-1"
                     >
                         <span
                             className={cn(
-                                'flex size-10 shrink-0 items-center justify-center rounded-xl',
+                                'flex size-9 shrink-0 items-center justify-center rounded-xl',
                                 quest.claimed
                                     ? 'bg-emerald-400/15 text-emerald-200'
-                                    : 'bg-gc-indigo/15 text-[#c4b5fd]',
+                                    : 'bg-primary/12 text-sky-400',
                             )}
                         >
                             <Icon className="size-5" />
@@ -105,8 +123,18 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                                 href={LINKS[quest.key] ?? '/feed'}
                                 className="block text-sm font-medium break-words text-white hover:underline"
                             >
-                                {TITLES()[quest.key] ?? quest.title}
+                                {weekly
+                                    ? (WEEKLY_TITLES()[quest.key] ??
+                                      quest.title)
+                                    : (TITLES()[quest.key] ?? quest.title)}
                             </Link>
+                            {weekly && (quest.finishers ?? 0) > 0 && (
+                                <span className="mt-0.5 block text-[11px] text-white/45">
+                                    {tr('Уже виконали: {n}', {
+                                        n: quest.finishers ?? 0,
+                                    })}
+                                </span>
+                            )}
                             {quest.bonus && (
                                 <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-indigo-200/80">
                                     <PlusBadge className="size-3 rounded-[4px] [&_svg]:size-2.5" />
@@ -114,13 +142,13 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                                 </span>
                             )}
                             <div className="mt-1.5 flex items-center gap-2">
-                                <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
+                                <span className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
                                     <span
                                         className={cn(
                                             'block h-full rounded-full transition-all',
                                             quest.done
                                                 ? 'bg-emerald-400'
-                                                : 'bg-gc-indigo',
+                                                : 'bg-primary',
                                         )}
                                         style={{ width: `${percent}%` }}
                                     />
@@ -140,7 +168,9 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                                 disabled={busy !== null}
                                 onClick={() =>
                                     router.post(
-                                        `/quests/${quest.key}/claim`,
+                                        weekly
+                                            ? `/quests/week/${quest.key}/claim`
+                                            : `/quests/${quest.key}/claim`,
                                         {},
                                         {
                                             preserveScroll: true,
@@ -154,7 +184,7 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                                 {tr('Забрати +{xp}', { xp: quest.xp })}
                             </button>
                         ) : (
-                            <span className="shrink-0 rounded-lg bg-white/[0.06] px-2 py-1 text-xs text-white/55">
+                            <span className="shrink-0 text-xs font-medium text-white/50 tabular-nums">
                                 +{quest.xp} XP
                             </span>
                         )}
@@ -170,10 +200,10 @@ export function FeedQuests({ quests }: { quests: Quest[] }) {
     if (quests.every((q) => q.claimed)) return null;
 
     return (
-        <section className="glass rounded-3xl p-4">
+        <section className="gc-solid rounded-2xl p-4">
             <div className="mb-3 flex items-center justify-between gap-2 px-1">
                 <h2 className="flex items-center gap-2 font-display text-[13px] font-semibold text-white/90">
-                    <Target className="size-4 text-gc-lilac-400" />
+                    <Target className="size-4 text-sky-400" />
                     {tr('Завдання дня')}
                 </h2>
                 <Link
@@ -184,6 +214,29 @@ export function FeedQuests({ quests }: { quests: Quest[] }) {
                 </Link>
             </div>
             <QuestList quests={quests} />
+        </section>
+    );
+}
+
+/** Живий блок лобі: челенджі тижня (№274). Усе забрано — блоку немає. */
+export function WeeklyChallenges({ quests }: { quests: Quest[] }) {
+    if (quests.every((q) => q.claimed)) return null;
+
+    return (
+        <section className="gc-solid rounded-2xl p-4">
+            <div className="mb-3 flex items-center justify-between gap-2 px-1">
+                <h2 className="flex items-center gap-2 font-display text-[13px] font-semibold text-white/90">
+                    <Flame className="size-4 text-orange-300" />
+                    {tr('Челенджі тижня')}
+                </h2>
+                <Link
+                    href="/quests"
+                    className="text-xs font-medium text-white/45 hover:text-white"
+                >
+                    {tr('Усі завдання')}
+                </Link>
+            </div>
+            <QuestList quests={quests} weekly />
         </section>
     );
 }

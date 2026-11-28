@@ -28,8 +28,8 @@ export const STATUS_LABELS = (): Record<string, string> => ({
 
 export const STATUS_TONE: Record<string, string> = {
     active: 'bg-emerald-400/10 text-emerald-200',
-    retired: 'bg-white/[0.06] text-white/60',
-    dead: 'bg-rose-400/10 text-rose-200',
+    retired: 'gc-solid-2 text-white/60',
+    dead: 'bg-red-400/10 text-red-400',
 };
 
 /** Портрет персонажа: фото або ініціали на тлі акценту. */
@@ -83,7 +83,7 @@ export function CharacterRow({
     return (
         <Link
             href={character.href}
-            className="flex min-w-0 items-center gap-3 rounded-2xl px-1.5 py-1.5 transition hover:bg-white/[0.05]"
+            className="flex min-w-0 items-center gap-3 rounded-2xl px-1.5 py-1.5 transition hover:bg-[var(--gc-l3)]"
         >
             <CharacterPortrait
                 character={character}
@@ -108,7 +108,7 @@ export function CharacterRow({
             {character.status !== 'active' && (
                 <span
                     className={cn(
-                        'shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium',
+                        'shrink-0 rounded-chip px-2 py-0.5 text-[11px] font-medium',
                         STATUS_TONE[character.status],
                     )}
                 >
@@ -124,9 +124,10 @@ export function CharactersWidget({
     characters,
     isSelf,
 }: {
-    characters: CharacterCardData[];
+    characters?: CharacterCardData[] | null;
     isSelf: boolean;
 }) {
+    const list = characters ?? [];
     return (
         <Widget
             title={tr('Персонажі RP')}
@@ -143,7 +144,7 @@ export function CharactersWidget({
                 )
             }
         >
-            {characters.length === 0 ? (
+            {list.length === 0 ? (
                 <p className="px-1 text-sm text-white/50">
                     {tr(
                         'Створіть персонажа: ім’я, біографія, сім’я й історія на сервері.',
@@ -151,7 +152,7 @@ export function CharactersWidget({
                 </p>
             ) : (
                 <div className="space-y-0.5">
-                    {characters.map((character) => (
+                    {list.map((character) => (
                         <CharacterRow
                             key={character.id}
                             character={character}

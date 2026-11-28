@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
+import { isCoarsePointer } from '@/lib/prefetch';
 import { cn } from '@/lib/utils';
 
 /** Сторінки з власною постійною «оболонкою» анімують лише вміст усередині неї. */
@@ -13,9 +14,8 @@ function viewTransitionActive(): boolean {
 }
 
 /**
- * Обгортка контенту сторінки. На першому показі дочірні блоки з’являються
- * каскадом (.gc-page). Під час переходу View Transitions знімок має бути
- * вже готовою сторінкою, тому каскад із opacity: 0 вимикається.
+ * Обгортка контенту сторінки. На ПК — каскад появи (.gc-page).
+ * На телефоні одразу settled: без анімації opacity/translate.
  */
 export function PageTransition({
     children,
@@ -31,17 +31,22 @@ export function PageTransition({
         ? undefined
         : SHELLS.find(([prefix]) => component.startsWith(prefix));
     const pageKey = shell ? shell[1] : component;
+    const mobile = typeof window !== 'undefined' && isCoarsePointer();
     const [snapshot, setSnapshot] = useState(() => ({
         key: pageKey,
-        settled: viewTransitionActive(),
+        settled: mobile || viewTransitionActive(),
     }));
 
     if (snapshot.key !== pageKey) {
-        setSnapshot({ key: pageKey, settled: viewTransitionActive() });
+        setSnapshot({
+            key: pageKey,
+            settled: mobile || viewTransitionActive(),
+        });
     }
 
     const settled =
-        snapshot.key === pageKey ? snapshot.settled : viewTransitionActive();
+        mobile ||
+        (snapshot.key === pageKey ? snapshot.settled : viewTransitionActive());
 
     return (
         <div

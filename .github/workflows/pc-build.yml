@@ -1,0 +1,65 @@
+# GameCon для ПК (pc/): Electron + React 19 + нативне ядро Rust (NAPI-RS).
+# Результат: артефакт «gamecon-pc» — установник Squirrel як у Discord (GameConSetup.exe з анімованою
+# заставкою, встановлення в один клік, автооновлення через RELEASES/nupkg).
+# Підпис — сертифікатом GCDev Software із GitHub Secrets (WINDOWS_CERTIFICATE / WINDOWS_CERTIFICATE_PASSWORD), коли вони є.
+name: PC build
+
+on:
+  push:
+    paths:
+      - pc/**
+      - .github/workflows/pc-build.yml
+  workflow_dispatch:
+
+concurrency:
+  group: pc-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    if: github.repository == 'zendjura-sys/Glendale'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: pc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: pc/package-lock.json
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            pc/native/target
+          key: pc-native-${{ runner.os }}-${{ hashFiles('pc/native/Cargo.toml', 'pc/native/src/**') }}
+      - name: Залежності
+        run: npm ci
+      - name: Перевірка типів
+        run: npm run typecheck
+      - name: Нативне ядро (Rust) і збірка
+        run: npm run build
+      - name: Перевірка ядра
+        run: npm run test:native
+      - name: Установник
+        shell: pwsh
+        env:
+          CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          if (-not $env:CSC_LINK) { Remove-Item Env:CSC_LINK; Remove-Item Env:CSC_KEY_PASSWORD; Write-Host 'Сертифіката немає — збірка без підпису.' }
+          npx electron-builder --win squirrel --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gamecon-pc
+          path: |
+            pc/dist/squirrel-windows/*.exe
+            pc/dist/squirrel-windows/*.nupkg
+            pc/dist/squirrel-windows/RELEASES
+          retention-days: 30

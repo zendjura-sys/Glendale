@@ -6,7 +6,7 @@ use App\Services\Games\GameCatalog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
-/** Оновлює каталог мультиплеєрних ігор з IGDB або RAWG; без ключів — лише стартовий список. */
+/** Оновлює каталог мультиплеєрних ігор з усіх налаштованих джерел (IGDB і RAWG); без ключів — лише стартовий список. */
 class GamesSync extends Command
 {
     protected $signature = 'games:sync {--pages=5 : Скільки сторінок на кожен розділ (IGDB — по 500 ігор, RAWG — по 40)}';

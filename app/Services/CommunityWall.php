@@ -8,6 +8,7 @@ use App\Models\CommunityMember;
 use App\Models\Post;
 use App\Models\User;
 use App\Notifications\CommunityActivity;
+use App\Services\Analytics\PageAnalytics;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
@@ -183,6 +184,8 @@ class CommunityWall
             'comments' => Comment::query()->whereIn('post_id', $postIds)->where('created_at', '>=', $since)->count(),
             'active_share' => $community->members_count > 0 ? (int) round($writers * 100 / $community->members_count) : 0,
             'weeks' => $weeks,
+            // Перегляди сторінки й звідки приходять (№288).
+            'page' => app(PageAnalytics::class)->report('community', $community->id),
         ];
     }
 

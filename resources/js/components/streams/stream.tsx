@@ -25,7 +25,7 @@ export function LiveBadge({ className }: { className?: string }) {
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-md bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white',
+                'inline-flex items-center gap-1 rounded-md bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white',
                 className,
             )}
         >
@@ -43,9 +43,9 @@ export function ProfileStream({ stream }: { stream: StreamInfo }) {
                 href={stream.url}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="glass flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/75 transition hover:text-white"
+                className="gc-solid flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/75 transition hover:text-white"
             >
-                <Tv className="size-4 shrink-0 text-gc-lilac-300" />
+                <Tv className="size-4 shrink-0 text-sky-400" />
                 <span className="min-w-0 flex-1 truncate">
                     {tr('Стрімить на {platform}', {
                         platform: stream.platform_label,
@@ -57,7 +57,7 @@ export function ProfileStream({ stream }: { stream: StreamInfo }) {
     }
 
     return (
-        <section className="glass overflow-hidden rounded-3xl">
+        <section className="gc-solid overflow-hidden rounded-2xl">
             {stream.embed && (
                 <div className="relative aspect-video w-full bg-black">
                     <iframe
@@ -107,10 +107,16 @@ export function FriendsLive({ streams }: { streams: StreamInfo[] }) {
     if (streams.length === 0) return null;
 
     return (
-        <section className="glass rounded-3xl p-4">
+        <section className="gc-solid rounded-2xl p-4">
             <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold text-white/90">
-                <Radio className="size-4 text-rose-400" />
+                <Radio className="size-4 text-red-400" />
                 {tr('Друзі в ефірі')}
+                <Link
+                    href="/streams/live"
+                    className="ml-auto text-xs font-medium text-sky-400 hover:underline"
+                >
+                    {tr('Усі ефіри')}
+                </Link>
             </h2>
             <div className="-mx-1 scrollbar-none flex gap-2 overflow-x-auto px-1">
                 {streams.map((s) =>
@@ -118,7 +124,7 @@ export function FriendsLive({ streams }: { streams: StreamInfo[] }) {
                         <Link
                             key={s.user.id}
                             href={`/${s.user.username}`}
-                            className="flex w-56 shrink-0 items-center gap-3 rounded-2xl bg-white/[0.04] p-2.5 transition hover:bg-white/[0.07]"
+                            className="gc-solid-2 flex w-56 shrink-0 items-center gap-3 rounded-2xl p-2.5 transition hover:bg-[var(--gc-l3)]"
                         >
                             <span className="relative">
                                 <UserAvatar
@@ -126,7 +132,6 @@ export function FriendsLive({ streams }: { streams: StreamInfo[] }) {
                                     size="md"
                                     showOnline={false}
                                 />
-                                <LiveBadge className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1 py-0 text-[8px]" />
                             </span>
                             <span className="min-w-0">
                                 <span className="block truncate text-sm font-semibold text-white">
@@ -154,7 +159,7 @@ export function StreamSettings({ stream }: { stream: StreamInfo | null }) {
 
     return (
         <div className="space-y-3">
-            <div className="flex gap-1 rounded-xl bg-white/[0.04] p-1">
+            <div className="gc-solid-2 flex gap-1 rounded-xl p-1">
                 {(['twitch', 'youtube'] as const).map((p) => (
                     <button
                         key={p}
@@ -198,10 +203,10 @@ export function StreamSettings({ stream }: { stream: StreamInfo | null }) {
                 </button>
             </form>
             {form.errors.channel && (
-                <p className="text-xs text-rose-300">{form.errors.channel}</p>
+                <p className="text-xs text-red-400">{form.errors.channel}</p>
             )}
             {stream && (
-                <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/[0.04] px-4 py-3">
+                <div className="gc-solid-2 flex flex-wrap items-center gap-2 rounded-2xl px-4 py-3">
                     <span className="min-w-0 flex-1 text-sm text-white/70">
                         {stream.live ? (
                             <span className="inline-flex items-center gap-2">
@@ -233,7 +238,7 @@ export function StreamSettings({ stream }: { stream: StreamInfo | null }) {
                         onClick={() =>
                             router.delete('/settings/stream', options)
                         }
-                        className="h-9 rounded-xl px-3 text-sm font-medium text-rose-200 hover:bg-rose-400/10"
+                        className="h-9 rounded-xl px-3 text-sm font-medium text-red-400 hover:bg-red-400/10"
                     >
                         {tr('Прибрати')}
                     </button>

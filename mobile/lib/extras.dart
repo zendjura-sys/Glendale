@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'discussions.dart';
 import 'cinema.dart';
 import 'events.dart';
 import 'i18n.dart';
@@ -15,6 +18,7 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'skeletons.dart';
 
 // Розділи сайту, яких бракувало в застосунку: моменти, завдання й сезон, збережене, чернетки, обрані
 // повідомлення, релізи, «Мої десять» і порівняння серверів. Дані й дії — ті самі контролери через /api/v1/site.
@@ -54,7 +58,7 @@ mixin _SitePage<T extends StatefulWidget> on State<T> {
         EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати ще'), onAction: load),
       ]);
     }
-    return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    return const ScreenSkeleton();
   }
 }
 
@@ -145,6 +149,10 @@ class _MomentsScreenState extends State<MomentsScreen> with _SitePage {
             },
           ),
         ],
+        if (d['clip_of_week'] is Map) ...[
+          const SizedBox(height: 12),
+          _ClipOfWeek(data: mapOf(d['clip_of_week'])),
+        ],
         const SizedBox(height: 12),
         if (moments.isEmpty)
           EmptyState(icon: LucideIcons.clapperboard, title: tr('Моментів поки немає'), text: tr('Поділіться першим кліпом — посиланням на YouTube, Twitch або Medal.'), action: tr('Додати момент'), onAction: _add),
@@ -154,6 +162,58 @@ class _MomentsScreenState extends State<MomentsScreen> with _SitePage {
             child: _MomentCard(moment: m, onLike: () => _like(m), onDelete: m['can_delete'] == true ? () => _delete(m) : null),
           ),
       ],
+    );
+  }
+}
+
+/// «Кліп тижня»: переможець / лідер (дані з `/site/moments`).
+class _ClipOfWeek extends StatelessWidget {
+  const _ClipOfWeek({required this.data});
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final winner = data['winner'] is Map ? mapOf(data['winner']) : null;
+    final leader = data['leader'] is Map ? mapOf(data['leader']) : null;
+    if (winner == null && leader == null) return const SizedBox.shrink();
+    final moment = mapOf((winner ?? leader)?['moment']);
+    final likes = intOf((winner ?? leader)?['likes']);
+    return Glass(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(winner != null ? LucideIcons.trophy : LucideIcons.flame, size: 18, color: gold),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  winner != null ? tr('Кліп тижня') : tr('Лідер цього тижня'),
+                  style: body(15, weight: FontWeight.w700),
+                ),
+              ),
+              Pill(label: '$likes', icon: LucideIcons.heart, color: dangerSoft),
+            ],
+          ),
+          if (winner == null) ...[
+            const SizedBox(height: 6),
+            Text(tr('Перший «Кліп тижня» оберемо в понеділок — кліп із найбільшою кількістю вподобань за тиждень.'), style: body(12.5, color: muted)),
+          ],
+          if (text(moment['title']) != null) ...[
+            const SizedBox(height: 8),
+            Text(text(moment['title'])!, style: body(14, weight: FontWeight.w600)),
+          ],
+          if (text(moment['url']) != null) ...[
+            const SizedBox(height: 8),
+            GhostButton(
+              label: tr('Дивитися'),
+              icon: LucideIcons.play,
+              compact: true,
+              onPressed: () => launchUrl(Uri.parse(text(moment['url'])!), mode: LaunchMode.externalApplication),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -199,7 +259,7 @@ class _MomentCard extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(text(moment['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700)),
+            FitText(text(moment['title']) ?? '', style: body(15, weight: FontWeight.w700), maxLines: 2),
             const SizedBox(height: 6),
             Row(children: [
               GestureDetector(
@@ -208,19 +268,14 @@ class _MomentCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  [text(user['name']), text(game['name']), text(server['name']), ago(moment['created_at'])].whereType<String>().where((s) => s.isNotEmpty).join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: body(12.5, color: muted),
-                ),
+                child: FitText([text(user['name']), text(game['name']), text(server['name']), ago(moment['created_at'])].whereType<String>().where((s) => s.isNotEmpty).join(' · '), style: body(12.5, color: muted)),
               ),
               TextButton.icon(
                 onPressed: onLike,
                 icon: Icon(LucideIcons.heart, size: 18, color: moment['liked'] == true ? pink : muted),
                 label: Text(compact(moment['likes']), style: body(13, color: moment['liked'] == true ? pink : muted, weight: FontWeight.w600)),
               ),
-              if (onDelete != null) IconButton(onPressed: onDelete, icon: const Icon(LucideIcons.trash2, size: 18, color: faint)),
+              if (onDelete != null) IconButton(onPressed: onDelete, icon: Icon(LucideIcons.trash2, size: 18, color: faint)),
             ]),
           ]),
         ),
@@ -357,6 +412,11 @@ class _QuestsScreenState extends State<QuestsScreen> with _SitePage {
     if (await attempt(context, () => api.post(Api.site('/quests/$key/claim')))) await load();
   }
 
+  /// Челендж тижня (№274): свій адрес нагороди.
+  Future<void> _claimWeekly(String key) async {
+    if (await attempt(context, () => api.post(Api.site('/quests/week/$key/claim')))) await load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final d = data;
@@ -387,6 +447,41 @@ class _QuestsScreenState extends State<QuestsScreen> with _SitePage {
           ),
           const SizedBox(height: 8),
         ],
+        // Челенджі тижня (№274): однакові для всіх, досвід — у сезон.
+        if (maps(d['weekly']).isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            const Icon(LucideIcons.flame, size: 18, color: Color(0xFFFDBA74)),
+            const SizedBox(width: 8),
+            Expanded(child: Text(tr('Челенджі тижня'), style: body(16, weight: FontWeight.w700))),
+            Text(tr('однакові для всіх'), style: body(12, color: muted)),
+          ]),
+          const SizedBox(height: 8),
+          for (final q in maps(d['weekly'])) ...[
+            _QuestTile(
+              quest: q,
+              title: text(q['title']) ?? '',
+              icon: _questIcons[text(q['icon'])] ?? LucideIcons.flame,
+              onClaim: () => _claimWeekly(text(q['key'])!),
+              onGo: _questLinks[text(q['key'])] == null ? null : () => context.go(_questLinks[text(q['key'])]!),
+            ),
+            if (intOf(q['finishers']) > 0)
+              Padding(padding: const EdgeInsets.only(left: 6, top: 4), child: Text(tr('Уже виконали: {n}', {'n': intOf(q['finishers'])}), style: body(11.5, color: muted))),
+            const SizedBox(height: 8),
+          ],
+        ],
+        const SizedBox(height: 10),
+        Glass(
+          padding: const EdgeInsets.all(14),
+          radius: 12,
+          onTap: () => context.push('/season'),
+          child: Row(children: [
+            Icon(LucideIcons.ticket, color: primary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Text(tr('Сезонний пропуск'), style: body(14, weight: FontWeight.w600))),
+            Text(tr('Нагороди за очки сезону'), style: body(12, color: muted)),
+          ]),
+        ),
         const SizedBox(height: 10),
         Glass(
           padding: const EdgeInsets.all(14),
@@ -449,7 +544,7 @@ class _QuestTile extends StatelessWidget {
             const SizedBox(height: 6),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(value: progress / target, minHeight: 5, color: claimed ? green : primary, backgroundColor: Colors.white.withValues(alpha: 0.07)),
+              child: LinearProgressIndicator(value: progress / target, minHeight: 5, color: claimed ? green : primary, backgroundColor: fg.withValues(alpha: 0.07)),
             ),
             const SizedBox(height: 4),
             Text('$progress / $target · +${quest['xp']} XP', style: body(12, color: muted)),
@@ -515,11 +610,11 @@ class _SavedScreenState extends State<SavedScreen> with _SitePage {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(text(item['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600)),
+                          FitText(text(item['title']) ?? '', style: body(15, weight: FontWeight.w600)),
                           Text(switch (item['kind']) { 'movie' => tr('Кіно'), 'game' => tr('Гра'), _ => tr('Сервер') }, style: body(12.5, color: muted)),
                         ]),
                       ),
-                      const Icon(LucideIcons.chevronRight, color: muted),
+                      Icon(LucideIcons.chevronRight, color: muted),
                     ]),
                   ),
           ),
@@ -577,7 +672,20 @@ class _SubjectActionsState extends State<SubjectActions> {
 
   @override
   Widget build(BuildContext context) {
+    final modules = AppScope.read(context).session.modules;
+    final talk = (modules == null || modules.contains('discussions')) && const {'game', 'server', 'movie', 'family', 'clan', 'community', 'article'}.contains(widget.kind);
     return Row(mainAxisSize: MainAxisSize.min, children: [
+      // Обговорення предмета (теми й відповіді) — окремим екраном.
+      if (talk) ...[
+        RoundIcon(
+          icon: LucideIcons.messagesSquare,
+          color: ink,
+          size: widget.size,
+          tooltip: tr('Обговорення'),
+          onTap: () => openDiscussions(context, widget.kind, intOf(widget.id)),
+        ),
+        const SizedBox(width: 6),
+      ],
       RoundIcon(
         icon: saved ? LucideIcons.bookmarkCheck : LucideIcons.bookmark,
         color: saved ? gold : ink,
@@ -650,7 +758,7 @@ class _DraftsScreenState extends State<DraftsScreen> with _SitePage {
               padding: const EdgeInsets.all(14),
               radius: 18,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(text(draft['body']) ?? tr('Без тексту'), maxLines: 6, overflow: TextOverflow.ellipsis, style: body(14.5).copyWith(height: 1.4)),
+                FitText(text(draft['body']) ?? tr('Без тексту'), style: body(14.5).copyWith(height: 1.4), maxLines: 6),
                 const SizedBox(height: 8),
                 Text(
                   text(draft['publish_at']) != null ? tr('Вийде {time}', {'time': _when(draft['publish_at'])}) : tr('Чернетка · {time}', {'time': ago(draft['created_at'])}),
@@ -713,7 +821,7 @@ class _SavedMessagesScreenState extends State<SavedMessagesScreen> with _SitePag
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(text(item['body']) ?? text(item['preview']) ?? '', maxLines: 4, overflow: TextOverflow.ellipsis, style: body(14).copyWith(height: 1.35)),
+                    FitText(text(item['body']) ?? text(item['preview']) ?? '', style: body(14).copyWith(height: 1.35), maxLines: 4),
                     const SizedBox(height: 4),
                     Text([text(item['author']), _when(item['created_at'])].whereType<String>().where((s) => s.isNotEmpty).join(' · '), style: body(12, color: muted)),
                   ]),
@@ -817,7 +925,7 @@ class _TopTenScreenState extends State<TopTenScreen> with _SitePage {
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 10,
             mainAxisSpacing: 12,
-            childAspectRatio: 0.52,
+            childAspectRatio: cellAspect(context, 0.52),
             children: [
               for (var i = 0; i < movies.length; i++)
                 Stack(children: [
@@ -921,7 +1029,7 @@ class _ServerCompareScreenState extends State<ServerCompareScreen> with _SitePag
                       flex: 3,
                       child: GestureDetector(
                         onTap: side == null ? null : () => context.push('/servers/${side['slug']}'),
-                        child: Text(text(side?['name']) ?? '—', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, weight: FontWeight.w700, color: side == null ? faint : primary)),
+                        child: FitText(text(side?['name']) ?? '—', style: body(13, weight: FontWeight.w700, color: side == null ? faint : primary), textAlign: TextAlign.center, maxLines: 2),
                       ),
                     ),
                 ]),
@@ -929,7 +1037,7 @@ class _ServerCompareScreenState extends State<ServerCompareScreen> with _SitePag
               for (final row in _rows())
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 9),
-                  decoration: const BoxDecoration(border: Border(top: BorderSide(color: line))),
+                  decoration: BoxDecoration(border: Border(top: BorderSide(color: line))),
                   child: Row(children: [
                     Expanded(flex: 4, child: Text(row.$2, style: body(13, color: muted))),
                     Expanded(flex: 3, child: Text(cell(left, row.$1), textAlign: TextAlign.center, style: body(13.5, weight: FontWeight.w600))),
@@ -973,14 +1081,9 @@ class StreamBadge extends StatelessWidget {
           border: Border.all(color: live ? danger.withValues(alpha: 0.4) : line),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (live) ...[const LiveBadge(), const SizedBox(width: 8)] else ...[const Icon(LucideIcons.radio, size: 15, color: muted), const SizedBox(width: 6)],
+          if (live) ...[const LiveBadge(), const SizedBox(width: 8)] else ...[Icon(LucideIcons.radio, size: 15, color: muted), const SizedBox(width: 6)],
           Flexible(
-            child: Text(
-              live ? (text(stream['title']) ?? tr('В ефірі на {platform}', {'platform': text(stream['platform_label']) ?? ''})) : tr('Стрімить на {platform}', {'platform': text(stream['platform_label']) ?? ''}),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: body(12.5, weight: FontWeight.w600, color: live ? ink : soft),
-            ),
+            child: FitText(live ? (text(stream['title']) ?? tr('В ефірі на {platform}', {'platform': text(stream['platform_label']) ?? ''})) : tr('Стрімить на {platform}', {'platform': text(stream['platform_label']) ?? ''}), style: body(12.5, weight: FontWeight.w600, color: live ? ink : soft)),
           ),
           if (live && details.isNotEmpty) ...[const SizedBox(width: 6), Text(details, style: body(11.5, color: muted))],
         ]),
@@ -1067,7 +1170,7 @@ class _StreamSettingsCardState extends State<StreamSettingsCard> {
         Text(tr('Позначка LIVE з’являється сама, коли почнеться ефір. Друзі отримають сповіщення.'), style: body(12.5, color: muted)),
         const SizedBox(height: 12),
         Segmented(
-          options: const [SegmentOption('twitch', 'Twitch'), SegmentOption('youtube', 'YouTube')],
+          options: [SegmentOption('twitch', 'Twitch'), SegmentOption('youtube', 'YouTube')],
           selected: platform,
           onSelect: (v) => setState(() => platform = v),
         ),
@@ -1129,6 +1232,8 @@ class _InviteScreenState extends State<InviteScreen> with _SitePage {
     final ladder = maps(d['ladder']);
     final people = maps(d['people']);
     final rewards = _referralRewards();
+    final next = d['next'] is Map ? mapOf(d['next']) : null;
+    final active = intOf(d['active']);
     return ScreenScroll(
       onRefresh: load,
       children: [
@@ -1137,7 +1242,7 @@ class _InviteScreenState extends State<InviteScreen> with _SitePage {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+              decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(14)),
               child: SelectableText(link, style: body(13.5, color: soft)),
             ),
             const SizedBox(height: 10),
@@ -1163,7 +1268,29 @@ class _InviteScreenState extends State<InviteScreen> with _SitePage {
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             CardTitle(tr('Нагороди'), icon: LucideIcons.gift),
-            const SizedBox(height: 8),
+            if (next != null) ...[
+              Row(children: [
+                Expanded(child: Text(tr('До нагороди «{reward}»', {'reward': rewards[intOf(next['target'])] ?? ''}), style: body(13.5, color: soft))),
+                Text('$active/${next['target']}', style: body(13.5, weight: FontWeight.w700)),
+              ]),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: ((active - intOf(next['from'])) / (intOf(next['target']) - intOf(next['from'])).clamp(1, 1000)).clamp(0.04, 1.0).toDouble(),
+                  minHeight: 6,
+                  color: primary,
+                  backgroundColor: fg.withValues(alpha: 0.06),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                tr('Ще {n} {friends} — і нагорода ваша.', {'n': next['left'], 'friends': plural(intOf(next['left']), 'активний друг', 'активні друзі', 'активних друзів')}),
+                style: body(12, color: muted),
+              ),
+              const SizedBox(height: 10),
+            ] else
+              Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(tr('Усі нагороди отримано — дякуємо, що кличете друзів!'), style: body(13, color: green))),
             for (final step in ladder)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
@@ -1179,14 +1306,36 @@ class _InviteScreenState extends State<InviteScreen> with _SitePage {
         if (people.isNotEmpty) ...[
           const SizedBox(height: 12),
           Glass(
-            child: Column(children: [
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              CardTitle(tr('Ви запросили'), icon: LucideIcons.users),
+              Text(tr('Смужки — перші кроки друга: пошта, аватар, перший допис і «Граю в…».'), style: body(12, color: muted)),
+              const SizedBox(height: 6),
               for (final p in people)
-                UserTile(
-                  user: p,
-                  size: 40,
-                  onTap: () => context.push('/u/${p['username']}'),
-                  trailing: Icon(p['active'] == true ? LucideIcons.circleCheck : LucideIcons.clock, size: 18, color: p['active'] == true ? green : faint),
-                ),
+                Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  UserTile(
+                    user: p,
+                    size: 40,
+                    onTap: () => context.push('/u/${p['username']}'),
+                    trailing: Icon(p['active'] == true ? LucideIcons.circleCheck : LucideIcons.clock, size: 18, color: p['active'] == true ? green : faint),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 52, bottom: 8),
+                    child: Row(children: [
+                      for (final key in const ['verified', 'avatar', 'post', 'played']) ...[
+                        Expanded(
+                          child: Container(
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: mapOf(p['steps'])[key] == true ? primary : fg.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        if (key != 'played') const SizedBox(width: 4),
+                      ],
+                    ]),
+                  ),
+                ]),
             ]),
           ),
         ],
@@ -1256,7 +1405,7 @@ class _JoinInviteScreenState extends State<JoinInviteScreen> with _SitePage {
         Glass(
           padding: const EdgeInsets.all(20),
           child: Column(children: [
-            const Icon(LucideIcons.mailOpen, size: 40, color: primary),
+            Icon(LucideIcons.mailOpen, size: 40, color: primary),
             const SizedBox(height: 10),
             Text(tr('Запрошення'), style: display(22)),
             const SizedBox(height: 4),
@@ -1277,5 +1426,32 @@ class _JoinInviteScreenState extends State<JoinInviteScreen> with _SitePage {
         ),
       ],
     );
+  }
+}
+
+/// Завдання дня списком — розгортаються під смугою над стрічкою.
+class QuestsInline extends StatelessWidget {
+  const QuestsInline({required this.quests, required this.onChanged, super.key});
+  final List<Map<String, dynamic>> quests;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final api = AppScope.read(context).session.api;
+    final titles = _questTitles();
+    return Column(children: [
+      for (final q in quests) ...[
+        _QuestTile(
+          quest: q,
+          title: titles[text(q['key'])] ?? text(q['title']) ?? '',
+          icon: _questIcons[text(q['icon'])] ?? LucideIcons.target,
+          onClaim: () async {
+            if (await attempt(context, () => api.post(Api.site('/quests/${q['key']}/claim')))) onChanged();
+          },
+          onGo: _questLinks[text(q['key'])] == null ? null : () => context.go(_questLinks[text(q['key'])]!),
+        ),
+        const SizedBox(height: 8),
+      ],
+    ]);
   }
 }

@@ -44,4 +44,40 @@ class NavigationController extends Controller
 
         return back();
     }
+
+    /** Найбільше розділів у шапці на ПК і планшеті (решта — у меню). */
+    public const MAX_HEADER = 12;
+
+    /**
+     * Шапка на ПК і планшеті: які розділи значками й у якому порядку. Порожньо — автоматично
+     * (усе, чого немає в нижній капсулі, скільки вміститься). Розділи капсули тут не повторюються.
+     */
+    public function header(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'header' => ['present', 'array', 'max:'.self::MAX_HEADER],
+            'header.*' => ['string', 'distinct', Rule::in(array_column($this->modules->navigation(), 'key'))],
+        ], [
+            'header.max' => 'У шапці поміщається не більше '.self::MAX_HEADER.' розділів.',
+            'header.*.in' => 'Цей розділ недоступний.',
+        ]);
+        $user = $request->user();
+        $capsule = $this->modules->navTabsFor($user);
+        $header = array_values(array_diff($data['header'], $capsule));
+        $user->forceFill(['preferences' => [...($user->preferences ?? []), 'header_tabs' => $header]])->save();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Шапку оновлено.']);
+
+        return back();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function headerTabs(User $user): array
+    {
+        $saved = $user->pref('header_tabs');
+
+        return is_array($saved) ? array_values(array_filter($saved, 'is_string')) : [];
+    }
 }

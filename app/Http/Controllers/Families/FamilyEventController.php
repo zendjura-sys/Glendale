@@ -6,8 +6,10 @@ use App\Models\Family;
 use App\Models\FamilyEvent;
 use App\Models\FamilyEventAttendance;
 use App\Models\FamilySeason;
+use App\Services\Families\FamilyAudit;
 use App\Services\Families\FamilyEvents;
 use App\Services\Families\FamilyRating;
+use App\Services\Families\SeasonCard;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FamilyEventController extends FamilyBaseController
 {
@@ -184,11 +187,43 @@ class FamilyEventController extends FamilyBaseController
                     'started_at' => $s->started_at?->toIso8601String(),
                     'ended_at' => $s->ended_at->toIso8601String(),
                     'top' => $s->top,
+                    'image' => "/f/{$family->slug}/rating/seasons/{$s->number}.png",
                 ])->values(),
+            'can_share' => $this->gate->can($member, $family, 'settings.manage') && ($family->webhook('discord') || $family->webhook('telegram_token')),
         ]);
     }
 
     /** Лідер завершує сезон: підсумок зберігається, рахунок сезону обнуляється. */
+    /** Картинка підсумків сезону (PNG) — для перегляду й завантаження. */
+    public function seasonImage(Request $request, Family $family, int $number, SeasonCard $cards): BinaryFileResponse
+    {
+        $this->member($request, $family);
+        $season = FamilySeason::query()->where('family_id', $family->id)->where('number', $number)->firstOrFail();
+
+        return response()->file($cards->path($family, $season), [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'private, max-age=3600',
+            'Content-Disposition' => 'inline; filename="season-'.$number.'.png"',
+        ]);
+    }
+
+    /** Надіслати картинку підсумків у Discord і Telegram сім’ї (ті, що підключені в налаштуваннях). */
+    public function shareSeason(Request $request, Family $family, int $number, SeasonCard $cards, FamilyAudit $audit): RedirectResponse
+    {
+        $member = $this->member($request, $family, 'settings.manage', write: true);
+        $season = FamilySeason::query()->where('family_id', $family->id)->where('number', $number)->firstOrFail();
+        $result = $cards->share($family, $season);
+        $audit->log($family, 'SEASON_SHARE', $member, null, ['season' => $number, 'channels' => $result]);
+        $ok = array_keys(array_filter($result));
+        Inertia::flash('toast', $result === []
+            ? ['type' => 'error', 'message' => 'Підключіть Discord чи Telegram у налаштуваннях сім’ї.']
+            : ($ok !== []
+                ? ['type' => 'success', 'message' => 'Надіслано: '.implode(', ', array_map('ucfirst', $ok)).'.']
+                : ['type' => 'error', 'message' => 'Не вдалося надіслати — перевірте вебхук і бота.']));
+
+        return back();
+    }
+
     public function endSeason(Request $request, Family $family, FamilyRating $rating): RedirectResponse
     {
         $member = $this->member($request, $family, write: true);

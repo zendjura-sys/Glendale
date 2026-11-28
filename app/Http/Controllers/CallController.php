@@ -27,6 +27,12 @@ class CallController extends Controller
         return response()->json(['call' => $this->calls->stateFor($conversation)]);
     }
 
+    /** Хто зараз дзвонить людині — для програм без push (ПК): показати дзвінок поверх будь-якого розділу. */
+    public function incoming(Request $request): JsonResponse
+    {
+        return response()->json(['calls' => $this->calls->incoming($request->user())]);
+    }
+
     public function start(Request $request, Conversation $conversation): JsonResponse
     {
         $user = $this->user($request);

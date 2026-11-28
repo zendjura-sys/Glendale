@@ -1,3 +1,4 @@
+import { StickerMedia } from '@/components/gc/stickers';
 import { Link } from '@inertiajs/react';
 import { Clock3, Lock, Smile, Sticker as StickerIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -68,7 +69,7 @@ export function EmojiPanel({
                 <StickerGrid onPick={onSticker} />
             )}
             {allowStickers && (
-                <div className="flex shrink-0 justify-center gap-1 border-t border-white/[0.06] p-1.5">
+                <div className="flex shrink-0 justify-center gap-1 p-1.5">
                     {(
                         [
                             { key: 'emoji', label: tr('Емодзі'), icon: Smile },
@@ -134,7 +135,7 @@ function EmojiGrid({ onPick }: { onPick: (emoji: string) => void }) {
 
     return (
         <>
-            <div className="flex shrink-0 gap-0.5 overflow-x-auto border-b border-white/[0.06] px-1.5 py-1">
+            <div className="flex shrink-0 gap-0.5 overflow-x-auto px-1.5 py-1">
                 {sections.map((section) => (
                     <button
                         key={section.key}
@@ -216,7 +217,7 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
 
     return (
         <>
-            <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-white/[0.06] px-1.5 py-1">
+            <div className="flex shrink-0 gap-1 overflow-x-auto px-1.5 py-1">
                 {recent.length > 0 && (
                     <button
                         type="button"
@@ -245,10 +246,8 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
                                 : 'opacity-60 hover:opacity-100',
                         )}
                     >
-                        <img
-                            loading="lazy"
-                            decoding="async"
-                            src={pack.stickers[0]?.url}
+                        <StickerMedia
+                            url={pack.stickers[0]?.url ?? ''}
                             alt={pack.name}
                             className="size-full object-contain"
                         />
@@ -298,12 +297,11 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
                                     onPick(sticker);
                                 }}
                                 title={sticker.emoji ?? undefined}
-                                className="aspect-square rounded-xl p-1 transition hover:scale-105 hover:bg-white/[0.07] disabled:opacity-40 disabled:hover:scale-100 disabled:hover:bg-transparent"
+                                className="aspect-square rounded-xl p-1 transition hover:scale-105 hover:bg-[var(--gc-l3)] disabled:opacity-40 disabled:hover:scale-100 disabled:hover:bg-transparent"
                             >
-                                <img
-                                    src={sticker.url}
+                                <StickerMedia
+                                    url={sticker.url}
                                     alt={sticker.emoji ?? ''}
-                                    loading="lazy"
                                     className="size-full object-contain"
                                 />
                             </button>

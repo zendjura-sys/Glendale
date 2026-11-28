@@ -14,6 +14,7 @@ const REASONS = {
     spam: tr('Спам або реклама'),
     abuse: tr('Образи, мат, цькування'),
     scam: tr('Шахрайство'),
+    child_safety: tr('Загроза дитині, сексуальна експлуатація'),
     other: tr('Інше'),
 } as const;
 
@@ -63,7 +64,7 @@ export function ReportDialog({
                                 'block w-full rounded-xl px-3 py-2 text-left text-sm transition',
                                 reason === key
                                     ? 'bg-[var(--accent)]/20 text-white'
-                                    : 'bg-white/[0.04] text-white/70 hover:bg-white/[0.07]',
+                                    : 'gc-solid-2 text-white/70 hover:bg-[var(--gc-l3)]',
                             )}
                         >
                             {label}

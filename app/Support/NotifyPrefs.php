@@ -15,7 +15,24 @@ use Illuminate\Notifications\DatabaseNotification;
 class NotifyPrefs
 {
     /** @var list<string> */
-    public const KEYS = ['likes', 'comments', 'mentions', 'events', 'playing', 'site', 'email', 'push'];
+    public const KEYS = ['likes', 'comments', 'mentions', 'events', 'playing', 'deals', 'site', 'email', 'push'];
+
+    /**
+     * Розділи, які можна вимкнути цілком (усі сповіщення розділу) — модуль сайту й назва.
+     *
+     * @var array<string, string>
+     */
+    public const SECTIONS = [
+        'families' => 'Сім’ї',
+        'clans' => 'Клани',
+        'servers' => 'Сервери й турніри',
+        'games' => 'Ігри, знижки й роздачі',
+        'cinema' => 'Кіно',
+        'music' => 'Музика',
+        'party' => 'Пошук паті',
+        'communities' => 'Спільноти',
+        'events' => 'Події',
+    ];
 
     /** @var array<string, string> */
     private const KINDS = [
@@ -25,7 +42,41 @@ class NotifyPrefs
         'photo_comment' => 'comments',
         'mention' => 'mentions',
         'event_reminder' => 'events',
+        'listen_room' => 'events',
+        'tournament' => 'events',
         'friend_playing' => 'playing',
+        'giveaway' => 'deals',
+        'price_drop' => 'deals',
+        'game_release' => 'deals',
+        'game_night_invite' => 'events',
+        'game_night_set' => 'events',
+        'broadcast' => 'site',
+    ];
+
+    /**
+     * Розділ (або функція режиму) кожного виду: без нього в режимі людини сповіщення не надходить.
+     *
+     * @var array<string, string>
+     */
+    private const MODE = [
+        'tournament' => 'servers',
+        'giveaway' => 'games',
+        'price_drop' => 'games',
+        'game_release' => 'games',
+        'listen_room' => 'music',
+        'clip_of_week' => 'moments',
+        'event_reminder' => 'events',
+        'movie_rating' => 'cinema',
+        'party_join' => 'party',
+        'party_invite' => 'party',
+        'party_time' => 'party',
+        'party_full' => 'party',
+        'game_patch' => 'games',
+        'game_night_invite' => 'games',
+        'game_night_set' => 'games',
+        'family_' => 'families',
+        'friend_playing' => 'feature:playing',
+        'stream_live' => 'feature:live',
     ];
 
     /**
@@ -60,9 +111,59 @@ class NotifyPrefs
 
     public static function allowsKind(User $user, string $kind): bool
     {
+        if (! self::inMode($user, $kind)) {
+            return false;
+        }
+        $section = self::section($kind);
+        if ($section !== null && ! self::sectionOn($user, $section)) {
+            return false;
+        }
         $type = self::KINDS[$kind] ?? null;
 
         return $type === null || self::enabled($user, $type);
+    }
+
+    /** Розділ виду сповіщення (для вимкнення розділу цілком) або null, якщо вид загальний. */
+    public static function section(string $kind): ?string
+    {
+        foreach (['family_' => 'families', 'clan_' => 'clans', 'community_' => 'communities', 'movie_' => 'cinema', 'episode' => 'cinema', 'server_' => 'servers', 'party_' => 'party'] as $prefix => $section) {
+            if (str_starts_with($kind, $prefix)) {
+                return $section;
+            }
+        }
+        $need = self::MODE[$kind] ?? null;
+
+        return $need !== null && ! str_starts_with($need, 'feature:') && array_key_exists($need, self::SECTIONS) ? $need : null;
+    }
+
+    /** Чи ввімкнені сповіщення розділу (за замовчуванням — так). */
+    public static function sectionOn(User $user, string $section): bool
+    {
+        $sections = $user->pref('notify_sections');
+
+        return ! is_array($sections) || ! array_key_exists($section, $sections) || (bool) $sections[$section];
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public static function sections(User $user): array
+    {
+        return collect(self::SECTIONS)->mapWithKeys(fn (string $label, string $key) => [$key => self::sectionOn($user, $key)])->all();
+    }
+
+    /** Чи є розділ виду сповіщення в режимі людини (працює й у черзі, без запиту). */
+    public static function inMode(User $user, string $kind): bool
+    {
+        $need = self::MODE[$kind] ?? (str_starts_with($kind, 'family_') ? self::MODE['family_'] : null);
+        if ($need === null) {
+            return true;
+        }
+        $modes = app(NetworkModes::class);
+
+        return str_starts_with($need, 'feature:')
+            ? (bool) ($modes->featuresFor($user)[substr($need, 8)] ?? true)
+            : in_array($need, $modes->modulesFor($user), true);
     }
 
     /**

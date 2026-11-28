@@ -20,12 +20,13 @@ use Illuminate\Support\Carbon;
  * @property bool $comments_enabled
  * @property int|null $cover_photo_id
  * @property int $photos_count
+ * @property int|null $game_id Гра альбому скриншотів (нові фото її успадковують)
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read User|Community|null $owner
  * @property-read Photo|null $cover
  */
-#[Fillable(['title', 'description', 'privacy', 'comments_enabled', 'cover_photo_id'])]
+#[Fillable(['title', 'description', 'privacy', 'comments_enabled', 'cover_photo_id', 'game_id'])]
 class PhotoAlbum extends Model
 {
     public const PRIVACY_PUBLIC = 'public';
@@ -92,5 +93,13 @@ class PhotoAlbum extends Model
             : $this->photos()->latest('id')->value('id');
 
         $this->forceFill(['photos_count' => $count, 'cover_photo_id' => $cover])->saveQuietly();
+    }
+
+    /**
+     * @return BelongsTo<Game, $this>
+     */
+    public function game(): BelongsTo
+    {
+        return $this->belongsTo(Game::class);
     }
 }

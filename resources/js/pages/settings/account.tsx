@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
+    Archive,
     CircleCheck,
     CircleX,
     Download,
@@ -8,7 +9,7 @@ import {
     Smartphone,
     Snowflake,
 } from 'lucide-react';
-import { SettingsCard } from '@/layouts/settings/layout';
+import { SettingsCard, SettingsSwitch } from '@/layouts/settings/layout';
 import { formatDate, timeAgo } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { WebPushSettings } from '@/components/gc/web-push-toggle';
@@ -52,17 +53,34 @@ type Props = {
         status: 'pending' | 'accepted' | 'rejected';
         reply: string | null;
         created_at: string;
+        due_at?: string;
+    }[];
+    strikes?: {
+        id: number;
+        reason: string;
+        active: boolean;
+        expires_at: string;
+        created_at: string;
     }[];
     appealKinds: Record<string, string>;
     mute: { until: string | null; reason: string | null } | null;
     hideProfanity: boolean;
+    exports?: {
+        id: number;
+        status: 'pending' | 'ready' | 'expired' | 'failed';
+        size: number;
+        created_at: string;
+        expires_at: string | null;
+        url: string | null;
+    }[];
+    loginAlerts?: boolean;
+    teenMode: { on: boolean; locked: boolean };
 };
 
 const field =
     'input-glass w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none';
 
-const row =
-    'flex items-center gap-3 rounded-2xl bg-white/[0.03] px-3.5 py-3 text-sm';
+const row = 'gc-row flex items-center gap-3 py-3 text-sm';
 
 function methodLabel(method: string): string {
     const labels: Record<string, string> = {
@@ -95,6 +113,10 @@ export default function Account({
     appealKinds,
     mute,
     hideProfanity,
+    exports = [],
+    loginAlerts = true,
+    teenMode,
+    strikes = [],
 }: Props) {
     const appeal = useForm({
         kind: mute ? 'mute' : 'content',
@@ -107,7 +129,7 @@ export default function Account({
     return (
         <>
             <Head title={tr('Акаунт')} />
-            <div className="space-y-5">
+            <div className="space-y-7">
                 <SettingsCard
                     title={tr('Сповіщення в браузері')}
                     description={tr('Push-сповіщення сайту на цьому пристрої.')}
@@ -115,13 +137,14 @@ export default function Account({
                     <WebPushSettings />
                 </SettingsCard>
                 <SettingsCard
+                    list
                     title={tr('Telegram і Discord')}
                     description={tr(
                         'Щоб кнопки «Піду» в групах ботів GameCon записували саме вас.',
                     )}
                 >
-                    <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+                    <div>
+                        <div className="gc-row flex flex-wrap items-center gap-3 py-3">
                             <span className="min-w-0 flex-1 text-sm text-white">
                                 Telegram
                                 <span className="block text-xs text-white/45">
@@ -141,7 +164,7 @@ export default function Account({
                                             options,
                                         )
                                     }
-                                    className="text-sm font-medium text-rose-200 hover:text-rose-100"
+                                    className="text-sm font-medium text-red-400 hover:text-red-400"
                                 >
                                     {tr('Відв’язати')}
                                 </button>
@@ -161,7 +184,7 @@ export default function Account({
                                 </span>
                             )}
                         </div>
-                        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+                        <div className="gc-row flex flex-wrap items-center gap-3 py-3">
                             <span className="min-w-0 flex-1 text-sm text-white">
                                 Discord
                                 <span className="block text-xs text-white/45">
@@ -177,16 +200,17 @@ export default function Account({
                 </SettingsCard>
                 {connections.length > 0 && (
                     <SettingsCard
+                        list
                         title={tr('Підключені сервери')}
                         description={tr(
                             'Сервери, куди ви входили через GameCon. Скасуйте доступ, якщо більше там не граєте.',
                         )}
                     >
-                        <ul className="space-y-2">
+                        <ul>
                             {connections.map((item) => (
                                 <li
                                     key={item.client_id}
-                                    className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3"
+                                    className="gc-row flex items-center gap-3 py-3"
                                 >
                                     <span className="min-w-0 flex-1">
                                         <Link
@@ -214,7 +238,7 @@ export default function Account({
                                                 options,
                                             )
                                         }
-                                        className="shrink-0 text-sm font-medium text-rose-200 hover:text-rose-100"
+                                        className="shrink-0 text-sm font-medium text-red-400 hover:text-red-400"
                                     >
                                         {tr('Скасувати')}
                                     </button>
@@ -224,12 +248,13 @@ export default function Account({
                     </SettingsCard>
                 )}
                 <SettingsCard
+                    list
                     title={tr('Пристрої і сесії')}
                     description={tr(
                         'Де ви зараз увійшли. Завершіть сесію, якщо не впізнаєте пристрій.',
                     )}
                 >
-                    <ul className="space-y-2">
+                    <ul>
                         {sessions.map((session) => (
                             <li key={session.id} className={row}>
                                 <Monitor className="size-5 shrink-0 text-white/50" />
@@ -245,7 +270,7 @@ export default function Account({
                                     </span>
                                 </span>
                                 {session.current ? (
-                                    <span className="rounded-full bg-gc-mint/15 px-2 py-0.5 text-xs font-medium text-gc-mint">
+                                    <span className="rounded-chip bg-gc-mint/15 px-2 py-0.5 text-xs font-medium text-gc-mint">
                                         {tr('Зараз')}
                                     </span>
                                 ) : (
@@ -257,7 +282,7 @@ export default function Account({
                                                 options,
                                             )
                                         }
-                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                                        className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white"
                                     >
                                         <LogOut className="size-4" />
                                         {tr('Завершити')}
@@ -287,7 +312,7 @@ export default function Account({
                                             options,
                                         )
                                     }
-                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-white/70 transition hover:bg-[var(--gc-l3)] hover:text-white"
                                 >
                                     <LogOut className="size-4" />
                                     {tr('Вийти')}
@@ -304,24 +329,36 @@ export default function Account({
                                     options,
                                 )
                             }
-                            className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                            className="flex min-h-12 w-full items-center gap-2 border-[var(--gc-hairline)] py-3 text-[15px] font-medium text-red-400 transition hover:text-red-400"
                         >
                             <LogOut className="size-4" />
                             {tr('Завершити всі інші сесії')}
                         </button>
                     )}
+                    <SettingsSwitch
+                        label={tr('Лист про вхід з нового пристрою')}
+                        checked={loginAlerts}
+                        onChange={(on) =>
+                            router.put(
+                                '/settings/account/login-alerts',
+                                { on },
+                                options,
+                            )
+                        }
+                    />
                 </SettingsCard>
 
                 <SettingsCard
+                    list
                     title={tr('Журнал входів')}
                     description={tr('Останні спроби увійти в акаунт')}
                 >
                     {logins.length === 0 ? (
-                        <p className="text-sm text-white/45">
+                        <p className="py-3.5 text-sm text-white/45">
                             {tr('Поки що порожньо.')}
                         </p>
                     ) : (
-                        <ul className="space-y-2">
+                        <ul>
                             {logins.map((login) => (
                                 <li key={login.id} className={row}>
                                     {login.success ? (
@@ -348,26 +385,50 @@ export default function Account({
                 </SettingsCard>
 
                 <SettingsCard
+                    list
                     title={tr('Образливі слова')}
                     description={tr(
                         'Ховати мат зірочками в записах, коментарях і чатах — лише для вас',
                     )}
                 >
-                    <label className="flex items-center gap-3 text-sm text-white/80">
-                        <input
-                            type="checkbox"
-                            checked={hideProfanity}
-                            onChange={(event) =>
-                                router.put(
-                                    '/settings/account/profanity',
-                                    { hide: event.target.checked },
-                                    options,
-                                )
-                            }
-                            className="size-4 accent-gc-indigo"
-                        />
-                        {tr('Приховувати образливі слова')}
-                    </label>
+                    <SettingsSwitch
+                        label={tr('Приховувати образливі слова')}
+                        checked={hideProfanity}
+                        onChange={(hide) =>
+                            router.put(
+                                '/settings/account/profanity',
+                                { hide },
+                                options,
+                            )
+                        }
+                    />
+                </SettingsCard>
+
+                <SettingsCard
+                    list
+                    title={tr('Підлітковий режим')}
+                    description={
+                        teenMode.locked
+                            ? tr(
+                                  'Увімкнено за датою народження й діє до 18 років: писати в особисті можуть лише друзі, незнайомі дорослі не бачать вас у пошуку, образливі слова приховано.',
+                              )
+                            : tr(
+                                  'Писати в особисті зможуть лише друзі, незнайомі дорослі не бачитимуть вас у пошуку, образливі слова й оголошення паті 18+ буде приховано.',
+                              )
+                    }
+                >
+                    <SettingsSwitch
+                        label={tr('Підлітковий режим')}
+                        checked={teenMode.on}
+                        disabled={teenMode.locked}
+                        onChange={(on) =>
+                            router.put(
+                                '/settings/account/teen-mode',
+                                { on },
+                                options,
+                            )
+                        }
+                    />
                 </SettingsCard>
 
                 <SettingsCard
@@ -377,12 +438,53 @@ export default function Account({
                     )}
                 >
                     {mute && (
-                        <p className="mb-4 rounded-2xl bg-gc-amber/10 px-3.5 py-3 text-sm text-gc-amber">
+                        <p className="mb-4 rounded-xl bg-gc-amber/10 px-3.5 py-3 text-sm text-gc-amber">
                             {tr('Вам заборонено писати до {date}.', {
                                 date: mute.until ? formatDate(mute.until) : '—',
                             })}
                             {mute.reason && ` ${mute.reason}`}
                         </p>
+                    )}
+                    {strikes.length > 0 && (
+                        <div className="gc-solid-2 mb-4 rounded-xl p-3.5">
+                            <p className="text-sm font-medium text-white">
+                                {tr('Страйки: активних {count} з 5', {
+                                    count: strikes.filter((s) => s.active)
+                                        .length,
+                                })}
+                            </p>
+                            <p className="mt-0.5 text-xs text-white/45">
+                                {tr(
+                                    'Страйк діє 90 днів. 3 активні — заборона писати на добу, 5 — на тиждень. Вважаєте помилкою — оскаржте нижче.',
+                                )}
+                            </p>
+                            <ul className="mt-2 space-y-1 text-sm">
+                                {strikes.map((s) => (
+                                    <li
+                                        key={s.id}
+                                        className={cn(
+                                            'flex gap-2',
+                                            s.active
+                                                ? 'text-white/80'
+                                                : 'text-white/35 line-through',
+                                        )}
+                                    >
+                                        <span className="min-w-0 flex-1">
+                                            {s.reason}
+                                        </span>
+                                        <span className="shrink-0 text-xs text-white/45">
+                                            {s.active
+                                                ? tr('до {date}', {
+                                                      date: formatDate(
+                                                          s.expires_at,
+                                                      ),
+                                                  })
+                                                : formatDate(s.created_at)}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     )}
                     <form
                         onSubmit={(event) => {
@@ -423,7 +525,7 @@ export default function Account({
                             className={cn(field, 'py-2.5')}
                         />
                         {appeal.errors.body && (
-                            <p className="text-xs text-rose-300">
+                            <p className="text-xs text-red-400">
                                 {appeal.errors.body}
                             </p>
                         )}
@@ -445,7 +547,7 @@ export default function Account({
                             {appeals.map((item) => (
                                 <li
                                     key={item.id}
-                                    className="rounded-2xl bg-white/[0.03] px-3.5 py-3 text-sm"
+                                    className="gc-solid-2 rounded-xl px-3.5 py-3 text-sm"
                                 >
                                     <p className="flex flex-wrap items-center gap-2 text-xs text-white/50">
                                         <span>
@@ -453,15 +555,26 @@ export default function Account({
                                         </span>
                                         <span>·</span>
                                         <span>{timeAgo(item.created_at)}</span>
+                                        {item.status === 'pending' &&
+                                            item.due_at && (
+                                                <span>
+                                                    ·{' '}
+                                                    {tr('відповімо до {date}', {
+                                                        date: formatDate(
+                                                            item.due_at,
+                                                        ),
+                                                    })}
+                                                </span>
+                                            )}
                                         <span
                                             className={cn(
-                                                'rounded-full px-2 py-0.5 font-medium',
+                                                'rounded-chip px-2 py-0.5 font-medium',
                                                 item.status === 'accepted' &&
                                                     'bg-gc-mint/15 text-gc-mint',
                                                 item.status === 'rejected' &&
                                                     'bg-gc-coral/15 text-gc-coral',
                                                 item.status === 'pending' &&
-                                                    'bg-white/[0.06] text-white/70',
+                                                    'gc-solid-2 text-white/70',
                                             )}
                                         >
                                             {statusLabel(item.status)}
@@ -484,17 +597,87 @@ export default function Account({
                 <SettingsCard
                     title={tr('Мої дані')}
                     description={tr(
-                        'Профіль, друзі, записи, коментарі, фото й повідомлення одним файлом JSON',
+                        'Повний архів ZIP: усі розділи окремими файлами плюс ваші фото, аватар і завантажені треки. Готується у фоні, посилання діє 7 днів.',
                     )}
                 >
-                    <a
-                        href="/settings/account/export"
-                        download
-                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
-                    >
-                        <Download className="size-4" />
-                        {tr('Завантажити свої дані')}
-                    </a>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            disabled={exports.some(
+                                (e) => e.status === 'pending',
+                            )}
+                            onClick={() =>
+                                router.post(
+                                    '/settings/account/exports',
+                                    {},
+                                    options,
+                                )
+                            }
+                            className="btn-glow inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50"
+                        >
+                            <Archive className="size-4" />
+                            {tr('Підготувати архів')}
+                        </button>
+                        <a
+                            href="/settings/account/export"
+                            download
+                            className="gc-solid-2 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                        >
+                            <Download className="size-4" />
+                            {tr('Швидко: лише текст (JSON)')}
+                        </a>
+                    </div>
+                    {exports.length > 0 && (
+                        <ul className="mt-3 space-y-2">
+                            {exports.map((e) => (
+                                <li
+                                    key={e.id}
+                                    className="gc-solid-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm"
+                                >
+                                    <Archive className="size-4 shrink-0 text-white/50" />
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block font-medium text-white">
+                                            {formatDate(e.created_at)}
+                                        </span>
+                                        <span className="block text-xs text-white/45">
+                                            {e.status === 'pending'
+                                                ? tr(
+                                                      'Готуємо… повідомимо, коли буде готово',
+                                                  )
+                                                : e.status === 'failed'
+                                                  ? tr(
+                                                        'Не вдалося — спробуйте ще раз',
+                                                    )
+                                                  : e.status === 'expired'
+                                                    ? tr('Посилання вже не діє')
+                                                    : tr(
+                                                          '{size} МБ · діє до {date}',
+                                                          {
+                                                              size: (
+                                                                  e.size /
+                                                                  1048576
+                                                              ).toFixed(1),
+                                                              date: formatDate(
+                                                                  e.expires_at ??
+                                                                      e.created_at,
+                                                              ),
+                                                          },
+                                                      )}
+                                        </span>
+                                    </span>
+                                    {e.url && (
+                                        <a
+                                            href={e.url}
+                                            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-sky-500 px-3 text-sm font-semibold text-white"
+                                        >
+                                            <Download className="size-4" />
+                                            {tr('Завантажити')}
+                                        </a>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </SettingsCard>
 
                 <SettingsCard
@@ -540,7 +723,7 @@ export default function Account({
                         </button>
                     </form>
                     {freeze.errors.password && (
-                        <p className="mt-1 text-xs text-rose-300">
+                        <p className="mt-1 text-xs text-red-400">
                             {freeze.errors.password}
                         </p>
                     )}

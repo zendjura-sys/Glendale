@@ -1,0 +1,73 @@
+# Збірка GameCon для Windows (desktop/, Rust + Tauri 2) у GitHub Actions — №261.
+#
+# Коли запускається: push зі змінами в desktop/ або цьому файлі; вручну — Actions → «Desktop build».
+# Результат: артефакт «gamecon-desktop» з інсталятором NSIS (*-setup.exe).
+# Підпис: сертифікатом GCDev Software, коли в GitHub Secrets є WINDOWS_CERTIFICATE (PFX у base64)
+# і WINDOWS_CERTIFICATE_PASSWORD; без них збірка йде непідписаною (SmartScreen попередить).
+name: Desktop build
+
+on:
+  push:
+    paths:
+      - desktop/**
+      - .github/workflows/desktop-build.yml
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    if: github.repository == 'zendjura-sys/Glendale'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/target
+          key: desktop-${{ runner.os }}-${{ hashFiles('desktop/**/Cargo.toml') }}
+      - name: Тести логіки
+        run: cargo test -p gamecon-core
+      - name: Сертифікат для підпису
+        id: sign
+        env:
+          CERT: ${{ secrets.WINDOWS_CERTIFICATE }}
+        shell: pwsh
+        run: |
+          if (-not $env:CERT) { Write-Host 'Сертифіката немає — збірка без підпису.'; exit 0 }
+          $pfx = Join-Path $env:RUNNER_TEMP 'gcdev.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:CERT))
+          "GC_SIGN_PFX=$pfx" >> $env:GITHUB_ENV
+          $script = (Resolve-Path 'scripts/sign.ps1').Path
+          $config = @{ bundle = @{ windows = @{ signCommand = @{ cmd = 'pwsh'; args = @('-NoProfile', '-File', $script, '%1') } } } } | ConvertTo-Json -Depth 6
+          $file = Join-Path $env:RUNNER_TEMP 'sign.json'
+          Set-Content -Path $file -Value $config -Encoding utf8
+          "config=$file" >> $env:GITHUB_OUTPUT
+      - name: Інсталятор
+        working-directory: desktop/src-tauri
+        env:
+          GC_SIGN_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: |
+          $extra = @()
+          if ('${{ steps.sign.outputs.config }}') { $extra = @('--config', '${{ steps.sign.outputs.config }}') }
+          npx --yes @tauri-apps/cli@2.1.0 build --bundles nsis @extra
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gamecon-desktop
+          path: desktop/target/release/bundle/nsis/*.exe
+          retention-days: 30

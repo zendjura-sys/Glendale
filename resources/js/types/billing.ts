@@ -1,6 +1,13 @@
 /** Тариф з каталогу (ціни — у гривнях; адміністратор змінює їх в Адмінка → Білінг). */
 export type BillingProduct = {
-    kind: 'plus' | 'family' | 'gift' | 'promo' | 'phone';
+    kind:
+        | 'plus'
+        | 'family'
+        | 'household'
+        | 'gift'
+        | 'promo'
+        | 'phone'
+        | 'balance';
     /** Вид просування сервера (для kind = promo). */
     promo: 'top' | 'highlight' | 'banner' | null;
     name: string;
@@ -28,6 +35,8 @@ export type SharedBilling = {
     /** Оплата карткою працює (адміністратор підключив еквайринг monobank). */
     card: boolean;
     products: Record<string, BillingProduct>;
+    /** Знижка на GameCon+ для сім’ї лідерам із власним GameCon+ (%). */
+    family_plus_discount: number;
     /** Пропонувати зберегти картку для автопродовження. */
     save_card: boolean;
     google_pay: GooglePayConfig | null;
@@ -36,6 +45,7 @@ export type SharedBilling = {
 };
 
 export type PaymentBadge =
+    | 'plata'
     | 'visa'
     | 'mastercard'
     | 'maestro'

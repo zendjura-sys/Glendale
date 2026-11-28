@@ -1,0 +1,21 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "overlay",
+  "description": "Сторінки оверлею тривог і міні-вікон на сайті GameCon: стан тривоги, стан віджета, відкрити розділ у головному вікні.",
+  "windows": [
+    "overlay",
+    "w-friends",
+    "w-chats"
+  ],
+  "remote": {
+    "urls": [
+      "https://gamecon.online/*"
+    ]
+  },
+  "permissions": [
+    "core:default",
+    "allow-alert-changed",
+    "allow-open-main",
+    "allow-widget-state"
+  ]
+}

@@ -6,6 +6,7 @@ use App\Models\Conversation;
 use App\Models\FriendMark;
 use App\Models\User;
 use App\Services\FriendshipService;
+use App\Services\Presence\SteamPresence;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,6 +54,8 @@ class FriendController extends Controller
 
         return Inertia::render('friends/index', [
             'tab' => $tab,
+            // Імпорт друзів зі Steam (№279) — коли Steam API підключено.
+            'steam_import' => app(SteamPresence::class)->configured(),
             'q' => $search,
             'users' => Inertia::scroll(fn () => $users->through(fn (User $u) => [
                 ...$u->toCard(),

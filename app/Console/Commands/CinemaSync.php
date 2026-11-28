@@ -8,7 +8,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 #[Signature('cinema:sync {--force : Запустити, навіть якщо автонаповнення вимкнено або ще не час} {--enrich : Лише збагатити метаданими фільми без них}')]
-#[Description('Автонаповнення кінокаталогу з Kodik і FlixCDN та збагачення метаданими')]
+#[Description('Автонаповнення кінокаталогу з плеєрів-партнерів та збагачення метаданими')]
 class CinemaSync extends Command
 {
     public function handle(CinemaAutoImport $import): int

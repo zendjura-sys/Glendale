@@ -1,0 +1,9 @@
+# GameCon для Windows (№261) на Rust: ядро логіки (core) і застосунок Tauri (src-tauri).
+[workspace]
+members = ["core", "src-tauri", "native"]
+resolver = "2"
+
+[workspace.package]
+version = "1.2611.0"
+edition = "2021"
+license = "UNLICENSED"

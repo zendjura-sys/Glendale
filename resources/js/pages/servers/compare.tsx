@@ -63,7 +63,7 @@ export default function CompareServers({ left, right, servers }: Props) {
     return (
         <>
             <Head title={tr('Порівняння серверів')} />
-            <div className="space-y-5">
+            <div className="space-y-3.5">
                 <Link
                     href="/servers"
                     className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
@@ -103,8 +103,8 @@ export default function CompareServers({ left, right, servers }: Props) {
                         );
                     })}
                 </div>
-                <section className="glass overflow-hidden rounded-3xl">
-                    <div className="grid grid-cols-[8rem_1fr_1fr] gap-2 border-b border-white/10 px-4 py-3 text-sm font-semibold text-white sm:grid-cols-[12rem_1fr_1fr]">
+                <section className="gc-solid overflow-hidden rounded-2xl">
+                    <div className="grid grid-cols-[8rem_1fr_1fr] gap-2 px-4 py-3 text-sm font-semibold text-white sm:grid-cols-[12rem_1fr_1fr]">
                         <span />
                         <span>{left?.name ?? '—'}</span>
                         <span>{right?.name ?? '—'}</span>

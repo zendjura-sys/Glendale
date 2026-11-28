@@ -46,18 +46,18 @@ export function ModeCard({
             aria-checked={active}
             onClick={onSelect}
             className={cn(
-                'group relative flex h-full flex-col rounded-[24px] text-left transition-colors',
+                'group relative flex h-full flex-col rounded-2xl text-left transition-colors',
                 compact ? 'p-4' : 'p-5 sm:p-6',
                 active
                     ? 'text-white'
-                    : 'glass text-white/90 hover:border-white/25',
+                    : 'gc-solid text-white/90 hover:border-white/25',
             )}
         >
             {active && (
                 <m.span
                     layoutId={layoutId}
                     transition={motionOr(reduce, SNAP)}
-                    className="liquid-glass absolute inset-0 rounded-[24px] shadow-[0_0_40px_-12px_var(--primary)] ring-2 ring-primary"
+                    className="liquid-glass absolute inset-0 rounded-2xl ring-2 ring-primary"
                 />
             )}
             <span className="relative flex items-start gap-3">
@@ -66,8 +66,8 @@ export function ModeCard({
                         'flex shrink-0 items-center justify-center rounded-2xl transition-colors',
                         compact ? 'size-10' : 'size-12',
                         active
-                            ? 'bg-primary text-primary-foreground shadow-[0_0_24px_-4px_var(--primary)]'
-                            : 'bg-black/25 text-white/80 ring-1 ring-white/10',
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-black/25 text-white/80',
                     )}
                 >
                     <Icon className={compact ? 'size-5' : 'size-6'} />
@@ -102,7 +102,7 @@ export function ModeCard({
                     {shown.map((key) => (
                         <span
                             key={key}
-                            className="rounded-full bg-white/[0.08] px-2.5 py-1 text-xs text-white/80"
+                            className="rounded-chip bg-white/[0.08] px-2.5 py-1 text-xs text-white/80"
                         >
                             {tr(moduleNames[key] ?? key)}
                         </span>

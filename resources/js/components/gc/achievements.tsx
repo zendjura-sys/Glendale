@@ -8,6 +8,8 @@ import {
     CirclePlay,
     Clapperboard,
     Crown,
+    Gamepad2,
+    Ghost,
     Heart,
     House,
     Lock,
@@ -17,8 +19,10 @@ import {
     PenLine,
     Rocket,
     Target,
+    Trophy,
     UserPlus,
     Megaphone,
+    Moon,
     Vote,
     Star,
     Swords,
@@ -37,7 +41,20 @@ export type Badge = {
     earned: boolean;
     progress: number;
     target: number;
+    /** У скількох відсотків активних людей є бейдж (null — ще не пораховано). */
+    rarity?: number | null;
+    /** Секретне: умову видно лише після відкриття. */
+    secret?: boolean;
 };
+
+/** Бейдж вважаємо рідкісним, якщо він є менш ніж у 10% людей. */
+const RARE = 10;
+
+function rarityLabel(rarity: number): string {
+    return tr('є у {p}% людей', {
+        p: rarity < 1 ? '<1' : String(Math.round(rarity)),
+    });
+}
 
 export type AchievementsData = {
     level: number;
@@ -50,7 +67,7 @@ export type AchievementsData = {
     badges: Badge[];
 };
 
-const ICONS: Record<string, LucideIcon> = {
+export const BADGE_ICONS: Record<string, LucideIcon> = {
     'pen-line': PenLine,
     newspaper: Newspaper,
     'users-round': UsersRound,
@@ -73,6 +90,11 @@ const ICONS: Record<string, LucideIcon> = {
     target: Target,
     'user-plus': UserPlus,
     megaphone: Megaphone,
+    trophy: Trophy,
+    'gamepad-2': Gamepad2,
+    moon: Moon,
+    ghost: Ghost,
+    lock: Lock,
 };
 
 /** Рівень (досвід до наступного) і бейджі за активність у профілі. */
@@ -80,19 +102,24 @@ export function AchievementsCard({
     data,
     isSelf,
 }: {
-    data: AchievementsData;
+    data: AchievementsData | null | undefined;
     isSelf: boolean;
 }) {
     const [all, setAll] = useState(false);
-    const span = Math.max(1, data.next_xp - data.level_xp);
-    const percent = Math.min(100, ((data.xp - data.level_xp) / span) * 100);
-    const shown = all ? data.badges : data.badges.filter((b) => b.earned);
+    const badges = Array.isArray(data?.badges) ? data.badges : [];
+    if (!data) return null;
+    const span = Math.max(1, (data.next_xp ?? 1) - (data.level_xp ?? 0));
+    const percent = Math.min(
+        100,
+        (((data.xp ?? 0) - (data.level_xp ?? 0)) / span) * 100,
+    );
+    const shown = all ? badges : badges.filter((b) => b.earned);
 
     return (
-        <section className="glass rounded-3xl p-4">
+        <section className="gc-solid rounded-2xl p-3 sm:p-3.5">
             <div className="flex items-center gap-3">
-                <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-brand text-white">
-                    <span className="text-[11px] leading-none font-semibold uppercase opacity-80">
+                <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-sky-700 text-[#fff]">
+                    <span className="text-[11px] leading-none font-semibold uppercase">
                         {tr('рів.')}
                     </span>
                     <span className="text-lg leading-tight font-bold">
@@ -106,12 +133,13 @@ export function AchievementsCard({
                     <div
                         className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]"
                         role="progressbar"
+                        aria-label={tr('Досвід до наступного рівня')}
                         aria-valuenow={Math.round(percent)}
                         aria-valuemin={0}
                         aria-valuemax={100}
                     >
                         <div
-                            className="h-full rounded-full bg-gradient-brand transition-[width] duration-500"
+                            className="h-full rounded-full bg-sky-500 transition-[width] duration-500"
                             style={{ width: `${percent}%` }}
                         />
                     </div>
@@ -132,7 +160,7 @@ export function AchievementsCard({
                 <button
                     type="button"
                     onClick={() => setAll(!all)}
-                    className="text-xs text-gc-lilac-200 hover:text-white"
+                    className="text-xs text-sky-400 hover:text-white"
                 >
                     {all ? tr('Лише отримані') : tr('Усі')}
                 </button>
@@ -146,20 +174,20 @@ export function AchievementsCard({
             ) : (
                 <div className="mt-2 grid grid-cols-4 gap-2">
                     {shown.map((b) => {
-                        const Icon = ICONS[b.icon] ?? Award;
+                        const Icon = BADGE_ICONS[b.icon] ?? Award;
 
                         return (
                             <div
                                 key={b.key}
-                                title={`${b.title} — ${b.text}${b.earned ? '' : ` (${b.progress}/${b.target})`}`}
+                                title={`${b.title} — ${b.text}${b.earned || b.secret ? '' : ` (${b.progress}/${b.target})`}${b.rarity != null ? ` · ${rarityLabel(b.rarity)}` : ''}`}
                                 className="flex flex-col items-center gap-1 text-center"
                             >
                                 <span
                                     className={cn(
                                         'relative flex size-11 items-center justify-center rounded-2xl',
                                         b.earned
-                                            ? 'bg-amber-300/15 text-amber-200 ring-1 ring-amber-300/40'
-                                            : 'bg-white/[0.04] text-white/25',
+                                            ? 'bg-amber-300/15 text-amber-200'
+                                            : 'gc-solid-2 text-white/25',
                                     )}
                                 >
                                     <Icon className="size-5" />
@@ -177,6 +205,13 @@ export function AchievementsCard({
                                 >
                                     {b.title}
                                 </span>
+                                {b.earned &&
+                                    b.rarity != null &&
+                                    b.rarity < RARE && (
+                                        <span className="text-[9.5px] leading-none text-amber-200/80 tabular-nums">
+                                            {rarityLabel(b.rarity)}
+                                        </span>
+                                    )}
                             </div>
                         );
                     })}

@@ -13,7 +13,7 @@ use App\Support\Settings\SiteSettings;
  */
 class Catalog
 {
-    public const KINDS = ['plus', 'family', 'gift', 'promo', 'phone'];
+    public const KINDS = ['plus', 'family', 'household', 'gift', 'promo', 'phone', 'balance'];
 
     public const PROMOS = ['top', 'highlight', 'banner'];
 
@@ -30,12 +30,14 @@ class Catalog
         'card_renewals' => true,
         // Пропонувати зберегти картку під час оплати (для автопродовження).
         'offer_save_card' => true,
+        // Пробний період GameCon+ на сайті, днів (0 — вимкнено). Один раз на акаунт, без картки.
+        'trial_days' => 7,
         // Значки способів оплати внизу сайту (лише ті, що реально приймає еквайринг).
-        'badges' => ['visa', 'mastercard', 'apple_pay', 'google_pay'],
+        'badges' => ['plata', 'visa', 'mastercard', 'apple_pay', 'google_pay'],
     ];
 
     /** Значки, які можна показати: Visa, Mastercard, Maestro, ПРОСТІР, Apple Pay, Google Pay. */
-    public const BADGES = ['visa', 'mastercard', 'maestro', 'prostir', 'apple_pay', 'google_pay'];
+    public const BADGES = ['plata', 'visa', 'mastercard', 'maestro', 'prostir', 'apple_pay', 'google_pay'];
 
     public function __construct(private readonly SiteSettings $settings) {}
 
@@ -79,12 +81,32 @@ class Catalog
         return (int) ($this->get($key)['price'] ?? 0) * 100;
     }
 
-    /** Ціна для покупця (копійки): номери з GameCon+ — зі знижкою з Адмінка → Номери. */
+    /**
+     * Знижка на GameCon+ для сім’ї, якщо платник (лідер) сам має GameCon+: %, 0 — без знижки.
+     * Типово 50 % — так власний GameCon+ лідера окупається, а сім’я отримує бонуси дешевше.
+     */
+    public function familyPlusDiscount(): int
+    {
+        return max(0, min(90, (int) $this->settings->get('family_plus_discount', 50)));
+    }
+
+    /**
+     * Ціна для покупця (копійки): номери з GameCon+ — зі знижкою з Адмінка → Номери;
+     * GameCon+ для сім’ї лідеру з власним GameCon+ — зі знижкою familyPlusDiscount().
+     */
     public function priceFor(?User $user, string $key): int
     {
         $price = $this->price($key);
-        if ($user !== null && $user->isPlus() && ($this->get($key)['kind'] ?? null) === 'phone') {
-            $discount = app(PhoneNumbers::class)->config()['plus_discount'];
+        $kind = $this->get($key)['kind'] ?? null;
+        $discount = 0;
+        if ($user !== null && $user->isPlus()) {
+            $discount = match ($kind) {
+                'phone' => app(PhoneNumbers::class)->config()['plus_discount'],
+                'family' => $this->familyPlusDiscount(),
+                default => 0,
+            };
+        }
+        if ($discount > 0) {
             $price = (int) (round($price * (100 - $discount) / 100 / 100) * 100);
         }
 
@@ -115,24 +137,24 @@ class Catalog
     }
 
     /**
-     * @return array{renew_before_hours: int, retry_hours: int, retry_max: int, order_hours: int, card_renewals: bool, offer_save_card: bool, badges: list<string>}
+     * @return array{renew_before_hours: int, retry_hours: int, retry_max: int, order_hours: int, card_renewals: bool, offer_save_card: bool, trial_days: int, badges: list<string>}
      */
     public function rules(): array
     {
         $saved = (array) $this->settings->get('billing_rules', []);
-        $rules = self::RULES;
-        foreach ($rules as $key => $default) {
-            if (! array_key_exists($key, $saved)) {
-                continue;
-            }
-            if (is_array($default)) {
-                $rules[$key] = array_values(array_intersect(self::BADGES, (array) $saved[$key]));
-            } else {
-                $rules[$key] = is_bool($default) ? (bool) $saved[$key] : max(0, (int) $saved[$key]);
-            }
-        }
+        $int = fn (string $key, int $default): int => array_key_exists($key, $saved) ? max(0, (int) $saved[$key]) : $default;
+        $bool = fn (string $key, bool $default): bool => array_key_exists($key, $saved) ? (bool) $saved[$key] : $default;
 
-        return $rules;
+        return [
+            'renew_before_hours' => $int('renew_before_hours', self::RULES['renew_before_hours']),
+            'retry_hours' => $int('retry_hours', self::RULES['retry_hours']),
+            'retry_max' => $int('retry_max', self::RULES['retry_max']),
+            'order_hours' => $int('order_hours', self::RULES['order_hours']),
+            'card_renewals' => $bool('card_renewals', self::RULES['card_renewals']),
+            'offer_save_card' => $bool('offer_save_card', self::RULES['offer_save_card']),
+            'trial_days' => $int('trial_days', self::RULES['trial_days']),
+            'badges' => array_key_exists('badges', $saved) ? array_values(array_intersect(self::BADGES, (array) $saved['badges'])) : self::RULES['badges'],
+        ];
     }
 
     /**

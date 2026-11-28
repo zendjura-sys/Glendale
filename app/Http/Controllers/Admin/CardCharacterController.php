@@ -1,0 +1,135 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\CardCharacter;
+use App\Models\Movie;
+use App\Services\Cards\CardAutopilot;
+use App\Services\Cards\CardCollection;
+use App\Support\Settings\SiteSettings;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response;
+
+/** Адмінка → Картки персонажів: що підтягнулося з Shikimori й TMDB, приховати зайве, додати вручну. */
+class CardCharacterController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        return Inertia::render('admin/card-characters', [
+            'characters' => CardCharacter::query()->with('movie:id,title,type')
+                ->when($q !== '', fn ($query) => $query->where('name', 'like', "%{$q}%"))
+                ->latest('id')->paginate(40)->withQueryString()
+                ->through(fn (CardCharacter $c) => [
+                    'id' => $c->id, 'name' => $c->name, 'image_url' => $c->image_url, 'role' => $c->role,
+                    'source' => $c->source, 'is_hidden' => $c->is_hidden, 'movie' => $c->movie?->title,
+                    'ai_rank' => $c->ai_rank, 'ai_reason' => $c->ai_reason, 'manual_rank' => $c->manual_rank,
+                ]),
+            'movies' => Movie::query()->where('is_published', true)->orderBy('title')->limit(500)->get(['id', 'title'])
+                ->map(fn (Movie $m) => ['id' => $m->id, 'title' => $m->title]),
+            'q' => $q,
+            'autopilot' => [
+                ...app(CardAutopilot::class)->config(),
+                'quiet_now' => app(CardAutopilot::class)->quiet(),
+                'online' => app(CardAutopilot::class)->online(),
+                'ai_used' => app(CardAutopilot::class)->aiUsedToday(),
+                'ai_left' => app(CardAutopilot::class)->aiLeft(),
+                'last' => Cache::get('cards.autopilot.last'),
+            ],
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'movie_id' => ['required', 'integer', 'exists:movies,id'],
+            'name' => ['required', 'string', 'min:2', 'max:120'],
+            'image_url' => ['nullable', 'url:https', 'max:500'],
+            'role' => ['required', 'in:main,supporting'],
+        ]);
+        $c = CardCharacter::query()->create([...$data, 'source' => 'manual', 'source_id' => (string) Str::uuid(), 'popularity' => $data['role'] === 'main' ? 100 : 40]);
+        Cache::forget('cards.catalog');
+        Log::info('admin: card character added', ['admin' => $request->user()->id, 'character' => $c->id]);
+
+        return back()->with('success', 'Персонажа додано.');
+    }
+
+    public function toggle(Request $request, CardCharacter $character): RedirectResponse
+    {
+        // Приховуємо, а не видаляємо: картки, які вже є в людей, лишаються в їхніх альбомах.
+        $character->update(['is_hidden' => ! $character->is_hidden]);
+        Cache::forget('cards.catalog');
+        Log::info('admin: card character '.($character->is_hidden ? 'hidden' : 'shown'), ['admin' => $request->user()->id, 'character' => $character->id]);
+
+        return back();
+    }
+
+    /** Ранг вручну (перекриває оцінку ІІ); порожньо — знову за ІІ чи популярністю. */
+    public function rank(Request $request, CardCharacter $character): RedirectResponse
+    {
+        $data = $request->validate(['rank' => ['nullable', Rule::in(CardCollection::RARITIES)]]);
+        $character->update(['manual_rank' => $data['rank'] ?? null]);
+        Cache::forget('cards.catalog');
+        Log::info('admin: card character rank', ['admin' => $request->user()->id, 'character' => $character->id, 'rank' => $data['rank'] ?? null]);
+
+        return back();
+    }
+
+    public function aiRank(Request $request): RedirectResponse
+    {
+        Artisan::call('cards:ai-rank', ['--batches' => 3]);
+        Log::info('admin: card characters ai rank', ['admin' => $request->user()->id]);
+
+        return back()->with('success', trim(Artisan::output()));
+    }
+
+    public function aiThemes(Request $request): RedirectResponse
+    {
+        Artisan::call('cards:ai-themes', ['--batches' => 3]);
+        Log::info('admin: card themes ai', ['admin' => $request->user()->id]);
+
+        return back()->with('success', trim(Artisan::output()));
+    }
+
+    /** Налаштування автопілота карток (тихі години, поріг онлайну, бюджет ІІ). */
+    public function autopilot(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'quiet_from' => ['required', 'integer', 'between:0,23'],
+            'quiet_to' => ['required', 'integer', 'between:0,23'],
+            'online_below' => ['required', 'integer', 'min:0', 'max:100000'],
+            'ai_daily' => ['required', 'integer', 'min:0', 'max:10000'],
+            'ai_site_cap' => ['required', 'integer', 'min:0', 'max:100000'],
+        ]);
+        app(SiteSettings::class)->put(['cards_autopilot' => $data]);
+        Log::info('admin: cards autopilot settings', ['admin' => $request->user()->id, ...$data]);
+
+        return back()->with('success', 'Налаштування автопілота збережено.');
+    }
+
+    public function autopilotRun(Request $request): RedirectResponse
+    {
+        $result = app(CardAutopilot::class)->run(force: true);
+        Log::info('admin: cards autopilot run', ['admin' => $request->user()->id]);
+
+        return back()->with('success', 'Автопілот: '.json_encode($result, JSON_UNESCAPED_UNICODE));
+    }
+
+    public function sync(Request $request): RedirectResponse
+    {
+        Artisan::call('cards:characters', ['--limit' => 20]);
+        Log::info('admin: card characters sync', ['admin' => $request->user()->id]);
+
+        return back()->with('success', trim(Artisan::output()));
+    }
+}

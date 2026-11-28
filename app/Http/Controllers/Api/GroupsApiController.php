@@ -30,6 +30,7 @@ use App\Services\Families\FamilyService;
 use App\Services\Families\MemberStats;
 use App\Services\Families\ReportService;
 use App\Services\Families\WeeklyDigest;
+use App\Services\Families\WeeklyGoals;
 use App\Services\PostPresenter;
 use App\Services\Servers\ServerVotes;
 use App\Support\Money;
@@ -64,6 +65,7 @@ class GroupsApiController extends ApiController
         $query = Community::query()
             ->when($tab === 'mine', fn (Builder $q) => $q->whereIn('id', $joined !== [] ? $joined : [0]))
             ->when($tab === 'managed', fn (Builder $q) => $q->whereIn('id', $managed !== [] ? $managed : [0]))
+            ->when($tab === 'discover', fn (Builder $q) => $q->where('is_listed', true))
             ->when($term !== '', fn (Builder $q) => $q->search($term))
             ->orderByDesc('is_verified')
             ->orderByDesc('members_count');
@@ -127,7 +129,8 @@ class GroupsApiController extends ApiController
 
     public function joinCommunity(Request $request, Community $community): JsonResponse
     {
-        $status = $this->communities->join($community, $this->user($request));
+        $data = $request->validate(['password' => ['nullable', 'string', 'max:64'], 'answers' => ['nullable', 'array', 'max:5'], 'answers.*' => ['nullable', 'string', 'max:1000']]);
+        $status = $this->communities->join($community, $this->user($request), password: $data['password'] ?? null, answers: $data['answers'] ?? []);
 
         return response()->json(['membership' => $status]);
     }
@@ -235,6 +238,7 @@ class GroupsApiController extends ApiController
             'abilities' => $can,
             'chat_id' => $family->conversation_id,
             'overview' => [
+                'goals' => app(WeeklyGoals::class)->progress($family),
                 'stats' => [
                     'week_earned' => (int) (collect($week['lines'])->firstWhere('member.id', $member->id)['total'] ?? 0),
                     'week_total' => $week['total'],
@@ -270,6 +274,9 @@ class GroupsApiController extends ApiController
         $data = $request->validate([
             ...FamilyBaseController::nicknameRules(),
             'note' => ['nullable', 'string', 'max:1000'],
+            'answers' => ['nullable', 'array'],
+            'quiz' => ['nullable', 'array', 'max:10'],
+            'quiz.*' => ['nullable', 'integer', 'min:0', 'max:9'],
         ], FamilyBaseController::nicknameMessages());
 
         $families->apply($family, $this->user($request), $data);
@@ -290,7 +297,9 @@ class GroupsApiController extends ApiController
             ])->values();
         $applications = $can['members.manage']
             ? FamilyMember::query()->with('user')->where('family_id', $family->id)->where('status', FamilyMember::STATUS_PENDING)->latest('id')->get()
-                ->map(fn (FamilyMember $m) => [...$m->toCard($family), 'note' => $m->application_note])->values()
+                ->map(fn (FamilyMember $m) => [...$m->toCard($family), 'note' => $m->application_note,
+                    'answers' => collect($family->applicationQuestions())->map(fn (array $q) => ['question' => $q['text'], 'answer' => $m->answers[$q['id']] ?? null])
+                        ->filter(fn (array $a) => $a['answer'] !== null)->values()])->values()
             : [];
 
         return response()->json([
@@ -491,7 +500,7 @@ class GroupsApiController extends ApiController
         $request->merge(['tag' => strtoupper(trim($request->string('tag')->toString()))]);
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:60'],
-            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $family->server_id)->ignore($family->id)],
+            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $family->server_id)->whereNull('deleted_at')->ignore($family->id)],
             'description' => ['nullable', 'string', 'max:2000'],
             'is_recruiting' => ['required', 'boolean'],
         ]);

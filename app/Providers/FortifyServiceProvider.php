@@ -91,6 +91,11 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($throttleKey);
         });
 
+        // «Увійти через застосунок»: нові запити — 6 за хвилину з IP, опитування стану кожні 2 с.
+        RateLimiter::for('app-login', fn (Request $request) => Limit::perMinute(6)->by($request->ip()));
+        RateLimiter::for('app-login-poll', fn (Request $request) => Limit::perMinute(90)->by($request->ip()));
+        RateLimiter::for('app-login-app', fn (Request $request) => Limit::perMinute(30)->by($request->user()?->getAuthIdentifier() ?: $request->ip()));
+
         RateLimiter::for('passkeys', function (Request $request) {
             return Limit::perMinute(10)->by(
                 ($request->input('credential.id') ?: $request->session()->getId()).'|'.$request->ip(),

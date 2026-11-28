@@ -33,9 +33,9 @@ export function DonationJarCard({
             : null;
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="gc-solid rounded-2xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
-                <HandHeart className="size-5 text-rose-300" />
+                <HandHeart className="size-5 text-red-400" />
                 {title}
             </h2>
             {jar.title && (
@@ -62,7 +62,7 @@ export function DonationJarCard({
                     {progress !== null && (
                         <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.08]">
                             <div
-                                className="h-full rounded-full bg-[var(--btn-primary,#6366f1)] transition-[width] duration-700 ease-out"
+                                className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
                                 style={{ width: `${Math.max(3, progress)}%` }}
                             />
                         </div>
@@ -73,7 +73,7 @@ export function DonationJarCard({
                 href={jar.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--btn-primary,#6366f1)] px-4 text-sm font-semibold text-white transition hover:opacity-90"
+                className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90"
             >
                 {tr('Задонатити')}
                 <ExternalLink className="size-4" />
@@ -105,10 +105,10 @@ export function DonationJarForm({
                 event.preventDefault();
                 form.put(action, { preserveScroll: true });
             }}
-            className="glass space-y-3 rounded-3xl p-5"
+            className="gc-solid space-y-3 rounded-2xl p-5"
         >
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
-                <HandHeart className="size-5 text-rose-300" />
+                <HandHeart className="size-5 text-red-400" />
                 {tr('Банка Monobank')}
             </h2>
             <p className="text-sm text-white/50">{hint}</p>
@@ -128,7 +128,7 @@ export function DonationJarForm({
             <button
                 type="submit"
                 disabled={form.processing}
-                className="inline-flex h-10 items-center justify-center rounded-xl bg-[var(--btn-primary,#6366f1)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+                className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
             >
                 {tr('Зберегти')}
             </button>

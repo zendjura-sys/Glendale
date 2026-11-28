@@ -165,6 +165,13 @@ class ReportService
         });
 
         $this->notifier->refresh($family, 'reports');
+        // Завдання змін: схвалений звіт сам зараховується у відкриті зміни учасника.
+        if ($approve) {
+            $report->unsetRelation('beneficiary');
+            if ($report->beneficiary instanceof FamilyMember) {
+                app(ShiftGoals::class)->recheck($family, $report->beneficiary);
+            }
+        }
 
         return $report;
     }

@@ -2,8 +2,11 @@ import { Link, router } from '@inertiajs/react';
 import {
     Ban,
     Check,
+    Flag,
     Gavel,
     MessageSquareHeart,
+    ShieldCheck,
+    UserCheck,
     UserX,
     VolumeX,
     X,
@@ -12,7 +15,9 @@ import { useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { formatDate, timeAgo } from '@/lib/format';
 import { tr } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
+import { SpellcheckTextarea } from '@/components/gc/spellcheck';
 
 export type PersonReport = {
     user_id: number;
@@ -21,6 +26,8 @@ export type PersonReport = {
     reasons: string[];
     comments: string[];
     reporters: string[];
+    trusted?: boolean;
+    strikes?: number;
     created_at: string;
 };
 
@@ -32,7 +39,10 @@ export type AppealItem = {
     banned: boolean;
     ban_reason: string | null;
     muted_until: string | null;
+    strikes?: number;
     created_at: string;
+    due_at?: string;
+    overdue?: boolean;
 };
 
 const button =
@@ -49,7 +59,10 @@ export function PeopleReports({
     hoursLabel: (h: number) => string;
 }) {
     const [hours, setHours] = useState<Record<number, number>>({});
-    const resolve = (row: PersonReport, action: 'ban' | 'mute' | 'dismiss') => {
+    const resolve = (
+        row: PersonReport,
+        action: 'ban' | 'mute' | 'strike' | 'dismiss',
+    ) => {
         if (
             action === 'ban' &&
             !window.confirm(tr('Заблокувати {name}?', { name: row.user.name }))
@@ -68,7 +81,7 @@ export function PeopleReports({
     };
 
     return (
-        <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+        <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <UserX className="size-5 text-white/60" />
                 {tr('Скарги на людей')}
@@ -82,7 +95,8 @@ export function PeopleReports({
                     {people.map((row) => (
                         <article
                             key={row.user_id}
-                            className="rounded-2xl bg-white/[0.03] p-3"
+                            id={`mod-person-${row.user_id}`}
+                            className="gc-solid-2 rounded-2xl p-3"
                         >
                             <div className="flex items-start gap-2.5">
                                 <Link href={`/${row.user.username}`}>
@@ -91,11 +105,23 @@ export function PeopleReports({
                                 <div className="min-w-0 flex-1">
                                     <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
                                         {row.user.name}
-                                        <span className="rounded-md bg-rose-500/15 px-2 py-0.5 text-xs font-normal text-rose-200">
+                                        <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-xs font-normal text-red-400">
                                             {tr('Скарг: {count}', {
                                                 count: row.count,
                                             })}
                                         </span>
+                                        {row.trusted && (
+                                            <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs font-normal text-emerald-200">
+                                                {tr('Довірений скаржник')}
+                                            </span>
+                                        )}
+                                        {(row.strikes ?? 0) > 0 && (
+                                            <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-normal text-amber-200">
+                                                {tr('Страйків: {count}', {
+                                                    count: row.strikes ?? 0,
+                                                })}
+                                            </span>
+                                        )}
                                         <span className="ml-auto text-xs font-normal text-white/45">
                                             {timeAgo(row.created_at)}
                                         </span>
@@ -104,7 +130,7 @@ export function PeopleReports({
                                         {row.reasons.map((reason) => (
                                             <span
                                                 key={reason}
-                                                className="rounded-md bg-white/[0.06] px-2 py-0.5"
+                                                className="gc-solid-2 rounded-md px-2 py-0.5"
                                             >
                                                 {tr(reason)}
                                             </span>
@@ -126,7 +152,7 @@ export function PeopleReports({
                                 <button
                                     type="button"
                                     onClick={() => resolve(row, 'ban')}
-                                    className={`${button} bg-rose-500/15 text-rose-200 hover:bg-rose-500/25`}
+                                    className={`${button} bg-red-500/15 text-red-400 hover:bg-red-500/25`}
                                 >
                                     <Gavel className="size-4" />
                                     {tr('Заблокувати')}
@@ -162,8 +188,16 @@ export function PeopleReports({
                                 </span>
                                 <button
                                     type="button"
+                                    onClick={() => resolve(row, 'strike')}
+                                    className={`${button} gc-solid-2 text-white/80 hover:bg-white/[0.1]`}
+                                >
+                                    <Flag className="size-4" />
+                                    {tr('Страйк')}
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => resolve(row, 'dismiss')}
-                                    className={`${button} text-white/55 hover:bg-white/[0.06] hover:text-white`}
+                                    className={`${button} text-white/55 hover:bg-[var(--gc-l3)] hover:text-white`}
                                 >
                                     <Ban className="size-4" />
                                     {tr('Відхилити')}
@@ -188,7 +222,10 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
         );
 
     return (
-        <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+        <section
+            id="appeals"
+            className="gc-solid mb-6 scroll-mt-24 rounded-2xl p-4 sm:p-5"
+        >
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <Gavel className="size-5 text-white/60" />
                 {tr('Оскарження')}
@@ -202,7 +239,8 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                     {appeals.map((item) => (
                         <article
                             key={item.id}
-                            className="rounded-2xl bg-white/[0.03] p-3"
+                            id={`mod-appeal-${item.id}`}
+                            className="gc-solid-2 rounded-2xl p-3"
                         >
                             <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
                                 {item.user && (
@@ -217,11 +255,11 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                                         {item.user.name}
                                     </Link>
                                 )}
-                                <span className="rounded-md bg-white/[0.06] px-2 py-0.5">
+                                <span className="gc-solid-2 rounded-md px-2 py-0.5">
                                     {tr(item.kind)}
                                 </span>
                                 {item.banned && (
-                                    <span className="rounded-md bg-rose-500/15 px-2 py-0.5 text-rose-200">
+                                    <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-red-400">
                                         {tr('Заблоковано')}
                                         {item.ban_reason &&
                                             `: ${item.ban_reason}`}
@@ -234,27 +272,50 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                                         })}
                                     </span>
                                 )}
-                                <span className="ml-auto">
-                                    {timeAgo(item.created_at)}
+                                {(item.strikes ?? 0) > 0 && (
+                                    <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-amber-200">
+                                        {tr('Страйків: {count}', {
+                                            count: item.strikes ?? 0,
+                                        })}
+                                    </span>
+                                )}
+                                <span
+                                    className={cn(
+                                        'ml-auto',
+                                        item.overdue &&
+                                            'font-medium text-red-400',
+                                    )}
+                                >
+                                    {item.overdue
+                                        ? tr('Прострочено · {ago}', {
+                                              ago: timeAgo(item.created_at),
+                                          })
+                                        : item.due_at
+                                          ? tr('Відповісти до {date}', {
+                                                date: formatDate(item.due_at),
+                                            })
+                                          : timeAgo(item.created_at)}
                                 </span>
                             </div>
                             <p className="mt-2 text-sm whitespace-pre-line text-white/80">
                                 {item.body}
                             </p>
-                            <textarea
+                            <SpellcheckTextarea
                                 value={replies[item.id] ?? ''}
-                                onChange={(e) =>
+                                onValueChange={(v) =>
                                     setReplies({
                                         ...replies,
-                                        [item.id]: e.target.value,
+                                        [item.id]: v,
                                     })
                                 }
+                                textClassName="px-3 py-2 text-sm"
+                                containerClassName="mt-2"
                                 rows={2}
                                 maxLength={1000}
                                 placeholder={tr(
                                     'Відповідь людині (необов’язково)',
                                 )}
-                                className="input-glass mt-2 w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                className="input-glass w-full rounded-xl text-white placeholder:text-white/30 focus:outline-none"
                             />
                             <div className="mt-2 flex flex-wrap gap-2">
                                 <button
@@ -268,7 +329,7 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                                 <button
                                     type="button"
                                     onClick={() => answer(item, false)}
-                                    className={`${button} text-white/55 hover:bg-white/[0.06] hover:text-white`}
+                                    className={`${button} text-white/55 hover:bg-[var(--gc-l3)] hover:text-white`}
                                 >
                                     <X className="size-4" />
                                     {tr('Відхилити')}
@@ -294,7 +355,7 @@ export type FeedbackItem = {
 /** Відгуки від людей: прочитане зникає зі списку. */
 export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
     return (
-        <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+        <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <MessageSquareHeart className="size-5 text-white/60" />
                 {tr('Відгуки')}
@@ -308,7 +369,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
                     {feedback.map((item) => (
                         <article
                             key={item.id}
-                            className="rounded-2xl bg-white/[0.03] p-3"
+                            className="gc-solid-2 rounded-2xl p-3"
                         >
                             <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
                                 {item.user && (
@@ -323,13 +384,13 @@ export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
                                         {item.user.name}
                                     </Link>
                                 )}
-                                <span className="rounded-md bg-white/[0.06] px-2 py-0.5">
+                                <span className="gc-solid-2 rounded-md px-2 py-0.5">
                                     {tr(item.kind)}
                                 </span>
                                 {item.url && (
                                     <Link
                                         href={item.url}
-                                        className="truncate text-gc-lilac-300 hover:text-white"
+                                        className="truncate text-sky-400 hover:text-white"
                                     >
                                         {item.url}
                                     </Link>
@@ -351,7 +412,7 @@ export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className={`${button} text-white/60 hover:bg-white/[0.06] hover:text-white`}
+                                    className={`${button} text-white/60 hover:bg-[var(--gc-l3)] hover:text-white`}
                                 >
                                     <Check className="size-4" />
                                     {tr('Прочитано')}
@@ -361,6 +422,198 @@ export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
                     ))}
                 </div>
             )}
+        </section>
+    );
+}
+
+export type NewcomerItem = UserCard & {
+    created_at: string | null;
+    posts: number;
+    signals: string[];
+    risk: number;
+};
+
+export type ReporterItem = UserCard & {
+    resolved: number;
+    dismissed: number;
+    trusted: boolean;
+    manual: boolean | null;
+};
+
+/** Черга новачків: нові акаунти з ознаками ризику — переглянути, заборонити писати чи заблокувати. */
+export function Newcomers({ items }: { items: NewcomerItem[] }) {
+    if (items.length === 0) return null;
+    const act = (id: number, action: 'ban' | 'mute') =>
+        (action !== 'ban' || window.confirm(tr('Заблокувати акаунт?'))) &&
+        router.post(
+            `/admin/moderation/people/${id}`,
+            {
+                action,
+                hours: action === 'mute' ? 24 : null,
+                reason: tr('Перевірка нового акаунта'),
+            },
+            { preserveScroll: true },
+        );
+
+    return (
+        <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
+            <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
+                <UserCheck className="size-5 text-white/60" />
+                {tr('Новачки на перевірку')}
+            </h2>
+            <p className="mb-3 text-sm text-white/45">
+                {tr('Акаунти до 7 днів; найризиковіші — зверху.')}
+            </p>
+            <div className="divide-y divide-white/[0.05]">
+                {items.map((u) => (
+                    <div
+                        key={u.id}
+                        className="flex flex-wrap items-center gap-3 py-2.5"
+                    >
+                        <Link
+                            href={`/${u.username}`}
+                            className="flex min-w-0 flex-1 items-center gap-2.5"
+                        >
+                            <UserAvatar user={u} size="sm" />
+                            <span className="min-w-0">
+                                <span className="block truncate text-sm font-semibold text-white">
+                                    {u.name}
+                                </span>
+                                <span className="block text-xs text-white/45">
+                                    {u.created_at && timeAgo(u.created_at)} ·{' '}
+                                    {tr('записів: {count}', { count: u.posts })}
+                                </span>
+                            </span>
+                        </Link>
+                        <div className="flex flex-wrap gap-1.5">
+                            {u.signals.map((signal) => (
+                                <span
+                                    key={signal}
+                                    className={cn(
+                                        'rounded-md px-2 py-0.5 text-xs',
+                                        u.risk >= 5
+                                            ? 'bg-red-500/15 text-red-400'
+                                            : 'gc-solid-2 text-white/60',
+                                    )}
+                                >
+                                    {tr(signal)}
+                                </span>
+                            ))}
+                        </div>
+                        <div className="flex gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    router.post(
+                                        `/admin/moderation/users/${u.id}/reviewed`,
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
+                                className={`${button} bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25`}
+                            >
+                                <Check className="size-4" />
+                                {tr('Усе гаразд')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => act(u.id, 'mute')}
+                                aria-label={tr('Заборонити писати на добу')}
+                                className={`${button} bg-amber-500/15 text-amber-200 hover:bg-amber-500/25`}
+                            >
+                                <VolumeX className="size-4" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => act(u.id, 'ban')}
+                                aria-label={tr('Заблокувати')}
+                                className={`${button} bg-red-500/15 text-red-400 hover:bg-red-500/25`}
+                            >
+                                <Gavel className="size-4" />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+/** Скаржники за 90 днів: точність скарг і ручна позначка довіри. */
+export function Reporters({ items }: { items: ReporterItem[] }) {
+    if (items.length === 0) return null;
+    const set = (id: number, trusted: boolean | null) =>
+        router.post(
+            `/admin/moderation/users/${id}/trust`,
+            { trusted },
+            { preserveScroll: true },
+        );
+
+    return (
+        <section className="gc-solid mb-6 rounded-2xl p-4 sm:p-5">
+            <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
+                <ShieldCheck className="size-5 text-white/60" />
+                {tr('Скаржники')}
+            </h2>
+            <p className="mb-3 text-sm text-white/45">
+                {tr(
+                    'Довірені (від 10 розглянутих скарг і 80% по ділу) піднімаються в черзі.',
+                )}
+            </p>
+            <div className="divide-y divide-white/[0.05]">
+                {items.map((u) => {
+                    const total = u.resolved + u.dismissed;
+                    return (
+                        <div
+                            key={u.id}
+                            className="flex flex-wrap items-center gap-3 py-2"
+                        >
+                            <UserAvatar user={u} size="xs" />
+                            <span className="min-w-0 flex-1 truncate text-sm text-white">
+                                {u.name}
+                            </span>
+                            <span className="text-xs text-white/50 tabular-nums">
+                                {tr('по ділу {ok} з {total}', {
+                                    ok: u.resolved,
+                                    total,
+                                })}
+                            </span>
+                            {u.trusted && (
+                                <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-200">
+                                    {u.manual === true
+                                        ? tr('Довірений (вручну)')
+                                        : tr('Довірений')}
+                                </span>
+                            )}
+                            <select
+                                value={
+                                    u.manual === null
+                                        ? 'auto'
+                                        : u.manual
+                                          ? 'yes'
+                                          : 'no'
+                                }
+                                onChange={(e) =>
+                                    set(
+                                        u.id,
+                                        e.target.value === 'auto'
+                                            ? null
+                                            : e.target.value === 'yes',
+                                    )
+                                }
+                                aria-label={tr('Довіра')}
+                                className="input-glass h-8 rounded-lg px-2 text-xs text-white"
+                            >
+                                <option value="auto">
+                                    {tr('Автоматично')}
+                                </option>
+                                <option value="yes">{tr('Довіряти')}</option>
+                                <option value="no">{tr('Не довіряти')}</option>
+                            </select>
+                        </div>
+                    );
+                })}
+            </div>
         </section>
     );
 }
