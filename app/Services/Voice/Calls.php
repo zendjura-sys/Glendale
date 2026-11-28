@@ -34,6 +34,21 @@ class Calls
     }
 
     /**
+     * Вхідні дзвінки людини: її кличуть (ще не прийняла й не відхилила), а дзвінок досі дзвонить.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function incoming(User $user): array
+    {
+        return array_values(Call::query()->with(['conversation', 'caller', 'participants.user'])
+            ->where('status', Call::STATUS_RINGING)
+            ->where('created_at', '>', now()->subSeconds(Call::RING_SECONDS))
+            ->whereHas('participants', fn ($q) => $q->where('user_id', $user->id)->where('state', CallParticipant::STATE_INVITED))
+            ->latest('id')->limit(3)->get()
+            ->map(fn (Call $call) => $this->state($call))->all());
+    }
+
+    /**
      * Чи може людина дзвонити в цю бесіду: учасник, а в особистій — співрозмовник приймає повідомлення від неї.
      */
     public function canCall(Conversation $conversation, User $user): bool

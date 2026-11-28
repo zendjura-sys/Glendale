@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { NotchToggle } from '@/components/NotchedCard';
 import { IconButton } from '@/components/ui';
 import { ToastHost } from '@/components/kit';
+import { IncomingCalls } from '@/components/IncomingCalls';
 import { PlayerBar } from '@/components/PlayerBar';
 import { HomeCarousels } from '@/components/HomeCarousels';
 import { useLayout, useSettings } from '@/lib/layout';
@@ -110,6 +111,7 @@ export function UnifiedView() {
                 {/* Плеєр — унизу вікна на всіх сторінках, поки щось у черзі. */}
                 <PlayerBar hidden={!!nav.path?.startsWith('/music')} />
             </div>
+            <IncomingCalls />
             {panel && <SettingsPanel onClose={() => setPanel(false)} />}
         </div>
     );

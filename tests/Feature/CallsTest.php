@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\User;
+use App\Services\Auth\ApiTokens;
 use App\Services\Messenger;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -68,6 +69,24 @@ class CallsTest extends TestCase
         $this->assertSame(Call::STATUS_ENDED, $call->fresh()->status);
         $this->assertStringStartsWith('Дзвінок · 0:', (string) $this->lastSystemText($conversation));
         $this->actingAs($this->alice)->getJson(route('messages.call.show', $conversation))->assertJsonPath('call', null);
+    }
+
+    public function test_desktop_app_sees_incoming_call_until_answered(): void
+    {
+        $conversation = $this->direct();
+        $token = app(ApiTokens::class)->issue($this->bob, 'desktop');
+        $this->withToken($token)->getJson('/api/v1/calls/incoming')->assertOk()->assertJsonCount(0, 'calls');
+
+        $this->actingAs($this->alice)->postJson(route('messages.call.start', $conversation))->assertOk();
+        $this->app['auth']->forgetGuards();
+        $call = $this->withToken($token)->getJson('/api/v1/calls/incoming')->assertOk()
+            ->assertJsonCount(1, 'calls')
+            ->assertJsonPath('calls.0.caller.id', $this->alice->id)
+            ->json('calls.0');
+
+        // Прийняв — більше не вхідний (і в того, хто дзвонить, його теж немає).
+        $this->withToken($token)->postJson("/api/v1/calls/{$call['id']}/join")->assertOk();
+        $this->withToken($token)->getJson('/api/v1/calls/incoming')->assertOk()->assertJsonCount(0, 'calls');
     }
 
     public function test_declined_and_missed_calls_leave_a_note_in_the_chat(): void

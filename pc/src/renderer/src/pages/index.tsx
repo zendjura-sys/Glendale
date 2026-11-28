@@ -69,7 +69,7 @@ export function resolvePage(path: string): ReactNode | null {
     const meName = (window as unknown as { gcUsername?: string }).gcUsername;
     if (p === '/profile' && meName) return <ProfilePage key="me" username={meName} />;
     if ((m = p.match(/^\/(?:u|users)\/([^/]+)$/))) return <ProfilePage key={m[1]} username={decodeURIComponent(m[1])} />;
-    if ((m = p.match(/^\/messages(?:\/(\d+))?$/))) return <MessagesPage key={path} initial={m[1] ? Number(m[1]) : undefined} />;
+    if ((m = p.match(/^\/messages(?:\/(\d+))?$/))) return <MessagesPage key={path} initial={m[1] ? Number(m[1]) : undefined} answer={Number(new URLSearchParams(query).get('answer')) || undefined} />;
     if ((m = p.match(/^\/(?:families|f)\/([^/]+)/))) return <FamilyPage key={path} slug={m[1]} initialTab={tab} />;
     return null;
 }

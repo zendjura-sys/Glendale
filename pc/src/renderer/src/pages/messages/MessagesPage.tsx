@@ -28,7 +28,7 @@ const EMOJI = ['👍', '❤️', '🔥', '😂', '😮', '😢', '🎉', '👎']
 const size = (n: number | null): string => (!n ? '' : n > 1048576 ? `${(n / 1048576).toFixed(1)} МБ` : `${Math.ceil(n / 1024)} КБ`);
 
 /** «Повідомлення» в програмі: бесіди з пошуком, чат з фото, файлами, стікерами, голосовими, відповідями, реакціями, правками й закріпленими. */
-export function MessagesPage({ initial }: { initial?: number }) {
+export function MessagesPage({ initial, answer }: { initial?: number; answer?: number }) {
     const [list, setList] = useState<Conversation[] | null>(null);
     const [open, setOpen] = useState<number | null>(initial ?? null);
     const [q, setQ] = useState('');
@@ -91,7 +91,7 @@ export function MessagesPage({ initial }: { initial?: number }) {
                     </ul>
                 </aside>
                 <section className="relative min-h-0 rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.07]">
-                    {open ? <Chat key={open} id={open} onChanged={load} /> : <div className="grid h-full place-items-center text-sm text-white/45">Оберіть бесіду ліворуч</div>}
+                    {open ? <Chat key={open} id={open} onChanged={load} answer={open === initial ? answer : undefined} /> : <div className="grid h-full place-items-center text-sm text-white/45">Оберіть бесіду ліворуч</div>}
                 </section>
             </div>
             {creating && (
@@ -108,7 +108,7 @@ export function MessagesPage({ initial }: { initial?: number }) {
     );
 }
 
-function Chat({ id, onChanged }: { id: number; onChanged: () => Promise<void> }) {
+function Chat({ id, onChanged, answer }: { id: number; onChanged: () => Promise<void>; answer?: number }) {
     const { me } = useMe();
     const toast = useToast();
     const [detail, setDetail] = useState<Detail | null>(null);
@@ -125,7 +125,7 @@ function Chat({ id, onChanged }: { id: number; onChanged: () => Promise<void> })
     const scroller = useRef<HTMLDivElement>(null);
     const stick = useRef(true);
     const { call, refresh: refreshCall } = useConversationCall(id);
-    const [inCall, setInCall] = useState<{ mode: 'start' | 'join'; callId?: number; video?: boolean } | null>(null);
+    const [inCall, setInCall] = useState<{ mode: 'start' | 'join'; callId?: number; video?: boolean } | null>(answer ? { mode: 'join', callId: answer } : null);
 
     const load = useCallback(async () => {
         try {

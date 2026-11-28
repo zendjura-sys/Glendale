@@ -423,6 +423,7 @@ Route::prefix('v1')->group(function () {
             });
         });
 
+        Route::get('calls/incoming', [CallController::class, 'incoming'])->middleware(['module:messages', 'throttle:120,1']);
         Route::prefix('calls/{call}')->whereNumber('call')->middleware('module:messages')->group(function () {
             Route::post('join', [CallController::class, 'join'])->middleware('throttle:30,1');
             Route::post('decline', [CallController::class, 'decline']);
