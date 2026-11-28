@@ -238,7 +238,7 @@ function Studio({ initial }: { initial: StudioConfig }) {
                 <Preview engine={engine} selected={selected} onSelect={setSelected} onChange={commit} />
 
                 {/* Джерела й властивості. */}
-                <div className="grid min-h-0 grid-rows-[1fr_auto] gap-3">
+                <div className={`grid min-h-0 gap-3 ${engine.broadcastId ? 'grid-rows-[minmax(0,1fr)_auto_minmax(220px,1fr)]' : 'grid-rows-[1fr_auto]'}`}>
                     <NotchedCard title="Джерела" subtitle={scene.name} glow="violet" badge={<NotchBadge tone="violet">{scene.sources.length}</NotchBadge>} badgeWidth={40}>
                         <div className="mb-2 grid grid-cols-3 gap-1">
                             <AddButton icon={Monitor} label="Екран" onClick={() => setPicker('screen')} />
@@ -292,6 +292,7 @@ function Studio({ initial }: { initial: StudioConfig }) {
                             <Properties source={source} onChange={commit} />
                         </div>
                     )}
+                    {engine.broadcastId && <LiveChat id={engine.broadcastId} />}
                 </div>
             </div>
 
@@ -573,6 +574,64 @@ function CapturePicker({ kind, onPick, onClose }: { kind: 'screen' | 'window'; o
                     ))}
                 </div>
             </div>
+        </div>
+    );
+}
+
+type ChatMsg = { id: number; body: string | null; gift: { emoji: string; label: string } | null; user: { id: number; name: string } | null };
+
+/** Чат ефіру просто в Студії: повідомлення й подарунки глядачів, відповідь стрімера, лічильники. */
+function LiveChat({ id }: { id: number }) {
+    const [msgs, setMsgs] = useState<ChatMsg[]>([]);
+    const [stats, setStats] = useState({ viewers: 0, likes: 0 });
+    const [body, setBody] = useState('');
+    const box = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        let stop = false;
+        const tick = async (): Promise<void> => {
+            const s = await api<{ messages: ChatMsg[]; broadcast: { viewers: number; likes: number } }>('GET', `/api/v1/site/livecast/${id}/state`).catch(() => null);
+            if (!s || stop) return;
+            setMsgs(s.messages);
+            setStats({ viewers: s.broadcast.viewers, likes: s.broadcast.likes });
+        };
+        void tick();
+        const t = window.setInterval(tick, 3000);
+        return () => {
+            stop = true;
+            window.clearInterval(t);
+        };
+    }, [id]);
+    useEffect(() => box.current?.scrollTo({ top: box.current.scrollHeight }), [msgs.length]);
+    const send = async (): Promise<void> => {
+        if (!body.trim()) return;
+        const s = await api<{ messages: ChatMsg[] }>('POST', `/api/v1/site/livecast/${id}/messages`, { body: body.trim() }).catch(() => null);
+        if (s) setMsgs(s.messages);
+        setBody('');
+    };
+    return (
+        <div className="flex min-h-0 flex-col rounded-2xl bg-obsidian ring-1 ring-white/10">
+            <div className="flex items-center gap-2 px-3 pt-2.5 pb-2 text-xs">
+                <span className="font-semibold tracking-wide text-white/50 uppercase">Чат ефіру</span>
+                <span className="ml-auto text-white/50">👁 {stats.viewers} · ♥ {stats.likes}</span>
+            </div>
+            <div ref={box} className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3 text-[13px]">
+                {msgs.length === 0 && <p className="py-4 text-center text-xs text-white/35">Глядачі напишуть тут.</p>}
+                {msgs.map((m) => (
+                    <p key={m.id} className={`break-words ${m.gift ? 'rounded-md bg-neon-violet/15 px-1.5 py-0.5' : ''}`}>
+                        <b className="text-neon-cyan">{m.user?.name}</b> <span className="text-white/80">{m.gift ? `${m.gift.emoji} «${m.gift.label}»` : m.body}</span>
+                    </p>
+                ))}
+            </div>
+            <form
+                className="flex gap-1.5 p-2"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    void send();
+                }}
+            >
+                <input value={body} maxLength={280} onChange={(e) => setBody(e.target.value)} placeholder="Відповісти глядачам…" className="min-w-0 flex-1 rounded-lg bg-white/5 px-2 py-1.5 text-sm outline-none ring-1 ring-white/10 focus:ring-neon-cyan/50" />
+                <button type="submit" className="rounded-lg bg-neon-cyan/20 px-2.5 text-sm ring-1 ring-neon-cyan/40 hover:bg-neon-cyan/30">→</button>
+            </form>
         </div>
     );
 }
