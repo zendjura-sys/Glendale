@@ -4,6 +4,7 @@ import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { navPrefetch } from '@/lib/prefetch';
 import { cn } from '@/lib/utils';
+import { centerInRow } from '@/lib/scroll-row';
 
 export type UnderlineTab = {
     key: string;
@@ -35,13 +36,10 @@ export function UnderlineTabs({
     const scroller = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        scroller.current
-            ?.querySelector<HTMLElement>('[data-active]')
-            ?.scrollIntoView({
-                block: 'nearest',
-                inline: 'center',
-                behavior: 'instant',
-            });
+        centerInRow(
+            scroller.current,
+            scroller.current?.querySelector<HTMLElement>('[data-active]'),
+        );
     }, [active]);
 
     return (

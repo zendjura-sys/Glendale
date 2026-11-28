@@ -7,6 +7,7 @@ import { UnderlineTabs } from '@/components/gc/underline-tabs';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { MovieCard } from '@/types';
+import { centerInRow } from '@/lib/scroll-row';
 
 /**
  * Вкладки за типом (Серіали / Фільми / Аніме…) і стрічка плиток: постер — тло плитки,
@@ -175,13 +176,12 @@ export function SortSegments<T extends string>({
     return (
         <div
             ref={(el) => {
-                // Телефон: активна кнопка завжди у полі зору, а не за краєм.
-                el?.querySelector<HTMLElement>(
-                    '[aria-pressed="true"]',
-                )?.scrollIntoView({
-                    block: 'nearest',
-                    inline: 'center',
-                });
+                // Телефон: активна кнопка завжди у полі зору, а не за краєм. Гортаємо лише сам ряд —
+                // scrollIntoView прокрутив би й сторінку (див. centerInRow).
+                centerInRow(
+                    el,
+                    el?.querySelector<HTMLElement>('[aria-pressed="true"]'),
+                );
             }}
             className="scrollbar-none flex min-w-0 gap-1 overflow-x-auto rounded-2xl bg-white/[0.05] p-1"
         >

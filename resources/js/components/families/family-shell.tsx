@@ -35,6 +35,7 @@ import type { FamilySection, FamilyShellProps } from '@/types';
 import { FamilyLogo } from './family-logo';
 import { RankBadge } from './ui';
 import { tr } from '@/lib/i18n';
+import { centerInRow } from '@/lib/scroll-row';
 
 type Tab = {
     section: FamilySection;
@@ -60,13 +61,13 @@ export function FamilyShell({
     const tabStrip = useRef<HTMLElement | null>(null);
 
     useEffect(() => {
-        tabStrip.current
-            ?.querySelector<HTMLElement>('[aria-current="page"]')
-            ?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest',
-                inline: 'center',
-            });
+        centerInRow(
+            tabStrip.current,
+            tabStrip.current?.querySelector<HTMLElement>(
+                '[aria-current="page"]',
+            ),
+            true,
+        );
     }, [section]);
     const reload = useRef<ReturnType<typeof setTimeout> | null>(null);
     const tabsNav = useRef<HTMLElement | null>(null);
@@ -82,11 +83,7 @@ export function FamilyShell({
         const active = tabsNav.current?.querySelector<HTMLElement>(
             '[data-family-tab="active"]',
         );
-        active?.scrollIntoView({
-            inline: 'center',
-            block: 'nearest',
-            behavior: 'smooth',
-        });
+        centerInRow(tabsNav.current, active, true);
     }, [section]);
 
     const tabs: Tab[] = [
