@@ -1,7 +1,7 @@
 {
     "name": "gamecon-pc",
     "productName": "GameCon",
-    "version": "1.2611.0",
+    "version": "1.2611.1",
     "description": "GameCon для ПК: автономне середовище (Electron + React 19 + нативне ядро Rust через NAPI-RS).",
     "author": "GCDev Software",
     "private": true,
