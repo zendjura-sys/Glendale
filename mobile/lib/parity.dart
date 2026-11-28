@@ -368,6 +368,25 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
     if (ok) context.pop(true);
   }
 
+  /// Завантажити картинку й вставити її Markdown-рядком туди, де стоїть курсор у тексті.
+  Future<void> _insertImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 88);
+    if (picked == null || !mounted) return;
+    final api = AppScope.read(context).session.api;
+    String? url;
+    await attempt(context, () async {
+      final r = await api.upload(Api.site('/articles/images'), {}, [await http.MultipartFile.fromPath('image', picked.path, filename: picked.name)]);
+      url = text(r['url']);
+      return r;
+    });
+    final link = url;
+    if (link == null || !mounted) return;
+    final at = bodyText.selection.isValid ? bodyText.selection.start : bodyText.text.length;
+    final line = '\n![]($link)\n';
+    bodyText.text = bodyText.text.replaceRange(at, at, line);
+    bodyText.selection = TextSelection.collapsed(offset: at + line.length);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!loaded) return const ScreenSkeleton();
@@ -381,6 +400,8 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
           const SizedBox(height: 10),
           GcField(controller: bodyText, label: tr('Текст статті'), maxLines: 14),
           const SizedBox(height: 10),
+          GhostButton(label: tr('Картинка в текст'), icon: LucideIcons.imagePlus, compact: true, onPressed: _insertImage),
+          const SizedBox(height: 8),
           GhostButton(
             label: cover == null ? tr('Обкладинка') : tr('Обкладинку вибрано'),
             icon: LucideIcons.image,

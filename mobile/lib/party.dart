@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'core/widgets/arctic_glass/arctic_fit_text.dart';
 import 'package:go_router/go_router.dart';
@@ -383,6 +384,19 @@ class PartyScreen extends StatelessWidget {
               const SizedBox(height: 8),
               GhostButton(label: tr('Вийти з паті'), icon: LucideIcons.logOut, onPressed: () async {
                 if (await attempt(context, () => api.delete(Api.site('/party/$id/join')))) await reload();
+              }),
+            ],
+            if ((mine || joined) && open) ...[
+              const SizedBox(height: 8),
+              GhostButton(label: tr('Запросити за посиланням'), icon: LucideIcons.link, onPressed: () async {
+                String? url;
+                final ok = await attempt(context, () async {
+                  url = text((await api.post(Api.site('/party/$id/invite-link')))['url']);
+                });
+                final link = url;
+                if (!ok || link == null || !context.mounted) return;
+                await Clipboard.setData(ClipboardData(text: link));
+                if (context.mounted) toast(context, tr('Посилання скопійовано — надішліть другу.'));
               }),
             ],
             if (mine && open) ...[
