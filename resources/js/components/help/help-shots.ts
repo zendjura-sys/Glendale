@@ -2,2704 +2,2546 @@
 import type { HelpShotMeta } from '@/components/help/help-shot';
 
 const HELP_SHOTS: Record<string, HelpShotMeta> = {
-    'account-appeal': {
-        src: '/images/help/account-appeal.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            what: {
-                x: 45.8,
-                y: 25.6,
-                w: 46.5,
-                h: 4.9,
-            },
-            send: {
-                x: 84.3,
-                y: 44.3,
-                w: 8.1,
-                h: 4.4,
-            },
-        },
-    },
-    'account-appeal-strikes': {
-        src: '/images/help/account-appeal-strikes.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            appeal: {
-                x: 44.7,
-                y: 17.8,
-                w: 48.8,
-                h: 2.5,
-            },
-        },
-    },
-    'account-data': {
-        src: '/images/help/account-data.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            export: {
-                x: 45.8,
-                y: 27.5,
-                w: 13.1,
-                h: 4.4,
-            },
-            freeze: {
-                x: 44.7,
-                y: 44.9,
-                w: 48.8,
-                h: 2.5,
-            },
-        },
-    },
-    'account-notify': {
-        src: '/images/help/account-notify.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            browser: {
-                x: 44.7,
-                y: 19.3,
-                w: 48.8,
-                h: 2.5,
-            },
-            bots: {
-                x: 44.7,
-                y: 36.9,
-                w: 48.8,
-                h: 2.5,
-            },
-        },
-    },
-    'ai-teammates': {
-        src: '/images/help/ai-teammates.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            finder: {
-                x: 33.1,
-                y: 23.6,
-                w: 53.3,
-                h: 76.4,
-            },
-        },
-    },
-    'app-download': {
-        src: '/images/help/app-download.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            install: {
-                x: 27.5,
-                y: 17.8,
-                w: 64.4,
-                h: 3.1,
-            },
-            apk: {
-                x: 27.5,
-                y: 25.3,
-                w: 64.4,
-                h: 7.1,
-            },
-        },
-    },
-    'app-page': {
-        src: '/images/help/app-page.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            title: {
-                x: 28.6,
-                y: 25.3,
-                w: 40.7,
-                h: 5.6,
-            },
-        },
-    },
-    archive: {
-        src: '/images/help/archive.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            auto: {
-                x: 37.5,
-                y: 20.9,
-                w: 44.4,
-                h: 15.6,
-            },
-            restore: {
-                x: 68.1,
-                y: 58.8,
-                w: 13.8,
-                h: 4.4,
-            },
-        },
-    },
-    'author-subscriptions': {
-        src: '/images/help/author-subscriptions.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            tiers: {
-                x: 44.7,
-                y: 19.3,
-                w: 48.8,
-                h: 2.5,
-            },
-            add: {
-                x: 45.8,
-                y: 40.5,
-                w: 11,
-                h: 4.4,
-            },
-            mine: {
-                x: 44.7,
-                y: 48.5,
-                w: 48.8,
-                h: 2.5,
-            },
-        },
-    },
-    awards: {
-        src: '/images/help/awards.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            year: {
-                x: 22.2,
-                y: 23.6,
-                w: 3.7,
-                h: 2.7,
-            },
-            nominee: {
-                x: 27.6,
-                y: 42.6,
-                w: 8.1,
-                h: 2.2,
-            },
-        },
-    },
-    'chat-call': {
-        src: '/images/help/chat-call.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            call: {
-                x: 88.3,
-                y: 11,
-                w: 2.5,
-                h: 4,
-            },
-            listen: {
-                x: 91.7,
-                y: 11,
-                w: 2.5,
-                h: 4,
-            },
-        },
-    },
-    'chat-header': {
-        src: '/images/help/chat-header.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            receipts: {
-                x: 75,
-                y: 11,
-                w: 2.5,
-                h: 4,
-            },
-            more: {
-                x: 85,
-                y: 11,
-                w: 2.5,
-                h: 4,
-            },
-            ai: {
-                x: 83.1,
-                y: 92.9,
-                w: 2.5,
-                h: 4,
-            },
-        },
-    },
-    'chat-pins': {
-        src: '/images/help/chat-pins.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            pin: {
-                x: 78.3,
-                y: 11,
-                w: 2.5,
-                h: 4,
-            },
-            more: {
-                x: 85,
-                y: 11,
-                w: 2.5,
-                h: 4,
-            },
-        },
-    },
-    'chat-voice': {
-        src: '/images/help/chat-voice.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            voice: {
-                x: 94.4,
-                y: 92.2,
-                w: 3.1,
-                h: 4.9,
-            },
-            circle: {
-                x: 91,
-                y: 92.2,
-                w: 3.1,
-                h: 4.9,
-            },
-            gif: {
-                x: 85.6,
-                y: 92.9,
-                w: 2.2,
-                h: 4,
-            },
-        },
-    },
-    'cinema-assist': {
-        src: '/images/help/cinema-assist.webp',
-        w: 824,
-        h: 76,
-        phone: false,
-        regions: {
-            sleep: {
-                x: 2.9,
-                y: 28.9,
-                w: 34,
-                h: 42.1,
-            },
-        },
-    },
-    'cinema-roulette': {
-        src: '/images/help/cinema-roulette.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            type: {
-                x: 38.2,
-                y: 20,
-                w: 4.8,
-                h: 4,
-            },
-            seen: {
-                x: 57.8,
-                y: 26.4,
-                w: 11.2,
-                h: 2.2,
-            },
-            spin: {
-                x: 34.2,
-                y: 31.1,
-                w: 9.3,
-                h: 4.9,
-            },
-        },
-    },
-    clans: {
-        src: '/images/help/clans.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            create: {
-                x: 89.8,
-                y: 9.8,
-                w: 8.8,
-                h: 4.4,
-            },
-            filter: {
-                x: 29.1,
-                y: 31.6,
-                w: 5,
-                h: 3.6,
-            },
-            list: {
-                x: 25.8,
-                y: 20.4,
-                w: 19.7,
-                h: 2.2,
-            },
-        },
-    },
-    'community-calendar': {
-        src: '/images/help/community-calendar.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            add: {
-                x: 84,
-                y: 10.2,
-                w: 6.9,
-                h: 4.4,
-            },
-            month: {
-                x: 87.2,
-                y: 18.2,
-                w: 2.5,
-                h: 4,
-            },
-            next: {
-                x: 29.7,
-                y: 87.2,
-                w: 60,
-                h: 2.7,
-            },
-        },
-    },
-    'community-log': {
-        src: '/images/help/community-log.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            list: {
-                x: 33.1,
-                y: 16.4,
-                w: 53.3,
-                h: 27.4,
-            },
-        },
-    },
-    'community-rules-accept': {
-        src: '/images/help/community-rules-accept.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            toggle: {
-                x: 34.4,
-                y: 28.9,
-                w: 24.7,
-                h: 10.7,
-            },
-        },
-    },
-    'community-settings': {
-        src: '/images/help/community-settings.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            type: {
-                x: 33.1,
-                y: 17.8,
-                w: 53.3,
-                h: 17.2,
-            },
-            access: {
-                x: 33.3,
-                y: 17.8,
-                w: 52.8,
-                h: 2.5,
-            },
-        },
-    },
-    configs: {
-        src: '/images/help/configs.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            share: {
-                x: 34.2,
-                y: 20.9,
-                w: 9.9,
-                h: 4.4,
-            },
-            sort: {
-                x: 34.2,
-                y: 33.8,
-                w: 6.7,
-                h: 3.6,
-            },
-            kind: {
-                x: 54.5,
-                y: 33.8,
-                w: 5.1,
-                h: 3.6,
-            },
-        },
-    },
-    'connected-apps': {
-        src: '/images/help/connected-apps.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            app: {
-                x: 44.4,
-                y: 19.3,
-                w: 49.3,
-                h: 34.2,
-            },
-            overlay: {
-                x: 87.6,
-                y: 41.2,
-                w: 3.1,
-                h: 2.7,
-            },
-            revoke: {
-                x: 83.7,
-                y: 30.3,
-                w: 7.8,
-                h: 3.6,
-            },
-        },
-    },
-    'contact-privacy': {
-        src: '/images/help/contact-privacy.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            messages: {
-                x: 45.8,
-                y: 46.1,
-                w: 46.5,
-                h: 9.5,
-            },
-            calls: {
-                x: 45.8,
-                y: 55.6,
-                w: 46.5,
-                h: 9.5,
-            },
-            groups: {
-                x: 45.8,
-                y: 65.1,
-                w: 46.5,
-                h: 9.5,
-            },
-        },
-    },
-    'dev-keys': {
-        src: '/images/help/dev-keys.webp',
-        w: 920,
-        h: 461,
-        phone: false,
-        regions: {
-            client: {
-                x: 3.5,
-                y: 19.1,
-                w: 45.9,
-                h: 13,
-            },
-            public: {
-                x: 50.7,
-                y: 19.1,
-                w: 45.9,
-                h: 13,
-            },
-            bot: {
-                x: 3.5,
-                y: 34.7,
-                w: 93,
-                h: 11.3,
-            },
-            token: {
-                x: 4.8,
-                y: 77.2,
-                w: 13.7,
-                h: 6.9,
-            },
-            redirects: {
-                x: 3.5,
-                y: 89.4,
-                w: 93,
-                h: 3.7,
-            },
-        },
-    },
-    'dev-new-app': {
-        src: '/images/help/dev-new-app.webp',
-        w: 920,
-        h: 900,
-        phone: false,
-        regions: {
-            name: {
-                x: 3.5,
-                y: 6.7,
-                w: 93,
-                h: 6.7,
-            },
-            about: {
-                x: 1.3,
-                y: 0,
-                w: 97.4,
-                h: 100,
-            },
-            site: {
-                x: 3.5,
-                y: 22.7,
-                w: 93,
-                h: 6.7,
-            },
-            redirects: {
-                x: 1.3,
-                y: 0,
-                w: 97.4,
-                h: 100,
-            },
-            public: {
-                x: 3.5,
-                y: 43.6,
-                w: 93,
-                h: 4,
-            },
-            scopes: {
-                x: 3.5,
-                y: 48.9,
-                w: 93,
-                h: 48.2,
-            },
-            save: {
-                x: 85.3,
-                y: 98.4,
-                w: 11.2,
-                h: 1.6,
-            },
-        },
-    },
-    'dev-overlay': {
-        src: '/images/help/dev-overlay.webp',
-        w: 880,
-        h: 822,
-        phone: false,
-        regions: {
-            stage: {
-                x: 1.4,
-                y: 1.5,
-                w: 97.3,
-                h: 58.6,
-            },
-            look: {
-                x: 1.4,
-                y: 64.9,
-                w: 97.3,
-                h: 35.1,
-            },
-        },
-    },
-    'dev-overlay-layout': {
-        src: '/images/help/dev-overlay-layout.webp',
-        w: 880,
-        h: 835,
-        phone: false,
-        regions: {
-            sections: {
-                x: 3.2,
-                y: 6.7,
-                w: 93.6,
-                h: 3.4,
-            },
-            corners: {
-                x: 20.9,
-                y: 49.1,
-                w: 58.2,
-                h: 34.5,
-            },
-            tray: {
-                x: 3.2,
-                y: 84.6,
-                w: 93.6,
-                h: 8,
-            },
-        },
-    },
-    'dev-overlay-publish': {
-        src: '/images/help/dev-overlay-publish.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            groups: {
-                x: 30,
-                y: 68.4,
-                w: 59.4,
-                h: 4.9,
-            },
-            items: {
-                x: 30,
-                y: 74.6,
-                w: 59.4,
-                h: 4.9,
-            },
-            onboarding: {
-                x: 30,
-                y: 80.8,
-                w: 59.4,
-                h: 4.9,
-            },
-            draft: {
-                x: 63.9,
-                y: 87.1,
-                w: 13.5,
-                h: 4,
-            },
-            publish: {
-                x: 78,
-                y: 87.1,
-                w: 11.4,
-                h: 4,
-            },
-        },
-    },
-    'dev-plugins': {
-        src: '/images/help/dev-plugins.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            filters: {
-                x: 24.2,
-                y: 45.4,
-                w: 30.5,
-                h: 4.4,
-            },
-            card: {
-                x: 24.2,
-                y: 52.6,
-                w: 23.1,
-                h: 8.9,
-            },
-        },
-    },
-    'dev-portal': {
-        src: '/images/help/dev-portal.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            new: {
-                x: 28.6,
-                y: 77,
-                w: 62.2,
-                h: 5.8,
-            },
-            sdk: {
-                x: 57.6,
-                y: 21.8,
-                w: 9.1,
-                h: 3.6,
-            },
-            servers: {
-                x: 66.9,
-                y: 21.8,
-                w: 10.8,
-                h: 3.6,
-            },
-            app: {
-                x: 28.6,
-                y: 27.1,
-                w: 62.2,
-                h: 48.6,
-            },
-            overlay: {
-                x: 72,
-                y: 29.3,
-                w: 7.8,
-                h: 3.6,
-            },
-            edit: {
-                x: 80.6,
-                y: 29.3,
-                w: 5.8,
-                h: 3.6,
-            },
-            keys: {
-                x: 30,
-                y: 35.6,
-                w: 29.3,
-                h: 1.8,
-            },
-        },
-    },
-    'dev-sdk': {
-        src: '/images/help/dev-sdk.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            platforms: {
-                x: 24.2,
-                y: 14.4,
-                w: 71.1,
-                h: 6,
-            },
-            sandbox: {
-                x: 24.2,
-                y: 28.9,
-                w: 71.1,
-                h: 71.1,
-            },
-            stage: {
-                x: 25.6,
-                y: 35.6,
-                w: 68.3,
-                h: 61.5,
-            },
-        },
-    },
-    'dev-sdk-code': {
-        src: '/images/help/dev-sdk-code.webp',
-        w: 1048,
-        h: 484,
-        phone: false,
-        regions: {
-            tabs: {
-                x: 75.5,
-                y: 6.6,
-                w: 21.5,
-                h: 9.1,
-            },
-            code: {
-                x: 3.1,
-                y: 18.2,
-                w: 93.9,
-                h: 66.1,
-            },
-            copy: {
-                x: 93.1,
-                y: 19.8,
-                w: 3.1,
-                h: 6.6,
-            },
-        },
-    },
-    'dev-sdk-settings': {
-        src: '/images/help/dev-sdk-settings.webp',
-        w: 1048,
-        h: 306,
-        phone: false,
-        regions: {
-            code: {
-                x: 3.1,
-                y: 49.8,
-                w: 46.2,
-                h: 39.7,
-            },
-            toggle: {
-                x: 52.3,
-                y: 37,
-                w: 43.1,
-                h: 18.7,
-            },
-            account: {
-                x: 52.3,
-                y: 55.6,
-                w: 43.1,
-                h: 15.6,
-            },
-        },
-    },
-    events: {
-        src: '/images/help/events.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            filter: {
-                x: 24.5,
-                y: 31.1,
-                w: 4.2,
-                h: 4,
-            },
-            subscribe: {
-                x: 43.8,
-                y: 25.8,
-                w: 14.3,
-                h: 3.6,
-            },
-            releases: {
-                x: 29,
-                y: 16.6,
-                w: 7.7,
-                h: 2,
-            },
-        },
-    },
-    families: {
-        src: '/images/help/families.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            create: {
-                x: 83.7,
-                y: 22.2,
-                w: 13,
-                h: 5.3,
-            },
-            mine: {
-                x: 20.8,
-                y: 31.9,
-                w: 77.8,
-                h: 3.1,
-            },
-            catalog: {
-                x: 20.8,
-                y: 49.3,
-                w: 9.4,
-                h: 3.1,
-            },
-        },
-    },
-    'family-charter': {
-        src: '/images/help/family-charter.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            text: {
-                x: 22.2,
-                y: 24.4,
-                w: 75,
-                h: 10.1,
-            },
-            quiz: {
-                x: 22.2,
-                y: 70.4,
-                w: 75,
-                h: 29.6,
-            },
-        },
-    },
-    'family-goals': {
-        src: '/images/help/family-goals.webp',
-        w: 648,
-        h: 274,
-        phone: false,
-        regions: {
-            goal: {
-                x: 4.9,
-                y: 26.3,
-                w: 90.1,
-                h: 20.4,
-            },
-            edit: {
-                x: 87,
-                y: 13.1,
-                w: 8.1,
-                h: 5.8,
-            },
-        },
-    },
-    'family-goals-settings': {
-        src: '/images/help/family-goals-settings.webp',
-        w: 1144,
-        h: 412,
-        phone: false,
-        regions: {
-            type: {
-                x: 3.8,
-                y: 27.2,
-                w: 38.3,
-                h: 10.7,
-            },
-            target: {
-                x: 42.8,
-                y: 27.2,
-                w: 9.8,
-                h: 10.7,
-            },
-            reward: {
-                x: 53.3,
-                y: 27.2,
-                w: 38.3,
-                h: 10.7,
-            },
-            add: {
-                x: 88.3,
-                y: 82.5,
-                w: 8.9,
-                h: 9.7,
-            },
-        },
-    },
-    'family-history': {
-        src: '/images/help/family-history.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            achievements: {
-                x: 22.2,
-                y: 28.9,
-                w: 32.1,
-                h: 37.6,
-            },
-            timeline: {
-                x: 58.2,
-                y: 25.8,
-                w: 39,
-                h: 29.8,
-            },
-        },
-    },
-    'family-relations': {
-        src: '/images/help/family-relations.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            form: {
-                x: 22.2,
-                y: 24.4,
-                w: 75,
-                h: 13.8,
-            },
-            list: {
-                x: 22.2,
-                y: 48.4,
-                w: 75,
-                h: 15.1,
-            },
-        },
-    },
-    'family-shift-goal': {
-        src: '/images/help/family-shift-goal.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            goal: {
-                x: 62.2,
-                y: 28.9,
-                w: 14.7,
-                h: 2.9,
-            },
-        },
-    },
-    'family-shift-partners': {
-        src: '/images/help/family-shift-partners.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            partners: {
-                x: 62.2,
-                y: 33.3,
-                w: 14.7,
-                h: 5.3,
-            },
-        },
-    },
-    'family-weekly': {
-        src: '/images/help/family-weekly.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            bell: {
-                x: 83.4,
-                y: 2.4,
-                w: 2.8,
-                h: 4.4,
-            },
-            report: {
-                x: 60.2,
-                y: 13.3,
-                w: 25.6,
-                h: 13,
-            },
-        },
-    },
-    'family-wiki': {
-        src: '/images/help/family-wiki.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            nav: {
-                x: 22.2,
-                y: 24.4,
-                w: 12.5,
-                h: 8.4,
-            },
-            page: {
-                x: 38.6,
-                y: 24.4,
-                w: 58.6,
-                h: 13.7,
-            },
-        },
-    },
-    'footer-legal': {
-        src: '/images/help/footer-legal.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            terms: {
-                x: 46.4,
-                y: 56,
-                w: 19.4,
-                h: 4.9,
-            },
-            privacy: {
-                x: 46.4,
-                y: 61.6,
-                w: 19.4,
-                h: 4.9,
-            },
-            refund: {
-                x: 46.4,
-                y: 67.1,
-                w: 19.4,
-                h: 4.9,
-            },
-        },
-    },
-    'game-nights': {
-        src: '/images/help/game-nights.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            plan: {
-                x: 34.2,
-                y: 20.9,
-                w: 10.6,
-                h: 4.4,
-            },
-            time: {
-                x: 35.3,
-                y: 44.2,
-                w: 9.1,
-                h: 2.2,
-            },
-            invite: {
-                x: 72.1,
-                y: 90.1,
-                w: 12.1,
-                h: 4.4,
-            },
-        },
-    },
-    'games-pc': {
-        src: '/images/help/games-pc.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            search: {
-                x: 77.2,
-                y: 12.9,
-                w: 20,
-                h: 4.9,
-            },
-            tools: {
-                x: 22.2,
-                y: 20,
-                w: 75,
-                h: 4,
-            },
-            platform: {
-                x: 21.9,
-                y: 29.3,
-                w: 25.3,
-                h: 4.4,
-            },
-            genre: {
-                x: 72.5,
-                y: 29.3,
-                w: 12.2,
-                h: 4.4,
-            },
-            sort: {
-                x: 85.3,
-                y: 29.3,
-                w: 12.2,
-                h: 4.4,
-            },
-            modes: {
-                x: 21.7,
-                y: 35.1,
-                w: 76.1,
-                h: 3.6,
-            },
-            letters: {
-                x: 21.9,
-                y: 40,
-                w: 75.6,
-                h: 4.4,
-            },
-        },
-    },
-    'help-assistant': {
-        src: '/images/help/help-assistant.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            assistant: {
-                x: 29.9,
-                y: 29,
-                w: 59.7,
-                h: 14.1,
-            },
-        },
-    },
-    'help-home': {
-        src: '/images/help/help-home.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            popular: {
-                x: 29.9,
-                y: 29,
-                w: 59.7,
-                h: 3.7,
-            },
-            sections: {
-                x: 29.9,
-                y: 79.2,
-                w: 59.7,
-                h: 3.7,
-            },
-        },
-    },
-    'home-pc': {
-        src: '/images/help/home-pc.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            logo: {
-                x: 2.3,
-                y: 2.7,
-                w: 9.7,
-                h: 4,
-            },
-            search: {
-                x: 14,
-                y: 2.9,
-                w: 23.6,
-                h: 3.6,
-            },
-            nav: {
-                x: 42.1,
-                y: 2.2,
-                w: 16.9,
-                h: 4.9,
-            },
-            music: {
-                x: 55.7,
-                y: 2.7,
-                w: 3.1,
-                h: 4,
-            },
-            gamecast: {
-                x: 63.5,
-                y: 2.7,
-                w: 10.6,
-                h: 4,
-            },
-            theme: {
-                x: 77.6,
-                y: 2.4,
-                w: 2.8,
-                h: 4.4,
-            },
-            whatsnew: {
-                x: 80.5,
-                y: 2.4,
-                w: 2.8,
-                h: 4.4,
-            },
-            bell: {
-                x: 83.4,
-                y: 2.4,
-                w: 2.8,
-                h: 4.4,
-            },
-            avatar: {
-                x: 86.3,
-                y: 2.2,
-                w: 11.8,
-                h: 4.9,
-            },
-            profile: {
-                x: 1.4,
-                y: 9.8,
-                w: 18.3,
-                h: 35.9,
-            },
-            menu: {
-                x: 2.5,
-                y: 48.8,
-                w: 16.1,
-                h: 33.1,
-            },
-            app: {
-                x: 1.4,
-                y: 85.4,
-                w: 18.3,
-                h: 11.6,
-            },
-            stories: {
-                x: 20.8,
-                y: 9.8,
-                w: 54.2,
-                h: 12.7,
-            },
-            streak: {
-                x: 20.8,
-                y: 23.8,
-                w: 54.2,
-                h: 7.1,
-            },
-            ready: {
-                x: 28,
-                y: 24.9,
-                w: 37.6,
-                h: 4.9,
-            },
-            quests: {
-                x: 66.2,
-                y: 24.9,
-                w: 8.1,
-                h: 4.9,
-            },
-            composer: {
-                x: 20.8,
-                y: 53.9,
-                w: 54.2,
-                h: 9.4,
-            },
-            continue: {
-                x: 20.8,
-                y: 79.8,
-                w: 54.2,
-                h: 10.2,
-            },
-            tabs: {
-                x: 20.8,
-                y: 91.4,
-                w: 54.2,
-                h: 4.4,
-            },
-            requests: {
-                x: 76.4,
-                y: 9.8,
-                w: 22.2,
-                h: 45.8,
-            },
-            widgets: {
-                x: 76.4,
-                y: 9.8,
-                w: 22.2,
-                h: 90.2,
-            },
-        },
-    },
-    'home-phone': {
-        src: '/images/help/home-phone.webp',
-        w: 824,
-        h: 1678,
-        phone: true,
-        regions: {
-            search: {
-                x: 19.7,
-                y: 3.1,
-                w: 51,
-                h: 3.8,
-            },
-            whatsnew: {
-                x: 73.5,
-                y: 2.6,
-                w: 9.7,
-                h: 4.8,
-            },
-            bell: {
-                x: 83.7,
-                y: 2.6,
-                w: 9.7,
-                h: 4.8,
-            },
-            stories: {
-                x: 2.9,
-                y: 10.5,
-                w: 94.2,
-                h: 13.6,
-            },
-            streak: {
-                x: 2.9,
-                y: 25.5,
-                w: 94.2,
-                h: 7.6,
-            },
-            composer: {
-                x: 2.9,
-                y: 57.9,
-                w: 94.2,
-                h: 9.3,
-            },
-            'tab-profile': {
-                x: 3.6,
-                y: 91.1,
-                w: 18.5,
-                h: 7.6,
-            },
-            'tab-feed': {
-                x: 22.2,
-                y: 91.1,
-                w: 18.5,
-                h: 7.6,
-            },
-            'tab-chat': {
-                x: 40.7,
-                y: 91.1,
-                w: 18.5,
-                h: 7.6,
-            },
-            'tab-friends': {
-                x: 59.3,
-                y: 91.1,
-                w: 18.5,
-                h: 7.6,
-            },
-            'tab-menu': {
-                x: 77.8,
-                y: 91.1,
-                w: 18.5,
-                h: 7.6,
-            },
-        },
-    },
-    invite: {
-        src: '/images/help/invite.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            copy: {
-                x: 81.4,
-                y: 24.4,
-                w: 2.8,
-                h: 4.4,
-            },
-            share: {
-                x: 34.7,
-                y: 31.1,
-                w: 10.5,
-                h: 4.9,
-            },
-            rewards: {
-                x: 34.7,
-                y: 52,
-                w: 50,
-                h: 3.1,
-            },
-        },
-    },
-    journal: {
-        src: '/images/help/journal.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            mood: {
-                x: 37.5,
-                y: 39,
-                w: 6.5,
-                h: 4,
-            },
-            save: {
-                x: 74.3,
-                y: 44.3,
-                w: 7.7,
-                h: 4.4,
-            },
-        },
-    },
-    languages: {
-        src: '/images/help/languages.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            langs: {
-                x: 45.8,
-                y: 22.2,
-                w: 46.5,
-                h: 2.2,
-            },
-        },
-    },
-    level: {
-        src: '/images/help/level.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            level: {
-                x: 38.3,
-                y: 14.7,
-                w: 40.1,
-                h: 4,
-            },
-            xp: {
-                x: 30,
-                y: 30.2,
-                w: 31.6,
-                h: 3.1,
-            },
-            daily: {
-                x: 79.9,
-                y: 16,
-                w: 9.3,
-                h: 4.4,
-            },
-        },
-    },
-    link: {
-        src: '/images/help/link.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            code: {
-                x: 16.7,
-                y: 3.6,
-                w: 16,
-                h: 2.2,
-            },
-            submit: {
-                x: 45.8,
-                y: 38.7,
-                w: 27.8,
-                h: 4.9,
-            },
-        },
-    },
-    'listen-together': {
-        src: '/images/help/listen-together.webp',
-        w: 344,
-        h: 594,
-        phone: false,
-        regions: {
-            track: {
-                x: 22.1,
-                y: 12.8,
-                w: 58.1,
-                h: 2.7,
-            },
-            join: {
-                x: 83.7,
-                y: 9.8,
-                w: 9.3,
-                h: 5.4,
-            },
-        },
-    },
-    login: {
-        src: '/images/help/login.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            app: {
-                x: 63,
-                y: 34.5,
-                w: 25.4,
-                h: 5.3,
-            },
-            passkey: {
-                x: 63,
-                y: 40.9,
-                w: 25.4,
-                h: 5.3,
-            },
-            email: {
-                x: 63,
-                y: 53.7,
-                w: 25.4,
-                h: 5.3,
-            },
-            forgot: {
-                x: 81.4,
-                y: 70,
-                w: 7,
-                h: 1.8,
-            },
-            submit: {
-                x: 63,
-                y: 76,
-                w: 25.4,
-                h: 5.3,
-            },
-        },
-    },
-    'login-app': {
-        src: '/images/help/login-app.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            qr: {
-                x: 42.3,
-                y: 62.5,
-                w: 1,
-                h: 1.6,
-            },
-            wait: {
-                x: 42.3,
-                y: 62.4,
-                w: 15.4,
-                h: 1.8,
-            },
-            send: {
-                x: 38.3,
-                y: 77.2,
-                w: 23.3,
-                h: 4.4,
-            },
-        },
-    },
-    memories: {
-        src: '/images/help/memories.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            title: {
-                x: 36.4,
-                y: 9.8,
-                w: 46.7,
-                h: 4.4,
-            },
-        },
-    },
-    messages: {
-        src: '/images/help/messages.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            new: {
-                x: 40.8,
-                y: 11.6,
-                w: 2.5,
-                h: 4,
-            },
-            list: {
-                x: 26.3,
-                y: 31.2,
-                w: 8.7,
-                h: 2.3,
-            },
-            attach: {
-                x: 45.6,
-                y: 92.7,
-                w: 2.8,
-                h: 4.4,
-            },
-            info: {
-                x: 95,
-                y: 11,
-                w: 2.5,
-                h: 4,
-            },
-        },
-    },
-    moments: {
-        src: '/images/help/moments.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            add: {
-                x: 84.4,
-                y: 13.6,
-                w: 12.5,
-                h: 4.9,
-            },
-            week: {
-                x: 28.4,
-                y: 22.2,
-                w: 14.8,
-                h: 4,
-            },
-            winners: {
-                x: 21.9,
-                y: 32.4,
-                w: 45,
-                h: 2.2,
-            },
-        },
-    },
-    'movie-lists': {
-        src: '/images/help/movie-lists.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            tabs: {
-                x: 20.8,
-                y: 18.2,
-                w: 7.7,
-                h: 3.6,
-            },
-            mine: {
-                x: 34.2,
-                y: 18.2,
-                w: 4.1,
-                h: 3.6,
-            },
-            list: {
-                x: 21.9,
-                y: 40.5,
-                w: 15.1,
-                h: 2.8,
-            },
-        },
-    },
-    'movie-status': {
-        src: '/images/help/movie-status.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            status: {
-                x: 29.9,
-                y: 21.9,
-                w: 6.8,
-                h: 4,
-            },
-            collection: {
-                x: 50.7,
-                y: 75.2,
-                w: 8.3,
-                h: 4.9,
-            },
-        },
-    },
-    'movie-together': {
-        src: '/images/help/movie-together.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            together: {
-                x: 59,
-                y: 45.4,
-                w: 15.6,
-                h: 4.4,
-            },
-        },
-    },
-    'music-connect': {
-        src: '/images/help/music-connect.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            devices: {
-                x: 72.8,
-                y: 92.7,
-                w: 2.5,
-                h: 4,
-            },
-        },
-    },
-    'music-player': {
-        src: '/images/help/music-player.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            lyrics: {
-                x: 70.3,
-                y: 92.7,
-                w: 2.5,
-                h: 4,
-            },
-            volume: {
-                x: 63.9,
-                y: 93.8,
-                w: 5.6,
-                h: 1.8,
-            },
-            next: {
-                x: 40,
-                y: 92.7,
-                w: 2.5,
-                h: 4,
-            },
-        },
-    },
-    'music-queue': {
-        src: '/images/help/music-queue.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            queue: {
-                x: 70.3,
-                y: 92.7,
-                w: 2.5,
-                h: 4,
-            },
-            shuffle: {
-                x: 31.9,
-                y: 92.7,
-                w: 2.5,
-                h: 4,
-            },
-            together: {
-                x: 80.3,
-                y: 92.7,
-                w: 2.5,
-                h: 4,
-            },
-        },
-    },
-    'music-radio': {
-        src: '/images/help/music-radio.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            mine: {
-                x: 20.8,
-                y: 28.2,
-                w: 31.1,
-                h: 1.4,
-            },
-            together: {
-                x: 20.8,
-                y: 24.6,
-                w: 12.4,
-                h: 2.2,
-            },
-            groups: {
-                x: 22,
-                y: 85.8,
-                w: 10.5,
-                h: 9.1,
-            },
-        },
-    },
-    'music-track-menu': {
-        src: '/images/help/music-track-menu.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            menu: {
-                x: 29.4,
-                y: 52.4,
-                w: 17.8,
-                h: 47.6,
-            },
-            edit: {
-                x: 29.9,
-                y: 84.1,
-                w: 16.9,
-                h: 4.3,
-            },
-        },
-    },
-    'music-upload': {
-        src: '/images/help/music-upload.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            file: {
-                x: 28.6,
-                y: 32.6,
-                w: 6.7,
-                h: 4,
-            },
-            link: {
-                x: 35.6,
-                y: 32.6,
-                w: 11.8,
-                h: 4,
-            },
-        },
-    },
-    'nav-settings': {
-        src: '/images/help/nav-settings.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            bar: {
-                x: 45.8,
-                y: 38.5,
-                w: 46.5,
-                h: 2.2,
-            },
-            up: {
-                x: 83.2,
-                y: 41.8,
-                w: 2.5,
-                h: 4,
-            },
-            menu: {
-                x: 45.8,
-                y: 65.4,
-                w: 3.6,
-                h: 2.2,
-            },
-        },
-    },
-    'overlay-companion': {
-        src: '/images/help/overlay-companion.webp',
-        w: 670,
-        h: 365,
-        phone: false,
-        regions: {
-            preset: {
-                x: 64,
-                y: 27.7,
-                w: 32.4,
-                h: 11,
-            },
-            layout: {
-                x: 55.8,
-                y: 41.9,
-                w: 40.6,
-                h: 11,
-            },
-            density: {
-                x: 63,
-                y: 56.7,
-                w: 33.4,
-                h: 4.4,
-            },
-            streamer: {
-                x: 89.9,
-                y: 76.4,
-                w: 6.6,
-                h: 6.6,
-            },
-            reset: {
-                x: 3.6,
-                y: 87.9,
-                w: 28.1,
-                h: 6.6,
-            },
-        },
-    },
-    party: {
-        src: '/images/help/party.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            match: {
-                x: 72.5,
-                y: 13.6,
-                w: 12.9,
-                h: 4.9,
-            },
-            ready: {
-                x: 22.2,
-                y: 40,
-                w: 75,
-                h: 4.4,
-            },
-            now: {
-                x: 23.9,
-                y: 37.1,
-                w: 73.3,
-                h: 2,
-            },
-        },
-    },
-    phone: {
-        src: '/images/help/phone.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            dialer: {
-                x: 39,
-                y: 62.1,
-                w: 10.8,
-                h: 6.2,
-            },
-            write: {
-                x: 27.6,
-                y: 62.1,
-                w: 10.8,
-                h: 6.2,
-            },
-            privacy: {
-                x: 60.7,
-                y: 24.7,
-                w: 36.6,
-                h: 2,
-            },
-            buy: {
-                x: 65.4,
-                y: 74.6,
-                w: 31.8,
-                h: 2.7,
-            },
-        },
-    },
-    photos: {
-        src: '/images/help/photos.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            create: {
-                x: 83.4,
-                y: 14.3,
-                w: 13.5,
-                h: 4.9,
-            },
-            albums: {
-                x: 20.8,
-                y: 25.1,
-                w: 77.8,
-                h: 2.2,
-            },
-            all: {
-                x: 21.9,
-                y: 78.2,
-                w: 75.6,
-                h: 2.2,
-            },
-        },
-    },
-    'playing-status': {
-        src: '/images/help/playing-status.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            status: {
-                x: 59.1,
-                y: 86.7,
-                w: 11.4,
-                h: 1.8,
-            },
-        },
-    },
-    plus: {
-        src: '/images/help/plus.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            buy: {
-                x: 31.7,
-                y: 48.9,
-                w: 26.5,
-                h: 4.4,
-            },
-            billing: {
-                x: 38.8,
-                y: 10.2,
-                w: 13.7,
-                h: 4.4,
-            },
-            compare: {
-                x: 51.5,
-                y: 27.2,
-                w: 18,
-                h: 2,
-            },
-        },
-    },
-    'plus-billing': {
-        src: '/images/help/plus-billing.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            auto: {
-                x: 34.4,
-                y: 62.9,
-                w: 50.6,
-                h: 3.1,
-            },
-            cards: {
-                x: 34.4,
-                y: 92.3,
-                w: 50.6,
-                h: 3.1,
-            },
-        },
-    },
-    'plus-style': {
-        src: '/images/help/plus-style.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            style: {
-                x: 30,
-                y: 17.8,
-                w: 59.4,
-                h: 3.1,
-            },
-        },
-    },
-    podcasts: {
-        src: '/images/help/podcasts.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            create: {
-                x: 83.6,
-                y: 15.1,
-                w: 10.6,
-                h: 4.4,
-            },
-            cats: {
-                x: 33,
-                y: 20.9,
-                w: 7.1,
-                h: 3.6,
-            },
-            show: {
-                x: 26.1,
-                y: 51.9,
-                w: 14.9,
-                h: 2.2,
-            },
-        },
-    },
-    'post-album': {
-        src: '/images/help/post-album.webp',
-        w: 804,
-        h: 720,
-        phone: false,
-        regions: {
-            counter: {
-                x: 88.8,
-                y: 19.8,
-                w: 6,
-                h: 3.3,
-            },
-            next: {
-                x: 90.3,
-                y: 55.4,
-                w: 4.5,
-                h: 5,
-            },
-            dots: {
-                x: 3.7,
-                y: 96.8,
-                w: 92.5,
-                h: 0.8,
-            },
-        },
-    },
-    'post-menu': {
-        src: '/images/help/post-menu.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            menu: {
-                x: 57.1,
-                y: 22.3,
-                w: 16.7,
-                h: 27.2,
-            },
-            hide: {
-                x: 57.5,
-                y: 37.2,
-                w: 15.8,
-                h: 3.6,
-            },
-            mute: {
-                x: 57.5,
-                y: 40.8,
-                w: 15.8,
-                h: 3.6,
-            },
-        },
-    },
-    'post-menu-own': {
-        src: '/images/help/post-menu-own.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            menu: {
-                x: 57.1,
-                y: 27.1,
-                w: 16.7,
-                h: 27.2,
-            },
-            series: {
-                x: 57.5,
-                y: 42,
-                w: 15.8,
-                h: 3.6,
-            },
-        },
-    },
-    'post-pc': {
-        src: '/images/help/post-pc.webp',
-        w: 804,
-        h: 192,
-        phone: false,
-        regions: {
-            author: {
-                x: 10.7,
-                y: 14.6,
-                w: 55.3,
-                h: 9.7,
-            },
-            more: {
-                x: 92.3,
-                y: 14.6,
-                w: 4,
-                h: 16.6,
-            },
-            actions: {
-                x: 3.7,
-                y: 68.8,
-                w: 92.5,
-                h: 16.6,
-            },
-        },
-    },
-    'quiet-hours': {
-        src: '/images/help/quiet-hours.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            quiet: {
-                x: 44.7,
-                y: 22.3,
-                w: 48.8,
-                h: 2.5,
-            },
-        },
-    },
-    'read-later': {
-        src: '/images/help/read-later.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            title: {
-                x: 37.5,
-                y: 9.8,
-                w: 39.1,
-                h: 4.4,
-            },
-            saved: {
-                x: 37.5,
-                y: 17.3,
-                w: 5.7,
-                h: 2.2,
-            },
-        },
-    },
-    register: {
-        src: '/images/help/register.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            name: {
-                x: 63,
-                y: 41.6,
-                w: 12.3,
-                h: 5.3,
-            },
-            email: {
-                x: 63,
-                y: 48.7,
-                w: 25.4,
-                h: 5.3,
-            },
-            password: {
-                x: 63,
-                y: 55.8,
-                w: 25.4,
-                h: 5.3,
-            },
-            create: {
-                x: 63,
-                y: 71.4,
-                w: 25.4,
-                h: 5.3,
-            },
-            login: {
-                x: 63,
-                y: 78.5,
-                w: 25.4,
-                h: 2.2,
-            },
-        },
-    },
-    saved: {
-        src: '/images/help/saved.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            title: {
-                x: 37.5,
-                y: 9.8,
-                w: 13.2,
-                h: 4.4,
-            },
-            later: {
-                x: 72.3,
-                y: 12,
-                w: 9.6,
-                h: 2.2,
-            },
-        },
-    },
-    'sdk-launcher': {
-        src: '/images/help/sdk-launcher.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            nav: {
-                x: 0.8,
-                y: 1.3,
-                w: 16.7,
-                h: 97.3,
-            },
-            main: {
-                x: 18.3,
-                y: 1.3,
-                w: 80.8,
-                h: 97.3,
-            },
-            me: {
-                x: 1.9,
-                y: 7.2,
-                w: 14.6,
-                h: 5.3,
-            },
-        },
-    },
-    'sdk-overlay': {
-        src: '/images/help/sdk-overlay.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            drop: {
-                x: 0,
-                y: 50,
-                w: 1.8,
-                h: 6.4,
-            },
-            panel: {
-                x: 2.4,
-                y: 31.2,
-                w: 22.2,
-                h: 37.6,
-            },
-            tabs: {
-                x: 3.3,
-                y: 37.1,
-                w: 20.4,
-                h: 3.6,
-            },
-            stack: {
-                x: 0.8,
-                y: 1.3,
-                w: 19.4,
-                h: 36,
-            },
-        },
-    },
-    'security-2fa': {
-        src: '/images/help/security-2fa.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            block: {
-                x: 44.4,
-                y: 15.6,
-                w: 49.3,
-                h: 20.3,
-            },
-            enable: {
-                x: 45.8,
-                y: 29.2,
-                w: 9.7,
-                h: 4.4,
-            },
-        },
-    },
-    'security-passkeys': {
-        src: '/images/help/security-passkeys.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            block: {
-                x: 44.4,
-                y: 13.3,
-                w: 49.3,
-                h: 37.8,
-            },
-            add: {
-                x: 45.8,
-                y: 44.5,
-                w: 9,
-                h: 4.4,
-            },
-        },
-    },
-    'server-characters': {
-        src: '/images/help/server-characters.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            chars: {
-                x: 22.2,
-                y: 17.8,
-                w: 12.6,
-                h: 3.1,
-            },
-            reviews: {
-                x: 22.2,
-                y: 30.7,
-                w: 75,
-                h: 3.1,
-            },
-        },
-    },
-    'server-owner': {
-        src: '/images/help/server-owner.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            news: {
-                x: 22.2,
-                y: 22.2,
-                w: 75,
-                h: 3.1,
-            },
-            claim: {
-                x: 22.2,
-                y: 39.6,
-                w: 9.5,
-                h: 4.4,
-            },
-            badge: {
-                x: 22.2,
-                y: 3.4,
-                w: 75,
-                h: 3.1,
-            },
-        },
-    },
-    'settings-appearance': {
-        src: '/images/help/settings-appearance.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            theme: {
-                x: 44.4,
-                y: 50.9,
-                w: 49.3,
-                h: 34.8,
-            },
-            style: {
-                x: 44.7,
-                y: 87,
-                w: 48.8,
-                h: 2.5,
-            },
-        },
-    },
-    'settings-profile': {
-        src: '/images/help/settings-profile.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            menu: {
-                x: 26.1,
-                y: 20,
-                w: 16.5,
-                h: 7.6,
-            },
-            main: {
-                x: 44.4,
-                y: 19.3,
-                w: 49.3,
-                h: 56.9,
-            },
-            save: {
-                x: 82.7,
-                y: 92.4,
-                w: 10.2,
-                h: 4.4,
-            },
-        },
-    },
-    shortcuts: {
-        src: '/images/help/shortcuts.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            dialog: {
-                x: 34.4,
-                y: 8.7,
-                w: 31.1,
-                h: 82.7,
-            },
-        },
-    },
-    status: {
-        src: '/images/help/status.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            now: {
-                x: 38.3,
-                y: 12.4,
-                w: 33.6,
-                h: 3.6,
-            },
-            history: {
-                x: 33.1,
-                y: 73.3,
-                w: 53.3,
-                h: 2.2,
-            },
-        },
-    },
-    support: {
-        src: '/images/help/support.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            new: {
-                x: 33.3,
-                y: 18.2,
-                w: 12.5,
-                h: 4.4,
-            },
-            title: {
-                x: 33.3,
-                y: 9.8,
-                w: 43.9,
-                h: 4.4,
-            },
-        },
-    },
-    'teen-mode': {
-        src: '/images/help/teen-mode.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            words: {
-                x: 44.7,
-                y: 17.7,
-                w: 48.8,
-                h: 2.5,
-            },
-            teen: {
-                x: 44.7,
-                y: 32,
-                w: 48.8,
-                h: 2.5,
-            },
-        },
-    },
-    terms: {
-        src: '/images/help/terms.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            title: {
-                x: 26.7,
-                y: 15.6,
-                w: 46.5,
-                h: 8,
-            },
-        },
-    },
-    tierlists: {
-        src: '/images/help/tierlists.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            title: {
-                x: 25.3,
-                y: 12.4,
-                w: 24.5,
-                h: 4.4,
-            },
-            new: {
-                x: 85.3,
-                y: 15.1,
-                w: 8.8,
-                h: 4.4,
-            },
-        },
-    },
-    today: {
-        src: '/images/help/today.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            summary: {
-                x: 37.5,
-                y: 18.2,
-                w: 44.4,
-                h: 16.1,
-            },
-            facts: {
-                x: 37.5,
-                y: 35.7,
-                w: 44.4,
-                h: 24.9,
-            },
-        },
-    },
-    trailers: {
-        src: '/images/help/trailers.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            title: {
-                x: 20.8,
-                y: 9.8,
-                w: 77.8,
-                h: 4.4,
-            },
-        },
-    },
-    transparency: {
-        src: '/images/help/transparency.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            reports: {
-                x: 30,
-                y: 33.3,
-                w: 59.4,
-                h: 3.1,
-            },
-            decisions: {
-                x: 30,
-                y: 55.8,
-                w: 59.4,
-                h: 3.1,
-            },
-            quarter: {
-                x: 38.6,
-                y: 23.6,
-                w: 9.1,
-                h: 3.6,
-            },
-        },
-    },
-    trivia: {
-        src: '/images/help/trivia.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            title: {
-                x: 36.4,
-                y: 9.8,
-                w: 46.7,
-                h: 4.4,
-            },
-            answer: {
-                x: 37.5,
-                y: 32.9,
-                w: 21.9,
-                h: 4.9,
-            },
-        },
-    },
-    'video-cover': {
-        src: '/images/help/video-cover.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            video: {
-                x: 22.8,
-                y: 12.9,
-                w: 11.2,
-                h: 3.6,
-            },
-            cover: {
-                x: 84.1,
-                y: 12.9,
-                w: 12.6,
-                h: 3.6,
-            },
-        },
-    },
-    wrapped: {
-        src: '/images/help/wrapped.webp',
-        w: 1440,
-        h: 900,
-        phone: false,
-        regions: {
-            title: {
-                x: 35.8,
-                y: 41.3,
-                w: 28.3,
-                h: 11.2,
-            },
-        },
-    },
+    "account-appeal": {
+        "src": "/images/help/account-appeal.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "what": {
+                "x": 45.8,
+                "y": 25.6,
+                "w": 46.5,
+                "h": 4.9
+            },
+            "send": {
+                "x": 84.3,
+                "y": 44.3,
+                "w": 8.1,
+                "h": 4.4
+            }
+        }
+    },
+    "account-appeal-strikes": {
+        "src": "/images/help/account-appeal-strikes.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "appeal": {
+                "x": 44.7,
+                "y": 17.8,
+                "w": 48.8,
+                "h": 2.5
+            }
+        }
+    },
+    "account-data": {
+        "src": "/images/help/account-data.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "export": {
+                "x": 45.8,
+                "y": 27.5,
+                "w": 13.1,
+                "h": 4.4
+            },
+            "freeze": {
+                "x": 44.7,
+                "y": 44.9,
+                "w": 48.8,
+                "h": 2.5
+            }
+        }
+    },
+    "account-notify": {
+        "src": "/images/help/account-notify.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "browser": {
+                "x": 44.7,
+                "y": 19.3,
+                "w": 48.8,
+                "h": 2.5
+            },
+            "bots": {
+                "x": 44.7,
+                "y": 36.9,
+                "w": 48.8,
+                "h": 2.5
+            }
+        }
+    },
+    "ai-teammates": {
+        "src": "/images/help/ai-teammates.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "finder": {
+                "x": 33.1,
+                "y": 23.6,
+                "w": 53.3,
+                "h": 76.4
+            }
+        }
+    },
+    "app-download": {
+        "src": "/images/help/app-download.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "install": {
+                "x": 27.5,
+                "y": 17.8,
+                "w": 64.4,
+                "h": 3.1
+            },
+            "apk": {
+                "x": 27.5,
+                "y": 25.3,
+                "w": 64.4,
+                "h": 7.1
+            }
+        }
+    },
+    "app-page": {
+        "src": "/images/help/app-page.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "title": {
+                "x": 28.6,
+                "y": 25.3,
+                "w": 40.7,
+                "h": 5.6
+            }
+        }
+    },
+    "archive": {
+        "src": "/images/help/archive.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {}
+    },
+    "author-subscriptions": {
+        "src": "/images/help/author-subscriptions.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "tiers": {
+                "x": 44.7,
+                "y": 19.3,
+                "w": 48.8,
+                "h": 2.5
+            },
+            "add": {
+                "x": 45.8,
+                "y": 40.5,
+                "w": 11,
+                "h": 4.4
+            },
+            "mine": {
+                "x": 44.7,
+                "y": 48.5,
+                "w": 48.8,
+                "h": 2.5
+            }
+        }
+    },
+    "awards": {
+        "src": "/images/help/awards.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "year": {
+                "x": 22.2,
+                "y": 23.6,
+                "w": 3.7,
+                "h": 2.7
+            },
+            "nominee": {
+                "x": 27.6,
+                "y": 42.6,
+                "w": 8.1,
+                "h": 2.2
+            }
+        }
+    },
+    "chat-call": {
+        "src": "/images/help/chat-call.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "call": {
+                "x": 88.3,
+                "y": 11,
+                "w": 2.5,
+                "h": 4
+            },
+            "listen": {
+                "x": 91.7,
+                "y": 11,
+                "w": 2.5,
+                "h": 4
+            }
+        }
+    },
+    "chat-header": {
+        "src": "/images/help/chat-header.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "receipts": {
+                "x": 75,
+                "y": 11,
+                "w": 2.5,
+                "h": 4
+            },
+            "more": {
+                "x": 85,
+                "y": 11,
+                "w": 2.5,
+                "h": 4
+            },
+            "ai": {
+                "x": 83.1,
+                "y": 92.9,
+                "w": 2.5,
+                "h": 4
+            }
+        }
+    },
+    "chat-pins": {
+        "src": "/images/help/chat-pins.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "pin": {
+                "x": 78.3,
+                "y": 11,
+                "w": 2.5,
+                "h": 4
+            },
+            "more": {
+                "x": 85,
+                "y": 11,
+                "w": 2.5,
+                "h": 4
+            }
+        }
+    },
+    "chat-voice": {
+        "src": "/images/help/chat-voice.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "voice": {
+                "x": 94.4,
+                "y": 92.2,
+                "w": 3.1,
+                "h": 4.9
+            },
+            "circle": {
+                "x": 91,
+                "y": 92.2,
+                "w": 3.1,
+                "h": 4.9
+            },
+            "gif": {
+                "x": 85.6,
+                "y": 92.9,
+                "w": 2.2,
+                "h": 4
+            }
+        }
+    },
+    "cinema-assist": {
+        "src": "/images/help/cinema-assist.webp",
+        "w": 824,
+        "h": 76,
+        "phone": false,
+        "regions": {
+            "sleep": {
+                "x": 2.9,
+                "y": 28.9,
+                "w": 34,
+                "h": 42.1
+            }
+        }
+    },
+    "cinema-roulette": {
+        "src": "/images/help/cinema-roulette.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "type": {
+                "x": 38.2,
+                "y": 20,
+                "w": 4.8,
+                "h": 4
+            },
+            "seen": {
+                "x": 57.8,
+                "y": 26.4,
+                "w": 11.2,
+                "h": 2.2
+            },
+            "spin": {
+                "x": 34.2,
+                "y": 31.1,
+                "w": 9.3,
+                "h": 4.9
+            }
+        }
+    },
+    "clans": {
+        "src": "/images/help/clans.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "create": {
+                "x": 89.8,
+                "y": 9.8,
+                "w": 8.8,
+                "h": 4.4
+            },
+            "filter": {
+                "x": 29.1,
+                "y": 31.6,
+                "w": 5,
+                "h": 3.6
+            },
+            "list": {
+                "x": 25.8,
+                "y": 20.4,
+                "w": 19.7,
+                "h": 2.2
+            }
+        }
+    },
+    "community-calendar": {
+        "src": "/images/help/community-calendar.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "add": {
+                "x": 84,
+                "y": 10.2,
+                "w": 6.9,
+                "h": 4.4
+            },
+            "month": {
+                "x": 87.2,
+                "y": 18.2,
+                "w": 2.5,
+                "h": 4
+            },
+            "next": {
+                "x": 29.7,
+                "y": 87.2,
+                "w": 60,
+                "h": 2.7
+            }
+        }
+    },
+    "community-log": {
+        "src": "/images/help/community-log.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {}
+    },
+    "community-rules-accept": {
+        "src": "/images/help/community-rules-accept.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "toggle": {
+                "x": 24.7,
+                "y": 28.9,
+                "w": 24.7,
+                "h": 8.9
+            }
+        }
+    },
+    "community-settings": {
+        "src": "/images/help/community-settings.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "type": {
+                "x": 33.1,
+                "y": 17.8,
+                "w": 53.3,
+                "h": 17.2
+            },
+            "access": {
+                "x": 33.3,
+                "y": 17.8,
+                "w": 52.8,
+                "h": 2.5
+            }
+        }
+    },
+    "configs": {
+        "src": "/images/help/configs.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "share": {
+                "x": 34.2,
+                "y": 20.9,
+                "w": 9.9,
+                "h": 4.4
+            },
+            "sort": {
+                "x": 34.2,
+                "y": 33.8,
+                "w": 6.7,
+                "h": 3.6
+            },
+            "kind": {
+                "x": 54.5,
+                "y": 33.8,
+                "w": 5.1,
+                "h": 3.6
+            }
+        }
+    },
+    "connected-apps": {
+        "src": "/images/help/connected-apps.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "app": {
+                "x": 44.4,
+                "y": 19.3,
+                "w": 49.3,
+                "h": 34.2
+            },
+            "overlay": {
+                "x": 87.6,
+                "y": 41.2,
+                "w": 3.1,
+                "h": 2.7
+            },
+            "revoke": {
+                "x": 83.7,
+                "y": 30.3,
+                "w": 7.8,
+                "h": 3.6
+            }
+        }
+    },
+    "contact-privacy": {
+        "src": "/images/help/contact-privacy.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "messages": {
+                "x": 45.8,
+                "y": 46.1,
+                "w": 46.5,
+                "h": 9.5
+            },
+            "calls": {
+                "x": 45.8,
+                "y": 55.6,
+                "w": 46.5,
+                "h": 9.5
+            },
+            "groups": {
+                "x": 45.8,
+                "y": 65.1,
+                "w": 46.5,
+                "h": 9.5
+            }
+        }
+    },
+    "dev-keys": {
+        "src": "/images/help/dev-keys.webp",
+        "w": 920,
+        "h": 461,
+        "phone": false,
+        "regions": {
+            "client": {
+                "x": 3.5,
+                "y": 19.1,
+                "w": 45.9,
+                "h": 13
+            },
+            "public": {
+                "x": 50.7,
+                "y": 19.1,
+                "w": 45.9,
+                "h": 13
+            },
+            "bot": {
+                "x": 3.5,
+                "y": 34.7,
+                "w": 93,
+                "h": 11.3
+            },
+            "token": {
+                "x": 4.8,
+                "y": 77.2,
+                "w": 13.7,
+                "h": 6.9
+            },
+            "redirects": {
+                "x": 3.5,
+                "y": 89.4,
+                "w": 93,
+                "h": 3.7
+            }
+        }
+    },
+    "dev-new-app": {
+        "src": "/images/help/dev-new-app.webp",
+        "w": 920,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "name": {
+                "x": 3.5,
+                "y": 6.7,
+                "w": 93,
+                "h": 6.7
+            },
+            "about": {
+                "x": 1.3,
+                "y": 0,
+                "w": 97.4,
+                "h": 100
+            },
+            "site": {
+                "x": 3.5,
+                "y": 22.7,
+                "w": 93,
+                "h": 6.7
+            },
+            "redirects": {
+                "x": 1.3,
+                "y": 0,
+                "w": 97.4,
+                "h": 100
+            },
+            "public": {
+                "x": 3.5,
+                "y": 43.6,
+                "w": 93,
+                "h": 4
+            },
+            "scopes": {
+                "x": 3.5,
+                "y": 48.9,
+                "w": 93,
+                "h": 48.2
+            },
+            "save": {
+                "x": 85.3,
+                "y": 98.4,
+                "w": 11.2,
+                "h": 1.6
+            }
+        }
+    },
+    "dev-overlay": {
+        "src": "/images/help/dev-overlay.webp",
+        "w": 880,
+        "h": 822,
+        "phone": false,
+        "regions": {
+            "stage": {
+                "x": 1.4,
+                "y": 1.5,
+                "w": 97.3,
+                "h": 58.6
+            },
+            "look": {
+                "x": 1.4,
+                "y": 64.9,
+                "w": 97.3,
+                "h": 35.1
+            }
+        }
+    },
+    "dev-overlay-layout": {
+        "src": "/images/help/dev-overlay-layout.webp",
+        "w": 880,
+        "h": 835,
+        "phone": false,
+        "regions": {
+            "sections": {
+                "x": 3.2,
+                "y": 6.7,
+                "w": 93.6,
+                "h": 3.4
+            },
+            "corners": {
+                "x": 20.9,
+                "y": 49.1,
+                "w": 58.2,
+                "h": 34.5
+            },
+            "tray": {
+                "x": 3.2,
+                "y": 84.6,
+                "w": 93.6,
+                "h": 8
+            }
+        }
+    },
+    "dev-overlay-publish": {
+        "src": "/images/help/dev-overlay-publish.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "groups": {
+                "x": 30,
+                "y": 68.4,
+                "w": 59.4,
+                "h": 4.9
+            },
+            "items": {
+                "x": 30,
+                "y": 74.6,
+                "w": 59.4,
+                "h": 4.9
+            },
+            "onboarding": {
+                "x": 30,
+                "y": 80.8,
+                "w": 59.4,
+                "h": 4.9
+            },
+            "draft": {
+                "x": 63.9,
+                "y": 87.1,
+                "w": 13.5,
+                "h": 4
+            },
+            "publish": {
+                "x": 78,
+                "y": 87.1,
+                "w": 11.4,
+                "h": 4
+            }
+        }
+    },
+    "dev-plugins": {
+        "src": "/images/help/dev-plugins.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "filters": {
+                "x": 24.2,
+                "y": 45.4,
+                "w": 30.5,
+                "h": 4.4
+            },
+            "card": {
+                "x": 24.2,
+                "y": 52.6,
+                "w": 23.1,
+                "h": 8.9
+            }
+        }
+    },
+    "dev-portal": {
+        "src": "/images/help/dev-portal.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "new": {
+                "x": 28.6,
+                "y": 77,
+                "w": 62.2,
+                "h": 5.8
+            },
+            "sdk": {
+                "x": 57.6,
+                "y": 21.8,
+                "w": 9.1,
+                "h": 3.6
+            },
+            "servers": {
+                "x": 66.9,
+                "y": 21.8,
+                "w": 10.8,
+                "h": 3.6
+            },
+            "app": {
+                "x": 28.6,
+                "y": 27.1,
+                "w": 62.2,
+                "h": 48.6
+            },
+            "overlay": {
+                "x": 72,
+                "y": 29.3,
+                "w": 7.8,
+                "h": 3.6
+            },
+            "edit": {
+                "x": 80.6,
+                "y": 29.3,
+                "w": 5.8,
+                "h": 3.6
+            },
+            "keys": {
+                "x": 30,
+                "y": 35.6,
+                "w": 29.3,
+                "h": 1.8
+            }
+        }
+    },
+    "dev-sdk": {
+        "src": "/images/help/dev-sdk.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "platforms": {
+                "x": 24.2,
+                "y": 14.4,
+                "w": 71.1,
+                "h": 6
+            },
+            "sandbox": {
+                "x": 24.2,
+                "y": 28.9,
+                "w": 71.1,
+                "h": 71.1
+            },
+            "stage": {
+                "x": 25.6,
+                "y": 35.6,
+                "w": 68.3,
+                "h": 61.5
+            }
+        }
+    },
+    "dev-sdk-code": {
+        "src": "/images/help/dev-sdk-code.webp",
+        "w": 1048,
+        "h": 484,
+        "phone": false,
+        "regions": {
+            "tabs": {
+                "x": 75.5,
+                "y": 6.6,
+                "w": 21.5,
+                "h": 9.1
+            },
+            "code": {
+                "x": 3.1,
+                "y": 18.2,
+                "w": 93.9,
+                "h": 66.1
+            },
+            "copy": {
+                "x": 93.1,
+                "y": 19.8,
+                "w": 3.1,
+                "h": 6.6
+            }
+        }
+    },
+    "dev-sdk-settings": {
+        "src": "/images/help/dev-sdk-settings.webp",
+        "w": 1048,
+        "h": 306,
+        "phone": false,
+        "regions": {
+            "code": {
+                "x": 3.1,
+                "y": 49.8,
+                "w": 46.2,
+                "h": 39.7
+            },
+            "toggle": {
+                "x": 52.3,
+                "y": 37,
+                "w": 43.1,
+                "h": 18.7
+            },
+            "account": {
+                "x": 52.3,
+                "y": 55.6,
+                "w": 43.1,
+                "h": 15.6
+            }
+        }
+    },
+    "events": {
+        "src": "/images/help/events.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "filter": {
+                "x": 24.5,
+                "y": 31.1,
+                "w": 4.2,
+                "h": 4
+            },
+            "subscribe": {
+                "x": 43.8,
+                "y": 25.8,
+                "w": 14.3,
+                "h": 3.6
+            },
+            "releases": {
+                "x": 29,
+                "y": 16.6,
+                "w": 7.7,
+                "h": 2
+            }
+        }
+    },
+    "families": {
+        "src": "/images/help/families.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "create": {
+                "x": 83.7,
+                "y": 22.2,
+                "w": 13,
+                "h": 5.3
+            },
+            "mine": {
+                "x": 20.8,
+                "y": 31.9,
+                "w": 77.8,
+                "h": 3.1
+            },
+            "catalog": {
+                "x": 20.8,
+                "y": 49.3,
+                "w": 9.4,
+                "h": 3.1
+            }
+        }
+    },
+    "family-charter": {
+        "src": "/images/help/family-charter.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "text": {
+                "x": 22.2,
+                "y": 24.4,
+                "w": 75,
+                "h": 10.1
+            },
+            "quiz": {
+                "x": 22.2,
+                "y": 70.4,
+                "w": 75,
+                "h": 29.6
+            }
+        }
+    },
+    "family-goals": {
+        "src": "/images/help/family-goals.webp",
+        "w": 648,
+        "h": 274,
+        "phone": false,
+        "regions": {
+            "goal": {
+                "x": 4.9,
+                "y": 26.3,
+                "w": 90.1,
+                "h": 20.4
+            },
+            "edit": {
+                "x": 87,
+                "y": 13.1,
+                "w": 8.1,
+                "h": 5.8
+            }
+        }
+    },
+    "family-goals-settings": {
+        "src": "/images/help/family-goals-settings.webp",
+        "w": 1144,
+        "h": 412,
+        "phone": false,
+        "regions": {
+            "type": {
+                "x": 3.8,
+                "y": 27.2,
+                "w": 38.3,
+                "h": 10.7
+            },
+            "target": {
+                "x": 42.8,
+                "y": 27.2,
+                "w": 9.8,
+                "h": 10.7
+            },
+            "reward": {
+                "x": 53.3,
+                "y": 27.2,
+                "w": 38.3,
+                "h": 10.7
+            },
+            "add": {
+                "x": 88.3,
+                "y": 82.5,
+                "w": 8.9,
+                "h": 9.7
+            }
+        }
+    },
+    "family-history": {
+        "src": "/images/help/family-history.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "achievements": {
+                "x": 22.2,
+                "y": 28.9,
+                "w": 32.1,
+                "h": 37.6
+            },
+            "timeline": {
+                "x": 58.2,
+                "y": 25.8,
+                "w": 39,
+                "h": 29.8
+            }
+        }
+    },
+    "family-relations": {
+        "src": "/images/help/family-relations.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "form": {
+                "x": 22.2,
+                "y": 24.4,
+                "w": 75,
+                "h": 13.8
+            },
+            "list": {
+                "x": 22.2,
+                "y": 48.4,
+                "w": 75,
+                "h": 15.1
+            }
+        }
+    },
+    "family-shift-goal": {
+        "src": "/images/help/family-shift-goal.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "goal": {
+                "x": 62.2,
+                "y": 28.9,
+                "w": 14.7,
+                "h": 2.9
+            }
+        }
+    },
+    "family-shift-partners": {
+        "src": "/images/help/family-shift-partners.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "partners": {
+                "x": 62.2,
+                "y": 33.3,
+                "w": 14.7,
+                "h": 5.3
+            }
+        }
+    },
+    "family-weekly": {
+        "src": "/images/help/family-weekly.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "bell": {
+                "x": 83.4,
+                "y": 2.4,
+                "w": 2.8,
+                "h": 4.4
+            },
+            "report": {
+                "x": 60.2,
+                "y": 13.3,
+                "w": 25.6,
+                "h": 13
+            }
+        }
+    },
+    "family-wiki": {
+        "src": "/images/help/family-wiki.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "nav": {
+                "x": 22.2,
+                "y": 24.4,
+                "w": 12.5,
+                "h": 8.4
+            },
+            "page": {
+                "x": 38.6,
+                "y": 24.4,
+                "w": 58.6,
+                "h": 13.7
+            }
+        }
+    },
+    "footer-legal": {
+        "src": "/images/help/footer-legal.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "terms": {
+                "x": 46.4,
+                "y": 56,
+                "w": 19.4,
+                "h": 4.9
+            },
+            "privacy": {
+                "x": 46.4,
+                "y": 61.6,
+                "w": 19.4,
+                "h": 4.9
+            },
+            "refund": {
+                "x": 46.4,
+                "y": 67.1,
+                "w": 19.4,
+                "h": 4.9
+            }
+        }
+    },
+    "game-nights": {
+        "src": "/images/help/game-nights.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "plan": {
+                "x": 34.2,
+                "y": 20.9,
+                "w": 10.6,
+                "h": 4.4
+            },
+            "time": {
+                "x": 35.3,
+                "y": 44.2,
+                "w": 9.1,
+                "h": 2.2
+            },
+            "invite": {
+                "x": 72.1,
+                "y": 90.1,
+                "w": 12.1,
+                "h": 4.4
+            }
+        }
+    },
+    "games-pc": {
+        "src": "/images/help/games-pc.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "search": {
+                "x": 77.2,
+                "y": 12.9,
+                "w": 20,
+                "h": 4.9
+            },
+            "tools": {
+                "x": 22.2,
+                "y": 20,
+                "w": 75,
+                "h": 4
+            },
+            "platform": {
+                "x": 21.9,
+                "y": 29.3,
+                "w": 25.3,
+                "h": 4.4
+            },
+            "genre": {
+                "x": 72.5,
+                "y": 29.3,
+                "w": 12.2,
+                "h": 4.4
+            },
+            "sort": {
+                "x": 85.3,
+                "y": 29.3,
+                "w": 12.2,
+                "h": 4.4
+            },
+            "modes": {
+                "x": 21.7,
+                "y": 35.1,
+                "w": 76.1,
+                "h": 3.6
+            },
+            "letters": {
+                "x": 21.9,
+                "y": 40,
+                "w": 75.6,
+                "h": 4.4
+            }
+        }
+    },
+    "help-assistant": {
+        "src": "/images/help/help-assistant.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "assistant": {
+                "x": 29.9,
+                "y": 29,
+                "w": 59.7,
+                "h": 14.1
+            }
+        }
+    },
+    "help-home": {
+        "src": "/images/help/help-home.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "popular": {
+                "x": 29.9,
+                "y": 29,
+                "w": 59.7,
+                "h": 3.7
+            },
+            "sections": {
+                "x": 29.9,
+                "y": 79.2,
+                "w": 59.7,
+                "h": 3.7
+            }
+        }
+    },
+    "home-pc": {
+        "src": "/images/help/home-pc.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "gamecast": {
+                "x": 37.8,
+                "y": 2.4,
+                "w": 10.2,
+                "h": 4
+            },
+            "theme": {
+                "x": 82.5,
+                "y": 2.2,
+                "w": 2.8,
+                "h": 4.4
+            },
+            "whatsnew": {
+                "x": 85.6,
+                "y": 2.2,
+                "w": 2.8,
+                "h": 4.4
+            },
+            "bell": {
+                "x": 88.6,
+                "y": 2.2,
+                "w": 2.8,
+                "h": 4.4
+            },
+            "avatar": {
+                "x": 91.7,
+                "y": 2,
+                "w": 6.7,
+                "h": 4.9
+            },
+            "streak": {
+                "x": 1.7,
+                "y": 62.8,
+                "w": 23.6,
+                "h": 7.1
+            },
+            "ready": {
+                "x": 8.6,
+                "y": 63.9,
+                "w": 1.9,
+                "h": 4.9
+            },
+            "quests": {
+                "x": 11.1,
+                "y": 63.9,
+                "w": 8.1,
+                "h": 4.9
+            }
+        }
+    },
+    "home-phone": {
+        "src": "/images/help/home-phone.webp",
+        "w": 824,
+        "h": 1678,
+        "phone": true,
+        "regions": {
+            "whatsnew": {
+                "x": 74,
+                "y": 2.4,
+                "w": 9.7,
+                "h": 4.8
+            },
+            "bell": {
+                "x": 84.7,
+                "y": 2.4,
+                "w": 9.7,
+                "h": 4.8
+            }
+        }
+    },
+    "invite": {
+        "src": "/images/help/invite.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "copy": {
+                "x": 81.4,
+                "y": 24.4,
+                "w": 2.8,
+                "h": 4.4
+            },
+            "share": {
+                "x": 34.7,
+                "y": 31.1,
+                "w": 10.5,
+                "h": 4.9
+            },
+            "rewards": {
+                "x": 34.7,
+                "y": 52,
+                "w": 50,
+                "h": 3.1
+            }
+        }
+    },
+    "journal": {
+        "src": "/images/help/journal.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "mood": {
+                "x": 37.5,
+                "y": 39,
+                "w": 6.5,
+                "h": 4
+            },
+            "save": {
+                "x": 74.3,
+                "y": 44.3,
+                "w": 7.7,
+                "h": 4.4
+            }
+        }
+    },
+    "languages": {
+        "src": "/images/help/languages.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "langs": {
+                "x": 45.8,
+                "y": 22.2,
+                "w": 46.5,
+                "h": 2.2
+            }
+        }
+    },
+    "level": {
+        "src": "/images/help/level.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "level": {
+                "x": 38.3,
+                "y": 14.7,
+                "w": 40.1,
+                "h": 4
+            },
+            "xp": {
+                "x": 30,
+                "y": 30.2,
+                "w": 31.6,
+                "h": 3.1
+            },
+            "daily": {
+                "x": 79.9,
+                "y": 16,
+                "w": 9.3,
+                "h": 4.4
+            }
+        }
+    },
+    "link": {
+        "src": "/images/help/link.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "code": {
+                "x": 16.7,
+                "y": 3.6,
+                "w": 16,
+                "h": 2.2
+            },
+            "submit": {
+                "x": 45.8,
+                "y": 38.7,
+                "w": 27.8,
+                "h": 4.9
+            }
+        }
+    },
+    "listen-together": {
+        "src": "/images/help/listen-together.webp",
+        "w": 344,
+        "h": 594,
+        "phone": false,
+        "regions": {
+            "track": {
+                "x": 22.1,
+                "y": 12.8,
+                "w": 58.1,
+                "h": 2.7
+            },
+            "join": {
+                "x": 83.7,
+                "y": 9.8,
+                "w": 9.3,
+                "h": 5.4
+            }
+        }
+    },
+    "login": {
+        "src": "/images/help/login.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "app": {
+                "x": 63,
+                "y": 34.5,
+                "w": 25.4,
+                "h": 5.3
+            },
+            "passkey": {
+                "x": 63,
+                "y": 40.9,
+                "w": 25.4,
+                "h": 5.3
+            },
+            "email": {
+                "x": 63,
+                "y": 53.7,
+                "w": 25.4,
+                "h": 5.3
+            },
+            "forgot": {
+                "x": 81.4,
+                "y": 70,
+                "w": 7,
+                "h": 1.8
+            },
+            "submit": {
+                "x": 63,
+                "y": 76,
+                "w": 25.4,
+                "h": 5.3
+            }
+        }
+    },
+    "login-app": {
+        "src": "/images/help/login-app.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "qr": {
+                "x": 42.3,
+                "y": 62.5,
+                "w": 1,
+                "h": 1.6
+            },
+            "wait": {
+                "x": 42.3,
+                "y": 62.4,
+                "w": 15.4,
+                "h": 1.8
+            },
+            "send": {
+                "x": 38.3,
+                "y": 77.2,
+                "w": 23.3,
+                "h": 4.4
+            }
+        }
+    },
+    "memories": {
+        "src": "/images/help/memories.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "title": {
+                "x": 36.4,
+                "y": 9.8,
+                "w": 46.7,
+                "h": 4.4
+            }
+        }
+    },
+    "messages": {
+        "src": "/images/help/messages.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "new": {
+                "x": 40.8,
+                "y": 11.6,
+                "w": 2.5,
+                "h": 4
+            },
+            "list": {
+                "x": 26.3,
+                "y": 31.2,
+                "w": 8.7,
+                "h": 2.3
+            },
+            "attach": {
+                "x": 45.6,
+                "y": 92.7,
+                "w": 2.8,
+                "h": 4.4
+            },
+            "info": {
+                "x": 95,
+                "y": 11,
+                "w": 2.5,
+                "h": 4
+            }
+        }
+    },
+    "moments": {
+        "src": "/images/help/moments.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "add": {
+                "x": 84.4,
+                "y": 13.6,
+                "w": 12.5,
+                "h": 4.9
+            },
+            "week": {
+                "x": 28.4,
+                "y": 22.2,
+                "w": 14.8,
+                "h": 4
+            },
+            "winners": {
+                "x": 21.9,
+                "y": 32.4,
+                "w": 45,
+                "h": 2.2
+            }
+        }
+    },
+    "movie-lists": {
+        "src": "/images/help/movie-lists.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "tabs": {
+                "x": 20.8,
+                "y": 18.2,
+                "w": 7.7,
+                "h": 3.6
+            },
+            "mine": {
+                "x": 34.2,
+                "y": 18.2,
+                "w": 4.1,
+                "h": 3.6
+            },
+            "list": {
+                "x": 21.9,
+                "y": 40.5,
+                "w": 15.1,
+                "h": 2.8
+            }
+        }
+    },
+    "movie-status": {
+        "src": "/images/help/movie-status.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "status": {
+                "x": 29.9,
+                "y": 21.9,
+                "w": 6.8,
+                "h": 4
+            },
+            "collection": {
+                "x": 50.7,
+                "y": 75.2,
+                "w": 8.3,
+                "h": 4.9
+            }
+        }
+    },
+    "movie-together": {
+        "src": "/images/help/movie-together.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "together": {
+                "x": 59,
+                "y": 45.4,
+                "w": 15.6,
+                "h": 4.4
+            }
+        }
+    },
+    "music-connect": {
+        "src": "/images/help/music-connect.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "devices": {
+                "x": 72.8,
+                "y": 92.7,
+                "w": 2.5,
+                "h": 4
+            }
+        }
+    },
+    "music-player": {
+        "src": "/images/help/music-player.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "lyrics": {
+                "x": 70.3,
+                "y": 92.7,
+                "w": 2.5,
+                "h": 4
+            },
+            "volume": {
+                "x": 63.9,
+                "y": 93.8,
+                "w": 5.6,
+                "h": 1.8
+            },
+            "next": {
+                "x": 40,
+                "y": 92.7,
+                "w": 2.5,
+                "h": 4
+            }
+        }
+    },
+    "music-queue": {
+        "src": "/images/help/music-queue.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "queue": {
+                "x": 70.3,
+                "y": 92.7,
+                "w": 2.5,
+                "h": 4
+            },
+            "shuffle": {
+                "x": 31.9,
+                "y": 92.7,
+                "w": 2.5,
+                "h": 4
+            },
+            "together": {
+                "x": 80.3,
+                "y": 92.7,
+                "w": 2.5,
+                "h": 4
+            }
+        }
+    },
+    "music-radio": {
+        "src": "/images/help/music-radio.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "mine": {
+                "x": 20.8,
+                "y": 28.2,
+                "w": 31.1,
+                "h": 1.4
+            },
+            "together": {
+                "x": 20.8,
+                "y": 24.6,
+                "w": 12.4,
+                "h": 2.2
+            },
+            "groups": {
+                "x": 22,
+                "y": 85.8,
+                "w": 10.5,
+                "h": 9.1
+            }
+        }
+    },
+    "music-track-menu": {
+        "src": "/images/help/music-track-menu.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "menu": {
+                "x": 29.4,
+                "y": 52.4,
+                "w": 17.8,
+                "h": 47.6
+            },
+            "edit": {
+                "x": 29.9,
+                "y": 84.1,
+                "w": 16.9,
+                "h": 4.3
+            }
+        }
+    },
+    "music-upload": {
+        "src": "/images/help/music-upload.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "file": {
+                "x": 28.6,
+                "y": 32.6,
+                "w": 6.7,
+                "h": 4
+            },
+            "link": {
+                "x": 35.6,
+                "y": 32.6,
+                "w": 11.8,
+                "h": 4
+            }
+        }
+    },
+    "nav-settings": {
+        "src": "/images/help/nav-settings.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "bar": {
+                "x": 45.8,
+                "y": 38.5,
+                "w": 46.5,
+                "h": 2.2
+            },
+            "up": {
+                "x": 83.2,
+                "y": 41.8,
+                "w": 2.5,
+                "h": 4
+            },
+            "menu": {
+                "x": 45.8,
+                "y": 65.4,
+                "w": 3.6,
+                "h": 2.2
+            }
+        }
+    },
+    "overlay-companion": {
+        "src": "/images/help/overlay-companion.webp",
+        "w": 670,
+        "h": 365,
+        "phone": false,
+        "regions": {
+            "preset": {
+                "x": 64,
+                "y": 27.7,
+                "w": 32.4,
+                "h": 11
+            },
+            "layout": {
+                "x": 55.8,
+                "y": 41.9,
+                "w": 40.6,
+                "h": 11
+            },
+            "density": {
+                "x": 63,
+                "y": 56.7,
+                "w": 33.4,
+                "h": 4.4
+            },
+            "streamer": {
+                "x": 89.9,
+                "y": 76.4,
+                "w": 6.6,
+                "h": 6.6
+            },
+            "reset": {
+                "x": 3.6,
+                "y": 87.9,
+                "w": 28.1,
+                "h": 6.6
+            }
+        }
+    },
+    "party": {
+        "src": "/images/help/party.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "match": {
+                "x": 72.5,
+                "y": 13.6,
+                "w": 12.9,
+                "h": 4.9
+            },
+            "ready": {
+                "x": 22.2,
+                "y": 40,
+                "w": 75,
+                "h": 4.4
+            },
+            "now": {
+                "x": 23.9,
+                "y": 37.1,
+                "w": 73.3,
+                "h": 2
+            }
+        }
+    },
+    "phone": {
+        "src": "/images/help/phone.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "dialer": {
+                "x": 39,
+                "y": 62.1,
+                "w": 10.8,
+                "h": 6.2
+            },
+            "write": {
+                "x": 27.6,
+                "y": 62.1,
+                "w": 10.8,
+                "h": 6.2
+            },
+            "privacy": {
+                "x": 60.7,
+                "y": 24.7,
+                "w": 36.6,
+                "h": 2
+            },
+            "buy": {
+                "x": 65.4,
+                "y": 74.6,
+                "w": 31.8,
+                "h": 2.7
+            }
+        }
+    },
+    "photos": {
+        "src": "/images/help/photos.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "create": {
+                "x": 83.4,
+                "y": 14.3,
+                "w": 13.5,
+                "h": 4.9
+            },
+            "albums": {
+                "x": 20.8,
+                "y": 25.1,
+                "w": 77.8,
+                "h": 2.2
+            },
+            "all": {
+                "x": 21.9,
+                "y": 78.2,
+                "w": 75.6,
+                "h": 2.2
+            }
+        }
+    },
+    "playing-status": {
+        "src": "/images/help/playing-status.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "status": {
+                "x": 59.1,
+                "y": 86.7,
+                "w": 11.4,
+                "h": 1.8
+            }
+        }
+    },
+    "plus": {
+        "src": "/images/help/plus.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "buy": {
+                "x": 31.7,
+                "y": 48.9,
+                "w": 26.5,
+                "h": 4.4
+            },
+            "billing": {
+                "x": 38.8,
+                "y": 10.2,
+                "w": 13.7,
+                "h": 4.4
+            },
+            "compare": {
+                "x": 51.5,
+                "y": 27.2,
+                "w": 18,
+                "h": 2
+            }
+        }
+    },
+    "plus-billing": {
+        "src": "/images/help/plus-billing.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "auto": {
+                "x": 34.4,
+                "y": 62.9,
+                "w": 50.6,
+                "h": 3.1
+            },
+            "cards": {
+                "x": 34.4,
+                "y": 92.3,
+                "w": 50.6,
+                "h": 3.1
+            }
+        }
+    },
+    "plus-style": {
+        "src": "/images/help/plus-style.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "style": {
+                "x": 30,
+                "y": 17.8,
+                "w": 59.4,
+                "h": 3.1
+            }
+        }
+    },
+    "podcasts": {
+        "src": "/images/help/podcasts.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "create": {
+                "x": 83.6,
+                "y": 15.1,
+                "w": 10.6,
+                "h": 4.4
+            },
+            "cats": {
+                "x": 33,
+                "y": 20.9,
+                "w": 7.1,
+                "h": 3.6
+            },
+            "show": {
+                "x": 26.1,
+                "y": 51.9,
+                "w": 14.9,
+                "h": 2.2
+            }
+        }
+    },
+    "post-album": {
+        "src": "/images/help/post-album.webp",
+        "w": 804,
+        "h": 720,
+        "phone": false,
+        "regions": {
+            "counter": {
+                "x": 88.8,
+                "y": 19.8,
+                "w": 6,
+                "h": 3.3
+            },
+            "next": {
+                "x": 90.3,
+                "y": 55.4,
+                "w": 4.5,
+                "h": 5
+            },
+            "dots": {
+                "x": 3.7,
+                "y": 96.8,
+                "w": 92.5,
+                "h": 0.8
+            }
+        }
+    },
+    "post-menu": {
+        "src": "/images/help/post-menu.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "menu": {
+                "x": 57.1,
+                "y": 22.3,
+                "w": 16.7,
+                "h": 27.2
+            },
+            "hide": {
+                "x": 57.5,
+                "y": 37.2,
+                "w": 15.8,
+                "h": 3.6
+            },
+            "mute": {
+                "x": 57.5,
+                "y": 40.8,
+                "w": 15.8,
+                "h": 3.6
+            }
+        }
+    },
+    "post-menu-own": {
+        "src": "/images/help/post-menu-own.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "menu": {
+                "x": 57.1,
+                "y": 27.1,
+                "w": 16.7,
+                "h": 27.2
+            },
+            "series": {
+                "x": 57.5,
+                "y": 42,
+                "w": 15.8,
+                "h": 3.6
+            }
+        }
+    },
+    "post-pc": {
+        "src": "/images/help/post-pc.webp",
+        "w": 364,
+        "h": 347,
+        "phone": false,
+        "regions": {
+            "author": {
+                "x": 22.5,
+                "y": 7.5,
+                "w": 45.6,
+                "h": 5.4
+            },
+            "more": {
+                "x": 85.2,
+                "y": 13.3,
+                "w": 8.8,
+                "h": 9.2
+            }
+        }
+    },
+    "quiet-hours": {
+        "src": "/images/help/quiet-hours.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "quiet": {
+                "x": 44.7,
+                "y": 22.3,
+                "w": 48.8,
+                "h": 2.5
+            }
+        }
+    },
+    "read-later": {
+        "src": "/images/help/read-later.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "title": {
+                "x": 37.5,
+                "y": 9.8,
+                "w": 39.1,
+                "h": 4.4
+            },
+            "saved": {
+                "x": 37.5,
+                "y": 17.3,
+                "w": 5.7,
+                "h": 2.2
+            }
+        }
+    },
+    "register": {
+        "src": "/images/help/register.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "name": {
+                "x": 63,
+                "y": 41.6,
+                "w": 12.3,
+                "h": 5.3
+            },
+            "email": {
+                "x": 63,
+                "y": 48.7,
+                "w": 25.4,
+                "h": 5.3
+            },
+            "password": {
+                "x": 63,
+                "y": 55.8,
+                "w": 25.4,
+                "h": 5.3
+            },
+            "create": {
+                "x": 63,
+                "y": 71.4,
+                "w": 25.4,
+                "h": 5.3
+            },
+            "login": {
+                "x": 63,
+                "y": 78.5,
+                "w": 25.4,
+                "h": 2.2
+            }
+        }
+    },
+    "saved": {
+        "src": "/images/help/saved.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "title": {
+                "x": 37.5,
+                "y": 9.8,
+                "w": 13.2,
+                "h": 4.4
+            },
+            "later": {
+                "x": 72.3,
+                "y": 12,
+                "w": 9.6,
+                "h": 2.2
+            }
+        }
+    },
+    "sdk-launcher": {
+        "src": "/images/help/sdk-launcher.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "nav": {
+                "x": 0.8,
+                "y": 1.3,
+                "w": 16.7,
+                "h": 97.3
+            },
+            "main": {
+                "x": 18.3,
+                "y": 1.3,
+                "w": 80.8,
+                "h": 97.3
+            },
+            "me": {
+                "x": 1.9,
+                "y": 7.2,
+                "w": 14.6,
+                "h": 5.3
+            }
+        }
+    },
+    "sdk-overlay": {
+        "src": "/images/help/sdk-overlay.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "drop": {
+                "x": 0,
+                "y": 50,
+                "w": 1.8,
+                "h": 6.4
+            },
+            "panel": {
+                "x": 2.4,
+                "y": 31.2,
+                "w": 22.2,
+                "h": 37.6
+            },
+            "tabs": {
+                "x": 3.3,
+                "y": 37.1,
+                "w": 20.4,
+                "h": 3.6
+            },
+            "stack": {
+                "x": 0.8,
+                "y": 1.3,
+                "w": 19.4,
+                "h": 36
+            }
+        }
+    },
+    "security-2fa": {
+        "src": "/images/help/security-2fa.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "block": {
+                "x": 44.4,
+                "y": 15.6,
+                "w": 49.3,
+                "h": 20.3
+            },
+            "enable": {
+                "x": 45.8,
+                "y": 29.2,
+                "w": 9.7,
+                "h": 4.4
+            }
+        }
+    },
+    "security-passkeys": {
+        "src": "/images/help/security-passkeys.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "block": {
+                "x": 44.4,
+                "y": 13.3,
+                "w": 49.3,
+                "h": 37.8
+            },
+            "add": {
+                "x": 45.8,
+                "y": 44.5,
+                "w": 9,
+                "h": 4.4
+            }
+        }
+    },
+    "server-characters": {
+        "src": "/images/help/server-characters.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "chars": {
+                "x": 22.2,
+                "y": 17.8,
+                "w": 12.6,
+                "h": 3.1
+            },
+            "reviews": {
+                "x": 22.2,
+                "y": 30.7,
+                "w": 75,
+                "h": 3.1
+            }
+        }
+    },
+    "server-owner": {
+        "src": "/images/help/server-owner.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "news": {
+                "x": 22.2,
+                "y": 22.2,
+                "w": 75,
+                "h": 3.1
+            },
+            "claim": {
+                "x": 22.2,
+                "y": 39.6,
+                "w": 9.5,
+                "h": 4.4
+            },
+            "badge": {
+                "x": 22.2,
+                "y": 3.4,
+                "w": 75,
+                "h": 3.1
+            }
+        }
+    },
+    "settings-appearance": {
+        "src": "/images/help/settings-appearance.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "theme": {
+                "x": 44.4,
+                "y": 50.9,
+                "w": 49.3,
+                "h": 34.8
+            },
+            "style": {
+                "x": 44.7,
+                "y": 87,
+                "w": 48.8,
+                "h": 2.5
+            }
+        }
+    },
+    "settings-profile": {
+        "src": "/images/help/settings-profile.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "menu": {
+                "x": 26.1,
+                "y": 20,
+                "w": 16.5,
+                "h": 7.6
+            },
+            "main": {
+                "x": 44.4,
+                "y": 19.3,
+                "w": 49.3,
+                "h": 56.9
+            },
+            "save": {
+                "x": 82.7,
+                "y": 92.4,
+                "w": 10.2,
+                "h": 4.4
+            }
+        }
+    },
+    "shortcuts": {
+        "src": "/images/help/shortcuts.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "dialog": {
+                "x": 34.4,
+                "y": 8.7,
+                "w": 31.1,
+                "h": 82.7
+            }
+        }
+    },
+    "status": {
+        "src": "/images/help/status.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "now": {
+                "x": 38.3,
+                "y": 12.4,
+                "w": 33.6,
+                "h": 3.6
+            },
+            "history": {
+                "x": 33.1,
+                "y": 73.3,
+                "w": 53.3,
+                "h": 2.2
+            }
+        }
+    },
+    "support": {
+        "src": "/images/help/support.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "new": {
+                "x": 33.3,
+                "y": 18.2,
+                "w": 12.5,
+                "h": 4.4
+            },
+            "title": {
+                "x": 33.3,
+                "y": 9.8,
+                "w": 43.9,
+                "h": 4.4
+            }
+        }
+    },
+    "teen-mode": {
+        "src": "/images/help/teen-mode.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "words": {
+                "x": 44.7,
+                "y": 17.7,
+                "w": 48.8,
+                "h": 2.5
+            },
+            "teen": {
+                "x": 44.7,
+                "y": 32,
+                "w": 48.8,
+                "h": 2.5
+            }
+        }
+    },
+    "terms": {
+        "src": "/images/help/terms.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "title": {
+                "x": 26.7,
+                "y": 15.6,
+                "w": 46.5,
+                "h": 8
+            }
+        }
+    },
+    "tierlists": {
+        "src": "/images/help/tierlists.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "title": {
+                "x": 25.3,
+                "y": 12.4,
+                "w": 24.5,
+                "h": 4.4
+            },
+            "new": {
+                "x": 85.3,
+                "y": 15.1,
+                "w": 8.8,
+                "h": 4.4
+            }
+        }
+    },
+    "today": {
+        "src": "/images/help/today.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "summary": {
+                "x": 37.5,
+                "y": 18.2,
+                "w": 44.4,
+                "h": 16.1
+            },
+            "facts": {
+                "x": 37.5,
+                "y": 35.7,
+                "w": 44.4,
+                "h": 24.9
+            }
+        }
+    },
+    "trailers": {
+        "src": "/images/help/trailers.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "title": {
+                "x": 20.8,
+                "y": 9.8,
+                "w": 77.8,
+                "h": 4.4
+            }
+        }
+    },
+    "transparency": {
+        "src": "/images/help/transparency.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "reports": {
+                "x": 30,
+                "y": 33.3,
+                "w": 59.4,
+                "h": 3.1
+            },
+            "decisions": {
+                "x": 30,
+                "y": 55.8,
+                "w": 59.4,
+                "h": 3.1
+            },
+            "quarter": {
+                "x": 38.6,
+                "y": 23.6,
+                "w": 9.1,
+                "h": 3.6
+            }
+        }
+    },
+    "trivia": {
+        "src": "/images/help/trivia.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "title": {
+                "x": 36.4,
+                "y": 9.8,
+                "w": 46.7,
+                "h": 4.4
+            },
+            "answer": {
+                "x": 37.5,
+                "y": 32.9,
+                "w": 21.9,
+                "h": 4.9
+            }
+        }
+    },
+    "video-cover": {
+        "src": "/images/help/video-cover.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "video": {
+                "x": 22.8,
+                "y": 12.9,
+                "w": 11.2,
+                "h": 3.6
+            },
+            "cover": {
+                "x": 84.1,
+                "y": 12.9,
+                "w": 12.6,
+                "h": 3.6
+            }
+        }
+    },
+    "wrapped": {
+        "src": "/images/help/wrapped.webp",
+        "w": 1440,
+        "h": 900,
+        "phone": false,
+        "regions": {
+            "title": {
+                "x": 35.8,
+                "y": 41.3,
+                "w": 28.3,
+                "h": 11.2
+            }
+        }
+    }
 };
 
 export default HELP_SHOTS;
