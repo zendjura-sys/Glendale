@@ -194,7 +194,7 @@ const SHOTS = [
     },
     {
         id: 'post-album',
-        url: '/dashboard',
+        url: '/mark',
         device: PC,
         prepare: async (p) => {
             const post = p
@@ -1264,7 +1264,7 @@ const SHOTS = [
     },
     {
         id: 'music-track-menu',
-        url: '/music',
+        url: '/music/charts',
         device: PC,
         prepare: async (p) => {
             await p
@@ -1284,7 +1284,7 @@ const SHOTS = [
     },
     {
         id: 'music-player',
-        url: '/music',
+        url: '/music/charts',
         device: PC,
         prepare: async (p) => {
             await p
@@ -1303,7 +1303,7 @@ const SHOTS = [
     },
     {
         id: 'music-queue',
-        url: '/music',
+        url: '/music/charts',
         device: PC,
         prepare: async (p) => {
             await p
@@ -1334,9 +1334,14 @@ const SHOTS = [
     },
     {
         id: 'music-connect',
-        url: '/music',
+        url: '/music/charts',
         device: PC,
         prepare: async (p) => {
+            // «Пристрої» з’являються, коли відкрито ще один пристрій: друга вкладка й буде ним.
+            const other = await p.context().newPage();
+            await other.goto(BASE + '/music/charts');
+            await other.waitForTimeout(2500);
+            await p.bringToFront();
             await p
                 .locator('main')
                 .getByRole('button', { name: /Карпатський дрифт/ })
