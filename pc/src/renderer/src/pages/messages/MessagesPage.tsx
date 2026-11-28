@@ -1,6 +1,7 @@
-import { BellOff, Check, CornerUpLeft, Download, FileText, ImagePlus, MessageSquarePlus, Pencil, Pin, Search, SendHorizontal, Smile, Sticker, Trash2, X } from 'lucide-react';
+import { BellOff, Check, Phone, Video, CornerUpLeft, Download, FileText, ImagePlus, MessageSquarePlus, Pencil, Pin, Search, SendHorizontal, Smile, Sticker, Trash2, X } from 'lucide-react';
 import { type DragEvent, type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Input, Loading, Modal, PageHeader, SmartImage, downloadFile, useToast, when } from '@/components/kit';
+import { DirectCall, IncomingCall, useConversationCall } from '@/components/DirectCall';
 import { Avatar } from '@/components/ui';
 import { api, type User } from '@/lib/api';
 import { useMe } from '@/lib/me';
@@ -123,6 +124,8 @@ function Chat({ id, onChanged }: { id: number; onChanged: () => Promise<void> })
     const [sending, setSending] = useState(false);
     const scroller = useRef<HTMLDivElement>(null);
     const stick = useRef(true);
+    const { call, refresh: refreshCall } = useConversationCall(id);
+    const [inCall, setInCall] = useState<{ mode: 'start' | 'join'; callId?: number; video?: boolean } | null>(null);
 
     const load = useCallback(async () => {
         try {
@@ -252,17 +255,39 @@ function Chat({ id, onChanged }: { id: number; onChanged: () => Promise<void> })
     if (!detail) return <Loading />;
     const c = detail.conversation;
     return (
-        <div className="flex h-full flex-col" onDragOver={(e) => e.preventDefault()} onDrop={drop}>
+        <div className="relative flex h-full flex-col" onDragOver={(e) => e.preventDefault()} onDrop={drop}>
             <header className="flex items-center gap-3 border-b border-white/5 px-4 py-3">
                 <Avatar user={{ name: c.title, avatar_url: c.avatar_url ?? c.peer?.avatar_url }} size={40} dot={c.peer?.is_online ? 'online' : null} />
                 <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold">{c.title}</div>
                     <div className="truncate text-xs text-white/45">{c.peer ? (c.peer.is_online ? 'у мережі' : 'не в мережі') : `${c.members_count} учасників`}</div>
                 </div>
+                {call && !inCall && !call.invited?.includes(me?.id ?? -1) ? (
+                    <Button small tone="primary" onClick={() => setInCall({ mode: 'join', callId: call.id })}>
+                        <Phone size={14} /> Приєднатися до дзвінка
+                    </Button>
+                ) : (
+                    <>
+                        <Button small onClick={() => setInCall({ mode: 'start' })}>
+                            <Phone size={14} /> Дзвінок
+                        </Button>
+                        <Button small onClick={() => setInCall({ mode: 'start', video: true })}>
+                            <Video size={14} />
+                        </Button>
+                    </>
+                )}
                 <Button small onClick={() => void mute()}>
                     <BellOff size={14} /> {c.is_muted ? 'Увімкнути сповіщення' : 'Без звуку'}
                 </Button>
             </header>
+            {call && !inCall && call.invited?.includes(me?.id ?? -1) && (
+                <IncomingCall
+                    call={call}
+                    onAccept={() => setInCall({ mode: 'join', callId: call.id })}
+                    onDecline={() => void api('POST', `/api/v1/calls/${call.id}/decline`).then(refreshCall, () => undefined)}
+                />
+            )}
+            {inCall && <DirectCall conversationId={id} callId={inCall.callId} mode={inCall.mode} video={inCall.video} title={c.title} peer={c.peer} onEnd={() => (setInCall(null), void refreshCall(), void load())} />}
             {c.pins.length > 0 && (
                 <div className="flex items-center gap-2 border-b border-white/5 bg-neon-violet/[0.06] px-4 py-2 text-sm">
                     <Pin size={14} className="text-neon-violet" />

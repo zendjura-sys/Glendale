@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { basename, dirname, join } from 'node:path';
-import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, session as session_, Tray } from 'electron';
+import { app, BrowserWindow, desktopCapturer, globalShortcut, ipcMain, Menu, nativeImage, session as session_, Tray } from 'electron';
 import { loadCore } from './native';
 import { Session } from './session';
 import { registerStudio } from './studio';
@@ -178,6 +178,13 @@ app.on('second-instance', () => windows?.setMode('unified'));
 app.whenReady().then(() => {
     if (squirrel) return;
     // Плеєри кіно (Kodik, Videoseed…) перевіряють, з якого сайту їх вбудовано: для них програма — це GameCon.
+    // Демонстрація екрана в дзвінках (getDisplayMedia): весь основний екран зі звуком системи.
+    session_.defaultSession.setDisplayMediaRequestHandler((_req, done) => {
+        void desktopCapturer.getSources({ types: ['screen'] }).then(
+            (sources) => done(sources[0] ? { video: sources[0], audio: process.platform === 'win32' ? 'loopback' : undefined } : {}),
+            () => done({}),
+        );
+    });
     session_.defaultSession.webRequest.onBeforeSendHeaders({ urls: ['https://*/*'] }, (details, done) => {
         if (details.resourceType === 'subFrame' && !details.requestHeaders.Referer) details.requestHeaders.Referer = 'https://gamecon.online/';
         done({ requestHeaders: details.requestHeaders });

@@ -268,13 +268,13 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
         phone: false,
         regions: {
             type: {
-                x: 33.1,
+                x: 23.3,
                 y: 17.8,
                 w: 53.3,
                 h: 17.2,
             },
             access: {
-                x: 33.3,
+                x: 23.6,
                 y: 17.8,
                 w: 52.8,
                 h: 2.5,
@@ -562,26 +562,26 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
     'dev-sdk-settings': {
         src: '/images/help/dev-sdk-settings.webp',
         w: 1048,
-        h: 306,
+        h: 298,
         phone: false,
         regions: {
             code: {
-                x: 3.1,
+                x: 2.7,
                 y: 49.8,
-                w: 46.2,
-                h: 39.7,
+                w: 46.6,
+                h: 40.8,
             },
             toggle: {
                 x: 52.3,
-                y: 37,
-                w: 43.1,
-                h: 18.7,
+                y: 36.6,
+                w: 43.5,
+                h: 19.2,
             },
             account: {
                 x: 52.3,
-                y: 55.6,
-                w: 43.1,
-                h: 15.6,
+                y: 55.8,
+                w: 43.5,
+                h: 16,
             },
         },
     },
@@ -1104,23 +1104,10 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
     },
     'listen-together': {
         src: '/images/help/listen-together.webp',
-        w: 344,
-        h: 594,
+        w: 364,
+        h: 189,
         phone: false,
-        regions: {
-            track: {
-                x: 22.1,
-                y: 12.8,
-                w: 58.1,
-                h: 2.7,
-            },
-            join: {
-                x: 83.7,
-                y: 9.8,
-                w: 9.3,
-                h: 5.4,
-            },
-        },
+        regions: {},
     },
     login: {
         src: '/images/help/login.webp',
@@ -1877,14 +1864,14 @@ const HELP_SHOTS: Record<string, HelpShotMeta> = {
         phone: false,
         regions: {
             now: {
-                x: 38.3,
-                y: 12.4,
-                w: 33.6,
+                x: 28.1,
+                y: 10.2,
+                w: 9.3,
                 h: 3.6,
             },
             history: {
-                x: 33.1,
-                y: 73.3,
+                x: 23.3,
+                y: 47.6,
                 w: 53.3,
                 h: 2.2,
             },

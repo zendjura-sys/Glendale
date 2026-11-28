@@ -1727,8 +1727,10 @@ async function capture(browser, state, shot, manifest) {
         });
         const p = await ctx.newPage();
         // Короткі очікування: зламаний селектор не повинен гальмувати всю зйомку.
-        p.setDefaultTimeout(8000);
-        await p.goto(BASE + shot.url);
+        p.setDefaultTimeout(Number(process.env.HELP_TIMEOUT) || 15000);
+        await p
+            .goto(BASE + shot.url, { waitUntil: 'networkidle' })
+            .catch(() => undefined);
         await p.waitForTimeout(2500);
         await tidy(p);
         if (shot.prepare) await shot.prepare(p);
