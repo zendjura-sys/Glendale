@@ -1,3 +1,4 @@
+import 'core/widgets/notched_card.dart';
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
@@ -313,13 +314,13 @@ class _PostCardState extends State<PostCard> {
 
     return Padding(
       padding: EdgeInsets.only(bottom: 12),
-      child: Glass(
+      // Допис — картка з вирізом (NotchedCard): автор на рівні мітки «Допис», одна фігура без шва.
+      child: NotchedCard(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 14),
-        radius: 24,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        radius: 20,
+        headerGap: 0,
+        badge: NotchBadge(tr('Допис')),
+        title: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GestureDetector(
@@ -400,6 +401,9 @@ class _PostCardState extends State<PostCard> {
                 ),
               ],
             ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             if (bodyText.isNotEmpty && lang != null && lang != I18n.locale.split('-').first)
               Padding(
                 padding: EdgeInsets.only(top: 10),

@@ -1,3 +1,4 @@
+import 'core/widgets/notched_card.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -224,37 +225,11 @@ class _LobbyCard extends StatelessWidget {
       _Tone.accent => primary,
       null => null,
     };
-    return Stack(clipBehavior: Clip.none, children: [
-      Material(
-        color: card,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(padding: EdgeInsets.fromLTRB(14, badge == null ? 14 : 20, 14, 14), child: child),
-        ),
-      ),
-      if (badge != null)
-        Positioned(
-          top: 0,
-          right: 0,
-          // Виріз: фон полотна навколо мітки, як на сайті (.gc-live-badge).
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(6, 0, 0, 6),
-            decoration: BoxDecoration(color: voidColor, borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(14))),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-              decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(99)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (dot != null) ...[
-                  Container(width: 6, height: 6, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
-                  const SizedBox(width: 5),
-                ],
-                Text(badge!, style: body(11, color: soft, weight: FontWeight.w700)),
-              ]),
-            ),
-          ),
-        ),
-    ]);
+    // Одна фігура з вирізом (NotchedCard): перший рядок блоку — на рівні мітки, без порожньої смуги зверху.
+    return NotchedCard(
+      title: child,
+      badge: badge == null ? null : NotchBadge(badge!, dot: dot),
+      onTap: onTap,
+    );
   }
 }

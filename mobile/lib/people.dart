@@ -1,3 +1,4 @@
+import 'core/widgets/notched_card.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -371,13 +372,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
           ),
         ],
         const SizedBox(height: 4),
-        Glass(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+        NotchedCard(
+          title: NotchTitle(tr('Можливо, ви знайомі'), icon: LucideIcons.sparkles),
+          actions: [NotchAction(tr('Усі'), onTap: () => context.push('/people'))],
+          badge: NotchBadge(tr('Люди')),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CardTitle(tr('Можливо, ви знайомі'), icon: LucideIcons.sparkles, trailing: tr('Усі'), onTrailing: () => context.push('/people')),
-              const SizedBox(height: 6),
               if (suggestions.isEmpty)
                 Padding(padding: const EdgeInsets.only(bottom: 6), child: Text(tr('Рекомендацій поки немає.'), style: body(13, color: muted)))
               else

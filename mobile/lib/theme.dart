@@ -156,8 +156,8 @@ ThemeData gameConTheme() {
     useMaterial3: true,
     scaffoldBackgroundColor: Colors.transparent,
     colorScheme: palette.isLight
-        ? ColorScheme.light(primary: primary, onPrimary: Colors.white, secondary: cyan, surface: popover, onSurface: ink, error: danger)
-        : ColorScheme.dark(primary: primary, onPrimary: Colors.white, secondary: cyan, surface: popover, onSurface: ink, error: danger),
+        ? ColorScheme.light(primary: primary, onPrimary: Colors.white, secondary: cyan, surface: popover, onSurface: ink, error: danger, surfaceContainer: palette.card, surfaceContainerHigh: palette.raised, outlineVariant: palette.line)
+        : ColorScheme.dark(primary: primary, onPrimary: Colors.white, secondary: cyan, surface: popover, onSurface: ink, error: danger, surfaceContainer: palette.card, surfaceContainerHigh: palette.raised, outlineVariant: palette.line),
     fontFamily: 'Onest',
   );
   return base.copyWith(

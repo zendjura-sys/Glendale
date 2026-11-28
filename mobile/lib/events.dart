@@ -1,3 +1,4 @@
+import 'core/widgets/notched_card.dart';
 import 'package:flutter/material.dart';
 
 import 'core/widgets/arctic_glass/arctic_fit_text.dart';
@@ -113,11 +114,12 @@ class EventTile extends StatelessWidget {
     final isClan = event['kind'] == 'clan';
     final isGame = event['kind'] == 'game';
     final link = text(event['url']);
-    return Glass(
+    // Подія — картка з вирізом: тип події в мітці, час і назва — на її рівні.
+    return NotchedCard(
       padding: const EdgeInsets.all(12),
       radius: 18,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      badge: NotchBadge(text(event['type_label']) ?? tr('Подія'), dot: status == 'going' ? const Color(0xFF3EE0A8) : primary),
+      title: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(
             width: 56,
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -134,7 +136,6 @@ class EventTile extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                Pill(label: text(event['type_label']) ?? ''),
                 GestureDetector(
                   onTap: () => context.push(appPathFor(text(where['url']))),
                   child: Text(text(where['name']) ?? '', style: body(12, color: muted)),
@@ -163,8 +164,7 @@ class EventTile extends StatelessWidget {
             ]),
           ),
         ]),
-        const SizedBox(height: 10),
-        Row(children: [
+      child: Row(children: [
           Expanded(
             child: status == 'going'
                 ? PrimaryButton(label: isGame ? tr('Цікаво') : tr('Піду'), icon: LucideIcons.check, compact: true, onPressed: isClan ? () => onRsvp(false) : null)
@@ -183,7 +183,6 @@ class EventTile extends StatelessWidget {
             ),
           ],
         ]),
-      ]),
     );
   }
 }

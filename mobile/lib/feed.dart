@@ -1,3 +1,4 @@
+import 'core/widgets/notched_card.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -222,13 +223,12 @@ class _FeedScreenState extends State<FeedScreen> {
         ],
         const SizedBox(height: 12),
         if (online.isNotEmpty && shows('online')) ...[
-          Glass(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+          NotchedCard(
+            title: NotchTitle(tr('Зараз онлайн'), icon: LucideIcons.radio),
+            badge: NotchBadge('${online.length}', dot: const Color(0xFF3EE0A8)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CardTitle(tr('Зараз онлайн'), icon: LucideIcons.radio, trailing: '${online.length}'),
-                const SizedBox(height: 10),
                 SizedBox(
                   height: 78,
                   child: ListView.separated(
