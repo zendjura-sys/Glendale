@@ -10,6 +10,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_acrylic
   flutter_tts
   flutter_webrtc
+  hotkey_manager_windows
   livekit_client
   record_windows
   screen_retriever_windows

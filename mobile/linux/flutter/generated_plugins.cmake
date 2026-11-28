@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_acrylic
   flutter_webrtc
   gtk
+  hotkey_manager_linux
   livekit_client
   record_linux
   screen_retriever_linux
